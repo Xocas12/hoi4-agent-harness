@@ -1,0 +1,78 @@
+# Adapters
+
+An adapter is a bridge to one running game. Each sees a different subset of the
+world, so the contract makes that subset explicit rather than papering over it.
+
+```python
+class GameAdapter:
+    supported_actions: frozenset[str]
+    def info(self) -> AdapterInfo: ...
+    def read_state(self) -> GameState: ...
+    def apply(self, call: ActionCall) -> ActionResult: ...
+    def pause(self) -> None: ...
+    def resume(self, speed: int = 3) -> None: ...
+    def advance(self, days: int) -> GameState: ...   # returns early on a critical event
+```
+
+Two invariants hold everywhere:
+
+- **Refuse, don't fake.** An action outside `supported_actions` returns
+  `error_kind="unsupported"` with the list of what *is* supported. The model can
+  work with that; it cannot work with a silent no-op reported as success.
+- **Unknown, not zero.** A field the adapter could not read goes in
+  `unknown_fields` and renders as `unknown`. A fabricated `0` for war support is
+  worse than a gap, because the agent will reason confidently from it.
+
+## mock — complete
+
+Seeded, deterministic, no HOI4 install. A clock, resources that accrue, queues
+that drain, scripted historical events (including a critical one on 1939-09-01).
+Every test runs against it, and `hoi4-harness play` uses it by default, so the
+whole harness is exercisable for free.
+
+Not a simulator. It is shaped like the game, not accurate to it — use it to test
+the loop, never to draw conclusions about strategy.
+
+## savegame — parser done, mapping TODO
+
+Reads the most recent `*.hoi4` autosave. `parse_clausewitz()` handles Paradox's
+`key=value` / `key={...}` text format including repeated keys.
+
+What is left is the mapping from parsed blocks to `GameState`, which has to be
+verified against a real save rather than guessed — block names have moved between
+patches. The three TODOs are marked in `_to_state`.
+
+Constraints: non-ironman text saves only (ironman is binary and compressed); a
+save is a snapshot, so pair it with a short autosave interval; read-only, so
+compose it with a writer.
+
+## screen — capture done, vision TODO
+
+Grabs the window or a named region with `mss`. `REGIONS` names the parts of the UI
+worth cropping (top bar, alert cluster, outliner) in 1920x1080 reference
+coordinates.
+
+`read_state()` needs a vision model call: send the PNG through the same
+provider-neutral LLM layer with a schema matching `GameState`, and put anything
+the model will not commit to in `unknown_fields`. This is the only adapter that
+works on ironman and the only one that sees alerts and the map — and the most
+expensive per observation, so it is for what numbers cannot express, not for
+routine ticks.
+
+## input_driver — mechanics done, per-action scripts TODO
+
+The write side. Hotkeys (`HOTKEYS`) are preferred over coordinates because they
+survive resolution and UI-scale changes; coordinates live in a calibration dict,
+not in code. `dry_run=True` logs intended input without sending it, which is how
+the tests and the default CLI run.
+
+The open work is one UI script per action, each ending in a verify step: act,
+re-read, confirm the state actually changed. A blind click is unverifiable, and
+an unverified action reported as success is the worst failure mode in this whole
+design.
+
+## composite
+
+Pairs a reader with a writer: `--adapter savegame+input` or `screen+input`. Its
+`advance()` is the remaining rough edge — it should block until the in-game date
+has actually moved and cut short on a critical event.

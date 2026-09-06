@@ -1,0 +1,113 @@
+"""Write-side sink: perform actions by driving keyboard and mouse.
+
+Status: skeleton. The mechanics (focus the window, move, click, hotkey) are
+straightforward. What is not straightforward, and what this file is structured
+around, is that a blind click is unverifiable: every action should act, re-read,
+and confirm the state actually changed, reporting failure rather than assuming
+success.
+
+Hotkeys are far more reliable than coordinates and should be preferred wherever
+the game exposes one. Coordinates are resolution- and UI-scale-dependent and
+belong in a calibration file, not in code.
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+
+from ..types import ActionCall, ActionResult, GameState
+from .base import AdapterInfo, GameAdapter
+
+HOTKEYS = {
+    "pause": "space",
+    "speed_up": "add",
+    "speed_down": "subtract",
+    "production": "b",
+    "research": "n",
+    "national_focus": "f",
+    "diplomacy": "j",
+    "trade": "t",
+    "construction": "c",
+    "division_designer": "u",
+}
+
+
+@dataclass
+class InputConfig:
+    window_title: str = "Hearts of Iron IV"
+    move_duration: float = 0.08
+    settle_seconds: float = 0.35
+    coordinates: dict[str, tuple[int, int]] = field(default_factory=dict)
+
+
+class InputDriverAdapter(GameAdapter):
+    """Applies actions through synthetic input. Reads nothing on its own.
+
+    Compose with a read-capable adapter (savegame or screen) via CompositeAdapter.
+    """
+
+    supported_actions = frozenset({"set_game_speed", "advance_time", "note"})
+
+    def __init__(self, config: InputConfig | None = None, dry_run: bool = True):
+        self.config = config or InputConfig()
+        self.dry_run = dry_run
+        self.log: list[str] = []
+
+    def info(self) -> AdapterInfo:
+        return AdapterInfo(
+            name="input",
+            readable=False,
+            writable=True,
+            clock_control=True,
+            notes=f"dry_run={self.dry_run}; requires the 'input' extra (pyautogui)",
+        )
+
+    def _gui(self):
+        try:
+            import pyautogui
+        except ImportError as exc:  # pragma: no cover - optional dependency
+            raise RuntimeError("pip install 'hoi4-agent-harness[input]' for input") from exc
+        pyautogui.FAILSAFE = True  # slam the mouse into a screen corner to abort
+        return pyautogui
+
+    def press(self, key: str) -> None:
+        self.log.append(f"press {key}")
+        if not self.dry_run:
+            self._gui().press(key)
+
+    def click(self, target: str) -> None:
+        point = self.config.coordinates.get(target)
+        if point is None:
+            raise KeyError(f"No calibrated coordinate for {target!r}. Run: hoi4-harness calibrate")
+        self.log.append(f"click {target} at {point}")
+        if not self.dry_run:
+            gui = self._gui()
+            gui.moveTo(point[0], point[1], duration=self.config.move_duration)
+            gui.click()
+
+    def read_state(self) -> GameState:
+        raise NotImplementedError("Write-only adapter; compose it with a reader.")
+
+    def apply(self, call: ActionCall) -> ActionResult:
+        if call.name == "note":
+            return ActionResult(ok=True, action=call.name, call_id=call.call_id, message="Noted.")
+        if call.name == "set_game_speed":
+            speed = int(call.arguments["speed"])
+            self.press(HOTKEYS["pause"] if speed == 0 else HOTKEYS["speed_up"])
+            return ActionResult(ok=True, action=call.name, call_id=call.call_id,
+                                message=f"Speed -> {speed}")
+        if call.name == "advance_time":
+            return ActionResult(ok=True, action=call.name, call_id=call.call_id,
+                                message="Clock handed back to the harness.")
+        # TODO: one UI script per action, each ending in a verify step. Until an
+        # action has one, refusing is the honest answer.
+        return self.unsupported(call)
+
+    def pause(self) -> None:
+        self.press(HOTKEYS["pause"])
+
+    def resume(self, speed: int = 3) -> None:
+        self.press(HOTKEYS["pause"])
+
+    def advance(self, days: int) -> GameState:
+        raise NotImplementedError("Compose with a reader to observe the clock.")

@@ -1,0 +1,23 @@
+# A small local model behind an OpenAI-compatible endpoint (Ollama by default).
+# Heavy coaching, a narrow action set and a hard reflex floor -- the combination
+# that makes a 7B model produce coherent play instead of noise.
+adapter = "mock"
+guidance = "coach"
+days_per_turn = 14
+max_actions_per_turn = 4
+max_tool_rounds_per_turn = 2
+full_brief_every = 3
+enabled_actions = [
+  "set_national_focus",
+  "start_research",
+  "queue_construction",
+  "set_production",
+  "advance_time",
+  "note",
+]
+
+[planner]
+provider = "openai"
+model = "qwen2.5:14b"
+base_url = "http://localhost:11434/v1"
+max_tokens = 2000

@@ -1,0 +1,54 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "hoi4-agent-harness"
+version = "0.1.0"
+description = "A provider-neutral agentic harness for driving Hearts of Iron IV with an LLM."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "Xocas Alvarez-Jorge" }]
+keywords = ["hoi4", "hearts-of-iron", "llm", "agent", "grand-strategy", "benchmark"]
+classifiers = [
+  "Development Status :: 2 - Pre-Alpha",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+]
+dependencies = []
+
+[project.optional-dependencies]
+anthropic = ["anthropic>=0.40"]
+openai = ["openai>=1.40"]
+google = ["google-genai>=0.3"]
+input = ["pyautogui>=0.9.54", "mss>=9.0"]
+all = ["anthropic>=0.40", "openai>=1.40", "google-genai>=0.3", "pyautogui>=0.9.54", "mss>=9.0"]
+dev = ["pytest>=8.0", "ruff>=0.6"]
+
+[project.scripts]
+hoi4-harness = "hoi4_harness.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/Xocas12/hoi4-agent-harness"
+Issues = "https://github.com/Xocas12/hoi4-agent-harness/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/hoi4_harness"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+[tool.ruff]
+line-length = 110
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+# B027: GameAdapter/LLMClient deliberately ship no-op hooks (pause, resume, close)
+# that most adapters never need to override.
+ignore = ["B027"]

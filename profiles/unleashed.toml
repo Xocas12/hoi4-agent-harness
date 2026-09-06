@@ -1,0 +1,19 @@
+# Everything off the leash: no coaching, no reflex layer, no confirmation gate.
+# The model decides literally every move, and nothing in the harness second-
+# guesses it. Use with --live to let irreversible actions through.
+guidance = "unconstrained"
+objective = "Win. Define winning yourself and say so in a note on turn one."
+require_confirmation = false
+reflex_enabled = false
+days_per_turn = 3
+max_actions_per_turn = 12
+max_tool_rounds_per_turn = 5
+full_brief_every = 4
+
+[planner]
+provider = "anthropic"
+model = "claude-opus-5"
+effort = "high"
+
+[budget]
+max_usd = 5.0

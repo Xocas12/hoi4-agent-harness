@@ -1,0 +1,10 @@
+{
+  "guidance": "historical",
+  "objective": "Play Sweden as Sweden actually played 1936-1939: armed neutrality, no adventures.",
+  "country": "SWE",
+  "start_date": "1936-01-01",
+  "turns": 180,
+  "days_per_turn": 7,
+  "planner": { "provider": "openai", "model": "gpt-5", "effort": "medium" },
+  "budget": { "max_usd": 3.0, "usd_per_m_input": 1.25, "usd_per_m_output": 10.0 }
+}

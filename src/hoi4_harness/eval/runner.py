@@ -1,0 +1,42 @@
+"""Run a scenario end to end and score it."""
+
+from __future__ import annotations
+
+from pathlib import Path
+
+from ..adapters.mock import MockAdapter
+from ..agent.llm import build_llm
+from ..agent.loop import AgentLoop
+from ..config import HarnessConfig
+from ..env import HOI4Env
+from .metrics import ScoreCard, score
+from .scenarios import SCENARIOS, Scenario
+
+
+def run_scenario(
+    scenario: Scenario | str,
+    config: HarnessConfig | None = None,
+    transcript_dir: Path | None = None,
+) -> ScoreCard:
+    if isinstance(scenario, str):
+        if scenario not in SCENARIOS:
+            raise KeyError(f"Unknown scenario {scenario!r}. Known: {', '.join(SCENARIOS)}")
+        scenario = SCENARIOS[scenario]
+
+    config = config or HarnessConfig()
+    adapter = MockAdapter(seed=scenario.seed, country=scenario.country, start=scenario.start)
+    env = HOI4Env(adapter, config)
+    env.reset()
+
+    transcript = (
+        (transcript_dir / f"{scenario.key}.jsonl") if transcript_dir else None
+    )
+    loop = AgentLoop(
+        env=env,
+        planner=build_llm(config.planner),
+        config=config,
+        transcript_path=transcript,
+    )
+    loop.config.objective = scenario.briefing
+    report = loop.run(scenario.turns)
+    return score(scenario, env.read_state(), report)
