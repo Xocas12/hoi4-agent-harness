@@ -142,7 +142,6 @@ class HarnessConfig:
     days_per_turn: int = 7
     max_actions_per_turn: int = 8
     max_tool_rounds_per_turn: int = 3
-    poll_seconds: float = 2.0
     full_brief_every: int = 8
     wake_on_free_research_slot: bool = True
     wake_on_no_focus: bool = True
@@ -181,7 +180,6 @@ class HarnessConfig:
             max_actions_per_turn=_env_int("HOI4_MAX_ACTIONS_PER_TURN", 8),
             max_tool_rounds_per_turn=_env_int("HOI4_MAX_TOOL_ROUNDS", 3),
             full_brief_every=_env_int("HOI4_FULL_BRIEF_EVERY", 8),
-            poll_seconds=_env_float("HOI4_POLL_SECONDS", 2.0) or 2.0,
             turns=_env_int("HOI4_TURNS", 10),
             dry_run=_env_bool("HOI4_DRY_RUN", True),
             run_dir=Path(os.environ.get("HOI4_RUN_DIR", "runs")),
