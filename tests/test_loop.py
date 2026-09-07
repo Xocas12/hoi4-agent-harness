@@ -65,3 +65,37 @@ def test_the_planner_is_not_woken_when_nothing_is_happening():
     quiet.research = []
     assert not Policy(days_per_turn=7).should_wake(quiet, days_since_planner=1).wake
     assert Policy(days_per_turn=7).should_wake(quiet, days_since_planner=7).wake
+
+
+def test_a_wake_turn_leaves_a_progress_line():
+    lines: list[str] = []
+    loop, _env = make_loop()
+    loop.progress = lines.append
+    loop.run(2)
+    assert len(lines) == 2
+    assert lines[0].startswith("1936-01-01")
+    assert "wake: no national focus is running" in lines[0]
+    assert "advance_time" in lines[0]
+    assert " tok" in lines[0]
+    assert lines[0].endswith("$0.00")
+
+
+def test_a_reflex_turn_leaves_a_progress_line_without_a_token_column():
+    lines: list[str] = []
+    loop, _env = make_loop(wake_on_no_focus=False, wake_on_free_research_slot=False)
+    loop.progress = lines.append
+    loop.run(2)
+    assert len(lines) == 2
+    assert "wake:" not in lines[1]
+    assert "queue_construction" in lines[1]
+    assert lines[1].endswith("$0.00")
+
+
+def test_a_budget_downgrade_says_why_in_its_progress_line():
+    lines: list[str] = []
+    loop, _env = make_loop()
+    loop.progress = lines.append
+    loop.budget.config = BudgetConfig(max_llm_calls=1)
+    loop.run(2)
+    assert "reflex (budget: call ceiling reached (1))" in lines[1]
+    assert "wake:" not in lines[1]

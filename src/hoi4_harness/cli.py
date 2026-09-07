@@ -137,12 +137,17 @@ def cmd_play(args: argparse.Namespace) -> int:
     env = HOI4Env(build_adapter(config), config)
     env.reset()
     run_dir = config.run_dir
+
+    def echo(line: str) -> None:
+        print(line, file=sys.stderr)      # stdout stays the final JSON, for piping
+
     loop = AgentLoop(
         env=env,
         planner=build_llm(config.planner),
         config=config,
         memory=Memory.load(run_dir / "memory.json"),
         transcript_path=run_dir / "transcript.jsonl",
+        progress=None if args.quiet else echo,
     )
     report = loop.run(config.turns)
     loop.memory.save(run_dir / "memory.json")
@@ -231,6 +236,8 @@ def build_parser() -> argparse.ArgumentParser:
     common(play)
     play.add_argument("--turns", type=int)
     play.add_argument("--days", type=int, help="in-game days per turn")
+    play.add_argument("--quiet", action="store_true",
+                      help="no per-turn progress line on stderr")
     play.set_defaults(func=cmd_play)
 
     evaluate = sub.add_parser("eval", help="run a scenario and score it")
