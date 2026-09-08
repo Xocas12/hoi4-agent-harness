@@ -41,7 +41,8 @@ def a_turn_of_advice(tag: str) -> LLMResponse:
 
     The default scripted policy keys off markers in the brief, and the first
     brief of a run is a delta that carries none of them -- so these tests name
-    their calls explicitly instead.
+    their calls explicitly instead. The note rides along because it is the one
+    call advisor mode processes rather than intercepts.
     """
     return LLMResponse(
         tool_calls=[
@@ -49,6 +50,7 @@ def a_turn_of_advice(tag: str) -> LLMResponse:
             ToolCall(f"{tag}-research", "start_research", {"technology": "construction1"}),
             ToolCall(f"{tag}-build", "queue_construction",
                      {"building": "civilian_factory", "state": "capital", "count": 2}),
+            ToolCall(f"{tag}-note", "note", {"text": f"Week {tag}: keep building toward 1938."}),
             ToolCall(f"{tag}-wait", "advance_time", {"days": 7}),
         ],
         stop_reason="tool_use",
@@ -168,6 +170,9 @@ def test_it_works_with_an_adapter_that_supports_no_actions(tmp_path):
     # Interception happens before the adapter is ever asked to do anything.
     assert adapter.applied == []
     assert report.actions_ok == 0 and report.actions_failed == 0
+    # The one exception still works: notes are processed into the journal even
+    # though this adapter supports no actions at all.
+    assert any("keep building toward" in e.text for e in loop.memory.journal)
     recommendations = [r for r in records_from(tmp_path / "advisor.jsonl")
                        if r["kind"] == "recommendation"]
     assert recommendations

@@ -75,8 +75,21 @@ routine ticks.
 
 The write side. Hotkeys (`HOTKEYS`) are preferred over coordinates because they
 survive resolution and UI-scale changes; coordinates live in a calibration dict,
-not in code. `dry_run=True` logs intended input without sending it, which is how
+not in code — `hoi4-harness calibrate` writes it (with the screen resolution it
+was captured at), and loading a calibration from another resolution is refused
+rather than applied. `dry_run=True` logs intended input without sending it, which is how
 the tests and the default CLI run.
+
+Input is gated on window focus. Before anything is sent, the adapter checks that
+the focused window's title contains `window_title` -- a case-insensitive
+substring, because the real title carries a suffix (`Hearts of Iron IV (OpenGL)`)
+and an exact match would never fire. If the game is not focused, the action comes
+back as a failed `ActionResult` with the name of the window that *is* focused,
+which the agent can read and act on like any other rejection.
+
+A platform with no implemented check reports **unsupported** and refuses, rather
+than passing. A guard that always returns true is worse than no guard, because it
+gets trusted. `--no-window-guard` is the deliberate opt-out.
 
 The open work is one UI script per action, each ending in a verify step: act,
 re-read, confirm the state actually changed. A blind click is unverifiable, and
@@ -85,6 +98,19 @@ design.
 
 ## composite
 
-Pairs a reader with a writer: `--adapter savegame+input` or `screen+input`. Its
-`advance()` is the remaining rough edge — it should block until the in-game date
-has actually moved and cut short on a critical event.
+Pairs a reader with a writer: `--adapter logtail+input`, `savegame+input` or
+`screen+input`.
+
+`advance()` blocks on the **in-game** date rather than returning after a single
+read, and returns early on a critical event. Without that, a real bridge takes a
+turn every few milliseconds and burns a budget in seconds. A wall-clock deadline
+is the backstop, so a wedged game ends the turn instead of hanging the run, and
+the game is left paused on every exit path including the timeout and an exception
+from the reader.
+
+Who owns the clock is a setting. With `clock_owner="harness"` (the default) the
+composite unpauses, waits, and pauses again. With `clock_owner="player"` it never
+sends a clock instruction at all — it only watches the date move — and
+`set_game_speed` is removed from the action list so the model cannot take the
+clock either. That is the mode to use when a person is playing the same
+campaign.
