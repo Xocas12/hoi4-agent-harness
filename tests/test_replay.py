@@ -125,12 +125,13 @@ def test_a_transcript_with_no_planner_turns_is_a_clear_error(tmp_path):
 
 def test_a_truncated_or_malformed_line_is_tolerated(tmp_path):
     path, _ = run_transcript(tmp_path, turns=2)
+    intact = len(planner_turns(path))
     raw = path.read_text(encoding="utf-8")
     path.write_text(raw + '{"t": 1.0, "kind": "obse\n\nnot json at all\n', encoding="utf-8")
     last = planner_turns(path)[-1]
     outcome = replay_turn(path, last, HarnessConfig(adapter="mock"))
     assert outcome.record["turn"] == last
-    assert sum(1 for r in load(path) if r.get("kind") == "observe") == 2
+    assert sum(1 for r in load(path) if r.get("kind") == "observe") == intact
 
 
 def test_the_new_calls_are_printed_not_executed(tmp_path):
