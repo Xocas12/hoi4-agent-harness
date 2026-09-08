@@ -68,6 +68,8 @@ def _config_from_args(args: argparse.Namespace) -> HarnessConfig:
         config.require_confirmation = False
     if getattr(args, "no_reflex", False):
         config.reflex_enabled = False
+    if getattr(args, "no_window_guard", False):
+        config.enforce_window_focus = False
     if getattr(args, "country", None):
         config.country = args.country
     if getattr(args, "start_date", None):
@@ -99,6 +101,17 @@ def cmd_doctor(args: argparse.Namespace) -> int:
             print(f"  [x] {module}")
         except ImportError:
             print(f"  [ ] {module}  (pip install 'hoi4-agent-harness[{extra}]')")
+
+    try:
+        from .adapters.window import check_focus
+
+        focus = check_focus(config.window_title)
+        if focus.supported:
+            print(f"game focused     {focus.focused}" + (f" ({focus.title})" if focus.title else ""))
+        else:
+            print(f"game focused     unknown -- {focus.reason}")
+    except Exception as exc:  # noqa: BLE001 - doctor reports, never raises
+        print(f"game focused     check failed: {exc}")
 
     try:
         adapter = build_adapter(config)
@@ -207,6 +220,8 @@ def build_parser() -> argparse.ArgumentParser:
                        help="skip the confirmation gate on irreversible actions")
         p.add_argument("--no-reflex", dest="no_reflex", action="store_true",
                        help="disable the deterministic reflex layer; the model decides everything")
+        p.add_argument("--no-window-guard", dest="no_window_guard", action="store_true",
+                       help="send input even when the game is not the focused window")
         p.add_argument("--country", help="country tag (mock adapter)")
         p.add_argument("--start-date", dest="start_date", help="start date (mock adapter)")
         p.add_argument("--seed", type=int, help="mock adapter seed")

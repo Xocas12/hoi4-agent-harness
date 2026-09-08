@@ -155,6 +155,9 @@ class HarnessConfig:
     save_dir: Path | None = None
     log_path: Path | None = None          # game.log, for the logtail adapter
     window_title: str = "Hearts of Iron IV"
+    # Refuse to send input unless the game is the focused window. Turning
+    # this off is an explicit choice to let keystrokes land wherever they land.
+    enforce_window_focus: bool = True
     # Which layer owns operations. "llm" = the model moves every army;
     # "ai" = the native AI runs fronts and the model sets intent (hybrid).
     operational_control: str = "llm"
@@ -188,6 +191,7 @@ class HarnessConfig:
             save_dir=Path(save_dir) if save_dir else None,
             log_path=Path(log_path) if log_path else None,
             window_title=os.environ.get("HOI4_WINDOW_TITLE", "Hearts of Iron IV"),
+            enforce_window_focus=_env_bool("HOI4_ENFORCE_WINDOW_FOCUS", True),
             operational_control=os.environ.get("HOI4_OPERATIONAL_CONTROL", "llm").strip(),
             country=os.environ.get("HOI4_COUNTRY", "SWE"),
             start_date=os.environ.get("HOI4_START_DATE", "1936-01-01"),
