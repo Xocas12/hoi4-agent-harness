@@ -52,6 +52,8 @@ def _config_from_args(args: argparse.Namespace) -> HarnessConfig:
         config.budget.max_usd = args.max_usd
     if getattr(args, "live", False):
         config.dry_run = False
+    if getattr(args, "no_window_guard", False):
+        config.enforce_window_focus = False
     if getattr(args, "run_dir", None):
         config.run_dir = Path(args.run_dir)
     if getattr(args, "guidance", None):
@@ -68,8 +70,6 @@ def _config_from_args(args: argparse.Namespace) -> HarnessConfig:
         config.require_confirmation = False
     if getattr(args, "no_reflex", False):
         config.reflex_enabled = False
-    if getattr(args, "no_window_guard", False):
-        config.enforce_window_focus = False
     if getattr(args, "country", None):
         config.country = args.country
     if getattr(args, "start_date", None):
@@ -207,6 +207,8 @@ def build_parser() -> argparse.ArgumentParser:
         p.add_argument("--live", action="store_true",
                        help="allow irreversible actions (default: dry run)")
         p.add_argument("--max-usd", type=float)
+        p.add_argument("--no-window-guard", dest="no_window_guard", action="store_true",
+                       help="send input even when the game is not the focused window")
         p.add_argument("--profile", help="JSON/TOML file holding a whole configuration")
         p.add_argument("--guidance", metavar="NAME|PATH",
                        help="how much to coach the model: " + ", ".join(guidance_packs())
@@ -220,8 +222,6 @@ def build_parser() -> argparse.ArgumentParser:
                        help="skip the confirmation gate on irreversible actions")
         p.add_argument("--no-reflex", dest="no_reflex", action="store_true",
                        help="disable the deterministic reflex layer; the model decides everything")
-        p.add_argument("--no-window-guard", dest="no_window_guard", action="store_true",
-                       help="send input even when the game is not the focused window")
         p.add_argument("--country", help="country tag (mock adapter)")
         p.add_argument("--start-date", dest="start_date", help="start date (mock adapter)")
         p.add_argument("--seed", type=int, help="mock adapter seed")
