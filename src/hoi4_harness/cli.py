@@ -52,6 +52,8 @@ def _config_from_args(args: argparse.Namespace) -> HarnessConfig:
         config.budget.max_usd = args.max_usd
     if getattr(args, "live", False):
         config.dry_run = False
+    if getattr(args, "advisor", False):
+        config.advisor = True
     if getattr(args, "run_dir", None):
         config.run_dir = Path(args.run_dir)
     if getattr(args, "guidance", None):
@@ -230,6 +232,8 @@ def build_parser() -> argparse.ArgumentParser:
     play = sub.add_parser("play", help="run the agent loop")
     common(play)
     play.add_argument("--turns", type=int)
+    play.add_argument("--advisor", action="store_true",
+                      help="recommend, never act: every tool call is shown to the player instead")
     play.add_argument("--days", type=int, help="in-game days per turn")
     play.set_defaults(func=cmd_play)
 
