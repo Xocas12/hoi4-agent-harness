@@ -163,7 +163,9 @@ def cmd_replay(args: argparse.Namespace) -> int:
         config = _config_from_args(args)
         print(replay_turn(Path(args.transcript), args.turn, config).render())
         return 0
-    except ReplayError as exc:
+    except (ReplayError, ValueError) as exc:
+        # ValueError: a misconfigured provider reaches build_llm here, and its
+        # message already says what is wrong and what the options are.
         print(f"replay: {exc}", file=sys.stderr)
         return 1
 

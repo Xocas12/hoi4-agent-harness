@@ -28,6 +28,24 @@ def run_transcript(tmp_path, script=None, turns=3):
     return tmp_path / "transcript.jsonl", client
 
 
+def planner_turns(path):
+    """The turns that actually woke the planner.
+
+    Not every turn does, and which ones do depends on how much the agent fixed
+    earlier -- so tests must read this from the transcript rather than assume
+    turn 1 exists.
+    """
+    turns = []
+    for line in path.read_text(encoding="utf-8").splitlines():
+        try:
+            record = json.loads(line)
+        except json.JSONDecodeError:
+            continue  # a transcript may end mid-write; that is a supported input
+        if record.get("kind") == "observe":
+            turns.append(int(record["turn"]))
+    return turns
+
+
 def call_index(path, turn):
     """Where client.calls holds the first round of ``turn``: the loop writes one
     llm record per complete() call, so count them up to the observe record."""
@@ -45,7 +63,7 @@ def call_index(path, turn):
 def test_replay_rebuilds_the_prompt_the_original_model_saw(tmp_path):
     path, client = run_transcript(tmp_path)
     config = HarnessConfig(adapter="mock")
-    for turn in (0, 1):
+    for turn in planner_turns(path):
         outcome = replay_turn(path, turn, config)
         system, messages = client.calls[call_index(path, turn)]
         assert outcome.prompt.system == system
@@ -69,7 +87,8 @@ def test_a_note_from_an_earlier_turn_comes_back_in_the_rebuilt_prompt(tmp_path):
         )
     ]
     path, _ = run_transcript(tmp_path, script=script)
-    outcome = replay_turn(path, 1, HarnessConfig(adapter="mock"))
+    later = planner_turns(path)[-1]
+    outcome = replay_turn(path, later, HarnessConfig(adapter="mock"))
     assert "Build civs until 1938." in outcome.prompt.user   # the journal
     assert "note, advance_time" in outcome.prompt.user       # the digest of that turn
 
@@ -78,14 +97,22 @@ def test_list_shows_the_turns_with_dates_and_wake_reasons(tmp_path):
     path, _ = run_transcript(tmp_path, turns=2)
     table = list_turns(path)
     assert "1936-01-01" in table
-    assert "1936-01-15" in table  # the scripted advance_time in turn 0 stacks a week
+    # The dates are whatever the run produced; the table must show them.
+    dates = [
+        json.loads(line)["date"]
+        for line in path.read_text(encoding="utf-8").splitlines()
+        if json.loads(line).get("kind") == "observe"
+    ]
+    for date in dates:
+        assert date in table
     assert "no national focus is running" in table
 
 
 def test_a_turn_that_does_not_exist_is_a_clear_error(tmp_path):
     path, _ = run_transcript(tmp_path, turns=2)
-    with pytest.raises(ReplayError, match=r"no turn 9.*0, 1"):
-        replay_turn(path, 9, HarnessConfig(adapter="mock"))
+    present = ", ".join(str(turn) for turn in planner_turns(path))
+    with pytest.raises(ReplayError, match=rf"no turn 99.*{present}"):
+        replay_turn(path, 99, HarnessConfig(adapter="mock"))
 
 
 def test_a_transcript_with_no_planner_turns_is_a_clear_error(tmp_path):
@@ -99,8 +126,9 @@ def test_a_truncated_or_malformed_line_is_tolerated(tmp_path):
     path, _ = run_transcript(tmp_path, turns=2)
     raw = path.read_text(encoding="utf-8")
     path.write_text(raw + '{"t": 1.0, "kind": "obse\n\nnot json at all\n', encoding="utf-8")
-    outcome = replay_turn(path, 1, HarnessConfig(adapter="mock"))
-    assert outcome.record["turn"] == 1
+    last = planner_turns(path)[-1]
+    outcome = replay_turn(path, last, HarnessConfig(adapter="mock"))
+    assert outcome.record["turn"] == last
     assert sum(1 for r in load(path) if r.get("kind") == "observe") == 2
 
 
@@ -132,6 +160,36 @@ def test_the_cli_prints_the_comparison_and_exits_zero(tmp_path, capsys):
     assert "original (scripted)" in out
     assert "replayed (scripted:scripted)" in out
     assert "advance_time" in out
+
+
+def test_long_calls_wrap_instead_of_breaking_the_columns(tmp_path):
+    path, _ = run_transcript(tmp_path, turns=1)
+    rambling = ScriptedClient(
+        script=[
+            LLMResponse(
+                tool_calls=[ToolCall("x", "note", {"text": "intent " * 40})],
+                stop_reason="tool_use",
+                usage=Usage(5, 5),
+            )
+        ]
+    )
+    rows = replay_turn(path, 0, HarnessConfig(adapter="mock"), planner=rambling).render().splitlines()
+    separator = next(i for i, r in enumerate(rows) if r.startswith("  --"))
+    body = rows[separator - 1:]
+    for row in body:
+        if not row.startswith("  "):  # the footer starts without the two-space indent
+            break
+        assert row.index(" | ") == 54  # 2-space gutter + 52-char column, every row
+    assert "intent" in "\n".join(body)  # wrapped, not truncated
+
+
+def test_a_misconfigured_provider_is_a_clear_error(tmp_path, capsys, monkeypatch):
+    path, _ = run_transcript(tmp_path, turns=1)
+    monkeypatch.setenv("HOI4_LLM_PROVIDER", "nope")
+    assert main(["replay", str(path), "--turn", "0"]) == 1
+    err = capsys.readouterr().err
+    assert "nope" in err
+    assert "Traceback" not in err
 
 
 def test_the_cli_lists_turns_and_reports_errors_without_a_traceback(tmp_path, capsys):

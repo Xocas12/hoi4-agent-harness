@@ -70,13 +70,16 @@ class ReplayOutcome:
     response: LLMResponse
 
     def render(self) -> str:
-        original = (
-            [_render_call(c.get("name", ""), c.get("arguments") or {}) for c in self.original_calls]
-            or ["(no recorded response)"]
+        original = _column(
+            [_render_call(c.get("name", ""), c.get("arguments") or {}) for c in self.original_calls],
+            self.original_text,
+            empty="(no recorded response)" if not self.original_model else "(no tool calls)",
         )
-        replayed = [_render_call(c.name, c.arguments) for c in self.response.tool_calls]
-        left = original + [""] + _wrap(self.original_text or "(no prose)")
-        right = (replayed or ["(no tool calls)"]) + [""] + _wrap(self.response.text or "(no prose)")
+        replayed = _column(
+            [_render_call(c.name, c.arguments) for c in self.response.tool_calls],
+            self.response.text,
+            empty="(no tool calls)",
+        )
         usage = self.response.usage
         return "\n".join(
             [
@@ -88,9 +91,9 @@ class ReplayOutcome:
                 "",
                 _side_by_side(
                     f"original ({self.original_model or '?'})",
-                    left,
+                    original,
                     f"replayed ({self.replayed_as})",
-                    right,
+                    replayed,
                 ),
                 "",
                 f"stop_reason {self.response.stop_reason} | "
@@ -303,6 +306,25 @@ def _render_call(name: str, arguments: dict[str, Any]) -> str:
 def _wrap(text: str) -> list[str]:
     wrapped = textwrap.wrap(text, width=_COLUMN_WIDTH, subsequent_indent="  ", break_long_words=True)
     return wrapped or [""]
+
+
+def _wrapped(lines: list[str]) -> list[str]:
+    wrapped: list[str] = []
+    for line in lines:
+        wrapped.extend(_wrap(line))
+    return wrapped
+
+
+def _column(calls: list[str], text: str, empty: str) -> list[str]:
+    """One comparison column: each call wrapped to the width, then its prose.
+
+    Nothing is truncated -- an argument longer than the column flows onto the
+    next row, because a comparison that silently drops an argument is worse
+    than a tall table.
+    """
+    if not calls and not text:
+        return [empty]
+    return _wrapped(calls or ["(no tool calls)"]) + [""] + _wrap(text or "(no prose)")
 
 
 def _side_by_side(left_title: str, left: list[str], right_title: str, right: list[str]) -> str:
