@@ -90,7 +90,8 @@ def test_a_note_from_an_earlier_turn_comes_back_in_the_rebuilt_prompt(tmp_path):
     later = planner_turns(path)[-1]
     outcome = replay_turn(path, later, HarnessConfig(adapter="mock"))
     assert "Build civs until 1938." in outcome.prompt.user   # the journal
-    assert "note, advance_time" in outcome.prompt.user       # the digest of that turn
+    assert "Recent turns:" in outcome.prompt.user            # the digest is rebuilt
+    assert "note" in outcome.prompt.user.split("Recent turns:")[1]
 
 
 def test_list_shows_the_turns_with_dates_and_wake_reasons(tmp_path):
@@ -159,7 +160,14 @@ def test_the_cli_prints_the_comparison_and_exits_zero(tmp_path, capsys):
     assert code == 0
     assert "original (scripted)" in out
     assert "replayed (scripted:scripted)" in out
-    assert "advance_time" in out
+    # Whatever the original turn called must appear; which action that is depends
+    # on what the brief showed, so read it from the transcript.
+    first_call = next(
+        json.loads(line)["tool_calls"][0]["name"]
+        for line in path.read_text(encoding="utf-8").splitlines()
+        if json.loads(line).get("kind") == "llm"
+    )
+    assert first_call in out
 
 
 def test_long_calls_wrap_instead_of_breaking_the_columns(tmp_path):
