@@ -142,21 +142,38 @@ class HarnessConfig:
     days_per_turn: int = 7
     max_actions_per_turn: int = 8
     max_tool_rounds_per_turn: int = 3
+    #: Consecutive provider failures tolerated before the run stops. A fatal
+    #: error (bad key, rejected schema) stops immediately regardless.
+    max_consecutive_llm_errors: int = 5
     full_brief_every: int = 8
     wake_on_free_research_slot: bool = True
     wake_on_no_focus: bool = True
+    # False is the reflex-only baseline: the model is never woken and the run is
+    # free, which is what every planner-run score is reported against.
+    planner_enabled: bool = True
     reflex_enabled: bool = True
 
     # --- run ----------------------------------------------------------------
     turns: int = 10
     dry_run: bool = True
+    # Advisor mode: the model recommends and never acts. Tool calls are
+    # intercepted and shown to a human, so a read-only adapter suffices.
+    advisor: bool = False
     run_dir: Path = Path("runs")
     save_dir: Path | None = None
     log_path: Path | None = None          # game.log, for the logtail adapter
     window_title: str = "Hearts of Iron IV"
+    # Refuse to send input unless the game is the focused window. Turning
+    # this off is an explicit choice to let keystrokes land wherever they land.
+    enforce_window_focus: bool = True
     # Which layer owns operations. "llm" = the model moves every army;
     # "ai" = the native AI runs fronts and the model sets intent (hybrid).
     operational_control: str = "llm"
+    # Who owns the game clock. "harness" pauses, decides, and runs the game
+    # forward itself. "player" never touches it -- required when a person is
+    # playing the same campaign, since being paused mid-battle by your own
+    # tooling is worse than having no tooling.
+    clock_owner: str = "harness"
     country: str = "SWE"
     start_date: str = "1936-01-01"
     seed: int = 1936
@@ -176,17 +193,22 @@ class HarnessConfig:
             system_prompt_path=Path(system_prompt_path) if system_prompt_path else None,
             objective=os.environ.get("HOI4_OBJECTIVE") or cls.objective,
             require_confirmation=_env_bool("HOI4_REQUIRE_CONFIRMATION", True),
+            planner_enabled=_env_bool("HOI4_PLANNER_ENABLED", True),
             days_per_turn=_env_int("HOI4_DAYS_PER_TURN", 7),
             max_actions_per_turn=_env_int("HOI4_MAX_ACTIONS_PER_TURN", 8),
             max_tool_rounds_per_turn=_env_int("HOI4_MAX_TOOL_ROUNDS", 3),
+            max_consecutive_llm_errors=_env_int("HOI4_MAX_CONSECUTIVE_LLM_ERRORS", 5),
             full_brief_every=_env_int("HOI4_FULL_BRIEF_EVERY", 8),
             turns=_env_int("HOI4_TURNS", 10),
             dry_run=_env_bool("HOI4_DRY_RUN", True),
+            advisor=_env_bool("HOI4_ADVISOR", False),
             run_dir=Path(os.environ.get("HOI4_RUN_DIR", "runs")),
             save_dir=Path(save_dir) if save_dir else None,
             log_path=Path(log_path) if log_path else None,
             window_title=os.environ.get("HOI4_WINDOW_TITLE", "Hearts of Iron IV"),
+            enforce_window_focus=_env_bool("HOI4_ENFORCE_WINDOW_FOCUS", True),
             operational_control=os.environ.get("HOI4_OPERATIONAL_CONTROL", "llm").strip(),
+            clock_owner=os.environ.get("HOI4_CLOCK_OWNER", "harness").strip(),
             country=os.environ.get("HOI4_COUNTRY", "SWE"),
             start_date=os.environ.get("HOI4_START_DATE", "1936-01-01"),
             seed=_env_int("HOI4_SEED", 1936),
@@ -240,6 +262,10 @@ class HarnessConfig:
         from .agent.hybrid import actions_for_mode
 
         allowed = actions_for_mode(set(adapter_supports), self.operational_control)
+        if self.clock_owner != "harness":
+            # The player owns the clock, so the model may not take it either --
+            # structurally, not by asking it nicely in the prompt.
+            allowed -= {"set_game_speed"}
         if self.enabled_actions is not None:
             allowed &= set(self.enabled_actions)
         return allowed - set(self.disabled_actions)

@@ -33,24 +33,44 @@ class HOI4Env:
     def read_state(self) -> GameState:
         return self.adapter.read_state()
 
-    def observe(self, notes: list[str] | None = None) -> Observation:
+    def observe(self, notes: list[str] | None = None, *, remember: bool = True) -> Observation:
         state = self.adapter.read_state()
         return self.builder.build(
             state,
             turn=self.turn,
             legal_actions=sorted(self.allowed_actions),
             notes=notes,
+            remember=remember,
         )
+
+    @property
+    def owns_clock(self) -> bool:
+        return self.config.clock_owner == "harness"
 
     def reset(self) -> Observation:
         self.turn = 0
-        self.adapter.pause()
-        return self.observe()
+        if self.owns_clock:
+            self.adapter.pause()
+        # The brief reset returns is real (the observe CLI prints it), but it must
+        # not set the diff baseline: the first observe() after reset is still full.
+        return self.observe(remember=False)
 
     # --- acting --------------------------------------------------------------
 
     def act(self, call: ActionCall) -> ActionResult:
         """Validate, gate, then apply one action."""
+        if self.config.advisor:
+            # The hard edge of advisor mode. The loop routes calls to the
+            # advisor instead of here, but the env refusing is what makes the
+            # mode structural: no call site can act by accident.
+            return ActionResult(
+                ok=False,
+                action=call.name,
+                call_id=call.call_id,
+                message="Advisor mode: the harness cannot act. Nothing was executed.",
+                error_kind="not_executed",
+            )
+
         problem = registry.check(call, self.allowed_actions)
         if problem is not None:
             return problem

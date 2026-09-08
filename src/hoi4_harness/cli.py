@@ -3,8 +3,11 @@
     hoi4-harness doctor                     what is installed and reachable
     hoi4-harness actions                    the agent's vocabulary
     hoi4-harness observe                    one situation brief, then exit
+    hoi4-harness calibrate                  record screen coordinates for clicking
     hoi4-harness play --turns 20            run the loop
+    hoi4-harness replay run.jsonl --turn 3  rebuild a turn's prompt, compare models
     hoi4-harness eval economy_ramp          run a scenario and score it
+    hoi4-harness eval --no-llm              score every scenario on reflexes alone
 
 Everything defaults to the mock adapter and the scripted model, so a fresh clone
 does something useful with no API key and no game installed.
@@ -23,9 +26,11 @@ from .adapters import ADAPTERS, build_adapter
 from .agent.llm import PROVIDERS, build_llm
 from .agent.loop import AgentLoop
 from .agent.memory import Memory
+from .calibration import DEFAULT_FILENAME, DEFAULT_TARGETS
 from .config import HarnessConfig
 from .env import HOI4Env
 from .guidance import available as guidance_packs
+from .replay import ReplayError, list_turns, replay_turn
 
 
 def _config_from_args(args: argparse.Namespace) -> HarnessConfig:
@@ -52,6 +57,10 @@ def _config_from_args(args: argparse.Namespace) -> HarnessConfig:
         config.budget.max_usd = args.max_usd
     if getattr(args, "live", False):
         config.dry_run = False
+    if getattr(args, "no_window_guard", False):
+        config.enforce_window_focus = False
+    if getattr(args, "advisor", False):
+        config.advisor = True
     if getattr(args, "run_dir", None):
         config.run_dir = Path(args.run_dir)
     if getattr(args, "guidance", None):
@@ -68,6 +77,10 @@ def _config_from_args(args: argparse.Namespace) -> HarnessConfig:
         config.require_confirmation = False
     if getattr(args, "no_reflex", False):
         config.reflex_enabled = False
+    if getattr(args, "player_clock", False):
+        config.clock_owner = "player"
+    if getattr(args, "no_llm", False):
+        config.planner_enabled = False
     if getattr(args, "country", None):
         config.country = args.country
     if getattr(args, "start_date", None):
@@ -82,8 +95,10 @@ def cmd_doctor(args: argparse.Namespace) -> int:
     print(f"hoi4-agent-harness {__version__}")
     print(f"python           {sys.version.split()[0]}")
     print(f"adapter          {config.adapter}")
-    print(f"planner          {config.planner.provider}:{config.planner.model}")
+    planner = f"{config.planner.provider}:{config.planner.model}"
+    print(f"planner          {planner if config.planner_enabled else 'disabled (reflex only)'}")
     print(f"dry run          {config.dry_run}")
+    print(f"clock owner      {config.clock_owner}")
     print(f"guidance         {config.system_prompt_path or config.guidance}")
     print(f"confirm gate     {config.require_confirmation}")
 
@@ -99,6 +114,17 @@ def cmd_doctor(args: argparse.Namespace) -> int:
             print(f"  [x] {module}")
         except ImportError:
             print(f"  [ ] {module}  (pip install 'hoi4-agent-harness[{extra}]')")
+
+    try:
+        from .adapters.window import check_focus
+
+        focus = check_focus(config.window_title)
+        if focus.supported:
+            print(f"game focused     {focus.focused}" + (f" ({focus.title})" if focus.title else ""))
+        else:
+            print(f"game focused     unknown -- {focus.reason}")
+    except Exception as exc:  # noqa: BLE001 - doctor reports, never raises
+        print(f"game focused     check failed: {exc}")
 
     try:
         adapter = build_adapter(config)
@@ -137,35 +163,70 @@ def cmd_play(args: argparse.Namespace) -> int:
     env = HOI4Env(build_adapter(config), config)
     env.reset()
     run_dir = config.run_dir
+    resume = bool(getattr(args, "resume", False))
 
     def echo(line: str) -> None:
         print(line, file=sys.stderr)      # stdout stays the final JSON, for piping
 
     loop = AgentLoop(
         env=env,
-        planner=build_llm(config.planner),
+        planner=build_llm(config.planner) if config.planner_enabled else None,
         config=config,
         memory=Memory.load(run_dir / "memory.json"),
         transcript_path=run_dir / "transcript.jsonl",
+        resume=resume,
         progress=None if args.quiet else echo,
     )
+    if resume and loop.report.resumed_from:
+        print(f"resuming {run_dir}: {loop.report.turns} turns already played", file=sys.stderr)
     report = loop.run(config.turns)
     loop.memory.save(run_dir / "memory.json")
     print(json.dumps(report.to_dict(), indent=2, default=str))
     return 0
 
 
+def cmd_replay(args: argparse.Namespace) -> int:
+    try:
+        if args.list_turns:
+            print(list_turns(Path(args.transcript)))
+            return 0
+        if args.turn is None:
+            print("replay: pass --turn N to choose a turn (see --list)", file=sys.stderr)
+            return 2
+        config = _config_from_args(args)
+        print(replay_turn(Path(args.transcript), args.turn, config).render())
+        return 0
+    except (ReplayError, ValueError) as exc:
+        # ValueError: a misconfigured provider reaches build_llm here, and its
+        # message already says what is wrong and what the options are.
+        print(f"replay: {exc}", file=sys.stderr)
+        return 1
+
+
 def cmd_eval(args: argparse.Namespace) -> int:
-    from .eval import SCENARIOS, run_scenario
+    from .eval import SCENARIOS, ScoreCard, run_scenario, write_baselines
 
     config = _config_from_args(args)
+    if getattr(args, "write_baseline", False) and config.planner_enabled:
+        # A baseline recorded from a model run would corrupt the thing every
+        # score is compared against, so refuse rather than quietly mis-record.
+        print(
+            "--write-baseline records reflex-only scores; pass --no-llm to measure them.",
+            file=sys.stderr,
+        )
+        return 2
+
     keys = [args.scenario] if args.scenario else list(SCENARIOS)
     failed = 0
+    cards: dict[str, ScoreCard] = {}
     for key in keys:
         card = run_scenario(key, config, transcript_dir=config.run_dir)
         print(card.render())
         print()
         failed += card.score < 1.0
+        cards[key] = card
+    if getattr(args, "write_baseline", False):
+        write_baselines(cards)
     return 0 if not args.strict else min(failed, 1)
 
 
@@ -184,6 +245,23 @@ def cmd_prompt(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_calibrate(args: argparse.Namespace) -> int:
+    from .calibration import capture_calibration, save_calibration
+
+    config = _config_from_args(args)
+    out = Path(args.out) if args.out else config.run_dir / DEFAULT_FILENAME
+    targets = args.targets or DEFAULT_TARGETS
+    try:
+        calibration = capture_calibration(targets)
+    except RuntimeError as exc:  # most likely the missing 'input' extra; report, don't crash
+        print(f"calibrate FAILED   {type(exc).__name__}: {exc}")
+        return 1
+    save_calibration(calibration, out)
+    width, height = calibration.screen
+    print(f"Wrote {len(calibration.coordinates)} targets at {width}x{height} to {out}")
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="hoi4-harness", description=__doc__)
     parser.add_argument("--version", action="version", version=__version__)
@@ -199,6 +277,8 @@ def build_parser() -> argparse.ArgumentParser:
         p.add_argument("--live", action="store_true",
                        help="allow irreversible actions (default: dry run)")
         p.add_argument("--max-usd", type=float)
+        p.add_argument("--no-window-guard", dest="no_window_guard", action="store_true",
+                       help="send input even when the game is not the focused window")
         p.add_argument("--profile", help="JSON/TOML file holding a whole configuration")
         p.add_argument("--guidance", metavar="NAME|PATH",
                        help="how much to coach the model: " + ", ".join(guidance_packs())
@@ -212,6 +292,10 @@ def build_parser() -> argparse.ArgumentParser:
                        help="skip the confirmation gate on irreversible actions")
         p.add_argument("--no-reflex", dest="no_reflex", action="store_true",
                        help="disable the deterministic reflex layer; the model decides everything")
+        p.add_argument("--player-clock", dest="player_clock", action="store_true",
+                       help="a person is playing: never pause, resume or set game speed")
+        p.add_argument("--no-llm", dest="no_llm", action="store_true",
+                       help="never wake the planner: reflexes only, zero model calls")
         p.add_argument("--country", help="country tag (mock adapter)")
         p.add_argument("--start-date", dest="start_date", help="start date (mock adapter)")
         p.add_argument("--seed", type=int, help="mock adapter seed")
@@ -235,16 +319,41 @@ def build_parser() -> argparse.ArgumentParser:
     play = sub.add_parser("play", help="run the agent loop")
     common(play)
     play.add_argument("--turns", type=int)
+    play.add_argument("--advisor", action="store_true",
+                      help="recommend, never act: every tool call is shown to the player instead")
     play.add_argument("--days", type=int, help="in-game days per turn")
+    play.add_argument(
+        "--resume",
+        action="store_true",
+        help="continue an interrupted run in --run-dir, rebuilding state from its transcript",
+    )
     play.add_argument("--quiet", action="store_true",
                       help="no per-turn progress line on stderr")
     play.set_defaults(func=cmd_play)
+
+    replay = sub.add_parser("replay", help="replay one turn from a transcript and compare models")
+    replay.add_argument("transcript", metavar="PATH", help="a transcript.jsonl written by play or eval")
+    replay.add_argument("--turn", type=int, help="which planner turn to replay (see --list)")
+    replay.add_argument("--list", dest="list_turns", action="store_true",
+                        help="show the turns in the transcript, then exit")
+    common(replay)
+    replay.set_defaults(func=cmd_replay)
 
     evaluate = sub.add_parser("eval", help="run a scenario and score it")
     common(evaluate)
     evaluate.add_argument("scenario", nargs="?")
     evaluate.add_argument("--strict", action="store_true", help="exit 1 unless every objective passes")
+    evaluate.add_argument("--write-baseline", dest="write_baseline", action="store_true",
+                          help="record the reflex-only scores as the committed baseline (needs --no-llm)")
     evaluate.set_defaults(func=cmd_eval)
+
+    calibrate = sub.add_parser("calibrate", help="record screen coordinates for the input driver")
+    common(calibrate)
+    calibrate.add_argument("targets", nargs="*", metavar="TARGET",
+                           help="targets to record (default: " + ", ".join(DEFAULT_TARGETS) + ")")
+    calibrate.add_argument("--out", metavar="PATH",
+                           help=f"where to write (default: <run-dir>/{DEFAULT_FILENAME})")
+    calibrate.set_defaults(func=cmd_calibrate)
 
     return parser
 

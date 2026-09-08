@@ -43,6 +43,7 @@ you at run time.
 | Live mode | `--live` | dry run is the default |
 | Actions per turn | `max_actions_per_turn` | |
 | Tool rounds per turn | `max_tool_rounds_per_turn` | how many times it can react to a rejection |
+| Error tolerance | `max_consecutive_llm_errors`, `HOI4_MAX_CONSECUTIVE_LLM_ERRORS` | consecutive provider failures before the run stops; a fatal error stops immediately regardless |
 
 ### Pacing and cost
 
@@ -50,6 +51,7 @@ you at run time.
 |---|---|
 | `days_per_turn` | in-game days between scheduled reviews |
 | `wake_on_no_focus`, `wake_on_free_research_slot` | opportunity wakes; turn off for a strictly scheduled run |
+| `planner_enabled` | `--no-llm` never wakes the model at all: reflexes only, zero model calls. `eval --no-llm --write-baseline` records those scores as the baseline every score card is reported against |
 | `reflex_enabled` | `--no-reflex` makes the model decide everything, including the boring parts |
 | `full_brief_every` | turns between full briefs; the rest are deltas |
 | `budget.max_usd`, `max_llm_calls`, `max_input_tokens`, `max_output_tokens` | hard ceilings; on exhaustion the run drops to reflex rather than stopping |
@@ -61,9 +63,11 @@ you at run time.
 |---|---|
 | `adapter` | `mock`, `logtail`, `savegame`, `screen`, and `X+input` pairs |
 | `operational_control` | `llm` (model commands directly) or `ai` (native AI runs operations — see [hybrid-control.md](hybrid-control.md)) |
+| `clock_owner`, `--player-clock` | `harness` (pauses and drives the clock) or `player` (never touches it — required when a person is playing the same campaign) |
 | `country`, `start_date`, `seed` | mock adapter start |
 | `log_path` / `HOI4_LOG_PATH` | `game.log`, for the logtail adapter |
 | `save_dir`, `window_title` | real-game adapters |
+| `enforce_window_focus`, `--no-window-guard` | refuse to send input unless the game is focused (default on) |
 
 ## Profiles
 
