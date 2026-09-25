@@ -43,6 +43,26 @@ that flag and starts biasing the AI's own scoring. No engine hooks, no fighting
 the AI for control of a unit — the model sets intent and the AI executes it with
 its own machinery.
 
+### Did the directive do anything?
+
+The adapter's answer to `set_ai_directive` only proves the harness recorded it.
+So the environment snapshots, when a directive is raised, what an observer could
+see change if the AI took it seriously — divisions on fronts facing the target,
+whether this country is at war with it, whether it fights on this side — and
+every brief after that, full or delta, carries one line per standing directive
+diffed against that snapshot:
+
+```
+Directive effect (observed, not intended):
+  invade POL, raised 14d ago: divisions facing POL 4 -> 16 on 1 front(s)
+  invade DEN, raised 21d ago: NO OBSERVABLE CHANGE
+```
+
+Re-weighting a directive keeps its original baseline, so re-issuing one that
+does nothing cannot reset its clock. This is also what catches #7's silent
+failure: a directive aimed at the wrong country reads NO OBSERVABLE CHANGE
+instead of looking identical to one that works.
+
 ### Theaters
 
 A theater is a **front, by name** — the cheapest definition that can express the

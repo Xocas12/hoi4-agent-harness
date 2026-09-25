@@ -12,6 +12,7 @@ from .actions import registry
 from .adapters.base import GameAdapter
 from .config import HarnessConfig
 from .observation import ObservationBuilder
+from .observation.directives import DirectiveTracker
 from .types import ActionCall, ActionResult, GameState, Observation
 
 
@@ -22,6 +23,9 @@ class HOI4Env:
         self.builder = ObservationBuilder(full_brief_every=self.config.full_brief_every)
         self.turn = 0
         self.confirm_hook = None  # set to a callable(ActionCall) -> bool for human approval
+        #: What each standing AI directive has visibly changed. The adapter's
+        #: "Directive standing" only proves the harness recorded it.
+        self.directives = DirectiveTracker()
 
     # --- observation ---------------------------------------------------------
 
@@ -35,13 +39,19 @@ class HOI4Env:
 
     def observe(self, notes: list[str] | None = None, *, remember: bool = True) -> Observation:
         state = self.adapter.read_state()
-        return self.builder.build(
+        observation = self.builder.build(
             state,
             turn=self.turn,
             legal_actions=sorted(self.allowed_actions),
             notes=notes,
             remember=remember,
         )
+        # Every brief, full or delta: a directive that has done nothing for a
+        # month is exactly the news that must not be diffed away.
+        status = self.directives.render(state)
+        if status:
+            observation.brief += "\n" + "\n".join(status)
+        return observation
 
     @property
     def owns_clock(self) -> bool:
@@ -97,7 +107,7 @@ class HOI4Env:
                 )
 
         try:
-            return self.adapter.apply(call)
+            result = self.adapter.apply(call)
         except Exception as exc:  # noqa: BLE001 - an adapter fault must not end the run
             return ActionResult(
                 ok=False,
@@ -106,6 +116,20 @@ class HOI4Env:
                 message=f"Adapter raised {type(exc).__name__}: {exc}",
                 error_kind="rejected",
             )
+        if result.ok:
+            self._track_directive(call)
+        return result
+
+    def _track_directive(self, call: ActionCall) -> None:
+        if call.name == "set_ai_directive":
+            self.directives.raised(
+                call.arguments["directive"],
+                call.arguments["target"],
+                int(call.arguments.get("weight", 100)),
+                self.adapter.read_state(),
+            )
+        elif call.name == "clear_ai_directives":
+            self.directives.clear()
 
     def act_many(self, calls: list[ActionCall]) -> list[ActionResult]:
         results: list[ActionResult] = []

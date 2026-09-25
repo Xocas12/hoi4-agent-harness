@@ -153,6 +153,11 @@ class MockAdapter(GameAdapter):
                 setattr(s, name, copy.deepcopy(value))
         if described.events:
             self.scripted_events.update(described.events)
+        # A front's friendly count is derived from where the divisions stand,
+        # as every tick does; doing it now means day zero agrees with day one
+        # instead of reporting whatever number the description guessed.
+        for front in s.fronts:
+            front.divisions_friendly = sum(g.count for g in s.divisions if g.location == front.name)
 
     # --- adapter contract ----------------------------------------------------
 
@@ -259,8 +264,16 @@ class MockAdapter(GameAdapter):
         """
         s = self.state
         defended = [f for f in s.fronts if self.posture_on(f.name) == "defensive"]
-        if s.delegated_armies and defended:
-            worst = max(defended, key=lambda f: f.divisions_enemy - f.divisions_friendly)
+        # An invade directive against an enemy the country is already fighting
+        # pulls the reserve to that front ahead of any posture -- the one way
+        # the mock lets a directive be seen to work, so that the directive
+        # feedback line has something to observe. Against a country it is not
+        # at war with, it does nothing, as in the game.
+        invading = {d.split()[1] for d in s.ai_directives if d.startswith("invade ")}
+        targeted = [f for f in s.fronts if f.enemy in invading]
+        if s.delegated_armies and (targeted or defended):
+            pool = targeted or defended
+            worst = max(pool, key=lambda f: f.divisions_enemy - f.divisions_friendly)
             for group in s.divisions:
                 if group.location in ("home", "unassigned"):
                     group.location = worst.name
