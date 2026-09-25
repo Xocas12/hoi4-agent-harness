@@ -174,9 +174,13 @@ verification checklist: [docs/mod-bridge.md](docs/mod-bridge.md).
 | Log-tail adapter (reads the mod's telemetry) | Working, tested |
 | Hybrid control vocabulary + mode switch | Working, tested; unproven as strategy |
 | LLM Bridge mod | Skeleton; structure CI-checked, script tokens need verifying in-game |
-| Eval runner + scenarios | Working, tested (2 scenarios) |
+| Eval runner + scenarios | Working, tested (6 scenarios, multi-seed, cross-model) |
+| Cost measurement (`measure`) | Working, tested; measured against the mock with a scripted planner |
+| Wartime brief + wake rules | Working, tested against synthetic and scripted wars; unmeasured in a real one |
+| Identifier index (playsets) | Working, tested against a fixture playset; not yet run on a real install |
+| Per-target AI directives | Generated and CI-checked; strategy types need verifying in-game |
 | Guidance packs + profiles | Working, tested (6 packs, 3 example profiles) |
-| Anthropic / OpenAI-compatible providers | Written, not yet run against a live key |
+| Anthropic / OpenAI-compatible providers | Written, not yet run against a live key; conformance suite in `tests/live/` |
 | Gemini provider | Written; the SDK surface moves — check this first if it fails |
 | Save-file adapter | Clausewitz parser works; state mapping is TODO |
 | Screen adapter | Capture works; vision→state is TODO |
