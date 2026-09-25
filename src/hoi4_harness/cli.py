@@ -9,6 +9,7 @@
     hoi4-harness eval economy_ramp          run a scenario and score it
     hoi4-harness eval --no-llm              score every scenario on reflexes alone
     hoi4-harness compare economy_ramp       the same scenario across models, one table
+    hoi4-harness measure --campaign wartime_1939_1941   brief size and wake rate in a war
 
 Everything defaults to the mock adapter and the scripted model, so a fresh clone
 does something useful with no API key and no game installed.
@@ -246,6 +247,29 @@ def cmd_compare(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_measure(args: argparse.Namespace) -> int:
+    from .eval import CAMPAIGNS, measure, run_scenario
+
+    if bool(args.transcript) == bool(args.campaign):
+        print("measure: give a transcript, or --campaign NAME to play one first", file=sys.stderr)
+        return 2
+    if args.campaign:
+        if args.campaign not in CAMPAIGNS:
+            print(f"measure: unknown campaign {args.campaign!r}. Known: {', '.join(CAMPAIGNS)}",
+                  file=sys.stderr)
+            return 2
+        config = _config_from_args(args)
+        run_scenario(CAMPAIGNS[args.campaign], config, transcript_dir=config.run_dir)
+        path = config.run_dir / f"{args.campaign}.jsonl"
+    else:
+        path = Path(args.transcript)
+        if not path.exists():
+            print(f"measure: no such transcript {path}", file=sys.stderr)
+            return 1
+    print(measure(path).render())
+    return 0
+
+
 def cmd_prompt(args: argparse.Namespace) -> int:
     """Print the exact system prompt a run would use. Nothing is hidden."""
     from .agent.prompts import build_system
@@ -375,6 +399,17 @@ def build_parser() -> argparse.ArgumentParser:
     )
     compare.add_argument("--days", type=int, help="in-game days per turn")
     compare.set_defaults(func=cmd_compare)
+
+    measure_p = sub.add_parser(
+        "measure", help="brief size, wake rate and cache hits, peacetime vs wartime"
+    )
+    common(measure_p)
+    measure_p.add_argument("transcript", nargs="?", metavar="PATH",
+                           help="a transcript.jsonl to measure")
+    measure_p.add_argument("--campaign", metavar="NAME",
+                           help="play a long measurement campaign first, then measure it "
+                                "(peacetime_1936_1939, wartime_1939_1941)")
+    measure_p.set_defaults(func=cmd_measure)
 
     calibrate = sub.add_parser("calibrate", help="record screen coordinates for the input driver")
     common(calibrate)

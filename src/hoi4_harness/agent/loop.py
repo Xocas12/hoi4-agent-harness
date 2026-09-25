@@ -28,6 +28,7 @@ from ..actions import catalog, registry
 from ..config import HarnessConfig
 from ..env import HOI4Env
 from ..observation.builder import snapshot as deepcopy_state
+from ..observation.tokens import count_tokens
 from ..types import ActionCall, ActionResult, GameState
 from .advisor import Advisor
 from .budget import BudgetGuard
@@ -183,6 +184,7 @@ class AgentLoop:
         for _ in range(turns):
             state = self.env.read_state()
             turn_date = state.date
+            at_war = bool(state.wars)
             self.history.append(deepcopy_state(state))
             previous = self.history[-2] if len(self.history) >= 2 else None
             decision = self.policy.should_wake(state, days_since_planner, previous)
@@ -211,7 +213,10 @@ class AgentLoop:
                 else:
                     marker = "reflex"
                 self.progress(self._progress_line(turn_date, marker, actions, turn_tokens))
-            self.transcript.write("turn_end", date=state.date, turn=self.report.turns)
+            self.transcript.write(
+                "turn_end", date=state.date, turn=self.report.turns,
+                from_date=turn_date, at_war=at_war, woke=decision.wake,
+            )
             self._checkpoint()
 
             if self.report.stopped_reason:
@@ -283,6 +288,16 @@ class AgentLoop:
                 ),
             )
         ]
+        brief_tokens, token_method = count_tokens(observation.brief)
+        # What the first request of this wake sends, split the way it bills: the
+        # prefix (system + tools) is byte-identical across wakes and cacheable,
+        # the turn message is not. Counted from the harness's own text, so it
+        # holds for any provider -- including the scripted one, which reports no
+        # real usage.
+        prefix_tokens, _ = count_tokens(
+            self.system + json.dumps([t.__dict__ for t in tools], sort_keys=True)
+        )
+        turn_tokens_sent, _ = count_tokens(messages[0].text)
         self.transcript.write(
             "observe",
             date=turn_date,
@@ -290,6 +305,14 @@ class AgentLoop:
             is_delta=observation.is_delta,
             brief=observation.brief,
             wake_reason=reason,
+            # Measured, not estimated afterwards (#14); the method travels with
+            # the number because chars/4 and a real tokenizer disagree.
+            brief_chars=len(observation.brief),
+            brief_tokens=brief_tokens,
+            token_method=token_method,
+            prompt_prefix_tokens=prefix_tokens,
+            prompt_turn_tokens=turn_tokens_sent,
+            at_war=bool(observation.state.wars),
         )
 
         taken: list[str] = []

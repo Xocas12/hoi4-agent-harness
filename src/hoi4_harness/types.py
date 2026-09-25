@@ -79,6 +79,36 @@ class War:
 
 
 @dataclass
+class WarChange:
+    """One dated change to a war the mock is scripted to fight.
+
+    A start describes where a campaign begins; a timeline describes how its
+    wars move on their own -- fronts opening, an enemy capitulating, an ally
+    falling, the enemy reinforcing a sector. It is how the mock produces a
+    1939-1941 war for measuring brief size and wake rate (#14) without a game.
+    The *agent's* effect on that war stays the mock's crude front rule; the
+    timeline only moves what the agent does not control.
+    """
+
+    date: str
+    open_wars: list[War] = field(default_factory=list)
+    #: Tags whose war with this country ends (a capitulation or a peace).
+    end_wars: list[str] = field(default_factory=list)
+    open_fronts: list[Front] = field(default_factory=list)
+    close_fronts: list[str] = field(default_factory=list)
+    #: Front name -> the enemy's new division count there.
+    enemy_divisions: dict[str, int] = field(default_factory=dict)
+    #: Allies that capitulate: removed from every war, with an event.
+    allies_fall: list[str] = field(default_factory=list)
+    #: Front name -> supply forced to this fraction (weather, a cut rail line).
+    supply: dict[str, float] = field(default_factory=dict)
+    #: Divisions that arrive at "home" (mobilisation, an ally's expeditionary force).
+    reinforcements: int = 0
+    #: (kind, text, severity) to emit on the day, if any.
+    event: tuple[str, str, str] | None = None
+
+
+@dataclass
 class ScenarioStart:
     """A described opening position, for scenarios that do not begin neutral.
 
@@ -113,6 +143,8 @@ class ScenarioStart:
     #: Extra scripted history, date -> (kind, text, severity), merged over the
     #: adapter's own script. This is how a scenario fixes its own war date.
     events: dict[str, tuple[str, str, str]] | None = None
+    #: How the wars move on their own after the start, in date order.
+    timeline: list[WarChange] | None = None
 
 
 @dataclass

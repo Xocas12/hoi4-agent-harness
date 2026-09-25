@@ -29,6 +29,7 @@ from ..types import (
     ProductionLine,
     ResearchSlot,
     ScenarioStart,
+    WarChange,
 )
 from .base import AdapterInfo, GameAdapter
 
@@ -122,6 +123,8 @@ class MockAdapter(GameAdapter):
         self._advisor_pp_bonus = 0.0
         self._trades: dict[str, int] = {}
         self._attrition: dict[str, float] = {}
+        self._losing_days: dict[str, int] = {}
+        self._timeline: dict[str, list[WarChange]] = {}
         if start_state is not None:
             self._apply_start(start_state)
 
@@ -153,6 +156,8 @@ class MockAdapter(GameAdapter):
                 setattr(s, name, copy.deepcopy(value))
         if described.events:
             self.scripted_events.update(described.events)
+        for change in described.timeline or []:
+            self._timeline.setdefault(change.date, []).append(copy.deepcopy(change))
         # A front's friendly count is derived from where the divisions stand,
         # as every tick does; doing it now means day zero agrees with day one
         # instead of reporting whatever number the description guessed.
@@ -245,6 +250,9 @@ class MockAdapter(GameAdapter):
             got = int(line.output_per_day)
             s.stockpiles[line.equipment] = s.stockpiles.get(line.equipment, 0) + got
 
+        for change in self._timeline.get(iso, []):
+            self._apply_change(change)
+
         if s.fronts:
             self._tick_fronts()
 
@@ -290,10 +298,105 @@ class MockAdapter(GameAdapter):
                 front.pressure = "advancing"
             else:
                 front.pressure = "stable"
+            self._tick_front_flags(front)
             if not holds:
                 self._attrition[front.name] = self._attrition.get(front.name, 0.0) + 0.1
                 if self._attrition[front.name] >= 1.0 and self._bleed_one_division(front.name):
                     self._attrition[front.name] -= 1.0
+
+    def _tick_front_flags(self, front) -> None:
+        """Supply, pockets and the capital, at the same level of crudeness.
+
+        Flags, not mechanics: none of these costs a division. They exist so the
+        wake rules and the brief have the wartime signals a real front throws
+        off. Supply that was never observed (None) stays unobserved.
+        """
+        if front.supply is not None:
+            step = {"advancing": -0.02, "losing_ground": -0.01}.get(front.pressure, 0.01)
+            front.supply = round(min(1.0, max(0.2, front.supply + step)), 2)
+        outnumbered = front.divisions_enemy >= 3 * max(1, front.divisions_friendly)
+        pocketed = front.pressure == "losing_ground" and outnumbered and front.divisions_friendly
+        front.pocket_divisions = max(1, front.divisions_friendly // 3) if pocketed else 0
+        if front.pressure == "losing_ground":
+            self._losing_days[front.name] = self._losing_days.get(front.name, 0) + 1
+        else:
+            self._losing_days[front.name] = 0
+        front.threatens_capital = self._losing_days[front.name] >= 45
+
+    def _apply_change(self, change: WarChange) -> None:
+        """One dated step of a scripted war. Only what the agent does not control."""
+        s = self.state
+        for war in change.open_wars:
+            if not any(w.against == war.against for w in s.wars):
+                s.wars.append(copy.deepcopy(war))
+        for tag in change.end_wars:
+            s.wars = [w for w in s.wars if w.against != tag]
+        for front in change.open_fronts:
+            if not any(f.name == front.name for f in s.fronts):
+                s.fronts.append(copy.deepcopy(front))
+                # A new front's friendly count is how many divisions the war
+                # plan sends there from the reserve, as far as the reserve goes.
+                self._send_from_home(front.name, front.divisions_friendly)
+        if change.close_fronts:
+            closing = set(change.close_fronts)
+            s.fronts = [f for f in s.fronts if f.name not in closing]
+            # The troops on a closed front come home; nobody is left standing
+            # on a line that no longer exists.
+            for group in s.divisions:
+                if group.location in closing:
+                    group.location = "home"
+            self._merge_groups()
+            s.theater_postures = {k: v for k, v in s.theater_postures.items() if k not in closing}
+        for name, count in change.enemy_divisions.items():
+            for front in s.fronts:
+                if front.name == name:
+                    front.divisions_enemy = count
+        for name, supply in change.supply.items():
+            for front in s.fronts:
+                if front.name == name:
+                    front.supply = supply
+        for tag in change.allies_fall:
+            for war in s.wars:
+                war.allies = [a for a in war.allies if a != tag]
+            self._emit("ally_capitulated", f"Our ally {tag} has capitulated.", "notable")
+        if change.reinforcements:
+            home = next((g for g in s.divisions if g.location == "home"), None)
+            if home is None:
+                home = DivisionGroup(template="Infantry", count=0, location="home")
+                s.divisions.append(home)
+            home.count += change.reinforcements
+        if change.event:
+            self._emit(*change.event)
+
+    def _merge_groups(self) -> None:
+        """One group per (template, location), so the brief does not list 'home' twice."""
+        merged: dict[tuple[str, str], DivisionGroup] = {}
+        for group in self.state.divisions:
+            key = (group.template, group.location)
+            if key in merged:
+                merged[key].count += group.count
+            else:
+                merged[key] = group
+        self.state.divisions = [g for g in merged.values() if g.count > 0]
+
+    def _send_from_home(self, location: str, count: int) -> None:
+        for group in list(self.state.divisions):
+            if count <= 0:
+                break
+            if group.location != "home" or group.count <= 0:
+                continue
+            moved = min(count, group.count)
+            group.count -= moved
+            count -= moved
+            target = next((g for g in self.state.divisions
+                           if g.location == location and g.template == group.template), None)
+            if target is None:
+                self.state.divisions.append(
+                    DivisionGroup(template=group.template, count=moved, location=location)
+                )
+            else:
+                target.count += moved
+        self.state.divisions = [g for g in self.state.divisions if g.count > 0]
 
     def posture_on(self, front_name: str) -> str | None:
         """The posture that governs one front: its theater's, else the global one."""
