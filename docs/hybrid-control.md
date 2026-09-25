@@ -146,6 +146,30 @@ question and it needs three runs of the same scenario — model-only, AI-only,
 hybrid — scored the same way. Until that exists this is a hypothesis with an
 implementation, and the repo should say so.
 
+### The experiment
+
+The runner exists; the result does not yet.
+
+```bash
+hoi4-harness experiment defensive_war --seeds 5 --provider anthropic --model ...
+```
+
+runs the scenario at the same seeds three ways and prints median, range and
+spend per arm, then a verdict line that says plainly when there is no
+difference:
+
+| Arm | Configuration |
+|---|---|
+| model-only | `operational_control=llm`, reflexes on, the configured guidance |
+| AI-only | no model at all; the reflex layer delegates every army and holds a defensive posture while a front is losing ground (`reflex_delegate`, off everywhere else) |
+| hybrid | `operational_control=ai`, `--guidance hybrid`; delegating is the model's call |
+
+The AI-only arm is the one that matters: if it scores close to hybrid, the model
+is decorative on that scenario. Against the mock with the scripted planner all
+three arms score 0.00 on `defensive_war` — which measures the mock's crude front
+rule and a planner that never delegates, nothing more. A result worth writing
+here needs a real game (#7, #8), a real model, and at least five seeds.
+
 ## Why this is the more promising direction
 
 Two reasons beyond raw skill.

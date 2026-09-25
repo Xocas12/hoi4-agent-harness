@@ -1,12 +1,13 @@
 # Evaluation
 
-Four commands, each answering a different question.
+Five commands, each answering a different question.
 
 | Command | Question |
 |---|---|
 | `hoi4-harness eval [SCENARIO]` | Did the agent do the thing this scenario asks? |
 | `hoi4-harness compare SCENARIO --models P:M,...` | Which model does it better, and for how much? |
 | `... --seeds N` (on either) | Is that a result, or one lucky run? |
+| `hoi4-harness experiment SCENARIO` | Does model + game AI beat either alone? ([hybrid-control.md](hybrid-control.md#the-experiment)) |
 | `hoi4-harness measure` | What does a campaign cost to play, in peace and in war? |
 
 ## Scenarios and the baseline

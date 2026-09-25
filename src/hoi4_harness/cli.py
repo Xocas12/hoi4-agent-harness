@@ -11,6 +11,7 @@
     hoi4-harness compare economy_ramp       the same scenario across models, one table
     hoi4-harness measure --campaign wartime_1939_1941   brief size and wake rate in a war
     hoi4-harness index --game-dir PATH      what countries and focuses a playset defines
+    hoi4-harness experiment defensive_war   model-only vs AI-only vs hybrid, same seeds
 
 Everything defaults to the mock adapter and the scripted model, so a fresh clone
 does something useful with no API key and no game installed.
@@ -398,6 +399,20 @@ def cmd_index(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_experiment(args: argparse.Namespace) -> int:
+    from .eval.experiment import run_experiment
+
+    config = _config_from_args(args)
+    try:
+        result = run_experiment(args.scenario, config, seeds=args.seeds,
+                                transcript_dir=config.run_dir / "experiment")
+    except KeyError as exc:
+        print(f"experiment: {exc.args[0]}", file=sys.stderr)
+        return 2
+    print(result.render())
+    return 0
+
+
 def cmd_prompt(args: argparse.Namespace) -> int:
     """Print the exact system prompt a run would use. Nothing is hidden."""
     from .agent.prompts import build_system
@@ -537,6 +552,15 @@ def build_parser() -> argparse.ArgumentParser:
     compare.add_argument("--seeds", type=int, default=1, metavar="N",
                          help="N seeds per model; rows report median and range")
     compare.set_defaults(func=cmd_compare)
+
+    experiment = sub.add_parser(
+        "experiment", help="one scenario three ways: model-only, AI-only, hybrid"
+    )
+    common(experiment)
+    experiment.add_argument("scenario")
+    experiment.add_argument("--seeds", type=int, default=5, metavar="N",
+                            help="seeds per arm (default 5)")
+    experiment.set_defaults(func=cmd_experiment)
 
     measure_p = sub.add_parser(
         "measure", help="brief size, wake rate and cache hits, peacetime vs wartime"

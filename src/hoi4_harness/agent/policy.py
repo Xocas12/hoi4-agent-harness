@@ -54,6 +54,7 @@ class Policy:
         wake_on_capital_threat: bool = True,
         wake_on_ally_capitulation: bool = True,
         wake_on_front_quiet: bool = True,
+        reflex_delegate: bool = False,
     ):
         self.days_per_turn = days_per_turn
         self.wake_on_no_focus = wake_on_no_focus
@@ -63,6 +64,7 @@ class Policy:
         self.wake_on_capital_threat = wake_on_capital_threat
         self.wake_on_ally_capitulation = wake_on_ally_capitulation
         self.wake_on_front_quiet = wake_on_front_quiet
+        self.reflex_delegate = reflex_delegate
         self.reflex_enabled = reflex_enabled
         self.planner_enabled = planner_enabled
 
@@ -111,6 +113,29 @@ class Policy:
             return WakeDecision(True, "scheduled review", "scheduled")
 
         return WakeDecision(False, "nothing worth a decision")
+
+    def _delegate(self, state: GameState) -> list[ActionCall]:
+        """The AI-only arm of the hybrid experiment (#10), and nothing else.
+
+        Off by default, because handing the army over is a strategic decision
+        and a reflex has no business making it. The experiment needs a run
+        where *no model* decides anything and the game's AI runs the war, so
+        this stands in for that AI's default: every army delegated, and a
+        defensive posture whenever a front is losing ground.
+        """
+        calls: list[ActionCall] = []
+        if state.divisions and "all" not in state.delegated_armies:
+            calls.append(ActionCall(
+                name="delegate_army_to_ai", arguments={"army": "all", "delegate": True},
+                rationale="reflex (AI-only arm): the game's AI runs the army",
+            ))
+        losing = any(f.pressure == "losing_ground" for f in state.fronts)
+        if losing and state.posture != "defensive":
+            calls.append(ActionCall(
+                name="set_ai_posture", arguments={"posture": "defensive"},
+                rationale="reflex (AI-only arm): a front is losing ground",
+            ))
+        return calls
 
     def _wartime_alarm(self, state: GameState, previous: GameState | None) -> str | None:
         """The things worth waking for in a war that no peacetime rule sees.
@@ -173,6 +198,9 @@ class Policy:
         actions: list[ActionCall] = []
         if not self.reflex_enabled:
             return actions
+
+        if self.reflex_delegate:
+            actions += self._delegate(state)
 
         if state.known("construction") and not state.construction and state.civilian_factories:
             actions.append(

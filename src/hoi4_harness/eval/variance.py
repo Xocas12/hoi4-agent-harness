@@ -104,6 +104,7 @@ def run_seeds(
     config: HarnessConfig,
     count: int,
     transcript_dir: Path | None = None,
+    operational_control: str | None = None,
 ) -> AggregateCard:
     aggregate = AggregateCard(scenario=scenario.key)
     for seed in seeds_for(scenario, count):
@@ -111,5 +112,8 @@ def run_seeds(
         # scenario, so a shared directory would keep only the last seed's run.
         where = transcript_dir / f"seed-{seed}" if transcript_dir else None
         aggregate.seeds.append(seed)
-        aggregate.cards.append(run_scenario(scenario, config, transcript_dir=where, seed=seed))
+        aggregate.cards.append(run_scenario(
+            scenario, config, transcript_dir=where, seed=seed,
+            operational_control=operational_control,
+        ))
     return aggregate

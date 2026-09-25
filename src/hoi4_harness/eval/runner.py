@@ -23,6 +23,7 @@ def run_scenario(
     config: HarnessConfig | None = None,
     transcript_dir: Path | None = None,
     seed: int | None = None,
+    operational_control: str | None = None,
 ) -> ScoreCard:
     """One run of one scenario. ``seed`` overrides the scenario's own mock seed,
     which is how a multi-seed run varies what actually varies."""
@@ -49,7 +50,9 @@ def run_scenario(
         )
     # The scenario says how it is meant to be fought; a scenario whose answer
     # lives in the hybrid vocabulary cannot run with those tools switched off.
-    config.operational_control = scenario.operational_control
+    # The experiment overrides this on purpose, to run one scenario all three
+    # ways; nothing else should.
+    config.operational_control = operational_control or scenario.operational_control
     adapter = MockAdapter(
         seed=scenario.seed if seed is None else seed,
         country=scenario.country,

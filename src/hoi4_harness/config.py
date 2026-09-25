@@ -168,6 +168,9 @@ class HarnessConfig:
     # free, which is what every planner-run score is reported against.
     planner_enabled: bool = True
     reflex_enabled: bool = True
+    # The AI-only arm of the hybrid experiment: the reflex layer hands every
+    # army to the game's AI. Never on by default -- see Policy._delegate.
+    reflex_delegate: bool = False
 
     # --- run ----------------------------------------------------------------
     turns: int = 10
