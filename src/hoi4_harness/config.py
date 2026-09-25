@@ -15,6 +15,13 @@ DEFAULT_MODELS = {
     "scripted": "scripted",
 }
 
+def mod_dirs_from_env(raw: str | None) -> list[Path]:
+    """``HOI4_MOD_DIRS``: mod folders in load order, separated like PATH."""
+    if not raw:
+        return []
+    return [Path(part) for part in raw.split(os.pathsep) if part.strip()]
+
+
 def _env_bool(name: str, default: bool) -> bool:
     raw = os.environ.get(name)
     if raw is None or raw == "":
@@ -186,6 +193,12 @@ class HarnessConfig:
     country: str = "SWE"
     start_date: str = "1936-01-01"
     seed: int = 1936
+    # --- the playset: what identifiers exist --------------------------------
+    # The install (the folder holding hoi4.exe and common/) and the active mods
+    # in load order. With game_dir set, focus, technology, state and tag ids are
+    # checked against what the game actually loads -- see identifiers.py.
+    game_dir: Path | None = None
+    mod_dirs: list[Path] = field(default_factory=list)
 
     @classmethod
     def from_env(cls) -> HarnessConfig:
@@ -220,6 +233,8 @@ class HarnessConfig:
             country=os.environ.get("HOI4_COUNTRY", "SWE"),
             start_date=os.environ.get("HOI4_START_DATE", "1936-01-01"),
             seed=_env_int("HOI4_SEED", 1936),
+            game_dir=Path(os.environ["HOI4_GAME_DIR"]) if os.environ.get("HOI4_GAME_DIR") else None,
+            mod_dirs=mod_dirs_from_env(os.environ.get("HOI4_MOD_DIRS")),
         )
 
     @classmethod
@@ -253,13 +268,23 @@ class HarnessConfig:
             elif key == "budget" and isinstance(value, dict):
                 for sub_key, sub_value in value.items():
                     setattr(self.budget, sub_key, sub_value)
-            elif key in {"run_dir", "save_dir", "system_prompt_path"} and value is not None:
+            elif key in {"run_dir", "save_dir", "system_prompt_path", "game_dir"} and value is not None:
                 setattr(self, key, Path(value))
+            elif key == "mod_dirs":
+                self.mod_dirs = [Path(v) for v in value]
             elif hasattr(self, key):
                 setattr(self, key, value)
             else:
                 raise KeyError(f"Unknown configuration key {key!r}")
         return self
+
+    def build_index(self):
+        """The identifier index for the configured playset, or None without one."""
+        if self.game_dir is None:
+            return None
+        from .identifiers import IdentifierIndex, Playset
+
+        return IdentifierIndex.build(Playset.from_paths(self.game_dir, self.mod_dirs))
 
     def allowed_actions(self, adapter_supports: set[str]) -> set[str]:
         """Adapter capability, narrowed by control mode then by the operator.

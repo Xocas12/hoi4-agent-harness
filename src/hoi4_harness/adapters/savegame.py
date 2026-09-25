@@ -143,6 +143,7 @@ class SaveGameAdapter(GameAdapter):
             "divisions",
             "fronts",
             "wars",
+            "completed_focuses",
         ]
         return state
 

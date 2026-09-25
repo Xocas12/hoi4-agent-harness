@@ -82,6 +82,12 @@ hoi4-harness play --system-prompt ./whole-thing.txt   # or replace the prompt en
 hoi4-harness play --profile profiles/unleashed.toml --live   # off the leash
 ```
 
+Point it at an install and a playset (`--game-dir`, `--mod`, or
+`HOI4_GAME_DIR` / `HOI4_MOD_DIRS`) and invented focus, technology, state and
+country ids are refused with the nearest real ones, the brief lists the focuses
+available now, and a total conversion is recorded as such — see
+[docs/playsets.md](docs/playsets.md).
+
 Also configurable: which actions exist at all (`--actions`, `--without`), whether
 the reflex layer runs (`--no-reflex` hands every decision to the model), whether
 the model is woken at all (`--no-llm` plays on reflexes alone — the baseline

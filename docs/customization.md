@@ -68,6 +68,7 @@ you at run time.
 | `country`, `start_date`, `seed` | mock adapter start |
 | `log_path` / `HOI4_LOG_PATH` | `game.log`, for the logtail adapter |
 | `save_dir`, `window_title` | real-game adapters |
+| `game_dir` / `HOI4_GAME_DIR` / `--game-dir`, `mod_dirs` / `HOI4_MOD_DIRS` / `--mod` | the playset: ids are checked against what it defines — see [playsets.md](playsets.md) |
 | `enforce_window_focus`, `--no-window-guard` | refuse to send input unless the game is focused (default on) |
 
 ## Profiles

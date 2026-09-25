@@ -14,6 +14,10 @@ from .metrics import ScoreCard, score
 from .scenarios import SCENARIOS, Scenario
 
 
+class PlaysetMismatch(ValueError):
+    """A scenario was asked to run on a playset it was not written for."""
+
+
 def run_scenario(
     scenario: Scenario | str,
     config: HarnessConfig | None = None,
@@ -28,6 +32,13 @@ def run_scenario(
         scenario = SCENARIOS[scenario]
 
     config = config or HarnessConfig()
+    index = config.build_index()
+    playset = index.playset.name if index is not None else "vanilla"
+    if playset != scenario.playset:
+        raise PlaysetMismatch(
+            f"{scenario.key} is written for the playset '{scenario.playset}', and this run is "
+            f"configured for '{playset}'. Its dates and objectives would score nonsense there."
+        )
     # The scenario says how it is meant to be fought; a scenario whose answer
     # lives in the hybrid vocabulary cannot run with those tools switched off.
     config.operational_control = scenario.operational_control
@@ -37,7 +48,7 @@ def run_scenario(
         start=scenario.start,
         start_state=scenario.start_state,
     )
-    env = HOI4Env(adapter, config)
+    env = HOI4Env(adapter, config, index=index)
     env.reset()
 
     transcript = (

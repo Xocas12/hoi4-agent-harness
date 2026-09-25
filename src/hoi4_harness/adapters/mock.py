@@ -216,6 +216,7 @@ class MockAdapter(GameAdapter):
             s.focus_days_remaining -= 1
             if s.focus_days_remaining <= 0:
                 self._emit("focus_complete", f"National focus complete: {s.national_focus}", "notable")
+                s.completed_focuses.append(s.national_focus)
                 s.national_focus, s.focus_days_remaining = None, None
 
         for slot in s.research:

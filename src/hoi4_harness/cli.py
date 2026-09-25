@@ -10,6 +10,7 @@
     hoi4-harness eval --no-llm              score every scenario on reflexes alone
     hoi4-harness compare economy_ramp       the same scenario across models, one table
     hoi4-harness measure --campaign wartime_1939_1941   brief size and wake rate in a war
+    hoi4-harness index --game-dir PATH      what countries and focuses a playset defines
 
 Everything defaults to the mock adapter and the scripted model, so a fresh clone
 does something useful with no API key and no game installed.
@@ -89,7 +90,16 @@ def _config_from_args(args: argparse.Namespace) -> HarnessConfig:
         config.start_date = args.start_date
     if getattr(args, "seed", None) is not None:
         config.seed = args.seed
+    if getattr(args, "game_dir", None):
+        config.game_dir = Path(args.game_dir)
+    if getattr(args, "mods", None):
+        config.mod_dirs = [Path(m) for m in args.mods]
     return config
+
+
+def _env_from_config(config: HarnessConfig) -> HOI4Env:
+    """The environment, with the playset's identifier index when one is configured."""
+    return HOI4Env(build_adapter(config), config, index=config.build_index())
 
 
 def cmd_doctor(args: argparse.Namespace) -> int:
@@ -165,7 +175,11 @@ def cmd_actions(args: argparse.Namespace) -> int:
 
 def cmd_observe(args: argparse.Namespace) -> int:
     config = _config_from_args(args)
-    env = HOI4Env(build_adapter(config), config)
+    try:
+        env = _env_from_config(config)
+    except FileNotFoundError as exc:
+        print(f"observe: {exc}", file=sys.stderr)
+        return 1
     observation = env.reset()
     print(observation.brief)
     return 0
@@ -173,7 +187,11 @@ def cmd_observe(args: argparse.Namespace) -> int:
 
 def cmd_play(args: argparse.Namespace) -> int:
     config = _config_from_args(args)
-    env = HOI4Env(build_adapter(config), config)
+    try:
+        env = _env_from_config(config)
+    except FileNotFoundError as exc:
+        print(f"play: {exc}", file=sys.stderr)
+        return 1
     env.reset()
     run_dir = config.run_dir
     resume = bool(getattr(args, "resume", False))
@@ -317,6 +335,41 @@ def cmd_mod_directives(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_index(args: argparse.Namespace) -> int:
+    """What exists in the configured playset: countries, focuses, technologies, states."""
+    config = _config_from_args(args)
+    if config.game_dir is None:
+        print("index: point --game-dir (or HOI4_GAME_DIR) at the HOI4 install", file=sys.stderr)
+        return 2
+    try:
+        index = config.build_index()
+    except FileNotFoundError as exc:
+        print(f"index: {exc}", file=sys.stderr)
+        return 1
+    summary = index.summary()
+    print(f"playset          {summary['playset']}  [{summary['fingerprint']}]")
+    for mod in index.playset.mods:
+        print(f"  mod            {mod.name} {mod.version}".rstrip() + f"  ({mod.path})")
+    print(f"countries        {summary['tags']}: {' '.join(sorted(index.tags)[:40])}"
+          + (" ..." if summary["tags"] > 40 else ""))
+    print(f"focus trees      {summary['focus_trees']} ({summary['focuses']} focuses)")
+    print(f"technologies     {summary['technologies']}")
+    print(f"states           {summary['states']}")
+    if args.country:
+        tag = args.country.upper()
+        trees = index.trees_for(tag)
+        focuses = index.focuses_for(tag)
+        print()
+        print(f"{tag}: {', '.join(t.id for t in trees) or 'no focus tree'}"
+              f" -- {len(focuses)} focuses")
+        roots = [f.id for f in focuses.values() if not f.prerequisites]
+        print(f"  start with: {', '.join(roots) or '-'}")
+        if args.all:
+            for focus_id in sorted(focuses):
+                print(f"  {focus_id}")
+    return 0
+
+
 def cmd_prompt(args: argparse.Namespace) -> int:
     """Print the exact system prompt a run would use. Nothing is hidden."""
     from .agent.prompts import build_system
@@ -386,6 +439,10 @@ def build_parser() -> argparse.ArgumentParser:
         p.add_argument("--country", help="country tag (mock adapter)")
         p.add_argument("--start-date", dest="start_date", help="start date (mock adapter)")
         p.add_argument("--seed", type=int, help="mock adapter seed")
+        p.add_argument("--game-dir", dest="game_dir", metavar="PATH",
+                       help="HOI4 install folder: check ids against what the game loads")
+        p.add_argument("--mod", dest="mods", action="append", metavar="PATH",
+                       help="an active mod folder; repeat in load order")
 
     doctor = sub.add_parser("doctor", help="check the environment")
     common(doctor)
@@ -461,6 +518,12 @@ def build_parser() -> argparse.ArgumentParser:
                            help="play a long measurement campaign first, then measure it "
                                 "(peacetime_1936_1939, wartime_1939_1941)")
     measure_p.set_defaults(func=cmd_measure)
+
+    index = sub.add_parser("index", help="list the countries and focuses a playset defines")
+    common(index)
+    # --country (from the common flags) picks the country whose tree is shown.
+    index.add_argument("--all", action="store_true", help="with --country: list every focus")
+    index.set_defaults(func=cmd_index)
 
     moddir = sub.add_parser(
         "mod-directives", help="regenerate the mod's per-target directive blocks"

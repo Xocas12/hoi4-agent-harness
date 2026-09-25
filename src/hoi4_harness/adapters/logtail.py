@@ -55,7 +55,10 @@ FIELDS = {
 }
 
 # Fields the mod does not emit yet. Reported as unknown rather than defaulted.
-NOT_EMITTED = ["research", "production", "construction", "fronts", "wars", "national_focus"]
+NOT_EMITTED = [
+    "research", "production", "construction", "fronts", "wars", "national_focus",
+    "completed_focuses",
+]
 
 
 def find_log(explicit: Path | None = None) -> Path | None:

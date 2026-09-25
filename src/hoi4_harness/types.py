@@ -189,6 +189,9 @@ class GameState:
     convoys: int = 0
     national_focus: str | None = None
     focus_days_remaining: int | None = None
+    #: Focuses finished so far, when the adapter can see them. It is what lets
+    #: the brief offer the focuses available *now* rather than the whole tree.
+    completed_focuses: list[str] = field(default_factory=list)
     ideology: str = "neutrality"
     research: list[ResearchSlot] = field(default_factory=list)
     production: list[ProductionLine] = field(default_factory=list)

@@ -123,6 +123,7 @@ class AgentLoop:
             system_prompt_path=self.config.system_prompt_path,
             operational_control=self.config.operational_control,
             advisor=self.config.advisor,
+            playset=env.index.playset.name if env.index is not None else None,
         )
         self.budget = BudgetGuard(self.config.budget)
         self.transcript = Transcript(transcript_path, append=resume)
@@ -139,6 +140,9 @@ class AgentLoop:
 
         if resume and transcript_path:
             self._resume_from(transcript_path)
+        # Which world produced this transcript: a run on a total conversion is
+        # not comparable to one on the base game, and nothing else records it.
+        self.transcript.write("playset", **env.playset)
 
     def _resume_from(self, transcript_path: Path) -> None:
         """Carry forward what the interrupted run knew.

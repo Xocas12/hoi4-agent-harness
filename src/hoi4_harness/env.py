@@ -11,15 +11,24 @@ from __future__ import annotations
 from .actions import registry
 from .adapters.base import GameAdapter
 from .config import HarnessConfig
+from .identifiers import IdentifierIndex
 from .observation import ObservationBuilder
 from .observation.directives import DirectiveTracker
 from .types import ActionCall, ActionResult, GameState, Observation
 
 
 class HOI4Env:
-    def __init__(self, adapter: GameAdapter, config: HarnessConfig | None = None):
+    def __init__(
+        self,
+        adapter: GameAdapter,
+        config: HarnessConfig | None = None,
+        index: IdentifierIndex | None = None,
+    ):
         self.adapter = adapter
         self.config = config or HarnessConfig()
+        #: What ids exist in the playset. None: nothing to check against, and
+        #: ids pass through to the adapter as before.
+        self.index = index
         self.builder = ObservationBuilder(full_brief_every=self.config.full_brief_every)
         self.turn = 0
         self.confirm_hook = None  # set to a callable(ActionCall) -> bool for human approval
@@ -48,10 +57,19 @@ class HOI4Env:
         )
         # Every brief, full or delta: a directive that has done nothing for a
         # month is exactly the news that must not be diffed away.
-        status = self.directives.render(state)
-        if status:
-            observation.brief += "\n" + "\n".join(status)
+        extra = self.directives.render(state)
+        if self.index is not None:
+            extra += self.index.brief_lines(state)
+        if extra:
+            observation.brief += "\n" + "\n".join(extra)
         return observation
+
+    @property
+    def playset(self) -> dict:
+        """What the transcript records about the world this run played in."""
+        if self.index is not None:
+            return {**self.index.playset.describe(), **self.index.summary()}
+        return {"name": f"unindexed ({self.adapter.info().name})"}
 
     @property
     def owns_clock(self) -> bool:
@@ -82,6 +100,10 @@ class HOI4Env:
             )
 
         problem = registry.check(call, self.allowed_actions)
+        if problem is None and self.index is not None:
+            # An invented id never reaches the game, where it would do nothing
+            # silently; the model gets the nearest real ones instead.
+            problem = self.index.check(call, self.adapter.read_state().country)
         if problem is not None:
             return problem
 
