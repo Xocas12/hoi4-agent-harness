@@ -12,6 +12,7 @@ they are the reason the turn is happening.
 from __future__ import annotations
 
 from ..types import GameState
+from .fronts import front_changes
 
 SCALARS = [
     ("political_power", "PP", 5.0),
@@ -76,13 +77,7 @@ def render_delta(previous: GameState, current: GameState) -> str:
     for tag in sorted(before_wars - after_wars):
         lines.append(f"War ended: {tag}")
 
-    for front in current.fronts:
-        was = next((f for f in previous.fronts if f.name == front.name), None)
-        if was is None or was.pressure != front.pressure:
-            lines.append(
-                f"Front {front.name}: {front.pressure} "
-                f"({front.divisions_friendly}v{front.divisions_enemy})"
-            )
+    lines.extend(front_changes(previous.fronts, current.fronts))
 
     if previous.posture != current.posture:
         lines.append(f"AI posture: {previous.posture or 'default'} -> {current.posture}")

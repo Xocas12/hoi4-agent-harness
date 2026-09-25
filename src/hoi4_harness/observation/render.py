@@ -13,6 +13,7 @@ delta. Rules applied here:
 from __future__ import annotations
 
 from ..types import GameState
+from .fronts import summarise_fronts
 
 _SEV = {"critical": "!!", "notable": "!", "info": "-"}
 
@@ -25,8 +26,12 @@ def _val(state: GameState, field: str, fmt=str) -> str:
     return "unknown" if not state.known(field) else fmt(getattr(state, field))
 
 
-def render_full(state: GameState, max_events: int = 6) -> str:
-    """A complete situation brief."""
+def render_full(state: GameState, max_events: int = 6, max_fronts: int = 3) -> str:
+    """A complete situation brief.
+
+    Fronts are capped at ``max_fronts`` full lines plus one folded line, however
+    many the war has -- see observation/fronts.py.
+    """
     lines: list[str] = []
     lines.append(f"## {state.country_name} ({state.country}) -- {state.date}")
 
@@ -93,12 +98,7 @@ def render_full(state: GameState, max_events: int = 6) -> str:
     if state.wars:
         for war in state.wars:
             lines.append(f"AT WAR with {war.against} since {war.since} (war score {war.war_score:+.0f})")
-    if state.fronts:
-        for front in state.fronts:
-            lines.append(
-                f"Front {front.name} vs {front.enemy}: {front.divisions_friendly}v"
-                f"{front.divisions_enemy}, {front.stance}, {front.pressure}"
-            )
+    lines.extend(summarise_fronts(state.fronts, limit=max_fronts))
 
     if state.delegated_armies or state.ai_directives or state.posture:
         bits = []

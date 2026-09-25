@@ -47,7 +47,14 @@ class DivisionGroup:
 
 @dataclass
 class Front:
-    """One contiguous fighting line, from the agent's point of view."""
+    """One contiguous fighting line, from the agent's point of view.
+
+    Derived from army and combat data, never from province lists: a province
+    list is enormous and a war has several fronts at once, which is the one
+    place a brief's size can run away. Everything past ``pressure`` is optional
+    because an adapter that cannot see it must say nothing rather than a
+    reassuring default -- ``supply=None`` is "not observed", not "fine".
+    """
 
     name: str
     enemy: str
@@ -55,6 +62,12 @@ class Front:
     divisions_enemy: int = 0
     stance: str = "hold"          # hold | offensive | retreat
     pressure: str = "stable"      # stable | advancing | losing_ground
+    #: Worst-supplied sector on this front, as a fraction of demand met (0-1).
+    supply: float | None = None
+    #: Friendly divisions at risk of being cut off. 0 when no pocket is forming.
+    pocket_divisions: int = 0
+    #: The capital or a victory-point cluster lies behind this front, in reach.
+    threatens_capital: bool = False
 
 
 @dataclass

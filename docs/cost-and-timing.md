@@ -105,8 +105,12 @@ Honest failure modes, since they decide whether the numbers above survive contac
 
 - **Wartime.** Fronts, combats, and encirclements are the state that does not
   compress well, and war is exactly when reflexes are least adequate. Expect the
-  wake rate and brief size to rise together. Front summarisation is the open
-  design problem in this repo.
+  wake rate and brief size to rise together. Brief size is now capped:
+  `observation/fronts.py` shows at most three fronts in full, ranked by how much
+  they need a decision (losing ground, a pocket forming, the capital threatened,
+  supply failing, an attack), and folds the rest into one line that still says
+  whether anything in the fold is in trouble. A synthetic twelve-front war renders
+  as a ~450-character brief. The wake rate is the half that is still unmeasured.
 - **Screen-based observation.** A vision call per observation is 1–2k image tokens
   and cannot be cached across turns. It is for what numbers cannot express, not
   for routine ticks.
