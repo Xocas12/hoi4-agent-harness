@@ -110,6 +110,11 @@ class AgentLoop:
             wake_on_free_research_slot=self.config.wake_on_free_research_slot,
             reflex_enabled=self.config.reflex_enabled,
             planner_enabled=self.config.planner_enabled,
+            wake_on_encirclement=self.config.wake_on_encirclement,
+            wake_on_supply_collapse=self.config.wake_on_supply_collapse,
+            wake_on_capital_threat=self.config.wake_on_capital_threat,
+            wake_on_ally_capitulation=self.config.wake_on_ally_capitulation,
+            wake_on_front_quiet=self.config.wake_on_front_quiet,
         )
         self.system = build_system(
             guidance=self.config.guidance,
@@ -179,7 +184,8 @@ class AgentLoop:
             state = self.env.read_state()
             turn_date = state.date
             self.history.append(deepcopy_state(state))
-            decision = self.policy.should_wake(state, days_since_planner)
+            previous = self.history[-2] if len(self.history) >= 2 else None
+            decision = self.policy.should_wake(state, days_since_planner, previous)
             blocked = self.budget.why_blocked()
             downgraded = bool(decision.wake and blocked)
 

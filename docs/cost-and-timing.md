@@ -34,7 +34,11 @@ The harness splits control:
   empty construction queue, reassigns idle military factories, and nothing that
   requires judgement. Free and instant.
 - **Planner** — the model. Woken on: a critical event, no national focus running,
-  an idle research slot, a front losing ground, or the scheduled review.
+  an idle research slot, a front losing ground, or the scheduled review. At war,
+  also on the *onset* of an encirclement, a supply collapse on a front that was
+  supplied last turn, the capital coming under threat, an ally capitulating or
+  leaving the war, and a front going quiet. Onset, not condition: a pocket wakes
+  the model when it opens or grows, not every turn it stands.
 
 Widening that rule is how a run gets expensive. It is deliberately one small
 function so the cost of a change is visible.

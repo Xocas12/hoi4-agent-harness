@@ -142,6 +142,13 @@ class HarnessConfig:
     full_brief_every: int = 8
     wake_on_free_research_slot: bool = True
     wake_on_no_focus: bool = True
+    # Wartime wake rules. Each fires on the onset of its condition, never on the
+    # condition standing, so a long siege does not wake the model every turn.
+    wake_on_encirclement: bool = True
+    wake_on_supply_collapse: bool = True
+    wake_on_capital_threat: bool = True
+    wake_on_ally_capitulation: bool = True
+    wake_on_front_quiet: bool = True
     # False is the reflex-only baseline: the model is never woken and the run is
     # free, which is what every planner-run score is reported against.
     planner_enabled: bool = True
