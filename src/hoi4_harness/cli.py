@@ -297,6 +297,26 @@ def cmd_measure(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_mod_directives(args: argparse.Namespace) -> int:
+    """Regenerate the mod's per-target directive files, or check they are current."""
+    from . import modgen
+
+    mod_dir = Path(args.mod_dir)
+    tags = [t for t in (args.tags or "").split(",") if t.strip()] or list(modgen.DEFAULT_TAGS)
+    try:
+        if args.check:
+            stale = modgen.drift(mod_dir, tags)
+            for path in stale:
+                print(f"stale: {path}", file=sys.stderr)
+            return 1 if stale else 0
+        for path in modgen.write(mod_dir, tags):
+            print(f"wrote {path}")
+    except ValueError as exc:
+        print(f"mod-directives: {exc}", file=sys.stderr)
+        return 2
+    return 0
+
+
 def cmd_prompt(args: argparse.Namespace) -> int:
     """Print the exact system prompt a run would use. Nothing is hidden."""
     from .agent.prompts import build_system
@@ -441,6 +461,17 @@ def build_parser() -> argparse.ArgumentParser:
                            help="play a long measurement campaign first, then measure it "
                                 "(peacetime_1936_1939, wartime_1939_1941)")
     measure_p.set_defaults(func=cmd_measure)
+
+    moddir = sub.add_parser(
+        "mod-directives", help="regenerate the mod's per-target directive blocks"
+    )
+    moddir.add_argument("--tags", metavar="GER,ENG,...",
+                        help="country tags to generate for (default: the vanilla majors and more)")
+    moddir.add_argument("--mod-dir", dest="mod_dir", default="mod/llm_bridge",
+                        help="the llm_bridge mod folder (default: mod/llm_bridge)")
+    moddir.add_argument("--check", action="store_true",
+                        help="exit 1 if the committed files differ from what would be generated")
+    moddir.set_defaults(func=cmd_mod_directives)
 
     calibrate = sub.add_parser("calibrate", help="record screen coordinates for the input driver")
     common(calibrate)

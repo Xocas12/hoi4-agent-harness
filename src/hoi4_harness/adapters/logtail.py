@@ -38,6 +38,9 @@ EVENT_CODES = {
     "10": ("posture_defensive", "info"),
     "11": ("posture_offensive", "info"),
     "12": ("directives_cleared", "info"),
+    # Mirrored from modgen.EVENT_TARGET_SELECTED / EVENT_DIRECTIVE_RAISED.
+    "13": ("directive_target_selected", "info"),
+    "14": ("directive_raised", "info"),
 }
 
 # Telemetry field -> (GameState attribute, converter)

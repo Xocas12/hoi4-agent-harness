@@ -38,10 +38,41 @@ clear_ai_directives {}                        stand everything down
 ```
 
 Underneath, the harness raises a country flag; an `ai_strategy` block in
-[the mod](../mod/llm_bridge/common/ai_strategy/llm_bridge_directives.txt) keys on
-that flag and starts biasing the AI's own scoring. No engine hooks, no fighting
-the AI for control of a unit — the model sets intent and the AI executes it with
-its own machinery.
+[the mod](../mod/llm_bridge/common/ai_strategy/) keys on that flag and starts
+biasing the AI's own scoring. No engine hooks, no fighting the AI for control of
+a unit — the model sets intent and the AI executes it with its own machinery.
+
+### Targets
+
+An `ai_strategy` block names its target as a literal (`id = "POL"`), and no
+variable-driven `id` is known to work there. So the mod carries one block per
+(directive, target), each gated on its own flag (`llmb_protect_POL`), generated
+from a template by [`modgen.py`](../src/hoi4_harness/modgen.py) into
+`llm_bridge_targets.txt`. Raising a directive is two stable clicks in the
+**LLM Bridge: targets** decision category:
+
+1. `Target: POL` — makes POL the selected target (and clears the previous one);
+2. `Directive: protect` — sets `llmb_protect_POL` for the selected target.
+
+That is targets + directives decisions, not their product, and the harness side
+(`set_ai_directive` in the catalog) does not change. Directing `protect FIN` and
+then `protect POL` raises two distinct blocks aimed at the right countries;
+`stand down` clears every one.
+
+The default tag list covers the countries a vanilla 1936 campaign most plausibly
+names. For a playset with other tags:
+
+```bash
+hoi4-harness mod-directives --tags GER,ENG,FRA,KAI,...   # regenerate
+hoi4-harness mod-directives --check                        # CI: are the files current?
+```
+
+Two things only the game can confirm, tracked in #1: that the `ai_strategy`
+types in `modgen.STRATEGIES` (`conquer`, `invade`, `protect`, `contain`,
+`befriend`, `antagonize`, `ignore`) are real in your version, and what `value`
+moves behaviour. The directive's `weight` is not transmitted — each block has a
+fixed value. A wrong type is ignored silently by the game, which is what the
+directive-effect line below exists to catch.
 
 ### Did the directive do anything?
 
@@ -104,10 +135,11 @@ Working and tested: the action vocabulary, the control-mode switch, the prompt
 layer, the `hybrid` guidance pack, state rendering for delegation and standing
 directives, and mock-adapter support so the whole path runs offline.
 
-Not built: the mod-side plumbing that reads a directive's target dynamically
-(the `ai_strategy` blocks currently hardcode example tags), army-level delegation
-through the real UI, and theater-scoped posture inside the mod (the harness side
-and the mock are built; see [Theaters](#theaters)).
+Built but unverified in a live game: per-target directive blocks (see
+[Targets](#targets)). Not built: army-level delegation through the real UI, the
+input-driver script that clicks the two target decisions (#3), and
+theater-scoped posture inside the mod (the harness side and the mock are built;
+see [Theaters](#theaters)).
 
 Not answered: **whether hybrid actually plays better.** That is the interesting
 question and it needs three runs of the same scenario — model-only, AI-only,
