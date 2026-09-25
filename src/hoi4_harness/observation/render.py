@@ -100,12 +100,17 @@ def render_full(state: GameState, max_events: int = 6, max_fronts: int = 3) -> s
             lines.append(f"AT WAR with {war.against} since {war.since} (war score {war.war_score:+.0f})")
     lines.extend(summarise_fronts(state.fronts, limit=max_fronts))
 
-    if state.delegated_armies or state.ai_directives or state.posture:
+    if state.delegated_armies or state.ai_directives or state.posture or state.theater_postures:
         bits = []
         if state.delegated_armies:
             bits.append(f"{len(state.delegated_armies)} army(s) delegated to the game AI")
         if state.posture:
             bits.append(f"posture {state.posture}")
+        if state.theater_postures:
+            bits.append(
+                "theaters: "
+                + ", ".join(f"{name} {p}" for name, p in sorted(state.theater_postures.items()))
+            )
         if state.ai_directives:
             bits.append("directives: " + "; ".join(state.ai_directives[:4]))
         lines.append("AI control: " + " | ".join(bits))

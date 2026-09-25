@@ -173,6 +173,10 @@ class GameState:
     delegated_armies: list[str] = field(default_factory=list)
     ai_directives: list[str] = field(default_factory=list)
     posture: str | None = None
+    #: Posture scoped to one theater, overriding ``posture`` there. A theater is
+    #: a front, by name: the cheapest definition that expresses "hold in the
+    #: east, press in the west", and one the brief already names.
+    theater_postures: dict[str, str] = field(default_factory=dict)
     events: list[GameEvent] = field(default_factory=list)
     unknown_fields: list[str] = field(default_factory=list)
     raw: dict[str, Any] = field(default_factory=dict, repr=False)

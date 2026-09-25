@@ -258,8 +258,9 @@ class MockAdapter(GameAdapter):
         collapsing front, and score the answer.
         """
         s = self.state
-        if s.delegated_armies and s.posture == "defensive":
-            worst = max(s.fronts, key=lambda f: f.divisions_enemy - f.divisions_friendly)
+        defended = [f for f in s.fronts if self.posture_on(f.name) == "defensive"]
+        if s.delegated_armies and defended:
+            worst = max(defended, key=lambda f: f.divisions_enemy - f.divisions_friendly)
             for group in s.divisions:
                 if group.location in ("home", "unassigned"):
                     group.location = worst.name
@@ -267,12 +268,23 @@ class MockAdapter(GameAdapter):
             front.divisions_friendly = sum(
                 g.count for g in s.divisions if g.location == front.name
             )
+            posture = self.posture_on(front.name) if s.delegated_armies else None
+            front.stance = "offensive" if posture == "offensive" else "hold"
             holds = front.divisions_friendly * 2 >= front.divisions_enemy
-            front.pressure = "stable" if holds else "losing_ground"
+            if not holds:
+                front.pressure = "losing_ground"
+            elif posture == "offensive" and front.divisions_friendly * 2 >= front.divisions_enemy * 3:
+                front.pressure = "advancing"
+            else:
+                front.pressure = "stable"
             if not holds:
                 self._attrition[front.name] = self._attrition.get(front.name, 0.0) + 0.1
                 if self._attrition[front.name] >= 1.0 and self._bleed_one_division(front.name):
                     self._attrition[front.name] -= 1.0
+
+    def posture_on(self, front_name: str) -> str | None:
+        """The posture that governs one front: its theater's, else the global one."""
+        return self.state.theater_postures.get(front_name, self.state.posture)
 
     def _bleed_one_division(self, front_name: str) -> bool:
         """Destroy one division on a front that is giving ground. False: nobody left."""
@@ -481,8 +493,18 @@ class MockAdapter(GameAdapter):
     def _do_set_ai_posture(self, call: ActionCall) -> ActionResult:
         if not self.state.delegated_armies:
             return self._fail(call, "No armies are delegated, so posture does nothing yet.")
-        self.state.posture = call.arguments["posture"]
-        return self._ok(call, f"Posture set to {self.state.posture}.")
+        posture = call.arguments["posture"]
+        theater = call.arguments.get("theater")
+        if theater:
+            if not any(front.name == theater for front in self.state.fronts):
+                known = ", ".join(f.name for f in self.state.fronts) or "none"
+                return self._fail(
+                    call, f"No front named '{theater}'. Fronts: {known}.", "invalid_args"
+                )
+            self.state.theater_postures[theater] = posture
+            return self._ok(call, f"Posture on {theater} set to {posture}.", theater=theater)
+        self.state.posture = posture
+        return self._ok(call, f"Posture set to {posture} on every front without its own.")
 
     def _do_set_ai_directive(self, call: ActionCall) -> ActionResult:
         directive = call.arguments["directive"]
@@ -499,4 +521,5 @@ class MockAdapter(GameAdapter):
         dropped = len(self.state.ai_directives)
         self.state.ai_directives = []
         self.state.posture = None
+        self.state.theater_postures = {}
         return self._ok(call, f"Cleared {dropped} directive(s).")

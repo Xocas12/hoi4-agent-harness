@@ -43,6 +43,23 @@ that flag and starts biasing the AI's own scoring. No engine hooks, no fighting
 the AI for control of a unit — the model sets intent and the AI executes it with
 its own machinery.
 
+### Theaters
+
+A theater is a **front, by name** — the cheapest definition that can express the
+most common decision a player makes, "hold in the east, press in the west", and
+one the brief already prints. `set_ai_posture` with a `theater` overrides the
+global posture on that front only; without one it sets the posture for every
+front that has no posture of its own. An unknown front name is rejected with the
+list of real ones. The brief shows both layers
+(`AI control: posture defensive | theaters: west offensive`) and the delta
+reports a theater changing posture on its own line. `clear_ai_directives` drops
+theater postures along with everything else.
+
+On the mod side this is still global: the posture flags in
+`llm_bridge_directives.txt` have no notion of a front. Scoping them needs a front
+identity the game script can key on (a strategic region or a state the front
+runs through), and choosing that is a live-game job, like the rest of #1.
+
 ## Turning it on
 
 ```bash
@@ -69,7 +86,8 @@ directives, and mock-adapter support so the whole path runs offline.
 
 Not built: the mod-side plumbing that reads a directive's target dynamically
 (the `ai_strategy` blocks currently hardcode example tags), army-level delegation
-through the real UI, and any theater-scoped posture.
+through the real UI, and theater-scoped posture inside the mod (the harness side
+and the mock are built; see [Theaters](#theaters)).
 
 Not answered: **whether hybrid actually plays better.** That is the interesting
 question and it needs three runs of the same scenario — model-only, AI-only,

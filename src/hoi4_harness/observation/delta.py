@@ -81,6 +81,13 @@ def render_delta(previous: GameState, current: GameState) -> str:
 
     if previous.posture != current.posture:
         lines.append(f"AI posture: {previous.posture or 'default'} -> {current.posture}")
+    for theater in sorted(set(previous.theater_postures) | set(current.theater_postures)):
+        was = previous.theater_postures.get(theater)
+        now = current.theater_postures.get(theater)
+        if was != now:
+            lines.append(
+                f"AI posture on {theater}: {was or 'global'} -> {now or 'global'}"
+            )
     if set(previous.ai_directives) != set(current.ai_directives):
         added = [d for d in current.ai_directives if d not in previous.ai_directives]
         dropped = [d for d in previous.ai_directives if d not in current.ai_directives]
