@@ -7,8 +7,10 @@ from .measure import Measurement, measure
 from .metrics import ScoreCard, score
 from .runner import run_scenario
 from .scenarios import SCENARIOS, Objective, Scenario
+from .variance import AggregateCard, run_seeds
 
 __all__ = [
+    "AggregateCard",
     "BASELINE_PATH",
     "CAMPAIGNS",
     "SCENARIOS",
@@ -24,6 +26,7 @@ __all__ = [
     "load",
     "measure",
     "run_scenario",
+    "run_seeds",
     "score",
     "write_baselines",
 ]

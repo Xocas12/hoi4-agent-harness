@@ -206,7 +206,7 @@ def cmd_replay(args: argparse.Namespace) -> int:
 
 
 def cmd_eval(args: argparse.Namespace) -> int:
-    from .eval import SCENARIOS, ScoreCard, run_scenario, write_baselines
+    from .eval import SCENARIOS, ScoreCard, run_scenario, run_seeds, write_baselines
 
     config = _config_from_args(args)
     if getattr(args, "write_baseline", False) and config.planner_enabled:
@@ -218,10 +218,26 @@ def cmd_eval(args: argparse.Namespace) -> int:
         )
         return 2
 
+    seeds = max(1, getattr(args, "seeds", 1) or 1)
+    if getattr(args, "write_baseline", False) and seeds > 1:
+        print("--write-baseline records one reflex-only run per scenario; drop --seeds.",
+              file=sys.stderr)
+        return 2
+    if args.scenario and args.scenario not in SCENARIOS:
+        print(f"eval: unknown scenario {args.scenario!r}. Known: {', '.join(SCENARIOS)}",
+              file=sys.stderr)
+        return 2
+
     keys = [args.scenario] if args.scenario else list(SCENARIOS)
     failed = 0
     cards: dict[str, ScoreCard] = {}
     for key in keys:
+        if seeds > 1:
+            aggregate = run_seeds(SCENARIOS[key], config, seeds, transcript_dir=config.run_dir)
+            print(aggregate.render())
+            print()
+            failed += aggregate.median < 1.0
+            continue
         card = run_scenario(key, config, transcript_dir=config.run_dir)
         print(card.render())
         print()
@@ -238,7 +254,7 @@ def cmd_compare(args: argparse.Namespace) -> int:
     config = _config_from_args(args)
     specs = [s.strip() for s in args.models.split(",") if s.strip()] if args.models else None
     try:
-        print(compare(args.scenario, specs, config).render())
+        print(compare(args.scenario, specs, config, seeds=max(1, args.seeds or 1)).render())
     except KeyError as exc:
         # The scenario is resolved before any model runs; the message names the
         # known ones.
@@ -385,6 +401,8 @@ def build_parser() -> argparse.ArgumentParser:
     evaluate.add_argument("--strict", action="store_true", help="exit 1 unless every objective passes")
     evaluate.add_argument("--write-baseline", dest="write_baseline", action="store_true",
                           help="record the reflex-only scores as the committed baseline (needs --no-llm)")
+    evaluate.add_argument("--seeds", type=int, default=1, metavar="N",
+                          help="run each scenario at N seeds and report median and range")
     evaluate.set_defaults(func=cmd_eval)
 
     compare = sub.add_parser(
@@ -398,6 +416,8 @@ def build_parser() -> argparse.ArgumentParser:
              "(default: the configured planner)",
     )
     compare.add_argument("--days", type=int, help="in-game days per turn")
+    compare.add_argument("--seeds", type=int, default=1, metavar="N",
+                         help="N seeds per model; rows report median and range")
     compare.set_defaults(func=cmd_compare)
 
     measure_p = sub.add_parser(

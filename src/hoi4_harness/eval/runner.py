@@ -18,7 +18,10 @@ def run_scenario(
     scenario: Scenario | str,
     config: HarnessConfig | None = None,
     transcript_dir: Path | None = None,
+    seed: int | None = None,
 ) -> ScoreCard:
+    """One run of one scenario. ``seed`` overrides the scenario's own mock seed,
+    which is how a multi-seed run varies what actually varies."""
     if isinstance(scenario, str):
         if scenario not in SCENARIOS:
             raise KeyError(f"Unknown scenario {scenario!r}. Known: {', '.join(SCENARIOS)}")
@@ -29,7 +32,7 @@ def run_scenario(
     # lives in the hybrid vocabulary cannot run with those tools switched off.
     config.operational_control = scenario.operational_control
     adapter = MockAdapter(
-        seed=scenario.seed,
+        seed=scenario.seed if seed is None else seed,
         country=scenario.country,
         start=scenario.start,
         start_state=scenario.start_state,

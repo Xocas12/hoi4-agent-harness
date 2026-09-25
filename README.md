@@ -154,7 +154,8 @@ verification checklist: [docs/mod-bridge.md](docs/mod-bridge.md).
 - **[observation/](src/hoi4_harness/observation/)** — full briefs, deltas, and the rule for choosing.
 - **[agent/](src/hoi4_harness/agent/)** — policy, memory, budget, prompts, loop, and the provider layer.
 - **[eval/](src/hoi4_harness/eval/)** — scenarios with checkable objectives, scored on outcome *and* cost, and
-  reported against a recorded reflex-only baseline (`eval --no-llm --write-baseline`).
+  reported against a recorded reflex-only baseline (`eval --no-llm --write-baseline`),
+  across seeds (`--seeds N`, median and range). See [docs/evaluation.md](docs/evaluation.md).
 
 ## Status
 
