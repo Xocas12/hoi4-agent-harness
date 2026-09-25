@@ -196,6 +196,19 @@ hoi4-harness doctor
 See [.env.example](.env.example) for every environment variable, and
 [docs/customization.md](docs/customization.md) for the full settings table.
 
+To check a provider still speaks the wire format the harness expects — tool
+schema accepted, tool calls parsed back into valid actions, a second tool round
+accepted, usage reported, prefix caching where promised — run the live
+conformance suite. It is opt-in because it costs a few cents a provider:
+
+```bash
+HOI4_LIVE_TESTS=1 ANTHROPIC_API_KEY=... pytest tests/live -v -rs
+HOI4_LIVE_ANTHROPIC_MODEL=claude-haiku-4-5 ...   # pick the model per provider
+```
+
+It also runs weekly in `.github/workflows/live-model.yml` for whichever keys
+the repository has; providers without one skip.
+
 
 ## Where it goes next
 
