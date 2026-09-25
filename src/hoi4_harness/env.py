@@ -11,6 +11,7 @@ from __future__ import annotations
 from .actions import registry
 from .adapters.base import GameAdapter
 from .config import HarnessConfig
+from .handover import PASS_THROUGH, HandoverQueue, HandoverReport
 from .identifiers import IdentifierIndex
 from .observation import ObservationBuilder
 from .observation.directives import DirectiveTracker
@@ -35,6 +36,9 @@ class HOI4Env:
         #: What each standing AI directive has visibly changed. The adapter's
         #: "Directive standing" only proves the harness recorded it.
         self.directives = DirectiveTracker()
+        #: Co-op: actions wait here until the player hands over the keyboard.
+        self.handover = HandoverQueue(self.config.run_dir) if self.config.handover else None
+        self._last_handover: HandoverReport | None = None
 
     # --- observation ---------------------------------------------------------
 
@@ -58,6 +62,13 @@ class HOI4Env:
         # Every brief, full or delta: a directive that has done nothing for a
         # month is exactly the news that must not be diffed away.
         extra = self.directives.render(state)
+        if self._last_handover is not None:
+            # Said once: what the last window actually did, stale ones included,
+            # so the model replans on what happened rather than what it queued.
+            extra.append(self._last_handover.summary())
+            self._last_handover = None
+        if self.handover is not None:
+            extra += self.handover.describe()
         if self.index is not None:
             extra += self.index.brief_lines(state)
         if extra:
@@ -128,6 +139,13 @@ class HOI4Env:
                     error_kind="rejected",
                 )
 
+        if self.handover is not None and call.name not in PASS_THROUGH:
+            # The player owns the keyboard: decide now, click when handed over.
+            state = self.adapter.read_state()
+            return self.handover.enqueue(call, state.date, self.turn)
+        return self._apply(call)
+
+    def _apply(self, call: ActionCall) -> ActionResult:
         try:
             result = self.adapter.apply(call)
         except Exception as exc:  # noqa: BLE001 - an adapter fault must not end the run
@@ -141,6 +159,27 @@ class HOI4Env:
         if result.ok:
             self._track_directive(call)
         return result
+
+    def run_handover(self) -> HandoverReport | None:
+        """Run the queued actions if the player has granted a window.
+
+        Each is validated again at execution time -- the operator's whitelist
+        or the playset may not have changed, but the call was accepted a while
+        ago and this is the last point before input reaches the game.
+        """
+        if self.handover is None:
+            return None
+
+        def apply(call: ActionCall) -> ActionResult:
+            problem = registry.check(call, self.allowed_actions)
+            if problem is None and self.index is not None:
+                problem = self.index.check(call, self.adapter.read_state().country)
+            return problem if problem is not None else self._apply(call)
+
+        report = self.handover.run(self.adapter.read_state, apply)
+        if report is not None:
+            self._last_handover = report
+        return report
 
     def _track_directive(self, call: ActionCall) -> None:
         if call.name == "set_ai_directive":

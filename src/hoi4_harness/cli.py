@@ -64,6 +64,8 @@ def _config_from_args(args: argparse.Namespace) -> HarnessConfig:
         config.enforce_window_focus = False
     if getattr(args, "advisor", False):
         config.advisor = True
+    if getattr(args, "handover", False):
+        config.handover = True
     if getattr(args, "run_dir", None):
         config.run_dir = Path(args.run_dir)
     if getattr(args, "guidance", None):
@@ -187,6 +189,10 @@ def cmd_observe(args: argparse.Namespace) -> int:
 
 def cmd_play(args: argparse.Namespace) -> int:
     config = _config_from_args(args)
+    if config.handover and config.advisor:
+        print("play: --advisor never acts, so there is nothing to hand over; pick one",
+              file=sys.stderr)
+        return 2
     try:
         env = _env_from_config(config)
     except FileNotFoundError as exc:
@@ -312,6 +318,28 @@ def cmd_measure(args: argparse.Namespace) -> int:
             print(f"measure: no such transcript {path}", file=sys.stderr)
             return 1
     print(measure(path).render())
+    return 0
+
+
+def cmd_handover(args: argparse.Namespace) -> int:
+    """Grant (or take back) the keyboard for a running --handover session."""
+    from .handover import QUEUE_FILENAME, HandoverQueue
+
+    config = _config_from_args(args)
+    queue = HandoverQueue(config.run_dir)
+    if args.release:
+        queue._release()
+        print("control taken back: the harness stops before its next action")
+        return 0
+    pending = config.run_dir / QUEUE_FILENAME
+    if pending.exists():
+        items = json.loads(pending.read_text(encoding="utf-8"))
+        for item in items:
+            print(f"  #{item['position']} {item['action']} {json.dumps(item['arguments'])}")
+        if not items:
+            print("nothing queued")
+    queue.grant()
+    print(f"control handed over ({queue.grant_path}); the harness runs its queue at the next turn")
     return 0
 
 
@@ -465,6 +493,8 @@ def build_parser() -> argparse.ArgumentParser:
     play.add_argument("--turns", type=int)
     play.add_argument("--advisor", action="store_true",
                       help="recommend, never act: every tool call is shown to the player instead")
+    play.add_argument("--handover", action="store_true",
+                      help="co-op: queue every action until the player runs `hoi4-harness handover`")
     play.add_argument("--days", type=int, help="in-game days per turn")
     play.add_argument(
         "--resume",
@@ -518,6 +548,12 @@ def build_parser() -> argparse.ArgumentParser:
                            help="play a long measurement campaign first, then measure it "
                                 "(peacetime_1936_1939, wartime_1939_1941)")
     measure_p.set_defaults(func=cmd_measure)
+
+    handover = sub.add_parser("handover", help="hand the keyboard to a --handover session")
+    common(handover)
+    handover.add_argument("--release", action="store_true",
+                          help="take control back; queued actions stay queued")
+    handover.set_defaults(func=cmd_handover)
 
     index = sub.add_parser("index", help="list the countries and focuses a playset defines")
     common(index)

@@ -190,6 +190,10 @@ class HarnessConfig:
     # playing the same campaign, since being paused mid-battle by your own
     # tooling is worse than having no tooling.
     clock_owner: str = "harness"
+    # Co-op turn-taking: every action is queued and runs only when the player
+    # grants a window (handover.py). For playing alongside a person, not for
+    # scoring -- the eval runner refuses a handover run.
+    handover: bool = False
     country: str = "SWE"
     start_date: str = "1936-01-01"
     seed: int = 1936
@@ -230,6 +234,7 @@ class HarnessConfig:
             enforce_window_focus=_env_bool("HOI4_ENFORCE_WINDOW_FOCUS", True),
             operational_control=os.environ.get("HOI4_OPERATIONAL_CONTROL", "llm").strip(),
             clock_owner=os.environ.get("HOI4_CLOCK_OWNER", "harness").strip(),
+            handover=_env_bool("HOI4_HANDOVER", False),
             country=os.environ.get("HOI4_COUNTRY", "SWE"),
             start_date=os.environ.get("HOI4_START_DATE", "1936-01-01"),
             seed=_env_int("HOI4_SEED", 1936),

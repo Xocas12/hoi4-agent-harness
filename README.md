@@ -88,6 +88,11 @@ country ids are refused with the nearest real ones, the brief lists the focuses
 available now, and a total conversion is recorded as such — see
 [docs/playsets.md](docs/playsets.md).
 
+Playing alongside the model rather than watching it: `--advisor` (it recommends,
+you act), `--player-clock` (it never touches the clock) and `--handover` (its
+actions queue until you hand it the keyboard, and are re-checked before they
+run) — see [docs/co-op.md](docs/co-op.md).
+
 Also configurable: which actions exist at all (`--actions`, `--without`), whether
 the reflex layer runs (`--no-reflex` hands every decision to the model), whether
 the model is woken at all (`--no-llm` plays on reflexes alone — the baseline

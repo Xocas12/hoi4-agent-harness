@@ -64,6 +64,7 @@ you at run time.
 |---|---|
 | `adapter` | `mock`, `logtail`, `savegame`, `screen`, and `X+input` pairs |
 | `operational_control` | `llm` (model commands directly) or `ai` (native AI runs operations — see [hybrid-control.md](hybrid-control.md)) |
+| `handover`, `--handover`, `HOI4_HANDOVER` | co-op turn-taking: actions queue until the player runs `hoi4-harness handover` — see [co-op.md](co-op.md) |
 | `clock_owner`, `--player-clock` | `harness` (pauses and drives the clock) or `player` (never touches it — required when a person is playing the same campaign) |
 | `country`, `start_date`, `seed` | mock adapter start |
 | `log_path` / `HOI4_LOG_PATH` | `game.log`, for the logtail adapter |

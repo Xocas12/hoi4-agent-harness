@@ -206,6 +206,11 @@ class AgentLoop:
                 actions, turn_tokens = self._reflex_turn(decision.reason)
                 days_since_planner += self.config.days_per_turn
 
+            handover = self.env.run_handover()
+            if handover is not None:
+                self.transcript.write("handover", **handover.to_dict())
+                if self.progress:
+                    self.progress(handover.summary())
             state = self.env.advance()
             self.report.turns += 1
             self.report.end_date = state.date
