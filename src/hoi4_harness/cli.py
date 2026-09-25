@@ -103,6 +103,17 @@ def cmd_doctor(args: argparse.Namespace) -> int:
     print(f"clock owner      {config.clock_owner}")
     print(f"guidance         {config.system_prompt_path or config.guidance}")
     print(f"confirm gate     {config.require_confirmation}")
+    budget = config.budget
+    if config.planner_enabled and config.planner.provider != "scripted" and not (
+        budget.usd_per_m_input or budget.usd_per_m_output
+    ):
+        print("pricing          UNSET -- spend will read $0.00; set HOI4_USD_PER_M_INPUT/OUTPUT")
+    elif budget.usd_per_m_input or budget.usd_per_m_output:
+        cached = budget.usd_per_m_cached_input
+        print(
+            f"pricing          ${budget.usd_per_m_input}/M in, ${budget.usd_per_m_output}/M out, "
+            + (f"${cached}/M cache read" if cached is not None else "cache reads at the input rate")
+        )
 
     for module, extra in (
         ("anthropic", "anthropic"),

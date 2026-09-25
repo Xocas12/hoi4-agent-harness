@@ -22,7 +22,6 @@ you at run time.
 | Endpoint | `--base-url`, `HOI4_LLM_BASE_URL` | Ollama, vLLM, LM Studio, OpenRouter, ... |
 | Reasoning effort | `--effort`, `HOI4_LLM_EFFORT` | where supported |
 | Max tokens, temperature | `HOI4_LLM_MAX_TOKENS`, `HOI4_LLM_TEMPERATURE` | |
-| Triage model | `HOI4_TRIAGE_*` | the cheap second role |
 
 ### What the model is told
 
@@ -56,7 +55,8 @@ you at run time.
 | `reflex_enabled` | `--no-reflex` makes the model decide everything, including the boring parts |
 | `full_brief_every` | turns between full briefs; the rest are deltas |
 | `budget.max_usd`, `max_llm_calls`, `max_input_tokens`, `max_output_tokens` | hard ceilings; on exhaustion the run drops to reflex rather than stopping |
-| `budget.usd_per_m_input` / `usd_per_m_output` | your price sheet, so the run reports real money |
+| `budget.usd_per_m_input` / `usd_per_m_output` | your price sheet, so the run reports real money; `doctor` warns when a real provider runs unpriced |
+| `budget.usd_per_m_cached_input` / `usd_per_m_cache_write` | cache reads and writes at their own rates; unset, they bill at the input rate — see [cost-and-timing.md](cost-and-timing.md#what-is-counted-where) |
 
 ### The game
 

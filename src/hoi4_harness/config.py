@@ -90,6 +90,12 @@ class BudgetConfig:
     max_usd: float | None = None
     usd_per_m_input: float = 0.0         # set from your provider's price sheet
     usd_per_m_output: float = 0.0
+    #: Cache reads and cache writes, per million. None bills them at the input
+    #: rate -- which overstates a cached run, so set them when you set the rest.
+    #: Typical ratios to the input rate: reads 0.1x (Anthropic), 0.25-0.5x
+    #: (OpenAI, Gemini); writes 1.25x (Anthropic 5-minute cache), none elsewhere.
+    usd_per_m_cached_input: float | None = None
+    usd_per_m_cache_write: float | None = None
 
     @classmethod
     def from_env(cls) -> BudgetConfig:
@@ -100,6 +106,8 @@ class BudgetConfig:
             max_usd=_env_float("HOI4_MAX_USD"),
             usd_per_m_input=_env_float("HOI4_USD_PER_M_INPUT", 0.0) or 0.0,
             usd_per_m_output=_env_float("HOI4_USD_PER_M_OUTPUT", 0.0) or 0.0,
+            usd_per_m_cached_input=_env_float("HOI4_USD_PER_M_CACHED_INPUT"),
+            usd_per_m_cache_write=_env_float("HOI4_USD_PER_M_CACHE_WRITE"),
         )
 
 

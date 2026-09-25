@@ -148,6 +148,33 @@ mid-tier model it is cents; on a local model behind an OpenAI-compatible endpoin
 it is electricity. Set `--max-usd` and the harness enforces it — on exhaustion the
 run does not stop, it drops to the reflex layer and keeps playing for free.
 
+## What is counted where
+
+Providers disagree about what their own usage fields mean, so each provider maps
+onto one definition (`Usage` in `agent/llm/base.py`) and the budget prices that:
+
+| | Anthropic | OpenAI / compatible | Gemini |
+|---|---|---|---|
+| `input_tokens` = all billed input | `input_tokens` + `cache_read_input_tokens` + `cache_creation_input_tokens` | `prompt_tokens` (already includes cached) | `prompt_token_count` (already includes cached) |
+| `cached_input_tokens` | `cache_read_input_tokens` | `prompt_tokens_details.cached_tokens` (often absent on local endpoints: reads as 0) | `cached_content_token_count` |
+| `cache_write_input_tokens` | `cache_creation_input_tokens` | 0 — caching is implicit | 0 — implicit caching |
+| `output_tokens`, reasoning included | `output_tokens` | `completion_tokens` | `candidates_token_count` + `thoughts_token_count` |
+
+Two of those were wrong until they were written down. Anthropic's
+`input_tokens` is only the uncached remainder, so a run's input total was short
+by its whole cached prefix and cache writes were never counted at all. Gemini's
+`candidates_token_count` leaves out thinking, which bills as output.
+
+Dollars are then `uncached × input rate + cache reads × cached rate + cache
+writes × write rate + output × output rate`. The cached and write rates default
+to the input rate — overstating a cached run rather than calling its prefix
+free — so set all four from the price sheet (`HOI4_USD_PER_M_*`, or `budget.*`
+in a profile). `doctor` warns when a real provider would run unpriced, since
+`$0.00` then means "nobody set a rate", not "free".
+
+Not yet done: checking a real run's reported spend against a provider's own
+usage dashboard. That needs a key and a run, and is the remaining half of #23.
+
 ## What would break this
 
 Honest failure modes, since they decide whether the numbers above survive contact:
