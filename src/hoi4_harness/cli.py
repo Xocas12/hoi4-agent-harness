@@ -413,6 +413,22 @@ def cmd_experiment(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_save_inspect(args: argparse.Namespace) -> int:
+    """Show what a real save contains, so the save mapping is written from the file."""
+    from .adapters.savegame import find_save_dir, inspect, latest_save
+
+    config = _config_from_args(args)
+    path = Path(args.save) if args.save else None
+    if path is None:
+        save_dir = find_save_dir(config.save_dir)
+        path = latest_save(save_dir) if save_dir else None
+    if path is None or not path.exists():
+        print("save-inspect: no save found; pass a path or set HOI4_SAVE_DIR", file=sys.stderr)
+        return 1
+    print(inspect(path))
+    return 0
+
+
 def cmd_prompt(args: argparse.Namespace) -> int:
     """Print the exact system prompt a run would use. Nothing is hidden."""
     from .agent.prompts import build_system
@@ -597,6 +613,14 @@ def build_parser() -> argparse.ArgumentParser:
     handover.add_argument("--release", action="store_true",
                           help="take control back; queued actions stay queued")
     handover.set_defaults(func=cmd_handover)
+
+    save_inspect = sub.add_parser(
+        "save-inspect", help="list what a save contains, for mapping it to game state"
+    )
+    common(save_inspect)
+    save_inspect.add_argument("save", nargs="?", metavar="PATH",
+                              help="a .hoi4 text save (default: the newest in the save folder)")
+    save_inspect.set_defaults(func=cmd_save_inspect)
 
     index = sub.add_parser("index", help="list the countries and focuses a playset defines")
     common(index)

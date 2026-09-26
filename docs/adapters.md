@@ -56,14 +56,33 @@ A path you supply explicitly is used or it fails — discovery never runs as a
 fallback, because searching on after you named a directory would mean reading a
 different campaign than the one you pointed at.
 
-## savegame — parser done, mapping TODO
+## savegame — parser and targeted reading done, field mapping needs a real save
 
 Reads the most recent `*.hoi4` autosave. `parse_clausewitz()` handles Paradox's
 `key=value` / `key={...}` text format including repeated keys.
 
-What is left is the mapping from parsed blocks to `GameState`, which has to be
-verified against a real save rather than guessed — block names have moved between
-patches. The three TODOs are marked in `_to_state`.
+A save is 68–96 MB on the machine this was checked on, so the adapter no longer
+tokenizes all of it. A text save writes its top level at column 0, so
+`top_level_spans()` finds each top-level entry without parsing, `extract()`
+parses only the entries asked for, and `country_block()` cuts out the player's
+own block. On a synthetic 53 MB save that is 0.6 s against 11.8 s for a full
+parse. When the layout does not show a key (a save on one line), it falls back
+to the full parse rather than reporting the key absent.
+
+What is left is the mapping from the player's block to `GameState`, which has to
+be verified against a real save rather than guessed — block names have moved
+between patches. So the adapter reads the date and the player and puts the
+player's parsed block in `state.raw["country"]`, and declares everything else
+unknown until each field is checked. To do that work from the file rather than
+from memory:
+
+```bash
+hoi4-harness save-inspect                   # newest save in HOI4_SAVE_DIR
+hoi4-harness save-inspect path/to/save.hoi4
+```
+
+prints the top-level entries by size and the player country's keys with a sample
+of each value — the input for writing `_to_state`, one verified field at a time.
 
 Constraints: non-ironman text saves only (ironman is binary and compressed); a
 save is a snapshot, so pair it with a short autosave interval; read-only, so
