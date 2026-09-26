@@ -128,3 +128,15 @@ def test_the_handover_command_grants_and_releases(tmp_path, capsys):
 
 def test_handover_and_advisor_together_are_refused(tmp_path, capsys):
     assert main(["play", "--handover", "--advisor", "--run-dir", str(tmp_path)]) == 2
+
+
+def test_the_same_action_asked_for_again_is_queued_once(tmp_path):
+    """A reflex asks for the same thing every turn the queue waits; it must run once."""
+    env = _env(tmp_path)
+    call = ActionCall("queue_construction", {"building": "civilian_factory", "state": "capital",
+                                              "count": 2})
+    first = env.act(call)
+    again = env.act(ActionCall(call.name, dict(call.arguments)))
+    assert first.changed["queued"] == again.changed["queued"] == 1
+    assert "Already queued as #1" in again.message
+    assert len(env.handover.pending) == 1

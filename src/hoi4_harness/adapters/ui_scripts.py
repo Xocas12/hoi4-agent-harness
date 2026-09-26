@@ -232,7 +232,11 @@ def verify(
 ) -> Outcome:
     """Poll the reader until the action's consequence shows up, or say why not."""
     after = read_state()
-    unseen = [name for name in NEEDS[call.name] if not after.known(name)]
+    needs = list(NEEDS[call.name])
+    if call.name == "set_ai_posture" and call.arguments.get("theater"):
+        # A theater-scoped posture is proved by the per-theater map, not the global one.
+        needs.append("theater_postures")
+    unseen = [name for name in needs if not after.known(name)]
     if unseen:
         return Outcome(False, "unverified", (
             f"input sent, but the reader cannot see {', '.join(unseen)}, so the change could not "

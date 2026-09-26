@@ -229,6 +229,14 @@ class SaveGameAdapter(GameAdapter):
             "fronts",
             "wars",
             "completed_focuses",
+            # Not read from the save either. Reported unknown so nothing -- the
+            # wake rules, the input driver's verification -- mistakes an empty
+            # default for "no focus running" or "no directive standing".
+            "national_focus",
+            "delegated_armies",
+            "ai_directives",
+            "posture",
+            "theater_postures",
         ]
         return state
 

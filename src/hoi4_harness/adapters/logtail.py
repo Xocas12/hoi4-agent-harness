@@ -61,6 +61,8 @@ NOT_EMITTED = [
     # Hybrid control: the mod raises flags but reports only posture changes, as
     # events. Posture becomes known the first time one arrives.
     "posture", "ai_directives", "delegated_armies",
+    # Posture events are global; nothing reports a per-theater posture.
+    "theater_postures",
 ]
 
 #: Events that say what the AI's posture now is.
@@ -238,6 +240,19 @@ class LogTailAdapter(GameAdapter):
             )
         self._state.events = list(self._pending)
         self._pending = []
+        return self._state
+
+    def peek_state(self) -> GameState:
+        """The state now, without draining pending events.
+
+        For the input driver's verification polling: an extra read there must
+        not swallow a war declaration before the loop's own read, which is what
+        decides whether to wake the planner.
+        """
+        self.poll()
+        if not self._seen_any:
+            raise RuntimeError("game.log has no LLM Bridge telemetry yet.")
+        self._state.events = list(self._pending)
         return self._state
 
     def apply(self, call: ActionCall) -> ActionResult:

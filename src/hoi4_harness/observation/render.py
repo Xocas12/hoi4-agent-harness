@@ -59,8 +59,12 @@ def render_full(state: GameState, max_events: int = 6, max_fronts: int = 3) -> s
 
     if state.national_focus:
         lines.append(f"Focus: {state.national_focus} ({state.focus_days_remaining}d left)")
-    else:
+    elif state.known("national_focus"):
         lines.append("Focus: NONE SELECTED")
+    else:
+        # Shouting NONE SELECTED for a field the adapter cannot see sends the
+        # model to start a focus that may already be running.
+        lines.append("Focus: unknown")
 
     busy = [s for s in state.research if s.technology]
     free = len(state.research) - len(busy)

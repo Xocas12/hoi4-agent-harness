@@ -267,3 +267,49 @@ def test_the_log_reader_learns_posture_from_the_mods_events(tmp_path):
     with log.open("a") as handle:
         handle.write("[x]: LLMB|v1|evt|tag=SWE|kind=12\n")
     assert reader.read_state().posture is None
+
+
+def test_verification_polling_does_not_drain_the_events_the_wake_rule_needs(tmp_path):
+    from hoi4_harness.adapters.logtail import LogTailAdapter
+
+    log = tmp_path / "game.log"
+    log.write_text("[x]: LLMB|v1|state|date=1936.1.1|tag=SWE|pp=1|stab=50|ws=10\n"
+                   "[x]: LLMB|v1|evt|tag=SWE|kind=1|detail=war\n")
+    reader = LogTailAdapter(log)
+    writer = InputDriverAdapter(dry_run=True)
+    CompositeAdapter(reader, writer)
+    writer._read_state()                       # what verification polling does
+    writer._read_state()
+    assert [e.kind for e in reader.read_state().events] == ["war_declared"]
+
+
+def test_an_unobservable_focus_is_not_shouted_as_none_selected():
+    from hoi4_harness.observation import render_full
+
+    assert "Focus: unknown" in render_full(GameState(unknown_fields=["national_focus"]))
+    assert "NONE SELECTED" in render_full(GameState())
+
+
+def test_a_theater_posture_through_the_log_reader_is_unverified(tmp_path):
+    from hoi4_harness.adapters.logtail import LogTailAdapter
+
+    log = tmp_path / "game.log"
+    log.write_text("[x]: LLMB|v1|state|date=1936.1.1|tag=SWE|pp=1|stab=50|ws=10\n"
+                   "[x]: LLMB|v1|evt|tag=SWE|kind=10\n")
+    driver = InputDriverAdapter(
+        InputConfig(coordinates={"p": (1, 1)}), dry_run=False,
+        focus_check=lambda t: FocusCheck(True, "Hearts of Iron IV"),
+        scripts={"set_ai_posture": parse_steps([{"click": "p"}])},
+        read_state=LogTailAdapter(log).peek_state, sleep=lambda s: None, gui=FakeGui(),
+    )
+    result = driver.apply(ActionCall("set_ai_posture", {"posture": "offensive", "theater": "east"}))
+    assert result.error_kind == "unverified" and "theater_postures" in result.message
+
+
+def test_the_save_reader_does_not_claim_fields_it_never_reads(tmp_path):
+    from hoi4_harness.adapters.savegame import SaveGameAdapter
+
+    (tmp_path / "a.hoi4").write_text('date="1936.1.1.12"\nplayer="SWE"\n')
+    state = SaveGameAdapter(tmp_path).read_state()
+    for name in ("national_focus", "posture", "ai_directives", "delegated_armies"):
+        assert not state.known(name)

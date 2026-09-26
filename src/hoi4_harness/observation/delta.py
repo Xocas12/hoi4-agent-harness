@@ -48,7 +48,7 @@ def render_delta(previous: GameState, current: GameState) -> str:
         if abs(after - before) >= threshold:
             lines.append(f"{label}: {_fmt(field, before)} -> {_fmt(field, after)}")
 
-    if previous.national_focus != current.national_focus:
+    if previous.national_focus != current.national_focus and current.known("national_focus"):
         was = previous.national_focus or "none"
         now = current.national_focus or "NONE SELECTED"
         lines.append(f"Focus: {was} -> {now}")

@@ -129,6 +129,21 @@ class HandoverQueue:
     # --- queueing -------------------------------------------------------------
 
     def enqueue(self, call: ActionCall, date: str, turn: int) -> ActionResult:
+        # A queued action changes nothing until the window opens, so whatever
+        # asked for it (a reflex, most often) asks again next turn. Queue it
+        # once: running the same call N times is not what anyone decided.
+        for entry in self.pending:
+            if entry.call.name == call.name and entry.call.arguments == call.arguments:
+                return ActionResult(
+                    ok=True,
+                    action=call.name,
+                    call_id=call.call_id,
+                    message=(
+                        f"Already queued as #{entry.position} for the player's next handover. "
+                        "NOT done yet. Do not plan as if it had happened."
+                    ),
+                    changed={"queued": entry.position, "executed": False},
+                )
         entry = Pending(call=call, queued_on=date, queued_turn=turn, position=self._next)
         self._next += 1
         self.pending.append(entry)
