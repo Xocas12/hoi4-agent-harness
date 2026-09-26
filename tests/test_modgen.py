@@ -34,7 +34,10 @@ def test_raising_a_directive_sets_the_flag_for_the_selected_target_only():
     effects = _files()["common/scripted_effects/llm_bridge_targets.txt"]
     raise_protect = re.search(r"llm_bridge_raise_protect = \{(.*?)\n\}", effects, flags=re.S).group(1)
     assert ("if = { limit = { has_country_flag = llmb_target_POL } "
-            "set_country_flag = llmb_protect_POL }") in raise_protect
+            "set_country_flag = llmb_protect_POL ") in raise_protect
+    # ...and says so in a literal line the log reader can rebuild directives from.
+    assert '|kind=14|detail=protect POL" }' in raise_protect
+    assert "llm_bridge_emit_event" not in raise_protect
     select_pol = re.search(r"llm_bridge_select_POL = \{(.*?)\n\}", effects, flags=re.S).group(1)
     # Selecting a target clears the previous one, so two clicks cannot raise
     # a directive against the wrong country.
@@ -71,3 +74,23 @@ def test_the_cli_regenerates_for_a_playset_and_checks_drift(tmp_path, capsys):
     assert "stale:" in capsys.readouterr().err
     loc = tmp_path / "localisation" / "english" / "llm_bridge_targets_l_english.yml"
     assert loc.read_bytes().startswith(b"\xef\xbb\xbf")
+
+
+def test_the_log_reader_rebuilds_standing_directives_from_the_generated_lines(tmp_path):
+    from hoi4_harness.adapters.logtail import LogTailAdapter
+
+    raise_protect = re.search(r"llm_bridge_raise_protect = \{(.*?)\n\}",
+                              _files()["common/scripted_effects/llm_bridge_targets.txt"],
+                              flags=re.S).group(1)
+    line = re.search(r'log = "(.*?)"', raise_protect).group(1).replace("[ROOT.GetTag]", "SWE")
+    log = tmp_path / "game.log"
+    log.write_text("[x]: LLMB|v1|state|date=1936.1.1|tag=SWE|pp=1|stab=50|ws=10\n")
+    reader = LogTailAdapter(log)
+    assert not reader.read_state().known("ai_directives")
+    with log.open("a") as handle:
+        handle.write(f"[x]: {line}\n")
+    state = reader.read_state()
+    assert state.known("ai_directives") and state.ai_directives == ["protect FIN"]
+    with log.open("a") as handle:
+        handle.write("[x]: LLMB|v1|evt|tag=SWE|kind=12\n")
+    assert reader.read_state().ai_directives == []

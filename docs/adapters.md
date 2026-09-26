@@ -165,10 +165,13 @@ calibrated coordinate, and a scripts file naming an action with no verification
 refused at load time.
 
 Through the log-tail reader, posture is observable — the mod emits an event when
-it changes, and the reader tracks it from the first one — but standing
-directives and delegated armies are not: the mod does not report them. Those
-actions come back `unverified` there, which is the honest answer until the mod
-emits them. An action
+it changes, and the reader tracks it from the first one. So are standing
+directives: each generated per-target branch logs its own literal line
+(`kind=14|detail=protect POL`, no variable to expand), and the reader rebuilds
+the list from those and resets it on stand-down. Directives raised before the
+harness started reading are missing until the next stand-down; a raise it saw
+never is. Delegated armies are not reported by the mod, so delegation comes
+back `unverified` there — the honest answer until the mod emits it. An action
 with no recorded script is refused, as before.
 
 To set one up: copy [`profiles/ui_scripts.example.json`](../profiles/ui_scripts.example.json)

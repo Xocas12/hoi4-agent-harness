@@ -30,6 +30,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from .actions.catalog import AI_DIRECTIVES
+from .adapters.logtail import SCHEMA_VERSION
 
 #: The countries a vanilla campaign most plausibly names in a directive.
 DEFAULT_TAGS = (
@@ -149,16 +150,17 @@ def _effects(tags: tuple[str, ...]) -> str:
     for directive in AI_DIRECTIVES:
         out.append(f"llm_bridge_raise_{directive} = {{")
         for tag in tags:
+            # Each branch logs its own literal line, so the directive and its
+            # target reach the harness without a variable that has to expand:
+            # the log reader rebuilds the standing directives from these, which
+            # is what lets set_ai_directive be verified rather than assumed.
             out.append(
                 f"\tif = {{ limit = {{ has_country_flag = llmb_target_{tag} }} "
-                f"set_country_flag = llmb_{directive}_{tag} }}"
+                f"set_country_flag = llmb_{directive}_{tag} "
+                f'log = "LLMB|v{SCHEMA_VERSION}|evt|tag=[ROOT.GetTag]|kind={EVENT_DIRECTIVE_RAISED}'
+                f'|detail={directive} {tag}" }}'
             )
-        out += [
-            f"\tset_variable = {{ llmb_event_kind = {EVENT_DIRECTIVE_RAISED} }}",
-            "\tllm_bridge_emit_event = yes",
-            "}",
-            "",
-        ]
+        out += ["}", ""]
     out.append("llm_bridge_clear_target_directives = {")
     for directive in AI_DIRECTIVES:
         out += [f"\tclr_country_flag = llmb_{directive}_{tag}" for tag in tags]

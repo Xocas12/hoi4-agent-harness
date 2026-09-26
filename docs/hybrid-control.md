@@ -139,8 +139,9 @@ Built but unverified in a live game: per-target directive blocks (see
 [Targets](#targets)), and verified input-driver scripts for all four hybrid
 actions (delegation, posture, directive, stand down) whose click paths still
 have to be recorded against a real game ([adapters.md](adapters.md#ui-scripts-act-then-prove-it)).
-Not built: the mod reporting delegated armies and standing directives, so
-through the log reader those two stay unverified; and
+Not built: the mod reporting delegated armies, so through the log reader
+delegation stays unverified (standing directives are reported, as literal log
+lines from the generated branches); and
 theater-scoped posture inside the mod (the harness side and the mock are built;
 see [Theaters](#theaters)).
 

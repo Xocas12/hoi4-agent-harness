@@ -222,6 +222,21 @@ class LogTailAdapter(GameAdapter):
                 state.posture = POSTURE_EVENTS.get(event_kind)
                 if "posture" in state.unknown_fields:
                     state.unknown_fields.remove("posture")
+            if event_kind == "directives_cleared":
+                # Standing down clears every directive: from here on the list is
+                # complete, not just what has been seen.
+                state.ai_directives = []
+                if "ai_directives" in state.unknown_fields:
+                    state.unknown_fields.remove("ai_directives")
+            elif event_kind == "directive_raised":
+                # Each raise logs "<directive> <TAG>" as a literal. Directives
+                # raised before the harness started reading are not in this list
+                # until a stand-down resets it; a raise it did see always is.
+                entry = fields.get("detail", "").strip()
+                if entry and entry not in state.ai_directives:
+                    state.ai_directives.append(entry)
+                if "ai_directives" in state.unknown_fields:
+                    state.unknown_fields.remove("ai_directives")
             self._pending.append(
                 GameEvent(
                     kind=event_kind,
