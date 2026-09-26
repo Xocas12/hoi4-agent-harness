@@ -30,6 +30,10 @@ class CompositeAdapter(GameAdapter):
         self.clock_owner = clock_owner
         self.poll_seconds = poll_seconds
         self.supported_actions = writer.supported_actions
+        # A writer that verifies what it did needs to see the game; the reader
+        # is the only thing here that can.
+        if hasattr(writer, "attach_reader"):
+            writer.attach_reader(reader.read_state)
 
     @property
     def owns_clock(self) -> bool:

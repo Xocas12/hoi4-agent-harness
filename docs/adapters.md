@@ -82,7 +82,7 @@ works on ironman and the only one that sees alerts and the map — and the most
 expensive per observation, so it is for what numbers cannot express, not for
 routine ticks.
 
-## input_driver — mechanics done, per-action scripts TODO
+## input_driver — mechanics and verification done, click paths recorded per install
 
 The write side. Hotkeys (`HOTKEYS`) are preferred over coordinates because they
 survive resolution and UI-scale changes; coordinates live in a calibration dict,
@@ -102,10 +102,51 @@ A platform with no implemented check reports **unsupported** and refuses, rather
 than passing. A guard that always returns true is worse than no guard, because it
 gets trusted. `--no-window-guard` is the deliberate opt-out.
 
-The open work is one UI script per action, each ending in a verify step: act,
-re-read, confirm the state actually changed. A blind click is unverifiable, and
-an unverified action reported as success is the worst failure mode in this whole
-design.
+### UI scripts: act, then prove it
+
+A blind click is unverifiable, and an unverified action reported as success is
+the worst failure mode in this whole design. So a scripted action has two halves,
+kept apart on purpose ([`ui_scripts.py`](../src/hoi4_harness/adapters/ui_scripts.py)):
+
+- **The click path** is data. It depends on the game version, the UI scale and
+  your layout, so — like coordinates — it lives in a file you record against
+  your own game, `<run-dir>/ui_scripts.json` (or `HOI4_UI_SCRIPTS`). Steps are
+  `press`, `click` (a calibrated target), `type` and `wait`, and may carry
+  `{placeholders}` filled from the action's arguments:
+
+  ```json
+  {"schema": 1, "scripts": {"set_national_focus": [
+    {"press": "f"}, {"click": "focus.search"}, {"type": "{focus_id}"},
+    {"click": "focus.first_result"}, {"press": "escape"}]}}
+  ```
+
+- **The verification** is code, because it does not depend on the UI: a started
+  focus is running, a researched technology is in a slot, a queued building
+  lengthens the queue by `count`, a production line has the factories asked for,
+  and a hired advisor costs political power (weak, since no adapter reports
+  advisors, and said so).
+
+After the steps, the driver re-reads the game through the reader it is composed
+with and polls until the verification passes or a timeout expires. The result is
+one of:
+
+| Outcome | When |
+|---|---|
+| ok, "done and verified" | the consequence showed up |
+| `rejected`, "input sent but the game did not change: …" | it did not — the UI was not where the script expected |
+| `unverified` | the reader cannot see the field that would prove it (the log-tail bridge does not emit the focus yet); treat it as not done |
+| `not_executed` | dry run: the path is logged, nothing is sent |
+
+A script is refused before any input is sent when a click target has no
+calibrated coordinate, and a scripts file naming an action with no verification
+(anything outside the five peacetime actions) is refused at load time. An action
+with no recorded script is refused, as before.
+
+To set one up: copy [`profiles/ui_scripts.example.json`](../profiles/ui_scripts.example.json)
+— a template whose paths are guesses at the UI, to be checked step by step — to
+your run directory, fix it against what you see, then run `hoi4-harness
+calibrate`, which now walks the targets your scripts click. `calibration.json`
+in the run directory (or `HOI4_CALIBRATION`) is loaded automatically.
 
 ## composite
 

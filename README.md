@@ -189,7 +189,7 @@ verification checklist: [docs/mod-bridge.md](docs/mod-bridge.md).
 | Gemini provider | Written; the SDK surface moves — check this first if it fails |
 | Save-file adapter | Clausewitz parser works; state mapping is TODO |
 | Screen adapter | Capture works; vision→state is TODO |
-| Input driver | Hotkeys and clicks work; per-action UI scripts are TODO |
+| Input driver | Hotkeys, clicks and typing work; verified UI scripts for the five peacetime actions, click paths recorded per install (unrecorded in-game) |
 
 Nothing that is a stub pretends otherwise at runtime: an adapter that cannot
 perform an action refuses it, and a field it cannot read renders as `unknown`

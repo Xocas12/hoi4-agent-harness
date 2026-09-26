@@ -182,6 +182,10 @@ class HarnessConfig:
     save_dir: Path | None = None
     log_path: Path | None = None          # game.log, for the logtail adapter
     window_title: str = "Hearts of Iron IV"
+    # The input driver's recorded click paths and screen coordinates. Default:
+    # ui_scripts.json and calibration.json in run_dir, when they exist.
+    ui_scripts_path: Path | None = None
+    calibration_path: Path | None = None
     # Refuse to send input unless the game is the focused window. Turning
     # this off is an explicit choice to let keystrokes land wherever they land.
     enforce_window_focus: bool = True
@@ -234,6 +238,10 @@ class HarnessConfig:
             save_dir=Path(save_dir) if save_dir else None,
             log_path=Path(log_path) if log_path else None,
             window_title=os.environ.get("HOI4_WINDOW_TITLE", "Hearts of Iron IV"),
+            ui_scripts_path=(Path(os.environ["HOI4_UI_SCRIPTS"])
+                             if os.environ.get("HOI4_UI_SCRIPTS") else None),
+            calibration_path=(Path(os.environ["HOI4_CALIBRATION"])
+                              if os.environ.get("HOI4_CALIBRATION") else None),
             enforce_window_focus=_env_bool("HOI4_ENFORCE_WINDOW_FOCUS", True),
             operational_control=os.environ.get("HOI4_OPERATIONAL_CONTROL", "llm").strip(),
             clock_owner=os.environ.get("HOI4_CLOCK_OWNER", "harness").strip(),
@@ -276,7 +284,8 @@ class HarnessConfig:
             elif key == "budget" and isinstance(value, dict):
                 for sub_key, sub_value in value.items():
                     setattr(self.budget, sub_key, sub_value)
-            elif key in {"run_dir", "save_dir", "system_prompt_path", "game_dir"} and value is not None:
+            elif key in {"run_dir", "save_dir", "system_prompt_path", "game_dir", "ui_scripts_path",
+                         "calibration_path"} and value is not None:
                 setattr(self, key, Path(value))
             elif key == "mod_dirs":
                 self.mod_dirs = [Path(v) for v in value]

@@ -428,12 +428,31 @@ def cmd_prompt(args: argparse.Namespace) -> int:
     return 0
 
 
+def calibration_targets(config: HarnessConfig) -> list[str]:
+    """What to calibrate when the operator names nothing: every concrete target
+    the recorded UI scripts click, else the default panel list. A templated
+    target ('construction.{building}') cannot be aimed at, so it is reported
+    and left for the operator to name per value."""
+    from .adapters.ui_scripts import DEFAULT_FILENAME as SCRIPTS_FILENAME
+    from .adapters.ui_scripts import load_scripts, targets_in
+
+    path = config.ui_scripts_path or config.run_dir / SCRIPTS_FILENAME
+    if not Path(path).exists():
+        return list(DEFAULT_TARGETS)
+    targets = targets_in(load_scripts(path))
+    templated = [t for t in targets if "{" in t]
+    for target in templated:
+        print(f"note: {target} depends on the action's arguments; calibrate each value by name",
+              file=sys.stderr)
+    return [t for t in targets if "{" not in t] or list(DEFAULT_TARGETS)
+
+
 def cmd_calibrate(args: argparse.Namespace) -> int:
     from .calibration import capture_calibration, save_calibration
 
     config = _config_from_args(args)
     out = Path(args.out) if args.out else config.run_dir / DEFAULT_FILENAME
-    targets = args.targets or DEFAULT_TARGETS
+    targets = args.targets or calibration_targets(config)
     try:
         calibration = capture_calibration(targets)
     except RuntimeError as exc:  # most likely the missing 'input' extra; report, don't crash
