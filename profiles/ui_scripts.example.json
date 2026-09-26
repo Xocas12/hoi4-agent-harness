@@ -37,6 +37,27 @@
       {"press": "enter"},
       {"press": "escape"}
     ],
+    "set_ai_directive": [
+      {"click": "decisions.tab"},
+      {"click": "decisions.target.{target}"},
+      {"click": "decisions.directive.{directive}"},
+      {"press": "escape"}
+    ],
+    "set_ai_posture": [
+      {"click": "decisions.tab"},
+      {"click": "decisions.posture.{posture}"},
+      {"press": "escape"}
+    ],
+    "clear_ai_directives": [
+      {"click": "decisions.tab"},
+      {"click": "decisions.clear_directives"},
+      {"press": "escape"}
+    ],
+    "delegate_army_to_ai": [
+      {"click": "army.{army}"},
+      {"click": "army.ai_control_toggle"},
+      {"press": "escape"}
+    ],
     "hire_advisor": [
       {"click": "politics.tab"},
       {"click": "politics.advisor.{advisor_id}"},

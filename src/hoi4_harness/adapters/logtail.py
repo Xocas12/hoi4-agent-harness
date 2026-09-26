@@ -58,7 +58,13 @@ FIELDS = {
 NOT_EMITTED = [
     "research", "production", "construction", "fronts", "wars", "national_focus",
     "completed_focuses",
+    # Hybrid control: the mod raises flags but reports only posture changes, as
+    # events. Posture becomes known the first time one arrives.
+    "posture", "ai_directives", "delegated_armies",
 ]
+
+#: Events that say what the AI's posture now is.
+POSTURE_EVENTS = {"posture_defensive": "defensive", "posture_offensive": "offensive"}
 
 
 def find_log(explicit: Path | None = None) -> Path | None:
@@ -210,6 +216,10 @@ class LogTailAdapter(GameAdapter):
         elif kind == "evt":
             code = fields.get("kind", "")
             event_kind, severity = EVENT_CODES.get(code, (code or "unknown", "info"))
+            if event_kind in POSTURE_EVENTS or event_kind == "directives_cleared":
+                state.posture = POSTURE_EVENTS.get(event_kind)
+                if "posture" in state.unknown_fields:
+                    state.unknown_fields.remove("posture")
             self._pending.append(
                 GameEvent(
                     kind=event_kind,

@@ -136,8 +136,11 @@ layer, the `hybrid` guidance pack, state rendering for delegation and standing
 directives, and mock-adapter support so the whole path runs offline.
 
 Built but unverified in a live game: per-target directive blocks (see
-[Targets](#targets)). Not built: army-level delegation through the real UI, the
-input-driver script that clicks the two target decisions (#3), and
+[Targets](#targets)), and verified input-driver scripts for all four hybrid
+actions (delegation, posture, directive, stand down) whose click paths still
+have to be recorded against a real game ([adapters.md](adapters.md#ui-scripts-act-then-prove-it)).
+Not built: the mod reporting delegated armies and standing directives, so
+through the log reader those two stay unverified; and
 theater-scoped posture inside the mod (the harness side and the mock are built;
 see [Theaters](#theaters)).
 

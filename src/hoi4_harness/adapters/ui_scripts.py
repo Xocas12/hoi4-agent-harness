@@ -124,6 +124,10 @@ NEEDS = {
     "queue_construction": ("construction",),
     "set_production": ("production",),
     "hire_advisor": ("political_power",),
+    "delegate_army_to_ai": ("delegated_armies",),
+    "set_ai_posture": ("posture",),
+    "set_ai_directive": ("ai_directives",),
+    "clear_ai_directives": ("ai_directives", "posture"),
 }
 
 
@@ -165,12 +169,48 @@ def _verify_advisor(before: GameState, after: GameState, args: dict) -> str | No
     return "political power did not fall, so no advisor was hired"
 
 
+def _verify_delegation(before: GameState, after: GameState, args: dict) -> str | None:
+    army, delegate = args["army"], bool(args["delegate"])
+    held = army in after.delegated_armies or "all" in after.delegated_armies
+    if army == "all" and not delegate:
+        held = bool(after.delegated_armies)
+    if held == delegate:
+        return None
+    return f"{army} is {'still not' if delegate else 'still'} under AI control"
+
+
+def _verify_posture(before: GameState, after: GameState, args: dict) -> str | None:
+    theater = args.get("theater")
+    now = after.theater_postures.get(theater) if theater else after.posture
+    if now == args["posture"]:
+        return None
+    where = f" on {theater}" if theater else ""
+    return f"posture{where} is {now or 'default'}, not {args['posture']}"
+
+
+def _verify_directive(before: GameState, after: GameState, args: dict) -> str | None:
+    wanted = f"{args['directive']} {args['target']}"
+    if any(entry == wanted or entry.startswith(wanted + " ") for entry in after.ai_directives):
+        return None
+    return f"no standing directive '{wanted}'"
+
+
+def _verify_cleared(before: GameState, after: GameState, args: dict) -> str | None:
+    if not after.ai_directives and after.posture is None:
+        return None
+    return f"{len(after.ai_directives)} directive(s) and posture {after.posture} still stand"
+
+
 VERIFIERS: dict[str, Callable[[GameState, GameState, dict], str | None]] = {
     "set_national_focus": _verify_focus,
     "start_research": _verify_research,
     "queue_construction": _verify_construction,
     "set_production": _verify_production,
     "hire_advisor": _verify_advisor,
+    "delegate_army_to_ai": _verify_delegation,
+    "set_ai_posture": _verify_posture,
+    "set_ai_directive": _verify_directive,
+    "clear_ai_directives": _verify_cleared,
 }
 
 

@@ -124,7 +124,10 @@ kept apart on purpose ([`ui_scripts.py`](../src/hoi4_harness/adapters/ui_scripts
   focus is running, a researched technology is in a slot, a queued building
   lengthens the queue by `count`, a production line has the factories asked for,
   and a hired advisor costs political power (weak, since no adapter reports
-  advisors, and said so).
+  advisors, and said so). The hybrid actions verify the same way: an army is (or
+  is no longer) under AI control, the posture — global or on a theater — is the
+  one asked for, a directive stands for exactly the country named, and
+  standing down leaves no directive and no posture.
 
 After the steps, the driver re-reads the game through the reader it is composed
 with and polls until the verification passes or a timeout expires. The result is
@@ -139,7 +142,14 @@ one of:
 
 A script is refused before any input is sent when a click target has no
 calibrated coordinate, and a scripts file naming an action with no verification
-(anything outside the five peacetime actions) is refused at load time. An action
+(anything outside the five peacetime actions and the four hybrid ones) is
+refused at load time.
+
+Through the log-tail reader, posture is observable — the mod emits an event when
+it changes, and the reader tracks it from the first one — but standing
+directives and delegated armies are not: the mod does not report them. Those
+actions come back `unverified` there, which is the honest answer until the mod
+emits them. An action
 with no recorded script is refused, as before.
 
 To set one up: copy [`profiles/ui_scripts.example.json`](../profiles/ui_scripts.example.json)

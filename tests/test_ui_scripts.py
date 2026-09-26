@@ -207,3 +207,63 @@ def test_build_adapter_loads_scripts_from_the_run_dir(tmp_path):
     log.write_text("")
     adapter = build_adapter(HarnessConfig(adapter="logtail+input", run_dir=tmp_path, log_path=log))
     assert "set_national_focus" in adapter.supported_actions
+
+
+# --- the hybrid actions (#8) ---------------------------------------------------
+
+
+@pytest.mark.parametrize(("name", "args", "before", "after"), [
+    ("delegate_army_to_ai", {"army": "1st Army", "delegate": True},
+     GameState(), GameState(delegated_armies=["1st Army"])),
+    ("delegate_army_to_ai", {"army": "all", "delegate": False},
+     GameState(delegated_armies=["all"]), GameState()),
+    ("set_ai_posture", {"posture": "defensive"}, GameState(), GameState(posture="defensive")),
+    ("set_ai_posture", {"posture": "offensive", "theater": "east"},
+     GameState(), GameState(theater_postures={"east": "offensive"})),
+    ("set_ai_directive", {"directive": "protect", "target": "FIN"},
+     GameState(), GameState(ai_directives=["protect FIN (100)"])),
+    ("clear_ai_directives", {},
+     GameState(ai_directives=["protect FIN (100)"], posture="defensive"), GameState()),
+])
+def test_each_hybrid_verifier_accepts_the_change_and_rejects_its_absence(name, args, before, after):
+    assert VERIFIERS[name](before, after, args) is None
+    assert VERIFIERS[name](before, before, args) is not None
+
+
+def test_a_directive_for_the_wrong_country_does_not_verify():
+    after = GameState(ai_directives=["protect FINX (100)"])
+    assert VERIFIERS["set_ai_directive"](GameState(), after,
+                                         {"directive": "protect", "target": "FIN"})
+
+
+def test_delegation_through_the_log_reader_is_unverified_not_assumed(tmp_path):
+    from hoi4_harness.adapters.logtail import LogTailAdapter
+
+    log = tmp_path / "game.log"
+    log.write_text("[x]: LLMB|v1|state|date=1936.1.1|tag=SWE|pp=1|stab=50|ws=10\n")
+    reader = LogTailAdapter(log)
+    driver = InputDriverAdapter(
+        InputConfig(coordinates={"army.all": (1, 1), "army.ai_control_toggle": (2, 2)}),
+        dry_run=False, focus_check=lambda t: FocusCheck(True, "Hearts of Iron IV"),
+        scripts={"delegate_army_to_ai": parse_steps(
+            [{"click": "army.{army}"}, {"click": "army.ai_control_toggle"}])},
+        read_state=reader.read_state, sleep=lambda s: None, gui=FakeGui(),
+    )
+    result = driver.apply(ActionCall("delegate_army_to_ai", {"army": "all", "delegate": True}))
+    assert result.error_kind == "unverified" and "delegated_armies" in result.message
+
+
+def test_the_log_reader_learns_posture_from_the_mods_events(tmp_path):
+    from hoi4_harness.adapters.logtail import LogTailAdapter
+
+    log = tmp_path / "game.log"
+    log.write_text("[x]: LLMB|v1|state|date=1936.1.1|tag=SWE|pp=1|stab=50|ws=10\n")
+    reader = LogTailAdapter(log)
+    assert not reader.read_state().known("posture")
+    with log.open("a") as handle:
+        handle.write("[x]: LLMB|v1|evt|tag=SWE|kind=10\n")
+    state = reader.read_state()
+    assert state.known("posture") and state.posture == "defensive"
+    with log.open("a") as handle:
+        handle.write("[x]: LLMB|v1|evt|tag=SWE|kind=12\n")
+    assert reader.read_state().posture is None
