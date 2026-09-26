@@ -95,6 +95,8 @@ def _config_from_args(args: argparse.Namespace) -> HarnessConfig:
         config.seed = args.seed
     if getattr(args, "game_dir", None):
         config.game_dir = Path(args.game_dir)
+    if getattr(args, "log_path_arg", None):
+        config.log_path = Path(args.log_path_arg)
     if getattr(args, "mods", None):
         config.mod_dirs = [Path(m) for m in args.mods]
     return config
@@ -429,6 +431,33 @@ def cmd_save_inspect(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_verify_bridge(args: argparse.Namespace) -> int:
+    """Check the bridge mod's tokens against the install, and its telemetry against a log."""
+    from .adapters.logtail import find_log
+    from .bridge_check import check_log, check_tokens
+
+    config = _config_from_args(args)
+    checked, failed = 0, False
+    if config.game_dir is not None:
+        report = check_tokens(config.game_dir)
+        print(report.render())
+        checked += 1
+        failed |= not report.ok
+    log = find_log(config.log_path)
+    if log is not None and log.exists():
+        if checked:
+            print()
+        report = check_log(log)
+        print(report.render())
+        checked += 1
+        failed |= not report.ok
+    if not checked:
+        print("verify-bridge: give --game-dir (tokens) and/or HOI4_LOG_PATH (telemetry)",
+              file=sys.stderr)
+        return 2
+    return 1 if failed else 0
+
+
 def cmd_prompt(args: argparse.Namespace) -> int:
     """Print the exact system prompt a run would use. Nothing is hidden."""
     from .agent.prompts import build_system
@@ -613,6 +642,14 @@ def build_parser() -> argparse.ArgumentParser:
     handover.add_argument("--release", action="store_true",
                           help="take control back; queued actions stay queued")
     handover.set_defaults(func=cmd_handover)
+
+    verify_bridge = sub.add_parser(
+        "verify-bridge", help="check the mod's tokens against the install and a game.log"
+    )
+    common(verify_bridge)
+    verify_bridge.add_argument("--log", dest="log_path_arg", metavar="PATH",
+                               help="game.log to check (default: HOI4_LOG_PATH or discovery)")
+    verify_bridge.set_defaults(func=cmd_verify_bridge)
 
     save_inspect = sub.add_parser(
         "save-inspect", help="list what a save contains, for mapping it to game state"
