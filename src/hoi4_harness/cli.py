@@ -12,6 +12,11 @@
     hoi4-harness measure --campaign wartime_1939_1941   brief size and wake rate in a war
     hoi4-harness index --game-dir PATH      what countries and focuses a playset defines
     hoi4-harness experiment defensive_war   model-only vs AI-only vs hybrid, same seeds
+    hoi4-harness play --handover            co-op: queue actions until the player hands over
+    hoi4-harness handover                   hand the keyboard to a --handover session
+    hoi4-harness verify-bridge              check the mod's tokens against an install and a log
+    hoi4-harness save-inspect               what a save contains, for mapping it
+    hoi4-harness mod-directives --tags ...  regenerate the mod's per-target directives
 
 Everything defaults to the mock adapter and the scripted model, so a fresh clone
 does something useful with no API key and no game installed.

@@ -178,7 +178,7 @@ verification checklist: [docs/mod-bridge.md](docs/mod-bridge.md).
 | Mock adapter | Working, tested, deterministic |
 | Log-tail adapter (reads the mod's telemetry) | Working, tested |
 | Hybrid control vocabulary + mode switch | Working, tested; unproven as strategy |
-| LLM Bridge mod | Skeleton; structure CI-checked, script tokens need verifying in-game |
+| LLM Bridge mod | Skeleton; structure CI-checked, script tokens need verifying in-game (`verify-bridge` checks them against an install and a log) |
 | Eval runner + scenarios | Working, tested (6 scenarios, multi-seed, cross-model) |
 | Cost measurement (`measure`) | Working, tested; measured against the mock with a scripted planner |
 | Wartime brief + wake rules | Working, tested against synthetic and scripted wars; unmeasured in a real one |
@@ -187,7 +187,7 @@ verification checklist: [docs/mod-bridge.md](docs/mod-bridge.md).
 | Guidance packs + profiles | Working, tested (6 packs, 3 example profiles) |
 | Anthropic / OpenAI-compatible providers | Written, not yet run against a live key; conformance suite in `tests/live/` |
 | Gemini provider | Written; the SDK surface moves — check this first if it fails |
-| Save-file adapter | Clausewitz parser works; state mapping is TODO |
+| Save-file adapter | Parser and targeted block reading work; field mapping needs a real save (`save-inspect` shows what to map) |
 | Screen adapter | Capture works; vision→state is TODO |
 | Input driver | Hotkeys, clicks and typing work; verified UI scripts for the five peacetime actions, click paths recorded per install (unrecorded in-game) |
 
