@@ -96,8 +96,9 @@ run) — see [docs/co-op.md](docs/co-op.md).
 Also configurable: which actions exist at all (`--actions`, `--without`), whether
 the reflex layer runs (`--no-reflex` hands every decision to the model), whether
 the model is woken at all (`--no-llm` plays on reflexes alone — the baseline
-every score is reported against), whether irreversible actions are gated
-(`--allow-all`), the wake rules, the pacing, the budget ceilings, and the game
+every score is reported against), whether irreversible actions are gated and who
+answers for them (`--allow-all`, `--confirm`), the wake rules, the pacing, the
+budget ceilings, and the game
 start. Three worked profiles ship in [profiles/](profiles/). Full list:
 [docs/customization.md](docs/customization.md) and
 [docs/guidance.md](docs/guidance.md).

@@ -253,7 +253,7 @@ class AgentLoop:
         if not calls:
             self.transcript.write("skip", date=state.date, reason=reason)
             return [], 0
-        results = self.env.act_many(calls)
+        results = self.env.act_many(calls, state.date)
         self._tally(results)
         self.transcript.write(
             "reflex",
@@ -360,7 +360,14 @@ class AgentLoop:
             results: list[ToolResult] = []
             end_turn = False
             for call in response.tool_calls:
-                action = ActionCall(name=call.name, arguments=call.arguments, call_id=call.id)
+                # The model's prose for this round is its stated rationale; a
+                # human asked to approve an irreversible call gets to see it.
+                action = ActionCall(
+                    name=call.name,
+                    arguments=call.arguments,
+                    call_id=call.id,
+                    rationale=response.text or None,
+                )
                 if self.advisor:
                     # Intercepted: recorded, shown to the player, never executed.
                     # note is the one call that is processed (into the journal),
@@ -379,7 +386,7 @@ class AgentLoop:
                     self.memory.note(
                         turn_date, observation.turn, str(action.arguments.get("text", ""))
                     )
-                result = self.env.act(action)
+                result = self.env.act(action, turn_date)
                 self._tally([result])
                 taken.append(f"{action.name}{'' if result.ok else ' (rejected)'}")
                 results.append(
@@ -453,7 +460,7 @@ class AgentLoop:
         if not calls:
             self.transcript.write("skip", date=state.date, reason=reason)
             return [], 0
-        results = self.env.act_many(calls)
+        results = self.env.act_many(calls, state.date)
         self._tally(results)
         self.transcript.write(
             "reflex", date=state.date, reason=reason,
