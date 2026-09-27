@@ -226,6 +226,13 @@ It also runs weekly in `.github/workflows/live-model.yml` for whichever keys
 the repository has; providers without one skip.
 
 
+## Running it against the real game
+
+Everything that can be built without the game is built; the rest needs one
+sitting with a real install. [docs/live-session.md](docs/live-session.md) is that
+sitting, step by step: what to run, what to look for, and which issue each
+output goes to.
+
 ## Where it goes next
 
 Seven milestones, each a claim the repo cannot currently make, tracked as
