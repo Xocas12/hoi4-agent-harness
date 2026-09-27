@@ -180,7 +180,7 @@ verification checklist: [docs/mod-bridge.md](docs/mod-bridge.md).
 | Log-tail adapter (reads the mod's telemetry) | Working, tested |
 | Hybrid control vocabulary + mode switch | Working, tested; unproven as strategy |
 | LLM Bridge mod | Skeleton; structure CI-checked, script tokens need verifying in-game (`verify-bridge` checks them against an install and a log) |
-| Eval runner + scenarios | Working, tested (6 scenarios, multi-seed, cross-model) |
+| Eval runner + scenarios | Working, tested (7 scenarios, multi-seed, cross-model) |
 | Cost measurement (`measure`) | Working, tested; measured against the mock with a scripted planner |
 | Wartime brief + wake rules | Working, tested against synthetic and scripted wars; unmeasured in a real one |
 | Identifier index (playsets) | Working, tested against a fixture playset; not yet run on a real install |
