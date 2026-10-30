@@ -500,23 +500,12 @@ class AgentLoop:
     def _reflex_fallback(self, reason: str) -> tuple[list[str], int]:
         """Play the turn for free rather than losing it.
 
-        Returns what the progress line needs, like the two turn methods: the
-        model produced nothing, so the token count is zero whatever it cost to
-        find that out.
+        It is a reflex turn like any other: counted as one (resume already
+        counted it so, from the transcript), and in advisor mode it acts on
+        nothing. The model produced nothing, so the token count is zero
+        whatever it cost to find that out.
         """
-        state = self.env.read_state()
-        calls = self.policy.reflex_actions(state)
-        if not calls:
-            self.transcript.write("skip", date=state.date, reason=reason)
-            return [], 0
-        results = self.env.act_many(calls, state.date)
-        self._tally(results)
-        self.transcript.write(
-            "reflex", date=state.date, reason=reason,
-            actions=[c.to_dict() for c in calls],
-            results=[r.to_dict() for r in results],
-        )
-        return [f"{r.action}{'' if r.ok else ' (rejected)'}" for r in results], 0
+        return self._reflex_turn(reason)
 
     def _acknowledge(self) -> None:
         """Mark this turn's events answered, before the clock moves on.
