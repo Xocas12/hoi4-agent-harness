@@ -27,7 +27,7 @@ from typing import Any
 from ..actions import catalog, registry
 from ..adapters.clock import days_between
 from ..config import HarnessConfig
-from ..env import HOI4Env
+from ..env import UNCAPPED_ACTIONS, HOI4Env
 from ..observation.builder import snapshot as deepcopy_state
 from ..observation.tokens import count_tokens
 from ..types import ActionCall, ActionResult, GameEvent, GameState
@@ -358,6 +358,10 @@ class AgentLoop:
         taken: list[str] = []
         turn_tokens = 0
         heard_back = False
+        # The per-turn action cap, counted across every round of this wake. It
+        # has to be enforced here: each call goes to env.act on its own, so
+        # act_many's cap never sees the planner's calls (#66).
+        actions_spent = 0
         for _round in range(self.config.max_tool_rounds_per_turn):
             if not self.budget.allows_call():
                 break
@@ -424,7 +428,13 @@ class AgentLoop:
                     self.memory.note(
                         turn_date, observation.turn, str(action.arguments.get("text", ""))
                     )
-                result = self.env.act(action, turn_date)
+                if action.name in UNCAPPED_ACTIONS:
+                    result = self.env.act(action, turn_date)
+                elif actions_spent >= self.config.max_actions_per_turn:
+                    result = self.env.over_budget(action)
+                else:
+                    actions_spent += 1
+                    result = self.env.act(action, turn_date)
                 self._tally([result])
                 taken.append(f"{action.name}{'' if result.ok else ' (rejected)'}")
                 results.append(
