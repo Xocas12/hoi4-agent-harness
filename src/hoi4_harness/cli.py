@@ -224,6 +224,13 @@ def cmd_play(args: argparse.Namespace) -> int:
     )
     if resume and loop.report.resumed_from:
         print(f"resuming {run_dir}: {loop.report.turns} turns already played", file=sys.stderr)
+    if env.handover is not None:
+        # What the player was shown as queued is what runs when they hand over,
+        # across a restart; a fresh run starts empty.
+        if resume and (restored := env.handover.restore()):
+            print(f"handover: {restored} queued action(s) restored", file=sys.stderr)
+        elif not resume:
+            env.handover.clear()
     if getattr(args, "confirm", False):
         # The hook is the gate's only UI; without this flag a live gated action
         # runs unanswered, which is what keeps unattended runs working.

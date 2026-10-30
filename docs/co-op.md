@@ -25,7 +25,10 @@ hoi4-harness handover --run-dir runs/coop --release  # take it back mid-run
   model is told not to plan as if it had happened. `note` and `advance_time`
   change nothing you could be clicking on and pass straight through.
 - **What is queued is always visible**: `handover-queue.json` in the run
-  directory, rewritten on every change, and a line in each brief.
+  directory, rewritten on every change, and a line in each brief. It is also
+  what survives a restart: `play --resume --handover` reloads it, so what you
+  were shown as queued is what runs when you hand over. A fresh run starts with
+  it empty.
 - **The grant is a file** (`handover.grant` in the run directory). `hoi4-harness
   handover` creates it; bind that command to a hotkey with whatever your OS
   offers. The harness runs the queue at the end of its next turn and deletes the
