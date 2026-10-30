@@ -164,7 +164,9 @@ class LogTailAdapter(GameAdapter):
         """Consume whatever has been appended since the last poll.
 
         Returns the number of telemetry lines applied. A truncated or rotated log
-        (size shrank) resets the offset rather than reading garbage.
+        (size shrank) resets the offset rather than reading garbage. A last line
+        the game has not finished writing is left for the next poll: read early,
+        ``mp=214000`` is ``mp=21`` and ``kind=12`` is ``kind=1``, a war.
         """
         if not self.log_path or not self.log_path.exists():
             raise FileNotFoundError(
@@ -176,7 +178,14 @@ class LogTailAdapter(GameAdapter):
         applied = 0
         with self.log_path.open("r", encoding="utf-8", errors="replace") as handle:
             handle.seek(self._offset)
-            for line in handle:
+            while True:
+                start = handle.tell()
+                line = handle.readline()
+                if not line:
+                    break
+                if not line.endswith("\n"):
+                    handle.seek(start)
+                    break
                 if PREFIX not in line:
                     continue
                 parsed = parse_line(line)
@@ -190,9 +199,23 @@ class LogTailAdapter(GameAdapter):
             self._offset = handle.tell()
         return applied
 
+    def _concerns_player(self, kind: str, fields: dict[str, str]) -> bool:
+        """Whether a line is about the country this reader keeps to.
+
+        A state line is the country's own. An event line names the scope the
+        on_action ran in (``tag``) and, where there is one, the other side
+        (``other``): a war is logged in the declarer's scope, so a war declared
+        *on* the player only matches through ``other``.
+        """
+        tags = [fields.get("tag")]
+        if kind == "evt":
+            tags.append(fields.get("other"))
+        tags = [t.strip().upper() for t in tags if t]
+        return not tags or self.country.upper() in tags
+
     def _apply(self, kind: str, fields: dict[str, str]) -> None:
         state = self._state
-        if self.country and fields.get("tag") not in (None, self.country):
+        if self.country and not self._concerns_player(kind, fields):
             return
 
         if kind in {"state", "boot"}:

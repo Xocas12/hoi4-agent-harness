@@ -93,7 +93,7 @@ def _config_from_args(args: argparse.Namespace) -> HarnessConfig:
     if getattr(args, "no_llm", False):
         config.planner_enabled = False
     if getattr(args, "country", None):
-        config.country = args.country
+        config.country = args.country.upper()
     if getattr(args, "start_date", None):
         config.start_date = args.start_date
     if getattr(args, "seed", None) is not None:
@@ -602,7 +602,8 @@ def build_parser() -> argparse.ArgumentParser:
                        help="a person is playing: never pause, resume or set game speed")
         p.add_argument("--no-llm", dest="no_llm", action="store_true",
                        help="never wake the planner: reflexes only, zero model calls")
-        p.add_argument("--country", help="country tag (mock adapter)")
+        p.add_argument("--country", help="country tag: the mock's country (default SWE), or the one "
+                       "the log reader keeps to (default: whichever the game reports)")
         p.add_argument("--start-date", dest="start_date", help="start date (mock adapter)")
         p.add_argument("--seed", type=int, help="mock adapter seed")
         p.add_argument("--game-dir", dest="game_dir", metavar="PATH",

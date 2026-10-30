@@ -219,7 +219,9 @@ class HarnessConfig:
     # grants a window (handover.py). For playing alongside a person, not for
     # scoring -- the eval runner refuses a handover run.
     handover: bool = False
-    country: str = "SWE"
+    # The player's tag. Unset, the mock plays Sweden and the log reader follows
+    # whichever human country the game reports; set, the reader keeps to it.
+    country: str | None = None
     start_date: str = "1936-01-01"
     seed: int = 1936
     # --- the playset: what identifiers exist --------------------------------
@@ -265,7 +267,7 @@ class HarnessConfig:
             clock_owner=os.environ.get("HOI4_CLOCK_OWNER", "harness").strip(),
             clock_probe_seconds=_env_float("HOI4_CLOCK_PROBE_SECONDS", 10.0) or 10.0,
             handover=_env_bool("HOI4_HANDOVER", False),
-            country=os.environ.get("HOI4_COUNTRY", "SWE"),
+            country=(os.environ.get("HOI4_COUNTRY") or "").strip().upper() or None,
             start_date=os.environ.get("HOI4_START_DATE", "1936-01-01"),
             seed=_env_int("HOI4_SEED", 1936),
             game_dir=Path(os.environ["HOI4_GAME_DIR"]) if os.environ.get("HOI4_GAME_DIR") else None,

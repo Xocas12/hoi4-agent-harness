@@ -31,7 +31,7 @@ on_actions = {
 	on_declare_war = {
 		effect = {
 			set_variable = { llmb_event_kind = 1 }   # war_declared
-			llm_bridge_emit_event = yes
+			llm_bridge_emit_war = yes
 		}
 	}
 
