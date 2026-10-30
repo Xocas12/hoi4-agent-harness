@@ -46,16 +46,14 @@ Everything else follows from those two:
 
 Measured against the mock with a scripted planner (`hoi4-harness measure`): a
 wake sends ~1.7k input tokens, ~1.5k of them the cacheable prefix, and every turn
-of a quiet campaign is a scheduled review. At the weekly default, 1936→1939 is
-~190 wakes — roughly 325k input tokens for the campaign — and at the scripted
-planner's ~1.5 calls a wake the default 250-call ceiling runs out in May 1939.
-The mock itself counts 110 wakes (~190k tokens), because its planner turns run
-the model's `advance_time` on top of the harness's week (#65). A scripted
-1939–1941 war grows the full brief by half and moves the wake rate from 2.5 to
-2.7 a month. Those are the harness's numbers against a stand-in game, with
-characters/4 as the token count; a real game and a real model are what would
-confirm them. Method, caveats and the table are in
-[docs/cost-and-timing.md](docs/cost-and-timing.md).
+of a campaign is a scheduled review. At the weekly default, 1936→1939 is ~190
+turns — roughly 325k input tokens if every one wakes the model — but at the
+scripted planner's ~1.5 calls a wake the default 250-call ceiling runs out after
+172 of them, in mid-1939. A scripted 1939–1941 war grows the full brief by two
+fifths and moves the wake rate from 3.9 to 4.4 a month. Those are the harness's
+numbers against a stand-in game, with characters/4 as the token count; a real
+game and a real model are what would confirm them. Method, caveats and the table
+are in [docs/cost-and-timing.md](docs/cost-and-timing.md).
 
 ## Total customization
 
