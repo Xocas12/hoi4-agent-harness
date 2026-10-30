@@ -15,8 +15,9 @@ def test_profile_provider_gets_provider_default_model(monkeypatch, tmp_path):
     for name in ("HOI4_LLM_PROVIDER", "HOI4_LLM_MODEL"):
         monkeypatch.delenv(name, raising=False)
     from hoi4_harness.config import HarnessConfig
-    profile = tmp_path / "p.toml"
-    profile.write_text('[planner]\nprovider = "openai"\n')
+    # JSON, not TOML: tomllib is 3.11+, and CI runs 3.10.
+    profile = tmp_path / "p.json"
+    profile.write_text('{"planner": {"provider": "openai"}}')
     assert HarnessConfig.from_file(profile).planner.model == "gpt-5"
 
 
