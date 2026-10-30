@@ -278,6 +278,7 @@ class InputDriverAdapter(GameAdapter):
                 message=(f"Speed {speed} not set: this driver cannot read the game's speed, "
                          "so it cannot set one. The harness runs the clock between turns; "
                          "set the speed in the game before the run."),
+                error_kind="unsupported",
             )
         if call.name == "advance_time":
             return ActionResult(ok=True, action=call.name, call_id=call.call_id,
