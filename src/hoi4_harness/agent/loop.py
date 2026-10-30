@@ -215,7 +215,14 @@ class AgentLoop:
                 if self.progress:
                     self.progress(handover.summary())
             self._acknowledge()
-            state = self.env.advance()
+            # The last turn stops on the end date rather than running past it:
+            # a scenario is scored on the state at ``until``, not a week later.
+            days = self.config.days_per_turn
+            if until is not None:
+                left = days_between(turn_date, until)
+                if 0 < left < days:
+                    days = left
+            state = self.env.advance(days)
             # Every turn's days count, the planner's own included. Adding only
             # reflex turns left the turn after each review at 0, so with
             # nothing else waking the planner it reviewed every other turn.

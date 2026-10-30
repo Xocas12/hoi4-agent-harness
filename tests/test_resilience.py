@@ -195,10 +195,10 @@ def _kill_on_turn(loop, turn):
     """Make the env die like Ctrl-C does: mid-run, so no run_end is written."""
     real_advance = loop.env.advance
 
-    def advance():
+    def advance(days=None):
         if loop.report.turns + 1 == turn:
             raise KeyboardInterrupt
-        return real_advance()
+        return real_advance(days)
 
     loop.env.advance = advance
 
