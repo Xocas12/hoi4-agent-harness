@@ -123,7 +123,9 @@ class Comparison:
         return (
             f"fixed for every run: scenario={self.scenario.key} {self._seed_text()} "
             f"guidance={config.system_prompt_path or config.guidance} "
-            f"control={config.operational_control} days_per_turn={config.days_per_turn}"
+            # The scenario's control mode, which the runner applies over the
+            # config's (runner.run_scenario), not the config's own.
+            f"control={self.scenario.operational_control} days_per_turn={config.days_per_turn}"
         )
 
 
