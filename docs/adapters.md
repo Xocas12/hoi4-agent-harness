@@ -58,7 +58,7 @@ front.
 
 Both the log-tail and savegame adapters locate the game's user directory through
 `hoi4_harness.paths`, which searches OneDrive-redirected Documents as well as the
-plain one. That is not hypothetical: on the machine this was checked against, the
+plain one, and `~/.local/share` (or `$XDG_DATA_HOME`) for the native Linux build. That is not hypothetical: on the machine this was checked against, the
 only copy lived under `OneDrive\Documents` and every previous default missed it.
 
 A path you supply explicitly is used or it fails — discovery never runs as a

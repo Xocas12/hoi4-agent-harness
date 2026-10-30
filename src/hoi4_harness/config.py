@@ -294,8 +294,8 @@ class HarnessConfig:
             elif key == "budget" and isinstance(value, dict):
                 for sub_key, sub_value in value.items():
                     setattr(self.budget, sub_key, sub_value)
-            elif key in {"run_dir", "save_dir", "system_prompt_path", "game_dir", "ui_scripts_path",
-                         "calibration_path"} and value is not None:
+            elif key in {"run_dir", "save_dir", "log_path", "system_prompt_path", "game_dir",
+                         "ui_scripts_path", "calibration_path"} and value is not None:
                 setattr(self, key, Path(value))
             elif key == "mod_dirs":
                 self.mod_dirs = [Path(v) for v in value]
