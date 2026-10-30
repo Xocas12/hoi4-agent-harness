@@ -39,11 +39,12 @@ The harness splits control:
   empty construction queue, reassigns idle military factories, and nothing that
   requires judgement. Free and instant.
 - **Planner** — the model. Woken on: a critical event, no national focus running,
-  an idle research slot, a front losing ground, or the scheduled review. At war,
-  also on the *onset* of an encirclement, a supply collapse on a front that was
-  supplied last turn, the capital coming under threat, an ally capitulating or
-  leaving the war, and a front going quiet. Onset, not condition: a pocket wakes
-  the model when it opens or grows, not every turn it stands.
+  an idle research slot, the *onset* of a front losing ground, or the scheduled
+  review. At war, also on the *onset* of an encirclement, a supply collapse on a
+  front that was supplied last turn, the capital coming under threat, an ally
+  capitulating or leaving the war, and a front going quiet. Onset, not
+  condition: a pocket wakes the model when it opens or grows, and a front wakes
+  it when it starts losing ground, not every turn either one stands.
 
 Widening that rule is how a run gets expensive. It is deliberately one small
 function so the cost of a change is visible.
@@ -219,8 +220,9 @@ Honest failure modes, since they decide whether the numbers above survive contac
   they need a decision (losing ground, a pocket forming, the capital threatened,
   supply failing, an attack), and folds the rest into one line that still says
   whether anything in the fold is in trouble. A synthetic twelve-front war renders
-  as a ~450-character brief. Measured over a scripted 1939–1941 (above), neither
-  brief size nor wake rate compounded; a real game is what would falsify that.
+  as a ~450-character brief. Measured over a scripted 1939–1941 (above), and
+  that war extended to mid-1942 with a front losing on every turn, neither brief
+  size nor wake rate compounded; a real game is what would falsify that.
 - **Screen-based observation.** A vision call per observation is 1–2k image tokens
   and cannot be cached across turns. It is for what numbers cannot express, not
   for routine ticks.
