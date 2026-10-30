@@ -69,6 +69,15 @@ class LLMConfig:
         if not self.model:
             self.model = DEFAULT_MODELS.get(self.provider, "")
 
+    def switch_provider(self, provider: str) -> None:
+        """Change provider. A model that was only the old provider's default goes
+        with it -- otherwise ``--provider anthropic`` would send the model name
+        ``scripted`` to the real API -- while a model someone chose is kept."""
+        if self.model == DEFAULT_MODELS.get(self.provider, ""):
+            self.model = ""
+        self.provider = provider
+        self.__post_init__()
+
     @classmethod
     def from_env(cls, prefix: str = "HOI4_LLM") -> LLMConfig:
         provider = os.environ.get(f"{prefix}_PROVIDER", "scripted").strip().lower()
@@ -289,7 +298,10 @@ class HarnessConfig:
             if key == "planner" and isinstance(value, dict):
                 role = getattr(self, key)
                 for sub_key, sub_value in value.items():
-                    setattr(role, sub_key, sub_value)
+                    if sub_key == "provider":
+                        role.switch_provider(sub_value)
+                    else:
+                        setattr(role, sub_key, sub_value)
                 role.__post_init__()
             elif key == "budget" and isinstance(value, dict):
                 for sub_key, sub_value in value.items():

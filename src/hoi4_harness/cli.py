@@ -51,9 +51,7 @@ def _config_from_args(args: argparse.Namespace) -> HarnessConfig:
     if getattr(args, "adapter", None):
         config.adapter = args.adapter
     if getattr(args, "provider", None):
-        config.planner.provider = args.provider
-        config.planner.model = args.model or config.planner.model or ""
-        config.planner.__post_init__()
+        config.planner.switch_provider(args.provider)
     if getattr(args, "model", None):
         config.planner.model = args.model
     if getattr(args, "base_url", None):
