@@ -293,7 +293,8 @@ class AgentLoop:
         return names, 0
 
     def _planner_turn(self, reason: str) -> tuple[list[str], int]:
-        observation = self.env.observe()
+        # Not yet the diff baseline: only once the model has replied (below).
+        observation = self.env.observe(remember=False)
         # The brief shows the model everything this read returned, which is more
         # than the wake rule saw if the game ran in between (a player-owned
         # clock). Copied now: later reads in the turn replace state.events.
@@ -377,6 +378,8 @@ class AgentLoop:
                     # next turn, rather than being acknowledged unseen.
                     self._answered = []
                 return self._reflex_fallback(f"model call failed: {type(exc).__name__}")
+            if not heard_back:
+                self.env.builder.remember_last()
             heard_back = True
             self._consecutive_errors = 0
             self.budget.record(response.usage)
