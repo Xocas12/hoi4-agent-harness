@@ -155,7 +155,9 @@ through the reader the composite attached:
 The cost is the stop check: every pause watches a still date for
 `clock_probe_seconds`, so each turn takes that much longer.
 `speed` in `resume(speed)` is still not applied; the game runs at whatever speed
-it was left at.
+it was left at. For the same reason `set_game_speed` with a speed above 0 is
+refused rather than pressing `+` and reporting a speed nobody checked: set the
+speed in the game before the run.
 
 ### UI scripts: act, then prove it
 
