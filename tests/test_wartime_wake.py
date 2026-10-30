@@ -192,7 +192,11 @@ def test_a_front_losing_for_several_turns_wakes_the_planner_once():
     losing_wakes = [d for _, d in seen if d.wake and "losing ground" in d.reason]
     assert len(losing_wakes) == 1, [d.reason for _, d in seen]
     assert "losing ground" in seen[0][1].reason
-    assert not all(d.wake for _, d in seen)
+    # A review is due every turn (#63), so the turns after the first are not
+    # quiet: they wake for the schedule or for another alarm, never again for
+    # the same losing front.
+    assert all("losing ground" not in d.reason for _, d in seen[1:])
+    assert any(d.reason == "scheduled review" for _, d in seen[1:])
 
 
 def test_the_loop_passes_the_losing_ground_flag_to_the_policy():
