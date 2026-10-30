@@ -107,7 +107,7 @@ def test_the_guard_can_be_switched_off_deliberately():
 def test_a_misdirected_action_is_a_failed_result_not_a_crash():
     """The agent has to be able to read this and wait, like any other rejection."""
     # Pausing presses a key; speeds above 0 are refused before any input is sent.
-    adapter = InputDriverAdapter(InputConfig(), focus_check=elsewhere(),
+    adapter = InputDriverAdapter(InputConfig(), dry_run=False, focus_check=elsewhere(),
                                  read_state=lambda: GameState(date="1936-01-01"))
     result = adapter.apply(ActionCall("set_game_speed", {"speed": 0}))
     assert not result.ok
