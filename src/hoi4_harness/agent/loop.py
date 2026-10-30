@@ -156,7 +156,11 @@ class AgentLoop:
         state = rebuild(transcript_path)
         if not state.records:
             return
-        self.memory = state.memory if state.memory.journal or state.memory.digest else self.memory
+        # The checkpoint is the memory exactly as the model last saw it, saved
+        # after every turn; the transcript only approximates it. Rebuild from
+        # the transcript only when there is no checkpoint to keep.
+        if not (self.memory.journal or self.memory.digest):
+            self.memory = state.memory
         self.report.turns = state.turns
         self.report.planner_calls = state.planner_calls
         self.report.reflex_turns = state.reflex_turns

@@ -42,6 +42,10 @@ class ResumeState:
     #: inferred from observations.
     turns_inferred: bool = False
     memory: Memory = field(default_factory=Memory)
+    #: The planner turn being replayed into the digest: (date, actions taken,
+    #: whether the model replied). The loop writes one digest entry per planner
+    #: turn, once the turn is over, and none for a turn whose call failed first.
+    _open: tuple[str, list[str], bool] | None = None
 
     def summary(self) -> str:
         return (
@@ -76,6 +80,7 @@ def rebuild(transcript_path: str | Path) -> ResumeState:
             _apply(state, record, date_turn := _date_turn(record, date, turn))
             date, turn = date_turn
 
+    _close_turn(state)
     state.last_date = date or state.last_date
     if state.turns == 0 and turn:
         # An older transcript with no turn_end records: fall back to the last
@@ -92,19 +97,32 @@ def _date_turn(record: dict, date: str, turn: int) -> tuple[str, int]:
     return date, turn
 
 
+def _close_turn(state: ResumeState) -> None:
+    if state._open is not None:
+        date, taken, replied = state._open
+        if replied:
+            state.memory.record_turn(date, taken)
+        state._open = None
+
+
 def _apply(state: ResumeState, record: dict, date_turn: tuple[str, int]) -> None:
     kind = record.get("kind")
     date, turn = date_turn
 
     if kind == "observe":
+        _close_turn(state)
+        state._open = (record.get("date", date), [], False)
         if not state.start_date:
             state.start_date = date
 
     elif kind == "turn_end":
+        _close_turn(state)
         state.turns = max(state.turns, int(record.get("turn", state.turns + 1)))
 
     elif kind == "llm":
         state.planner_calls += 1
+        if state._open is not None:
+            state._open = (state._open[0], state._open[1], True)
         usage = record.get("usage") or {}
         state.usage = state.usage + Usage(
             input_tokens=int(usage.get("input_tokens", 0)),
@@ -136,8 +154,12 @@ def _apply(state: ResumeState, record: dict, date_turn: tuple[str, int]) -> None
                 state.actions_ok += 1
         if kind == "reflex":
             state.reflex_turns += 1
-        names = [r.get("name") or r.get("action") for r in results]
-        state.memory.record_turn(date, [n for n in names if n])
+        if kind == "actions" and state._open is not None:
+            # As the loop marks them; reflex turns never reach the digest.
+            for result in results:
+                name = result.get("name") or result.get("action")
+                if name:
+                    state._open[1].append(name + (" (rejected)" if result.get("is_error") else ""))
 
     elif kind == "skip":
         state.reflex_turns += 1
