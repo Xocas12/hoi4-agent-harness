@@ -1,5 +1,6 @@
 """logtail filters every line by config.country, which defaults to SWE."""
 from hoi4_harness.adapters import build_adapter
+from hoi4_harness.adapters.logtail import LogTailAdapter
 from hoi4_harness.config import HarnessConfig
 
 LOG = (
@@ -19,7 +20,6 @@ def test_logtail_reads_a_german_game_with_default_config(tmp_path, monkeypatch):
     state = build_adapter(config).read_state()   # raises: "no LLM Bridge telemetry"
     assert state.country == "GER"
 
-from hoi4_harness.adapters.logtail import LogTailAdapter
 
 P = "[10:00:00][1939.9.1.12][effect.cpp:1] "
 
