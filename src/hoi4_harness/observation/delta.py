@@ -42,7 +42,15 @@ def render_delta(previous: GameState, current: GameState) -> str:
     lines = [f"## {current.country} -- {current.date} (changes since {previous.date})"]
 
     for field, label, threshold in SCALARS:
-        if not current.known(field) or not previous.known(field):
+        was_known, is_known = previous.known(field), current.known(field)
+        if was_known != is_known:
+            # Silence here would leave the model with the last value it saw, or
+            # no value until the next full brief.
+            before = _fmt(field, getattr(previous, field)) if was_known else "unknown"
+            after = _fmt(field, getattr(current, field)) if is_known else "unknown"
+            lines.append(f"{label}: {before} -> {after}")
+            continue
+        if not is_known:
             continue
         before, after = getattr(previous, field), getattr(current, field)
         if abs(after - before) >= threshold:
