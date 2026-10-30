@@ -45,6 +45,14 @@ class ScriptedClient(LLMClient):
         available = {t.name for t in (tools or [])}
         calls: list[ToolCall] = []
 
+        if messages and messages[-1].tool_results:
+            # Its orders went out last round. Reading the brief again would issue
+            # the same orders again, so a wake would cost every tool round it is
+            # allowed: hand the clock back instead, as a model would.
+            if "advance_time" in available:
+                calls.append(self._call("advance_time", days=7, reason="orders given"))
+            return self._respond(calls, brief)
+
         if "NONE SELECTED" in brief and "set_national_focus" in available:
             calls.append(self._call("set_national_focus", focus_id="industrial_effort"))
         if "SLOT(S) FREE" in brief and "start_research" in available:
@@ -57,6 +65,9 @@ class ScriptedClient(LLMClient):
         if not calls and "advance_time" in available:
             calls.append(self._call("advance_time", days=7, reason="nothing worth an action this week"))
 
+        return self._respond(calls, brief)
+
+    def _respond(self, calls: list[ToolCall], brief: str) -> LLMResponse:
         return LLMResponse(
             text="" if calls else "Holding.",
             tool_calls=calls,
