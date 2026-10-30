@@ -120,4 +120,21 @@ def turn_prompt(
 
 
 # Backwards-compatible default, used when nothing overrides it.
+def system_for(config, index=None) -> str:
+    """The system prompt a run with ``config`` (and ``index``) is given.
+
+    The one place that maps a config onto ``build_system``: the loop, ``replay``
+    and ``hoi4-harness prompt`` all call it, so the prompt they show is the
+    prompt the run had.
+    """
+    return build_system(
+        guidance=config.guidance,
+        extra=config.system_prompt_extra,
+        system_prompt_path=config.system_prompt_path,
+        operational_control=config.operational_control,
+        advisor=config.advisor,
+        playset=index.playset.name if index is not None else None,
+    )
+
+
 SYSTEM = build_system("doctrine")

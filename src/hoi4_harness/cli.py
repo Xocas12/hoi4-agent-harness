@@ -480,16 +480,10 @@ def cmd_verify_bridge(args: argparse.Namespace) -> int:
 
 def cmd_prompt(args: argparse.Namespace) -> int:
     """Print the exact system prompt a run would use. Nothing is hidden."""
-    from .agent.prompts import build_system
+    from .agent.prompts import system_for
 
     config = _config_from_args(args)
-    print(
-        build_system(
-            guidance=config.guidance,
-            extra=config.system_prompt_extra,
-            system_prompt_path=config.system_prompt_path,
-        )
-    )
+    print(system_for(config, config.build_index()))
     return 0
 
 

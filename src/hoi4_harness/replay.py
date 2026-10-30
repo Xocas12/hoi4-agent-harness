@@ -38,7 +38,7 @@ from .adapters import build_adapter
 from .agent.llm import build_llm
 from .agent.llm.base import LLMClient, LLMResponse, Msg
 from .agent.memory import Memory
-from .agent.prompts import build_system, turn_prompt
+from .agent.prompts import system_for, turn_prompt
 from .config import HarnessConfig
 
 _COLUMN_WIDTH = 52  # per comparison column, so the pair fits a 110-char terminal
@@ -188,12 +188,7 @@ def rebuild_prompt(
     """
     turn = int(record.get("turn", 0))
     memory = memory_before(records, turn)
-    system = build_system(
-        guidance=config.guidance,
-        extra=config.system_prompt_extra,
-        system_prompt_path=config.system_prompt_path,
-        operational_control=config.operational_control,
-    )
+    system = system_for(config, config.build_index())
     user = turn_prompt(
         brief=str(record.get("brief", "")),
         objective=config.objective,

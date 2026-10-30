@@ -37,7 +37,7 @@ from .errors import classify, describe
 from .llm.base import LLMClient, Msg, ToolResult
 from .memory import Memory
 from .policy import Policy
-from .prompts import build_system, turn_prompt
+from .prompts import system_for, turn_prompt
 from .resume import rebuild
 
 
@@ -120,14 +120,7 @@ class AgentLoop:
             wake_on_losing_ground=self.config.wake_on_losing_ground,
             reflex_delegate=self.config.reflex_delegate,
         )
-        self.system = build_system(
-            guidance=self.config.guidance,
-            extra=self.config.system_prompt_extra,
-            system_prompt_path=self.config.system_prompt_path,
-            operational_control=self.config.operational_control,
-            advisor=self.config.advisor,
-            playset=env.index.playset.name if env.index is not None else None,
-        )
+        self.system = system_for(self.config, env.index)
         self.budget = BudgetGuard(self.config.budget)
         self.transcript = Transcript(transcript_path, append=resume)
         self.advisor = (
