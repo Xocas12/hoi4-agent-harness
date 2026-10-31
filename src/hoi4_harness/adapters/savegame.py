@@ -101,11 +101,17 @@ def country_block(text: str, tag: str) -> dict | None:
         return None
     start, end = spans[0]
     body = text[start:end]
-    match = re.search(rf"^\s{{1,2}}{re.escape(tag)}\s*=\s*\{{", body, flags=re.M)
+    # Countries sit at the indentation of the first key inside the container.
+    # Anything deeper is nested in another country (GER={ SWE={opinion=...} }),
+    # and [ \t] rather than \s keeps the match from running across a newline.
+    first = re.compile(r"^([ \t]*)[A-Za-z0-9_\-]+[ \t]*=", re.M).search(body, body.find("{") + 1)
+    if not first:
+        return None
+    indent = first.group(1)
+    match = re.search(rf"^{re.escape(indent)}{re.escape(tag)}[ \t]*=[ \t]*\{{", body, flags=re.M)
     if not match:
         return None
     # The country's block runs to the next key at the same indentation.
-    indent = match.group(0)[: len(match.group(0)) - len(match.group(0).lstrip())]
     following = re.compile(rf"^{re.escape(indent)}[A-Za-z0-9_\-]+\s*=", re.M)
     nxt = following.search(body, match.end())
     chunk = body[match.start(): nxt.start() if nxt else len(body)]
