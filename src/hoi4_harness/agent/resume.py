@@ -161,6 +161,9 @@ def _apply(state: ResumeState, record: dict, date_turn: tuple[str, int]) -> None
                 if name:
                     state._open[1].append(name + (" (rejected)" if result.get("is_error") else ""))
 
+    elif kind == "advised" and state._open is not None:
+        state._open[1].extend(str(entry) for entry in record.get("taken") or [])
+
     elif kind == "skip":
         state.reflex_turns += 1
 

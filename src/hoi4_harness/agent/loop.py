@@ -414,6 +414,7 @@ class AgentLoop:
 
             results: list[ToolResult] = []
             end_turn = False
+            round_start = len(taken)
             for call in response.tool_calls:
                 # The model's prose for this round is its stated rationale; a
                 # human asked to approve an irreversible call gets to see it.
@@ -461,7 +462,11 @@ class AgentLoop:
                 if action.name == "advance_time":
                     end_turn = True
 
-            if not self.advisor:
+            if self.advisor:
+                # Nothing executed, so there is no actions record; this is what
+                # resume and replay rebuild the advisor's digest from.
+                self.transcript.write("advised", taken=taken[round_start:])
+            else:
                 self.transcript.write("actions", results=[r.__dict__ for r in results])
             if end_turn:
                 break
