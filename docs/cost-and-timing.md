@@ -127,17 +127,19 @@ place.
 
 | campaign, wake rules | phase | game days | turns | wakes | wakes / month | brief mean (full / delta) | brief max | request: prefix + turn |
 |---|---|---|---|---|---|---|---|---|
-| peacetime, default | peace | 1,338 | 192 | 192 | 4.4 | 43 (134 / 30) | 151 | 1,531 + 148 |
-| peacetime, schedule only | peace | 1,338 | 192 | 192 | 4.4 | 43 (134 / 30) | 151 | 1,531 + 146 |
-| wartime, default | war | 852 | 123 | 123 | 4.4 | 55 (188 / 35) | 243 | 1,531 + 184 |
-| wartime, schedule + alarms | war | 852 | 123 | 123 | 4.4 | 55 (188 / 35) | 243 | 1,531 + 182 |
+| peacetime, default | peace | 1,338 | 192 | 192 | 4.4 | 45 (134 / 33) | 151 | 1,531 + 150 |
+| peacetime, schedule only | peace | 1,338 | 192 | 192 | 4.4 | 45 (134 / 33) | 151 | 1,531 + 148 |
+| wartime, default | war | 852 | 123 | 123 | 4.4 | 58 (188 / 39) | 243 | 1,531 + 187 |
+| wartime, schedule + alarms | war | 852 | 123 | 123 | 4.4 | 58 (188 / 39) | 243 | 1,531 + 185 |
 
 These were re-measured with #63 (a review every `days_per_turn`), #65 (the
 mock's `advance_time` ends the turn), #66 (the action cap holds the planner) and
 #70 (a losing front wakes once) all in place, and with the scripted planner no
 longer re-issuing its orders every tool round (it now hands the clock back once
 they are out: 1.25 calls a wake, not ~1.5) and the last turn stopping on the
-end date. The earlier table (110 / 110 / 76 / 76 wakes) came from a mock whose
+end date. Since then a delta brief also reports a value that crept past its
+threshold over several turns rather than in one, which added ~3 tokens to the
+mean delta. The earlier table (110 / 110 / 76 / 76 wakes) came from a mock whose
 planner turns ran the model's days and then another week, so three turns in four
 were 14 days long.
 
@@ -145,7 +147,7 @@ What that says:
 
 - **A wake sends ~1.7k tokens, not ~2.2k.** ~1.5k of it is the cacheable
   prefix, so the design's premise holds: the part that changes turn to turn is
-  ~150-185 tokens, and most of that is the memory block and framing, not the
+  ~150-190 tokens, and most of that is the memory block and framing, not the
   brief.
 - **Every turn is a review.** A review is due every `days_per_turn`, and a turn
   runs that long unless a critical event cuts it short and wakes the model
@@ -160,7 +162,7 @@ What that says:
   wake that is ~320k input tokens for the campaign, ~295k of them cacheable,
   against the ~400k estimated.
 - **War did not compound.** The full brief grows by two fifths (134 → 188) and
-  the per-turn message by a quarter (148 → 184), because fronts are capped at
+  the per-turn message by a quarter (150 → 187), because fronts are capped at
   three lines. The wake rate is flat at 4.4 a month: with a review due every
   turn it is the turn rate. In the schedule-and-alarms run the alarms name 4 of
   123 wartime wakes (three critical events and the supply collapse in the
