@@ -217,7 +217,9 @@ def cmd_play(args: argparse.Namespace) -> int:
         env=env,
         planner=build_llm(config.planner) if config.planner_enabled else None,
         config=config,
-        memory=Memory.load(run_dir / "memory.json"),
+        # A fresh run starts with no memory, as it starts with an empty
+        # transcript; only --resume carries the old one forward.
+        memory=Memory.load(run_dir / "memory.json") if resume else Memory(),
         transcript_path=run_dir / "transcript.jsonl",
         resume=resume,
         progress=None if args.quiet else echo,
