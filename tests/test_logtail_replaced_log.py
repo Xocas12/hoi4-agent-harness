@@ -23,3 +23,13 @@ def test_rotated_log_larger_than_offset_is_read_from_the_start(tmp_path):
     state = reader.read_state()
     assert state.date == "1940-06-01" and state.political_power == 99.0, (
         state.date, state.political_power, state.country)
+
+
+def test_a_recreated_log_on_the_same_inode_is_still_a_new_session(tmp_path, monkeypatch):
+    # Filesystems reuse a freed inode at once; the head of the file still differs.
+    log = tmp_path / "game.log"
+    log.write_text(line("1936.1.1", "SWE", 10), encoding="utf-8")
+    reader = LogTailAdapter(log_path=log)
+    reader.read_state()
+    log.write_text(line("1940.6.1", "GER", 99) + "x" * 200 + "\n", encoding="utf-8")
+    assert reader.read_state().date == "1940-06-01"

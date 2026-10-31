@@ -55,6 +55,10 @@ FIELDS = {
     "mp": ("manpower", int),
 }
 
+#: How much of the log's start identifies it: a session's first line carries
+#: its own timestamp, so a new game.log differs here even on a reused inode.
+HEAD_BYTES = 256
+
 # Fields the mod does not emit yet. Reported as unknown rather than defaulted.
 NOT_EMITTED = [
     "research", "production", "construction", "fronts", "wars", "national_focus",
@@ -142,8 +146,10 @@ class LogTailAdapter(GameAdapter):
         self.poll_seconds = poll_seconds
         self.country = country
         self._offset = 0
-        #: (device, inode) of the file the offset belongs to.
+        #: The file the offset belongs to: (device, inode) and its first bytes.
+        #: Both, because a deleted and recreated file can get the same inode.
         self._identity: tuple[int, int] | None = None
+        self._head = b""
         self._state = GameState(unknown_fields=list(NOT_EMITTED))
         self._pending: list[GameEvent] = []
         self._seen_any = False
@@ -178,13 +184,19 @@ class LogTailAdapter(GameAdapter):
             )
         stat = self.log_path.stat()
         identity = (stat.st_dev, stat.st_ino)
-        if stat.st_size < self._offset or (self._identity not in (None, identity)):
+        with self.log_path.open("rb") as raw:
+            head = raw.read(HEAD_BYTES)
+        replaced = self._identity not in (None, identity) or (
+            self._head and not head.startswith(self._head)
+        )
+        if stat.st_size < self._offset or replaced:
             # Size alone misses a new log that has already grown past the old
             # offset before this poll: it would be read from the middle.
             self._offset = 0
             self._state = GameState(unknown_fields=list(NOT_EMITTED))
             self._pending = []
         self._identity = identity
+        self._head = head
         applied = 0
         with self.log_path.open("r", encoding="utf-8", errors="replace") as handle:
             handle.seek(self._offset)
