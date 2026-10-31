@@ -54,8 +54,9 @@ expose.
 
 **Rule of thumb for a claim that goes in a README:**
 
-- at least **five seeds** per configuration — fewer and the output labels itself
-  "an anecdote, not a result";
+- at least **five seeds** per configuration — fewer and `compare`, `experiment`
+  and `eval --seeds` label their output "an anecdote, not a result" (a single
+  `eval` run prints a score card, which makes no claim across seeds);
 - report **median and range**, never a mean on its own;
 - "A beats B" needs, at the very least, A's worst run to beat B's median;
   ranges that overlap heavily are a tie whatever the medians say;
