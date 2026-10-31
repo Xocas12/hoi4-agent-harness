@@ -104,8 +104,11 @@ def drift(mod_dir: Path, tags=DEFAULT_TAGS) -> list[str]:
     stale = []
     for item in generate(tags):
         target = mod_dir / item.path
-        current = target.read_text(encoding="utf-8-sig") if target.exists() else None
-        if current != item.text:
+        # Bytes, not text: utf-8-sig reads a file with or without its BOM, and
+        # the game ignores localisation that has lost it.
+        wanted = item.text.encode("utf-8-sig" if item.bom else "utf-8")
+        current = target.read_bytes().replace(b"\r\n", b"\n") if target.exists() else None
+        if current != wanted:
             stale.append(item.path)
     return stale
 
