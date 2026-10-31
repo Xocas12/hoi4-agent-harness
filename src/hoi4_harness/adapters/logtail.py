@@ -142,6 +142,8 @@ class LogTailAdapter(GameAdapter):
         self.poll_seconds = poll_seconds
         self.country = country
         self._offset = 0
+        #: (device, inode) of the file the offset belongs to.
+        self._identity: tuple[int, int] | None = None
         self._state = GameState(unknown_fields=list(NOT_EMITTED))
         self._pending: list[GameEvent] = []
         self._seen_any = False
@@ -163,8 +165,10 @@ class LogTailAdapter(GameAdapter):
     def poll(self) -> int:
         """Consume whatever has been appended since the last poll.
 
-        Returns the number of telemetry lines applied. A truncated or rotated log
-        (size shrank) resets the offset rather than reading garbage. A last line
+        Returns the number of telemetry lines applied. A truncated log (size
+        shrank) or a replaced one (a new file, as a game restart writes) is a
+        new session: it is read from the start, and nothing the old session
+        reported carries over. A last line
         the game has not finished writing is left for the next poll: read early,
         ``mp=214000`` is ``mp=21`` and ``kind=12`` is ``kind=1``, a war.
         """
@@ -172,9 +176,15 @@ class LogTailAdapter(GameAdapter):
             raise FileNotFoundError(
                 "No game.log found. Set HOI4_LOG_PATH, and check the LLM Bridge mod is enabled."
             )
-        size = self.log_path.stat().st_size
-        if size < self._offset:
+        stat = self.log_path.stat()
+        identity = (stat.st_dev, stat.st_ino)
+        if stat.st_size < self._offset or (self._identity not in (None, identity)):
+            # Size alone misses a new log that has already grown past the old
+            # offset before this poll: it would be read from the middle.
             self._offset = 0
+            self._state = GameState(unknown_fields=list(NOT_EMITTED))
+            self._pending = []
+        self._identity = identity
         applied = 0
         with self.log_path.open("r", encoding="utf-8", errors="replace") as handle:
             handle.seek(self._offset)
