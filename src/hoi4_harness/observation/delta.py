@@ -120,6 +120,21 @@ def render_delta(previous: GameState, current: GameState) -> str:
     return "\n".join(lines)
 
 
+def keep_unreported(previous: GameState, baseline: GameState) -> GameState:
+    """Hold each scalar a delta left out at the value the model last saw.
+
+    Diffing against the latest state instead lets a value that creeps up just
+    under its threshold every turn move for ever unreported: the baseline
+    moves with it. Holding it means the creep shows once it adds up.
+    """
+    for field, _label, threshold in SCALARS:
+        if not (previous.known(field) and baseline.known(field)):
+            continue
+        if abs(getattr(baseline, field) - getattr(previous, field)) < threshold:
+            setattr(baseline, field, getattr(previous, field))
+    return baseline
+
+
 def delta_is_large(previous: GameState, current: GameState, threshold: int = 12) -> bool:
     """When too much has moved, a full brief is cheaper than an unreadable diff."""
     return len(render_delta(previous, current).splitlines()) > threshold

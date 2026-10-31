@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from ..types import GameState, Observation
-from .delta import delta_is_large, render_delta
+from .delta import delta_is_large, keep_unreported, render_delta
 from .render import render_full
 
 
@@ -58,7 +58,10 @@ class ObservationBuilder:
         # The loop uses it too, and calls remember_last() once the model has
         # replied: a brief nobody read must not be what the next delta diffs
         # against, or its changes are never shown.
-        self._unremembered = (use_full, snapshot(state))
+        baseline = snapshot(state)
+        if not use_full:
+            baseline = keep_unreported(self._previous, baseline)
+        self._unremembered = (use_full, baseline)
         if remember:
             self.remember_last()
         return Observation(
