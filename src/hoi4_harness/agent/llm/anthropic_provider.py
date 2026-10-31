@@ -61,7 +61,9 @@ def wire_messages(messages: list[Msg]) -> list[dict]:
     wire: list[dict] = []
     for msg in messages:
         if msg.role == "assistant":
-            content: list[dict] = []
+            # Thinking blocks go back first and unchanged: the API checks their
+            # signatures against the tool_use they preceded.
+            content: list[dict] = [dict(block) for block in msg.provider_blocks]
             if msg.text:
                 content.append({"type": "text", "text": msg.text})
             for call in msg.tool_calls:
@@ -146,6 +148,7 @@ class AnthropicClient(LLMClient):
         ]
         usage = usage_from_wire(message.usage)
         return LLMResponse(
+            provider_blocks=_thinking_blocks(message.content),
             text=text,
             tool_calls=calls,
             stop_reason=message.stop_reason or "end_turn",
@@ -153,3 +156,15 @@ class AnthropicClient(LLMClient):
             model=self.model,
             raw=message,
         )
+
+
+def _thinking_blocks(content) -> list[dict]:
+    """The reply's thinking blocks, as the wire dicts to send them back with."""
+    blocks: list[dict] = []
+    for block in content:
+        if block.type == "thinking":
+            blocks.append({"type": "thinking", "thinking": block.thinking,
+                           "signature": block.signature})
+        elif block.type == "redacted_thinking":
+            blocks.append({"type": "redacted_thinking", "data": block.data})
+    return blocks

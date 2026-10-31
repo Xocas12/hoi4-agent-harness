@@ -217,7 +217,9 @@ def cmd_play(args: argparse.Namespace) -> int:
         env=env,
         planner=build_llm(config.planner) if config.planner_enabled else None,
         config=config,
-        memory=Memory.load(run_dir / "memory.json"),
+        # A fresh run starts with no memory, as it starts with an empty
+        # transcript; only --resume carries the old one forward.
+        memory=Memory.load(run_dir / "memory.json") if resume else Memory(),
         transcript_path=run_dir / "transcript.jsonl",
         resume=resume,
         progress=None if args.quiet else echo,
@@ -263,9 +265,29 @@ def cmd_replay(args: argparse.Namespace) -> int:
         return 1
 
 
+def _refuse_scenario_overrides(args: argparse.Namespace, command: str) -> bool:
+    """A scenario fixes its own game: the mock, its country, its start and its
+    seed. Flags that would change them are refused rather than dropped, so a
+    score is never mistaken for one measured on something else."""
+    given = [
+        flag for flag, value in (
+            ("--adapter", getattr(args, "adapter", None) not in (None, "mock")),
+            ("--country", getattr(args, "country", None)),
+            ("--start-date", getattr(args, "start_date", None)),
+            ("--seed", getattr(args, "seed", None) is not None),
+        ) if value
+    ]
+    if given:
+        print(f"{command}: a scenario fixes its adapter, country, start and seed; "
+              f"drop {', '.join(given)} (vary seeds with --seeds N)", file=sys.stderr)
+    return bool(given)
+
+
 def cmd_eval(args: argparse.Namespace) -> int:
     from .eval import SCENARIOS, ScoreCard, run_scenario, run_seeds, write_baselines
 
+    if _refuse_scenario_overrides(args, "eval"):
+        return 2
     config = _config_from_args(args)
     if getattr(args, "write_baseline", False) and config.planner_enabled:
         # A baseline recorded from a model run would corrupt the thing every
@@ -294,7 +316,8 @@ def cmd_eval(args: argparse.Namespace) -> int:
             aggregate = run_seeds(SCENARIOS[key], config, seeds, transcript_dir=config.run_dir)
             print(aggregate.render())
             print()
-            failed += aggregate.median < 1.0
+            # --strict means every run passes, not the median one.
+            failed += aggregate.low < 1.0
             continue
         card = run_scenario(key, config, transcript_dir=config.run_dir)
         print(card.render())
@@ -309,6 +332,8 @@ def cmd_eval(args: argparse.Namespace) -> int:
 def cmd_compare(args: argparse.Namespace) -> int:
     from .eval import compare
 
+    if _refuse_scenario_overrides(args, "compare"):
+        return 2
     config = _config_from_args(args)
     specs = [s.strip() for s in args.models.split(",") if s.strip()] if args.models else None
     try:
@@ -331,6 +356,8 @@ def cmd_measure(args: argparse.Namespace) -> int:
         if args.campaign not in CAMPAIGNS:
             print(f"measure: unknown campaign {args.campaign!r}. Known: {', '.join(CAMPAIGNS)}",
                   file=sys.stderr)
+            return 2
+        if _refuse_scenario_overrides(args, "measure"):
             return 2
         config = _config_from_args(args)
         run_scenario(CAMPAIGNS[args.campaign], config, transcript_dir=config.run_dir)
@@ -424,6 +451,8 @@ def cmd_index(args: argparse.Namespace) -> int:
 def cmd_experiment(args: argparse.Namespace) -> int:
     from .eval.experiment import run_experiment
 
+    if _refuse_scenario_overrides(args, "experiment"):
+        return 2
     config = _config_from_args(args)
     try:
         result = run_experiment(args.scenario, config, seeds=args.seeds,

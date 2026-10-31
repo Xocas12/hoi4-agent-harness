@@ -92,6 +92,10 @@ def check_focus(expected_title: str) -> FocusCheck:
     Matching is a case-insensitive substring, because the real title carries the
     version ("Hearts of Iron IV v1.16.4") and a launcher may add its own suffix.
     """
+    if not expected_title.strip():
+        # An empty title is a substring of every title: the guard would pass
+        # whatever window has focus.
+        return FocusCheck(False, None, reason="no window title is configured to look for")
     try:
         title = active_window_title()
     except WindowCheckUnsupported as exc:

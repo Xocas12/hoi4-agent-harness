@@ -194,7 +194,7 @@ one of:
 |---|---|
 | ok, "done and verified" | the consequence showed up |
 | `rejected`, "input sent but the game did not change: …" | it did not — the UI was not where the script expected |
-| `unverified` | the reader cannot see the field that would prove it (the log-tail bridge does not emit the focus yet); treat it as not done |
+| `unverified` | the reader still cannot see the field that would prove it when the timeout expires (the log-tail bridge does not emit the focus yet; posture and directives turn known when their event line lands, which polling waits for); treat it as not done |
 | `not_executed` | dry run: the path is logged, nothing is sent |
 
 A script is refused before any input is sent when a click target has no

@@ -1,6 +1,6 @@
 # The action catalog
 
-The catalog is the agent's entire vocabulary. It is small on purpose: 16 verbs,
+The catalog is the agent's entire vocabulary. It is small on purpose: 20 verbs,
 listed by `hoi4-harness actions` (add `--json` for schemas).
 
 | Action | Category | Notes |
@@ -21,6 +21,12 @@ listed by `hoi4-harness actions` (add `--json` for schemas).
 | `set_game_speed` | clock | The harness normally owns this |
 | `advance_time` | clock | Ends the turn |
 | `note` | memory | Free; writes to the journal |
+| `delegate_army_to_ai` | strategy | Hybrid control: the game's AI runs the army |
+| `set_ai_posture` | strategy | Global, or one theater |
+| `set_ai_directive` | strategy | Confirmation-gated; targets a country |
+| `clear_ai_directives` | strategy | |
+
+The four `strategy` verbs are the hybrid vocabulary (`docs/hybrid-control.md`).
 
 ## Design rules
 

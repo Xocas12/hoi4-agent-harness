@@ -83,9 +83,18 @@ class Comparison:
                 lines.append(f"  failed: {result.error}")
             elif result.card and result.card.stopped_reason:
                 lines.append(f"  stopped early: {result.card.stopped_reason}")
+            if result.aggregate is not None:
+                short = sum(1 for c in result.aggregate.cards if c.reached_end_date is False)
+                if short:
+                    lines.append(f"  {short}/{result.aggregate.n} runs STOPPED SHORT of the end date")
+            elif result.card and result.card.reached_end_date is False:
+                # A run that ran out of turns is scored on an earlier date than
+                # the baseline, so its delta compares two different moments.
+                lines.append(f"  STOPPED SHORT at {result.card.end_date}: "
+                             "ran out of turns before the end date")
         if self.baseline_note:
             lines.append(f"  {self.baseline_note}")
-        if 1 < self.seeds < QUOTABLE_SEEDS:
+        if self.seeds < QUOTABLE_SEEDS:
             lines.append(f"  fewer than {QUOTABLE_SEEDS} seeds per model: an anecdote, not a result")
         return "\n".join(lines)
 
@@ -95,7 +104,9 @@ class Comparison:
         if card is None:
             return [result.model] + ["--"] * (7 if wide else 6)
         agg = result.aggregate
-        score = agg.median if agg else card.score
+        # The row is one run: with --seeds the card is the median-scoring run
+        # (the lower middle one when N is even), so score and spend agree.
+        score = card.score
         delta = "--" if card.baseline is None else f"{score - card.baseline:+.2f}"
         spread = [f"{agg.low:.2f}-{agg.high:.2f}"] if wide and agg else (["--"] if wide else [])
         return [

@@ -55,6 +55,10 @@ FIELDS = {
     "mp": ("manpower", int),
 }
 
+#: How much of the log's start identifies it: a session's first line carries
+#: its own timestamp, so a new game.log differs here even on a reused inode.
+HEAD_BYTES = 256
+
 # Fields the mod does not emit yet. Reported as unknown rather than defaulted.
 NOT_EMITTED = [
     "research", "production", "construction", "fronts", "wars", "national_focus",
@@ -142,6 +146,10 @@ class LogTailAdapter(GameAdapter):
         self.poll_seconds = poll_seconds
         self.country = country
         self._offset = 0
+        #: The file the offset belongs to: (device, inode) and its first bytes.
+        #: Both, because a deleted and recreated file can get the same inode.
+        self._identity: tuple[int, int] | None = None
+        self._head = b""
         self._state = GameState(unknown_fields=list(NOT_EMITTED))
         self._pending: list[GameEvent] = []
         self._seen_any = False
@@ -163,8 +171,10 @@ class LogTailAdapter(GameAdapter):
     def poll(self) -> int:
         """Consume whatever has been appended since the last poll.
 
-        Returns the number of telemetry lines applied. A truncated or rotated log
-        (size shrank) resets the offset rather than reading garbage. A last line
+        Returns the number of telemetry lines applied. A truncated log (size
+        shrank) or a replaced one (a new file, as a game restart writes) is a
+        new session: it is read from the start, and nothing the old session
+        reported carries over. A last line
         the game has not finished writing is left for the next poll: read early,
         ``mp=214000`` is ``mp=21`` and ``kind=12`` is ``kind=1``, a war.
         """
@@ -172,9 +182,21 @@ class LogTailAdapter(GameAdapter):
             raise FileNotFoundError(
                 "No game.log found. Set HOI4_LOG_PATH, and check the LLM Bridge mod is enabled."
             )
-        size = self.log_path.stat().st_size
-        if size < self._offset:
+        stat = self.log_path.stat()
+        identity = (stat.st_dev, stat.st_ino)
+        with self.log_path.open("rb") as raw:
+            head = raw.read(HEAD_BYTES)
+        replaced = self._identity not in (None, identity) or (
+            self._head and not head.startswith(self._head)
+        )
+        if stat.st_size < self._offset or replaced:
+            # Size alone misses a new log that has already grown past the old
+            # offset before this poll: it would be read from the middle.
             self._offset = 0
+            self._state = GameState(unknown_fields=list(NOT_EMITTED))
+            self._pending = []
+        self._identity = identity
+        self._head = head
         applied = 0
         with self.log_path.open("r", encoding="utf-8", errors="replace") as handle:
             handle.seek(self._offset)

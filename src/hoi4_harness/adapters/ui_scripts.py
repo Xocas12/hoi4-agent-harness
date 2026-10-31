@@ -176,12 +176,22 @@ def _verify_research(before: GameState, after: GameState, args: dict) -> str | N
 
 def _verify_construction(before: GameState, after: GameState, args: dict) -> str | None:
     count = int(args.get("count", 1))
-    added = sum(1 for item in after.construction if item.building == args["building"]) - sum(
-        1 for item in before.construction if item.building == args["building"]
-    )
+    where = args.get("state")
+
+    def queued(state: GameState) -> int:
+        # In the state asked for: a factory that landed one state over, after a
+        # mis-click on the state list, is not the order that was given.
+        return sum(
+            1 for item in state.construction
+            if item.building == args["building"]
+            and (where is None or str(item.state).casefold() == str(where).casefold())
+        )
+
+    added = queued(after) - queued(before)
     if added >= count:
         return None
-    return f"the queue gained {max(added, 0)} {args['building']}, not {count}"
+    place = f" in {where}" if where else ""
+    return f"the queue gained {max(added, 0)} {args['building']}{place}, not {count}"
 
 
 def _verify_production(before: GameState, after: GameState, args: dict) -> str | None:
@@ -267,20 +277,27 @@ def verify(
     if call.name == "set_ai_posture" and call.arguments.get("theater"):
         # A theater-scoped posture is proved by the per-theater map, not the global one.
         needs.append("theater_postures")
-    unseen = [name for name in needs if not after.known(name)]
+    check = VERIFIERS[call.name]
+
+    def unseen_or_problem(state: GameState) -> tuple[list[str], str | None]:
+        # A field can turn known mid-poll: the log-tail reader learns posture
+        # and directives from the very event line the action makes the mod
+        # write, which may land after the first read.
+        unseen = [name for name in needs if not state.known(name)]
+        return unseen, None if unseen else check(before, state, call.arguments)
+
+    waited = 0.0
+    unseen, problem = unseen_or_problem(after)
+    while (unseen or problem is not None) and waited < timeout:
+        sleep(poll)
+        waited += poll
+        after = read_state()
+        unseen, problem = unseen_or_problem(after)
     if unseen:
         return Outcome(False, "unverified", (
             f"input sent, but the reader cannot see {', '.join(unseen)}, so the change could not "
             "be confirmed. Treat it as not done until a later brief shows it."
         ))
-    check = VERIFIERS[call.name]
-    waited = 0.0
-    problem = check(before, after, call.arguments)
-    while problem is not None and waited < timeout:
-        sleep(poll)
-        waited += poll
-        after = read_state()
-        problem = check(before, after, call.arguments)
     if problem is None:
         return Outcome(True, None, "done and verified")
     return Outcome(False, "rejected", (

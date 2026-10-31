@@ -302,11 +302,16 @@ class HarnessConfig:
                 for sub_key, sub_value in value.items():
                     if sub_key == "provider":
                         role.switch_provider(sub_value)
-                    else:
+                    elif hasattr(role, sub_key):
                         setattr(role, sub_key, sub_value)
+                    else:
+                        raise KeyError(f"Unknown configuration key {key}.{sub_key!r}")
                 role.__post_init__()
             elif key == "budget" and isinstance(value, dict):
                 for sub_key, sub_value in value.items():
+                    if not hasattr(self.budget, sub_key):
+                        # A typo here is a spending cap that silently isn't one.
+                        raise KeyError(f"Unknown configuration key budget.{sub_key!r}")
                     setattr(self.budget, sub_key, sub_value)
             elif key in {"run_dir", "save_dir", "log_path", "system_prompt_path", "game_dir",
                          "ui_scripts_path", "calibration_path"} and value is not None:

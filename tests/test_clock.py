@@ -284,8 +284,9 @@ def test_65_a_second_advance_does_not_wipe_the_critical_event_that_stopped_the_f
     adapter.advance(7)                      # nobody has looked yet
     events = adapter.read_state().events
     assert any(e.severity == "critical" and "Poland" in e.text for e in events)
-    # Once read, they are gone on the next advance, and the old critical event
-    # does not stop the new one on its first day.
+    # Once acknowledged they are gone, and the old critical event does not
+    # stop the new advance on its first day.
+    adapter.acknowledge_events(events)
     state = adapter.advance(7)
     assert not any("Poland" in e.text for e in state.events)
     assert state.date == "1939-09-15"

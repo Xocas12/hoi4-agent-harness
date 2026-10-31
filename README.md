@@ -177,7 +177,7 @@ verification checklist: [docs/mod-bridge.md](docs/mod-bridge.md).
 | Piece | State |
 |---|---|
 | Agent loop, budget, memory, policy | Working, tested |
-| Action catalog + validation | Working, tested (16 actions) |
+| Action catalog + validation | Working, tested (20 actions) |
 | Observation briefs + deltas | Working, tested |
 | Mock adapter | Working, tested, deterministic |
 | Log-tail adapter (reads the mod's telemetry) | Working, tested |

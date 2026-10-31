@@ -72,7 +72,7 @@ class Mod:
             version = _descriptor_value(text, "version") or ""
             replace = re.findall(r'^\s*replace_path\s*=\s*"([^"]+)"', text, flags=re.M)
         return cls(path=path, name=name, version=version,
-                   replace_paths=[p.strip("/").replace("\\", "/") for p in replace])
+                   replace_paths=[p.replace("\\", "/").strip("/") for p in replace])
 
 
 def _descriptor_value(text: str, key: str) -> str | None:
@@ -216,7 +216,10 @@ class IdentifierIndex:
             if not isinstance(block, dict):
                 continue
             tree = FocusTree(id=str(block.get("id", "")))
-            tree.tags = set(_all_values(block.get("country"), "tag"))
+            # original_tag is how a tree keeps to a country through a civil war
+            # or a tag switch, and how many total conversions key their trees.
+            country = block.get("country")
+            tree.tags = set(_all_values(country, "tag")) | set(_all_values(country, "original_tag"))
             tree.default = str(block.get("default", "no")) == "yes"
             for entry in _as_list(block.get("focus")):
                 focus = _focus(entry)
@@ -379,8 +382,23 @@ class IdentifierIndex:
 
 def _uncommented(path: Path) -> str:
     text = path.read_text(encoding="utf-8-sig", errors="replace")
-    # '#' starts a comment everywhere except inside a quoted string.
-    return "\n".join(re.sub(r'#(?=(?:[^"]*"[^"]*")*[^"]*$).*', "", line) for line in text.splitlines())
+    return "\n".join(_strip_comment(line) for line in text.splitlines())
+
+
+def _strip_comment(line: str) -> str:
+    """Cut a line at its first '#' outside a quoted string.
+
+    Scanned left to right: a quote inside the comment itself (``# the "Sverige
+    class``) must not decide whether the '#' was in a string, or the tokenizer
+    reads from that quote across lines to the next one.
+    """
+    quoted = False
+    for i, char in enumerate(line):
+        if char == '"':
+            quoted = not quoted
+        elif char == "#" and not quoted:
+            return line[:i]
+    return line
 
 
 def _parse(path: Path) -> dict:

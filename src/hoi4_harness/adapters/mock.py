@@ -18,6 +18,7 @@ from __future__ import annotations
 import copy
 import datetime as dt
 import random
+from collections.abc import Iterable
 
 from ..types import (
     ActionCall,
@@ -119,11 +120,9 @@ class MockAdapter(GameAdapter):
                        "tungsten": 10, "chromium": 12},
         )
         self.scripted_events = dict(SCRIPTED_EVENTS)
+        #: Events not yet acknowledged, in order. They stay until the loop
+        #: passes them to ``acknowledge_events``, as the adapter contract says.
         self._pending: list[GameEvent] = []
-        #: Whether ``read_state()`` has shown ``_pending`` since the last advance. An
-        #: advance only clears events that have been read, so two advances in a
-        #: row cannot wipe the critical event that stopped the first.
-        self._pending_read = False
         self._advisor_pp_bonus = 0.0
         self._trades: dict[str, int] = {}
         self._attrition: dict[str, float] = {}
@@ -180,13 +179,18 @@ class MockAdapter(GameAdapter):
         )
 
     def read_state(self) -> GameState:
-        self._pending_read = True
         return self._snapshot()
 
     def _snapshot(self) -> GameState:
         self.state.date = self.date.isoformat()
         self.state.events = list(self._pending)
         return self.state
+
+    def acknowledge_events(self, events: Iterable[GameEvent]) -> None:
+        """Drop exactly these events, matched by identity, as the log-tail
+        reader does: whatever arrived after the read that returned them stays."""
+        answered = {id(event) for event in events}
+        self._pending = [event for event in self._pending if id(event) not in answered]
 
     def apply(self, call: ActionCall) -> ActionResult:
         if call.name not in self.supported_actions:
@@ -201,16 +205,13 @@ class MockAdapter(GameAdapter):
         self.state.speed = max(1, min(5, speed))
 
     def advance(self, days: int) -> GameState:
-        """Tick forward, stopping early on a critical event.
+        """Tick forward, stopping early on a new critical event.
 
-        Events are cleared only once they have been read through
-        ``read_state()``. The state this returns does not count as a read: a
-        caller that advances again without looking still finds the earlier
-        events waiting, rather than losing them to the second advance.
+        Nothing here clears events: an event the loop never acknowledged --
+        a war on a turn whose model call failed -- is still there next turn.
+        Only an event that arrives during this advance stops it, so an old
+        critical one does not freeze the clock.
         """
-        if self._pending_read:
-            self._pending = []
-            self._pending_read = False
         first_new = len(self._pending)
         for _ in range(max(0, days)):
             self.date += dt.timedelta(days=1)
@@ -616,6 +617,13 @@ class MockAdapter(GameAdapter):
             for name in armies:
                 if name not in self.state.delegated_armies:
                     self.state.delegated_armies.append(name)
+        elif army != "all" and "all" in self.state.delegated_armies:
+            # Under a blanket delegation one army cannot be singled out; saying
+            # it was recalled while nothing changed would fake the result.
+            return self._fail(
+                call, f"Every army is delegated as 'all', so {army} cannot be recalled alone. "
+                "Recall 'all', then delegate the armies that should stay with the AI."
+            )
         else:
             self.state.delegated_armies = [
                 name for name in self.state.delegated_armies if name not in armies

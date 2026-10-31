@@ -375,12 +375,16 @@ class AgentLoop:
                 response = self.planner.complete(self.system, messages, tools)
             except Exception as exc:  # noqa: BLE001 - the provider is not ours
                 self._record_llm_failure(exc, turn_date)
-                if not heard_back:
-                    # The model never answered this turn, so neither did the
-                    # loop: leave every event queued. A war that woke this turn
-                    # stays pending, ends the clock wait at once, and wakes the
-                    # next turn, rather than being acknowledged unseen.
-                    self._answered = []
+                if heard_back:
+                    # The model already answered and acted this turn: what it
+                    # did stands and is remembered, and reflexes on top would
+                    # play the turn twice. The turn ends where the model got to.
+                    break
+                # The model never answered this turn, so neither did the loop:
+                # leave every event queued. A war that woke this turn stays
+                # pending, ends the clock wait at once, and wakes the next
+                # turn, rather than being acknowledged unseen.
+                self._answered = []
                 return self._reflex_fallback(f"model call failed: {type(exc).__name__}")
             if not heard_back:
                 self.env.builder.remember_last()
@@ -405,10 +409,12 @@ class AgentLoop:
                 break
 
             messages.append(Msg(role="assistant", text=response.text,
-                                tool_calls=response.tool_calls))
+                                tool_calls=response.tool_calls,
+                                provider_blocks=response.provider_blocks))
 
             results: list[ToolResult] = []
             end_turn = False
+            round_start = len(taken)
             for call in response.tool_calls:
                 # The model's prose for this round is its stated rationale; a
                 # human asked to approve an irreversible call gets to see it.
@@ -456,7 +462,11 @@ class AgentLoop:
                 if action.name == "advance_time":
                     end_turn = True
 
-            if not self.advisor:
+            if self.advisor:
+                # Nothing executed, so there is no actions record; this is what
+                # resume and replay rebuild the advisor's digest from.
+                self.transcript.write("advised", taken=taken[round_start:])
+            else:
                 self.transcript.write("actions", results=[r.__dict__ for r in results])
             if end_turn:
                 break
