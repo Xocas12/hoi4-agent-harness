@@ -215,25 +215,32 @@ def memory_before(records: list[dict[str, Any]], turn: int) -> Memory:
     date: str | None = None  # the planner turn currently being replayed
     turn_no = 0
     taken: list[str] = []
+    # A wake whose model call failed before any reply writes no digest line in
+    # the loop, so it must not here either (resume.py tracks the same thing).
+    replied = False
     for record in records:
         kind = record.get("kind")
         if kind == "observe":
             # Flush the previous planner turn's digest first: it was recorded
             # before the target turn's prompt was built, so it belongs in it.
-            if date is not None:
+            if date is not None and replied:
                 memory.record_turn(date, taken)
             if record.get("turn") == turn:
                 break  # the target turn's own actions must not be in its prompt
             date, turn_no, taken = str(record.get("date", "")), int(record.get("turn") or 0), []
+            replied = False
         elif date is None:
             continue
         elif kind == "llm":
+            replied = True
             # The loop journals a note before executing it, so every note call
             # in an llm record reached memory, whatever happened to the result.
             for call in record.get("tool_calls") or []:
                 if call.get("name") == "note":
                     text = call.get("arguments", {}).get("text", "")
                     memory.note(date, turn_no, str(text))
+        elif kind == "advised":
+            taken.extend(str(entry) for entry in record.get("taken") or [])
         elif kind == "actions":
             for result in record.get("results") or []:
                 name = str(result.get("name") or "?")
