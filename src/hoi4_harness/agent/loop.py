@@ -405,7 +405,8 @@ class AgentLoop:
                 break
 
             messages.append(Msg(role="assistant", text=response.text,
-                                tool_calls=response.tool_calls))
+                                tool_calls=response.tool_calls,
+                                provider_blocks=response.provider_blocks))
 
             results: list[ToolResult] = []
             end_turn = False

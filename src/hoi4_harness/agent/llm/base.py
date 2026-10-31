@@ -42,6 +42,10 @@ class Msg:
     text: str = ""
     tool_calls: list[ToolCall] = field(default_factory=list)
     tool_results: list[ToolResult] = field(default_factory=list)
+    #: Provider-native blocks an assistant turn must be sent back with,
+    #: unchanged -- Anthropic's signed thinking blocks before a tool_use. The
+    #: harness never reads them; only the provider that produced them does.
+    provider_blocks: list[dict] = field(default_factory=list)
 
 
 @dataclass
@@ -87,6 +91,7 @@ class LLMResponse:
     usage: Usage = field(default_factory=Usage)
     model: str = ""
     raw: Any = field(default=None, repr=False)
+    provider_blocks: list[dict] = field(default_factory=list, repr=False)
 
     @property
     def wants_tools(self) -> bool:
