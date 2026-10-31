@@ -617,6 +617,13 @@ class MockAdapter(GameAdapter):
             for name in armies:
                 if name not in self.state.delegated_armies:
                     self.state.delegated_armies.append(name)
+        elif army != "all" and "all" in self.state.delegated_armies:
+            # Under a blanket delegation one army cannot be singled out; saying
+            # it was recalled while nothing changed would fake the result.
+            return self._fail(
+                call, f"Every army is delegated as 'all', so {army} cannot be recalled alone. "
+                "Recall 'all', then delegate the armies that should stay with the AI."
+            )
         else:
             self.state.delegated_armies = [
                 name for name in self.state.delegated_armies if name not in armies
