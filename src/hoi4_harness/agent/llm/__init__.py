@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import os
+
 from ...config import LLMConfig
 from .base import LLMClient, LLMResponse, Msg, ToolCall, ToolResult, Usage
 from .scripted import ScriptedClient
@@ -32,6 +34,14 @@ def build_llm(config: LLMConfig) -> LLMClient:
         temperature=config.temperature,
         cache_prefix=config.cache_prefix,
     )
+    if config.api_key_env:
+        # The key lives in a variable the user named, e.g. an OpenRouter key
+        # beside an OpenAI one. A name that resolves to nothing is an error:
+        # falling back to the vendor's default variable would bill another key.
+        key = os.environ.get(config.api_key_env)
+        if not key:
+            raise ValueError(f"api_key_env names {config.api_key_env}, which is not set")
+        kwargs["api_key"] = key
     if provider == "scripted":
         return ScriptedClient(model=config.model or "scripted")
     if provider == "anthropic":
