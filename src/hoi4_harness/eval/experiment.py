@@ -94,6 +94,11 @@ class Experiment:
             ).rstrip())
             if index == 0:
                 lines.append("  ".join("-" * w for w in widths))
+        for arm in ARMS:
+            agg = self.arms[arm]
+            short = sum(1 for card in agg.cards if card.reached_end_date is False)
+            if short:
+                lines.append(f"{arm}: {short}/{agg.n} runs STOPPED SHORT of the end date")
         lines.append("")
         lines.append("verdict: " + self.verdict())
         if self.seeds < QUOTABLE_SEEDS:
