@@ -147,7 +147,8 @@ class HarnessConfig:
     # --- pacing -------------------------------------------------------------
     # The harness owns the clock. It pauses the game, decides, then runs forward
     # `days_per_turn` in-game days before looking again. A critical event cuts
-    # the wait short.
+    # the wait short. It is also the scheduled review interval, so a turn that
+    # nothing else wakes the planner for is a review.
     days_per_turn: int = 7
     max_actions_per_turn: int = 8
     max_tool_rounds_per_turn: int = 3
@@ -157,6 +158,9 @@ class HarnessConfig:
     full_brief_every: int = 8
     wake_on_free_research_slot: bool = True
     wake_on_no_focus: bool = True
+    # A front starting to lose ground. Like the wartime rules below it fires on
+    # onset: a front that stays losing wakes the model once, not every turn.
+    wake_on_losing_ground: bool = True
     # Wartime wake rules. Each fires on the onset of its condition, never on the
     # condition standing, so a long siege does not wake the model every turn.
     wake_on_encirclement: bool = True
@@ -197,6 +201,11 @@ class HarnessConfig:
     # playing the same campaign, since being paused mid-battle by your own
     # tooling is worse than having no tooling.
     clock_owner: str = "harness"
+    # How long the in-game date must stand still before the input driver takes
+    # the game as paused. The pause key is a toggle, so the driver looks before
+    # and after pressing it; this must be longer than an in-game day takes at
+    # the speed the game runs.
+    clock_probe_seconds: float = 10.0
     # Co-op turn-taking: every action is queued and runs only when the player
     # grants a window (handover.py). For playing alongside a person, not for
     # scoring -- the eval runner refuses a handover run.
@@ -245,6 +254,7 @@ class HarnessConfig:
             enforce_window_focus=_env_bool("HOI4_ENFORCE_WINDOW_FOCUS", True),
             operational_control=os.environ.get("HOI4_OPERATIONAL_CONTROL", "llm").strip(),
             clock_owner=os.environ.get("HOI4_CLOCK_OWNER", "harness").strip(),
+            clock_probe_seconds=_env_float("HOI4_CLOCK_PROBE_SECONDS", 10.0) or 10.0,
             handover=_env_bool("HOI4_HANDOVER", False),
             country=os.environ.get("HOI4_COUNTRY", "SWE"),
             start_date=os.environ.get("HOI4_START_DATE", "1936-01-01"),

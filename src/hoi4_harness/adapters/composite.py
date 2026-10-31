@@ -12,7 +12,9 @@ tooling. That is what ``clock_owner`` decides.
 
 from __future__ import annotations
 
-from ..types import ActionCall, ActionResult, GameState
+from collections.abc import Iterable
+
+from ..types import ActionCall, ActionResult, GameEvent, GameState
 from .base import AdapterInfo, GameAdapter
 from .clock import wait_for_days
 
@@ -54,6 +56,10 @@ class CompositeAdapter(GameAdapter):
     def read_state(self) -> GameState:
         return self.reader.read_state()
 
+    def acknowledge_events(self, events: Iterable[GameEvent]) -> None:
+        # The reader is where events come from, so it is where they queue.
+        self.reader.acknowledge_events(events)
+
     def apply(self, call: ActionCall) -> ActionResult:
         return self.writer.apply(call)
 
@@ -74,15 +80,20 @@ class CompositeAdapter(GameAdapter):
         leaves the game paused on every exit path including the timeout -- when
         the harness owns the clock.
 
+        Days are counted from the date before the unpause: a writer that watches
+        the game start (the input driver does) has already let some of them pass.
+
         When the player owns it, this only watches: no pause, no resume, no
         speed change.
         """
         if not self.owns_clock:
             return wait_for_days(self.reader.read_state, days, self.poll_seconds)
 
-        self.writer.resume()
         try:
-            return wait_for_days(self.reader.read_state, days, self.poll_seconds)
+            # Peeked, not read: a read can drain events the loop's wake rule needs.
+            start = getattr(self.reader, "peek_state", self.reader.read_state)().date
+            self.writer.resume()
+            return wait_for_days(self.reader.read_state, days, self.poll_seconds, start=start)
         finally:
             self.writer.pause()
 

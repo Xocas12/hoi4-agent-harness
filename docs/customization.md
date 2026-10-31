@@ -41,7 +41,7 @@ you at run time.
 | Confirmation gate | `--allow-all` | let irreversible actions through |
 | Ask a person | `--confirm` | terminal prompt on each irreversible action: yes / no / always |
 | Live mode | `--live` | dry run is the default |
-| Actions per turn | `max_actions_per_turn` | |
+| Actions per turn | `max_actions_per_turn` | counted per turn across all tool rounds, for the model as well as the reflexes; a call past the cap is refused with `error_kind="budget"`. `note` and `advance_time` do not count |
 | Tool rounds per turn | `max_tool_rounds_per_turn` | how many times it can react to a rejection |
 | Error tolerance | `max_consecutive_llm_errors`, `HOI4_MAX_CONSECUTIVE_LLM_ERRORS` | consecutive provider failures before the run stops; a fatal error stops immediately regardless |
 
@@ -49,8 +49,9 @@ you at run time.
 
 | Setting | Notes |
 |---|---|
-| `days_per_turn` | in-game days between scheduled reviews |
+| `days_per_turn` | in-game days a turn runs the clock, and between scheduled reviews: a turn nothing else wakes the model for is a review |
 | `wake_on_no_focus`, `wake_on_free_research_slot` | opportunity wakes; turn off for a strictly scheduled run |
+| `wake_on_losing_ground` | a front that starts losing ground; fires on the onset, so a front that stays losing wakes the model once and the scheduled review covers the rest |
 | `wake_on_encirclement`, `wake_on_supply_collapse`, `wake_on_capital_threat`, `wake_on_ally_capitulation`, `wake_on_front_quiet` | wartime wakes, each on the onset of its condition; only consulted while at war |
 | `planner_enabled` | `--no-llm` never wakes the model at all: reflexes only, zero model calls. `eval --no-llm --write-baseline` records those scores as the baseline every score card is reported against |
 | `reflex_enabled` | `--no-reflex` makes the model decide everything, including the boring parts |
@@ -67,6 +68,7 @@ you at run time.
 | `operational_control` | `llm` (model commands directly) or `ai` (native AI runs operations — see [hybrid-control.md](hybrid-control.md)) |
 | `handover`, `--handover`, `HOI4_HANDOVER` | co-op turn-taking: actions queue until the player runs `hoi4-harness handover` — see [co-op.md](co-op.md) |
 | `clock_owner`, `--player-clock` | `harness` (pauses and drives the clock) or `player` (never touches it — required when a person is playing the same campaign) |
+| `clock_probe_seconds` / `HOI4_CLOCK_PROBE_SECONDS` | how long the date must stand still before the input driver takes the game as paused (default 10). The pause key is a toggle, so it looks before and after pressing; this must be longer than an in-game day at your game speed, and every turn spends it once — see [adapters.md](adapters.md#the-clock-a-toggle-so-look-before-pressing) |
 | `country`, `start_date`, `seed` | mock adapter start |
 | `log_path` / `HOI4_LOG_PATH` | `game.log`, for the logtail adapter |
 | `save_dir`, `window_title` | real-game adapters |

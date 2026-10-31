@@ -1,3 +1,8 @@
+import datetime as dt
+import json
+
+import pytest
+
 from hoi4_harness.actions import catalog
 from hoi4_harness.adapters.mock import MockAdapter
 from hoi4_harness.agent.llm.base import LLMResponse, ToolCall, Usage
@@ -96,6 +101,88 @@ def test_the_planner_is_not_woken_when_nothing_is_happening():
     assert Policy(days_per_turn=7).should_wake(quiet, days_since_planner=7).wake
 
 
+# --- the scheduled review, through the loop's own counter (#63) ---------------
+
+
+class _Holds(ScriptedClient):
+    """A planner that answers every wake by doing nothing: no action of its
+    own can wake it again or move the clock."""
+
+    def complete(self, system, messages, tools=None, max_tokens=None):
+        return LLMResponse(text="Holding.", usage=Usage(10, 10))
+
+
+class _StoppedClock(MockAdapter):
+    """A reader that has lost the calendar: the game runs, the date never moves."""
+
+    def advance(self, days):
+        return self.read_state()
+
+
+class _ShortTurns(MockAdapter):
+    """A clock that comes back after three days whatever it was asked for, as
+    an early return or a wait that ran out would."""
+
+    def advance(self, days):
+        return super().advance(min(days, 3))
+
+
+def _wakes_on_a_quiet_run(turns, adapter=None, **overrides):
+    """(date, decision) for every turn of a run where only the schedule can
+    wake the planner: opportunity wakes off, peacetime, a planner that holds."""
+    config = HarnessConfig(
+        adapter="mock", wake_on_no_focus=False, wake_on_free_research_slot=False, **overrides
+    )
+    env = HOI4Env(adapter or MockAdapter(seed=3), config)
+    env.reset()
+    loop = AgentLoop(env=env, planner=_Holds(), config=config)
+    seen = []
+    decide = loop.policy.should_wake
+
+    def spy(state, days_since_planner, previous=None):
+        decision = decide(state, days_since_planner, previous)
+        seen.append((state.date, decision))
+        return decision
+
+    loop.policy.should_wake = spy
+    loop.run(turns)
+    return seen, loop.report
+
+
+def _days_between_wakes(seen):
+    woke = [dt.date.fromisoformat(date) for date, decision in seen if decision.wake]
+    return [(later - earlier).days for earlier, later in zip(woke, woke[1:], strict=False)]
+
+
+@pytest.mark.parametrize("days_per_turn", [3, 7, 14])
+def test_the_scheduled_review_comes_round_every_days_per_turn(days_per_turn):
+    """The counter used to be reset on a wake and topped up only on reflex
+    turns, so the turn after every review saw 0 days and the review came round
+    every other turn: every 14 game days at the default 7."""
+    seen, report = _wakes_on_a_quiet_run(12, days_per_turn=days_per_turn)
+
+    assert [d.reason for _, d in seen] == ["scheduled review"] * 12
+    assert _days_between_wakes(seen) == [days_per_turn] * 11
+    assert report.planner_calls == 12 and report.reflex_turns == 0
+
+
+def test_the_review_counts_game_days_not_turns():
+    """A turn that ran fewer days than it asked for is counted as it ran, so the
+    review still waits for days_per_turn of game time."""
+    seen, _ = _wakes_on_a_quiet_run(9, adapter=_ShortTurns(seed=3), days_per_turn=7)
+
+    assert [d.wake for _, d in seen] == [True, False, False] * 3
+    assert _days_between_wakes(seen) == [9, 9]
+
+
+def test_a_calendar_that_cannot_be_read_does_not_stop_the_review():
+    """No date movement to measure: each turn counts the days it asked for,
+    rather than none, which would leave the planner asleep for good."""
+    seen, _ = _wakes_on_a_quiet_run(6, adapter=_StoppedClock(seed=3), days_per_turn=7)
+
+    assert [d.wake for _, d in seen] == [True] * 6
+
+
 def test_memory_is_dated_when_the_turn_happened_not_after_it():
     """Adapters hand back a live GameState that keeps mutating as the turn's
     actions run, so reading the date at the end of the turn dated every journal
@@ -144,7 +231,9 @@ def test_a_wake_turn_leaves_a_progress_line():
 
 def test_a_reflex_turn_leaves_a_progress_line_without_a_token_column():
     lines: list[str] = []
-    loop, _env = make_loop(wake_on_no_focus=False, wake_on_free_research_slot=False)
+    # Reflex-only, because with the opportunity wakes merely off the scheduled
+    # review takes every quiet turn: the review interval is the turn length.
+    loop, _env = make_loop(planner_enabled=False)
     loop.progress = lines.append
     loop.run(2)
     assert len(lines) == 2
@@ -161,3 +250,87 @@ def test_a_budget_downgrade_says_why_in_its_progress_line():
     loop.run(2)
     assert "reflex (budget: call ceiling reached (1))" in lines[1]
     assert "wake:" not in lines[1]
+
+
+def _build(call_id: str) -> ToolCall:
+    return ToolCall(call_id, "queue_construction",
+                    {"building": "civilian_factory", "state": "capital", "count": 1})
+
+
+def test_the_per_turn_action_cap_binds_the_planner_not_only_the_reflexes():
+    """#66: the cap lived only in act_many, which only the reflexes call. The
+    planner's calls went through env.act one by one and nothing counted them,
+    so a model could run rounds x calls-per-round actions in one turn. Notes
+    and advance_time are turn bookkeeping, not actions, and stay free."""
+    script = [
+        LLMResponse(
+            tool_calls=[_build("a1"), _build("a2"), ToolCall("n1", "note", {"text": "civs"}),
+                        _build("a3")],
+            stop_reason="tool_use",
+            usage=Usage(10, 10),
+        ),
+        LLMResponse(
+            tool_calls=[_build("b1"), _build("b2"), _build("b3"),
+                        ToolCall("n2", "note", {"text": "still civs"})],
+            stop_reason="tool_use",
+            usage=Usage(10, 10),
+        ),
+        LLMResponse(
+            tool_calls=[_build("c1"), ToolCall("t1", "advance_time", {"days": 7})],
+            stop_reason="tool_use",
+            usage=Usage(10, 10),
+        ),
+    ]
+    loop, env = make_loop(script=script, max_actions_per_turn=4, max_tool_rounds_per_turn=3)
+
+    applied: list[str] = []
+    real_apply = env.adapter.apply
+
+    def counting_apply(call):
+        applied.append(call.name)
+        return real_apply(call)
+
+    env.adapter.apply = counting_apply
+    results: list[dict] = []
+    real_write = loop.transcript.write
+
+    def capture(kind, **fields):
+        if kind == "actions":
+            results.extend(fields["results"])
+        return real_write(kind, **fields)
+
+    loop.transcript.write = capture
+    loop.run(1)
+
+    by_id = {r["call_id"]: json.loads(r["content"]) for r in results}
+    # Seven construction calls were sent; exactly four reached the game.
+    assert applied.count("queue_construction") == 4
+    assert [i for i in ("a1", "a2", "a3", "b1") if by_id[i]["ok"]] == ["a1", "a2", "a3", "b1"]
+    for refused in ("b2", "b3", "c1"):
+        assert by_id[refused]["ok"] is False
+        assert by_id[refused]["error"] == "budget"
+    # The notes were journalled and the clock was still handed back.
+    assert by_id["n1"]["ok"] and by_id["n2"]["ok"]
+    assert by_id["t1"]["ok"]
+    assert len(loop.memory.journal) == 2
+
+
+def test_the_cap_is_counted_per_turn_and_starts_again_on_the_next_wake():
+    from hoi4_harness.agent.policy import WakeDecision
+
+    def wake(advance_id):
+        return LLMResponse(
+            tool_calls=[_build(f"{advance_id}-{i}") for i in range(3)]
+            + [ToolCall(advance_id, "advance_time", {"days": 7})],
+            stop_reason="tool_use",
+            usage=Usage(10, 10),
+        )
+
+    loop, env = make_loop(script=[wake("t1"), wake("t2")], max_actions_per_turn=2)
+    loop.policy.should_wake = lambda *a, **k: WakeDecision(True, "test")
+    loop.run(2)
+    # Two builds and the hand-back on each wake; the second wake is not
+    # charged for what the first one spent.
+    assert loop.report.planner_calls == 2
+    assert loop.report.actions_ok == 2 * (2 + 1)
+    assert loop.report.actions_failed == 2 * 1

@@ -21,7 +21,12 @@ the moment a critical event fires.
 
 Speed 5 on a fast machine runs roughly a game-week in a couple of seconds, so a
 1936–1939 campaign at weekly reviews is a few minutes of game time plus however
-long the model takes across ~105 wakes (measured; see below).
+long the model takes across ~190 wakes, one a week (measured; see below). On the real game
+add the pause check: the pause key is a toggle, so after each pause the input
+driver watches the date stand still for `clock_probe_seconds` before it trusts
+it ([adapters.md](adapters.md#the-clock-a-toggle-so-look-before-pressing)). At
+the default 10 s that is about half an hour over the ~190 turns of that
+campaign; at speed 5 the window can be cut to a couple of seconds.
 
 ## 2. Most game-days are not decisions
 
@@ -34,14 +39,21 @@ The harness splits control:
   empty construction queue, reassigns idle military factories, and nothing that
   requires judgement. Free and instant.
 - **Planner** — the model. Woken on: a critical event, no national focus running,
-  an idle research slot, a front losing ground, or the scheduled review. At war,
-  also on the *onset* of an encirclement, a supply collapse on a front that was
-  supplied last turn, the capital coming under threat, an ally capitulating or
-  leaving the war, and a front going quiet. Onset, not condition: a pocket wakes
-  the model when it opens or grows, not every turn it stands.
+  an idle research slot, the *onset* of a front losing ground, or the scheduled
+  review. At war, also on the *onset* of an encirclement, a supply collapse on a
+  front that was supplied last turn, the capital coming under threat, an ally
+  capitulating or leaving the war, and a front going quiet. Onset, not
+  condition: a pocket wakes the model when it opens or grows, and a front wakes
+  it when it starts losing ground, not every turn either one stands.
 
 Widening that rule is how a run gets expensive. It is deliberately one small
 function so the cost of a change is visible.
+
+The review interval is `days_per_turn`, which is also how far each turn runs the
+clock, so a turn that nothing else wakes the model for is a scheduled review. The
+reflex layer plays a turn on its own when the budget has run out, when the
+planner is disabled (the reflex-only baseline), or when the clock came back early
+and fewer than `days_per_turn` game days have passed since the last review.
 
 ## 3. The state space is compressed before it is sent
 
@@ -85,7 +97,8 @@ contradict the current one, and the model re-argues settled decisions.
 ## The arithmetic
 
 This section started as an estimate: ~2.2k input tokens a wake, ~190 wakes for
-1936–1939. It is now measured, and the estimate was high on both counts.
+1936–1939. It is now measured: the estimate was high on the size of a wake and
+about right on the number.
 
 **Method.** `hoi4-harness measure --campaign NAME` plays a long campaign against
 the mock and reads its transcript. Every wake records the brief's size, what the
@@ -106,32 +119,53 @@ it used. The mock's war is a script, not a simulation, and the scripted planner
 is not a model, so wake *rate* is the harness's rule applied to the mock's
 signals — the number to re-measure on a real game (#1, #3) and a real model.
 Billed tokens and cache hits need a real provider; the command prints them when
-the transcript has them and dashes when it does not.
+the transcript has them and dashes when it does not. On the mock, as through the input driver, a
+planner turn that ends in `advance_time` only ends the turn and the harness
+moves the clock once (#65), so every turn is `days_per_turn` long unless a
+critical event cuts it short. The default `max_llm_calls` of 250 is left in
+place, so the peacetime runs show where it bites.
 
-| campaign, wake rules | phase | game days | wakes | wakes / month | brief mean (full / delta) | brief max | request: prefix + turn |
-|---|---|---|---|---|---|---|---|
-| peacetime, default | peace | 1,339 | 105 | 2.4 | 50 (133 / 37) | 151 | 1,531 + 184 |
-| peacetime, schedule only | peace | 1,346 | 75 | 1.7 | 56 (131 / 45) | 143 | 1,531 + 189 |
-| wartime, default | war | 854 | 66 | 2.4 | 70 (175 / 53) | 230 | 1,531 + 233 |
-| wartime, schedule + alarms | war | 854 | 49 | 1.7 | 77 (195 / 54) | 253 | 1,531 + 233 |
+| campaign, wake rules | phase | game days | turns | wakes | wakes / month | brief mean (full / delta) | brief max | request: prefix + turn |
+|---|---|---|---|---|---|---|---|---|
+| peacetime, default | peace | 1,339 | 192 | 172 | 3.9 | 45 (139 / 31) | 157 | 1,531 + 165 |
+| peacetime, schedule only | peace | 1,339 | 192 | 172 | 3.9 | 45 (139 / 31) | 157 | 1,531 + 164 |
+| wartime, default | war | 854 | 123 | 123 | 4.4 | 63 (196 / 43) | 243 | 1,531 + 220 |
+| wartime, schedule + alarms | war | 854 | 123 | 123 | 4.4 | 63 (196 / 43) | 243 | 1,531 + 219 |
+
+These were re-measured with #63 (a review every `days_per_turn`), #65 (the
+mock's `advance_time` ends the turn), #66 (the action cap holds the planner) and
+#70 (a losing front wakes once) all in place. The earlier table (110 / 110 / 76 /
+76 wakes) came from a mock whose planner turns ran the model's days and then
+another week, so three turns in four were 14 days long.
 
 What that says:
 
-- **A wake sends ~1.75k tokens, not ~2.2k.** ~1.5k of it is the cacheable
+- **A wake sends ~1.7k tokens, not ~2.2k.** ~1.5k of it is the cacheable
   prefix, so the design's premise holds: the part that changes turn to turn is
-  ~200 tokens, and most of that is the memory block and framing, not the brief.
-- **1936–1939 is ~105 wakes, not ~190** — the estimate was ~1.8x high. At 1.75k
-  input a wake that is ~185k input tokens for the campaign, ~160k of them
-  cacheable, against the ~400k estimated.
-- **War did not compound.** The full brief grows by a third (133 → 175) and the
-  per-turn message by a quarter (184 → 233), because fronts are capped at three
-  lines. The wake rate is flat (2.4 → 2.4, and 1.7 → 1.7 with only the schedule
-  and the wartime alarms), because every wartime rule fires on the onset of its
-  condition. In the schedule-and-alarms run the alarms account for 5 of 49
-  wartime wakes: three critical events, the supply collapse in the October mud,
-  and the losing front after the counteroffensive.
-- **What the estimate got right:** the order of magnitude, and that the prefix is
-  most of the bill.
+  ~170-220 tokens, and most of that is the memory block and framing, not the
+  brief.
+- **Every turn is a review.** A review is due every `days_per_turn`, and a turn
+  runs that long unless a critical event cuts it short and wakes the model
+  anyway, so the opportunity rules only change why a turn wakes the model (in
+  the default peacetime run: the schedule 89 times, an idle research slot 54, no
+  focus 29), never whether it does. The schedule-only runs wake exactly as often.
+- **1936–1939 is ~190 turns at a weekly review, so the ~190 estimate was
+  right, and the default call ceiling is too low for it.** The scripted planner
+  makes ~1.5 calls a wake, so the 250-call ceiling is spent after 172 turns and
+  the last 20, from mid-1939, drop to reflexes. At ~1.7k input a wake the 172
+  wakes are ~290k input tokens, ~265k of them cacheable; all 192 would be
+  ~325k, against the ~400k estimated. A campaign that should be played to its
+  end needs `max_llm_calls` of about 300.
+- **War did not compound.** The full brief grows by two fifths (139 → 196) and
+  the per-turn message by a third (165 → 220), because fronts are capped at three
+  lines. The wake rate goes from 3.9 to 4.4 a month: with a review due every turn
+  that is the turn rate, and the war's three critical events each cut a turn
+  short. In the schedule-and-alarms run the alarms name 4 of 123 wartime wakes
+  (the three critical events and the supply collapse in the October mud); the
+  losing front after the counteroffensive falls on turns that are reviews
+  anyway, so it never names one.
+- **What the estimate got right:** the order of magnitude, the number of wakes,
+  and that the prefix is most of the bill.
 
 Reproduce with:
 
@@ -139,11 +173,12 @@ Reproduce with:
 hoi4-harness measure --campaign peacetime_1936_1939
 hoi4-harness measure --campaign wartime_1939_1941
 echo '{"wake_on_free_research_slot": false, "wake_on_no_focus": false}' > sched.json
+hoi4-harness measure --campaign peacetime_1936_1939 --profile sched.json
 hoi4-harness measure --campaign wartime_1939_1941 --profile sched.json
 hoi4-harness measure runs/transcript.jsonl       # or any transcript from play/eval
 ```
 
-At frontier-model prices that lands around a dollar per campaign; on a
+At frontier-model prices that lands around a dollar or two per campaign; on a
 mid-tier model it is cents; on a local model behind an OpenAI-compatible endpoint
 it is electricity. Set `--max-usd` and the harness enforces it — on exhaustion the
 run does not stop, it drops to the reflex layer and keeps playing for free.
@@ -186,8 +221,9 @@ Honest failure modes, since they decide whether the numbers above survive contac
   they need a decision (losing ground, a pocket forming, the capital threatened,
   supply failing, an attack), and folds the rest into one line that still says
   whether anything in the fold is in trouble. A synthetic twelve-front war renders
-  as a ~450-character brief. Measured over a scripted 1939–1941 (above), neither
-  brief size nor wake rate compounded; a real game is what would falsify that.
+  as a ~450-character brief. Measured over a scripted 1939–1941 (above), and
+  that war extended to mid-1942 with a front losing on every turn, neither brief
+  size nor wake rate compounded; a real game is what would falsify that.
 - **Screen-based observation.** A vision call per observation is 1–2k image tokens
   and cannot be cached across turns. It is for what numbers cannot express, not
   for routine ticks.

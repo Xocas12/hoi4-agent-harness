@@ -41,8 +41,11 @@ rejected, or unverified when the reader cannot see the proving field.
 **Env.** The rules that must not depend on the model behaving live here:
 schema validation, identifier checks against the playset (`identifiers.py`, when
 one is configured), the confirmation gate on irreversible actions, the per-turn
-action cap, the co-op handover queue (`handover.py`), and exception containment
-(an adapter fault becomes a failed action, not a dead run). It also keeps the
+action cap (applied by `act_many` to the reflexes; the planner's calls arrive one
+`act` at a time over several tool rounds, so the loop counts them across the turn
+and Env supplies the `budget` refusal), the co-op handover queue (`handover.py`),
+and exception containment (an adapter fault becomes a failed action, not a dead
+run). It also keeps the
 directive tracker, which diffs what each standing directive has visibly changed.
 
 **Policy.** The wake rule and the reflexes. See
@@ -82,7 +85,11 @@ on four models" a config change.
 7. Up to `max_tool_rounds_per_turn` rounds, so the model can react to a rejection
    without being able to loop forever.
 8. In handover mode, run the queue if the player has granted a window.
-9. Record the turn in memory, advance the clock, repeat.
+9. Record the turn in memory, acknowledge the events from (1) and the brief in
+   (5), advance the clock, repeat. An event that arrives after those reads,
+   including the one that cuts the wait short, is still pending next turn. A
+   wake whose model call failed before any reply acknowledges nothing, so its
+   war wakes the next turn again.
 
 Everything above is written to a JSONL transcript, one record per event, which is
 what the eval runner and any later analysis read.
@@ -108,7 +115,9 @@ turn count, spend, the agent's own journal, and the turn digest. Reconstruction
 tolerates a transcript that was truncated mid-write, since that is the normal
 shape of a file written by a process that died. Resuming appends to the same
 transcript rather than truncating it, and carries spend forward -- a resumed run
-cannot quietly get a second budget.
+cannot quietly get a second budget. Dollars are re-priced from the restored
+token usage, not read from a `run_end` record, since a run that crashed never
+wrote one.
 
 Note what resume does *not* do: it restores what the *harness* knew, not the
 game. The mock's world is gone when the process dies; a live adapter re-observes

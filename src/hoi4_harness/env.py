@@ -3,10 +3,14 @@
 Everything the agent can do to the world goes through here, which makes this the
 one place to enforce the rules that must not depend on the model behaving:
 validation, the confirmation gate on irreversible actions, and the per-turn
-action cap.
+action cap. The cap is applied by act_many() to the reflexes, and by the agent
+loop to the planner's calls, which arrive one act() at a time across several
+tool rounds; both refuse with ``error_kind="budget"`` (see over_budget()).
 """
 
 from __future__ import annotations
+
+from collections.abc import Iterable
 
 from .actions import registry
 from .adapters.base import GameAdapter
@@ -16,7 +20,12 @@ from .handover import PASS_THROUGH, HandoverQueue, HandoverReport
 from .identifiers import IdentifierIndex
 from .observation import ObservationBuilder
 from .observation.directives import DirectiveTracker
-from .types import ActionCall, ActionResult, GameState, Observation
+from .types import ActionCall, ActionResult, GameEvent, GameState, Observation
+
+#: Calls the per-turn action cap does not count: a note only writes to the
+#: journal, and advance_time hands the clock back -- the prompt asks for "up to
+#: N actions, then advance_time", and refusing it would not stop the turn.
+UNCAPPED_ACTIONS = frozenset({"note", "advance_time"})
 
 
 class HOI4Env:
@@ -52,6 +61,10 @@ class HOI4Env:
 
     def read_state(self) -> GameState:
         return self.adapter.read_state()
+
+    def acknowledge_events(self, events: Iterable[GameEvent]) -> None:
+        """Tell the adapter the loop has answered these events (see GameAdapter)."""
+        self.adapter.acknowledge_events(events)
 
     def observe(self, notes: list[str] | None = None, *, remember: bool = True) -> Observation:
         state = self.adapter.read_state()
@@ -95,7 +108,14 @@ class HOI4Env:
             self.adapter.pause()
         # The brief reset returns is real (the observe CLI prints it), but it must
         # not set the diff baseline: the first observe() after reset is still full.
-        return self.observe(remember=False)
+        observation = self.observe(remember=False)
+        # Whatever this first read found already queued is history, not news: the
+        # log-tail reader starts at the top of game.log, so a fresh start, a
+        # `play --resume` or a co-op attach would otherwise wake turn 1 for every
+        # war the mod has logged this session, including ones a previous run has
+        # already answered. Only what this read returned: anything later is news.
+        self.adapter.acknowledge_events(observation.state.events)
+        return observation
 
     # --- acting --------------------------------------------------------------
 
@@ -202,6 +222,25 @@ class HOI4Env:
             )
         elif call.name == "clear_ai_directives":
             self.directives.clear()
+
+    def over_budget(self, call: ActionCall) -> ActionResult:
+        """The refusal for a call past the per-turn action cap. Nothing runs.
+
+        The planner's calls arrive one at a time, so the loop counts them across
+        the turn's rounds and hands each one past the cap this result instead of
+        passing it to act().
+        """
+        cap = self.config.max_actions_per_turn
+        return ActionResult(
+            ok=False,
+            action=call.name,
+            call_id=call.call_id,
+            message=(
+                f"The per-turn cap of {cap} actions is used up; '{call.name}' was not run. "
+                "Call advance_time to end the turn."
+            ),
+            error_kind="budget",
+        )
 
     def act_many(self, calls: list[ActionCall], date: str = "") -> list[ActionResult]:
         results: list[ActionResult] = []
