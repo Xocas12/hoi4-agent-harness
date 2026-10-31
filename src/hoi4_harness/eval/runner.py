@@ -75,5 +75,11 @@ def run_scenario(
     )
     loop.config.objective = scenario.briefing
     report = loop.run(scenario.max_turns, until=scenario.until)
-    card = score(scenario, env.read_state(), report, loop.history)
+    final = env.read_state()
+    # loop.history is the state at the start of each turn: the first is the
+    # opening the agent inherited, and the last is a turn before the end. A
+    # whole-run objective reads what the agent produced, so it gets the state
+    # after each turn instead, ending on the one that is scored.
+    produced = loop.history[1:] + [final]
+    card = score(scenario, final, report, produced)
     return attach_baseline(card, scenario)
