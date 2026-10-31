@@ -5,7 +5,8 @@ Windows that is *supposed* to be ``Documents\Paradox Interactive\...`` -- but
 Documents is very often redirected into OneDrive, and then it is not there at
 all. Checked against a real install: the only copy on that machine lives under
 ``OneDrive\Documents``, and every default path the harness had would have missed
-it.
+it. Native Linux builds use neither: they keep it under
+``$XDG_DATA_HOME`` (``~/.local/share``).
 
 Hence one place that knows where to look, rather than two lists that drift.
 """
@@ -38,6 +39,10 @@ def documents_roots() -> Iterator[Path]:
             if candidate not in seen:
                 seen.add(candidate)
                 yield candidate
+    # The native Linux build: ~/.local/share/Paradox Interactive/..., not Documents.
+    xdg = Path(os.environ["XDG_DATA_HOME"]) if os.environ.get("XDG_DATA_HOME") else home / ".local" / "share"
+    if xdg not in seen:
+        yield xdg
 
 
 def game_dirs() -> Iterator[Path]:

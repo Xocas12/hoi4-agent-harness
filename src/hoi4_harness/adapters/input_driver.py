@@ -268,10 +268,18 @@ class InputDriverAdapter(GameAdapter):
             if speed == 0:
                 # The pause key is a toggle: pressed on a paused game it unpauses.
                 self.pause()
-            else:
-                self.press(HOTKEYS["speed_up"])
-            return ActionResult(ok=True, action=call.name, call_id=call.call_id,
-                                message=f"Speed -> {speed}")
+                return ActionResult(ok=True, action=call.name, call_id=call.call_id,
+                                    message="Paused.")
+            # Nothing reads the game's speed back, and '+' moves it one step from
+            # wherever it is, so a speed cannot be set -- only guessed at. Say so
+            # rather than press blind and report a speed that may not be true.
+            return ActionResult(
+                ok=False, action=call.name, call_id=call.call_id,
+                message=(f"Speed {speed} not set: this driver cannot read the game's speed, "
+                         "so it cannot set one. The harness runs the clock between turns; "
+                         "set the speed in the game before the run."),
+                error_kind="unsupported",
+            )
         if call.name == "advance_time":
             return ActionResult(ok=True, action=call.name, call_id=call.call_id,
                                 message="Clock handed back to the harness.")

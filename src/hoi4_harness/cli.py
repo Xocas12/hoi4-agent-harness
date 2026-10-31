@@ -51,9 +51,7 @@ def _config_from_args(args: argparse.Namespace) -> HarnessConfig:
     if getattr(args, "adapter", None):
         config.adapter = args.adapter
     if getattr(args, "provider", None):
-        config.planner.provider = args.provider
-        config.planner.model = args.model or config.planner.model or ""
-        config.planner.__post_init__()
+        config.planner.switch_provider(args.provider)
     if getattr(args, "model", None):
         config.planner.model = args.model
     if getattr(args, "base_url", None):
@@ -95,7 +93,7 @@ def _config_from_args(args: argparse.Namespace) -> HarnessConfig:
     if getattr(args, "no_llm", False):
         config.planner_enabled = False
     if getattr(args, "country", None):
-        config.country = args.country
+        config.country = args.country.upper()
     if getattr(args, "start_date", None):
         config.start_date = args.start_date
     if getattr(args, "seed", None) is not None:
@@ -226,6 +224,13 @@ def cmd_play(args: argparse.Namespace) -> int:
     )
     if resume and loop.report.resumed_from:
         print(f"resuming {run_dir}: {loop.report.turns} turns already played", file=sys.stderr)
+    if env.handover is not None:
+        # What the player was shown as queued is what runs when they hand over,
+        # across a restart; a fresh run starts empty.
+        if resume and (restored := env.handover.restore()):
+            print(f"handover: {restored} queued action(s) restored", file=sys.stderr)
+        elif not resume:
+            env.handover.clear()
     if getattr(args, "confirm", False):
         # The hook is the gate's only UI; without this flag a live gated action
         # runs unanswered, which is what keeps unattended runs working.
@@ -475,16 +480,10 @@ def cmd_verify_bridge(args: argparse.Namespace) -> int:
 
 def cmd_prompt(args: argparse.Namespace) -> int:
     """Print the exact system prompt a run would use. Nothing is hidden."""
-    from .agent.prompts import build_system
+    from .agent.prompts import system_for
 
     config = _config_from_args(args)
-    print(
-        build_system(
-            guidance=config.guidance,
-            extra=config.system_prompt_extra,
-            system_prompt_path=config.system_prompt_path,
-        )
-    )
+    print(system_for(config, config.build_index()))
     return 0
 
 
@@ -604,7 +603,8 @@ def build_parser() -> argparse.ArgumentParser:
                        help="a person is playing: never pause, resume or set game speed")
         p.add_argument("--no-llm", dest="no_llm", action="store_true",
                        help="never wake the planner: reflexes only, zero model calls")
-        p.add_argument("--country", help="country tag (mock adapter)")
+        p.add_argument("--country", help="country tag: the mock's country (default SWE), or the one "
+                       "the log reader keeps to (default: whichever the game reports)")
         p.add_argument("--start-date", dest="start_date", help="start date (mock adapter)")
         p.add_argument("--seed", type=int, help="mock adapter seed")
         p.add_argument("--game-dir", dest="game_dir", metavar="PATH",

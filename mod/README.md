@@ -34,9 +34,13 @@ One pipe-delimited line per tick, prefixed so the parser can find it in a log
 full of everything else:
 
 ```
-LLMB|v1|date=1936.2.14|tag=SWE|pp=42|stab=63|ws=18|civ=12|mil=5|doc=4|mp=214000
-LLMB|v1|evt|kind=war_declared|from=GER|to=POL
+LLMB|v1|state|date=1936.2.14|tag=SWE|pp=42|stab=63|ws=18|civ=12|mil=5|doc=4|mp=214000
+LLMB|v1|evt|tag=GER|other=POL|kind=1|detail=0
 ```
+
+Event kinds are numeric codes (`1` is a war declaration); the table is
+`EVENT_CODES` in `hoi4_harness/adapters/logtail.py`, and the full rules are in
+[docs/mod-bridge.md](../docs/mod-bridge.md#the-wire-format).
 
 `LLMB_SCHEMA_VERSION` in `common/scripted_effects/llm_bridge_telemetry.txt` and
 `SCHEMA_VERSION` in `hoi4_harness/adapters/logtail.py` must match. They are

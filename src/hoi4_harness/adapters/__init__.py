@@ -38,7 +38,7 @@ def build_adapter(config: HarnessConfig) -> GameAdapter:
     name = config.adapter.strip().lower()
     if name == "mock":
         return MockAdapter(
-            seed=config.seed, country=config.country, start=config.start_date
+            seed=config.seed, country=config.country or "SWE", start=config.start_date
         )
     if name == "savegame":
         from .savegame import SaveGameAdapter

@@ -37,7 +37,7 @@ from .errors import classify, describe
 from .llm.base import LLMClient, Msg, ToolResult
 from .memory import Memory
 from .policy import Policy
-from .prompts import build_system, turn_prompt
+from .prompts import system_for, turn_prompt
 from .resume import rebuild
 
 
@@ -120,14 +120,7 @@ class AgentLoop:
             wake_on_losing_ground=self.config.wake_on_losing_ground,
             reflex_delegate=self.config.reflex_delegate,
         )
-        self.system = build_system(
-            guidance=self.config.guidance,
-            extra=self.config.system_prompt_extra,
-            system_prompt_path=self.config.system_prompt_path,
-            operational_control=self.config.operational_control,
-            advisor=self.config.advisor,
-            playset=env.index.playset.name if env.index is not None else None,
-        )
+        self.system = system_for(self.config, env.index)
         self.budget = BudgetGuard(self.config.budget)
         self.transcript = Transcript(transcript_path, append=resume)
         self.advisor = (
@@ -163,7 +156,11 @@ class AgentLoop:
         state = rebuild(transcript_path)
         if not state.records:
             return
-        self.memory = state.memory if state.memory.journal or state.memory.digest else self.memory
+        # The checkpoint is the memory exactly as the model last saw it, saved
+        # after every turn; the transcript only approximates it. Rebuild from
+        # the transcript only when there is no checkpoint to keep.
+        if not (self.memory.journal or self.memory.digest):
+            self.memory = state.memory
         self.report.turns = state.turns
         self.report.planner_calls = state.planner_calls
         self.report.reflex_turns = state.reflex_turns
@@ -222,7 +219,14 @@ class AgentLoop:
                 if self.progress:
                     self.progress(handover.summary())
             self._acknowledge()
-            state = self.env.advance()
+            # The last turn stops on the end date rather than running past it:
+            # a scenario is scored on the state at ``until``, not a week later.
+            days = self.config.days_per_turn
+            if until is not None:
+                left = days_between(turn_date, until)
+                if 0 < left < days:
+                    days = left
+            state = self.env.advance(days)
             # Every turn's days count, the planner's own included. Adding only
             # reflex turns left the turn after each review at 0, so with
             # nothing else waking the planner it reviewed every other turn.
@@ -293,7 +297,8 @@ class AgentLoop:
         return names, 0
 
     def _planner_turn(self, reason: str) -> tuple[list[str], int]:
-        observation = self.env.observe()
+        # Not yet the diff baseline: only once the model has replied (below).
+        observation = self.env.observe(remember=False)
         # The brief shows the model everything this read returned, which is more
         # than the wake rule saw if the game ran in between (a player-owned
         # clock). Copied now: later reads in the turn replace state.events.
@@ -377,6 +382,8 @@ class AgentLoop:
                     # next turn, rather than being acknowledged unseen.
                     self._answered = []
                 return self._reflex_fallback(f"model call failed: {type(exc).__name__}")
+            if not heard_back:
+                self.env.builder.remember_last()
             heard_back = True
             self._consecutive_errors = 0
             self.budget.record(response.usage)
@@ -500,23 +507,12 @@ class AgentLoop:
     def _reflex_fallback(self, reason: str) -> tuple[list[str], int]:
         """Play the turn for free rather than losing it.
 
-        Returns what the progress line needs, like the two turn methods: the
-        model produced nothing, so the token count is zero whatever it cost to
-        find that out.
+        It is a reflex turn like any other: counted as one (resume already
+        counted it so, from the transcript), and in advisor mode it acts on
+        nothing. The model produced nothing, so the token count is zero
+        whatever it cost to find that out.
         """
-        state = self.env.read_state()
-        calls = self.policy.reflex_actions(state)
-        if not calls:
-            self.transcript.write("skip", date=state.date, reason=reason)
-            return [], 0
-        results = self.env.act_many(calls, state.date)
-        self._tally(results)
-        self.transcript.write(
-            "reflex", date=state.date, reason=reason,
-            actions=[c.to_dict() for c in calls],
-            results=[r.to_dict() for r in results],
-        )
-        return [f"{r.action}{'' if r.ok else ' (rejected)'}" for r in results], 0
+        return self._reflex_turn(reason)
 
     def _acknowledge(self) -> None:
         """Mark this turn's events answered, before the clock moves on.

@@ -19,6 +19,17 @@ class ObservationBuilder:
         self.full_brief_every = max(1, full_brief_every)
         self._previous: GameState | None = None
         self._turns_since_full = 0
+        #: The last build, not yet the diff baseline (see build()).
+        self._unremembered: tuple[bool, GameState] | None = None
+
+    def remember_last(self) -> None:
+        """Make the last brief built the one the next delta diffs against."""
+        if self._unremembered is None:
+            return
+        use_full, previous = self._unremembered
+        self._turns_since_full = 0 if use_full else self._turns_since_full + 1
+        self._previous = previous
+        self._unremembered = None
 
     def build(
         self,
@@ -44,9 +55,12 @@ class ObservationBuilder:
 
         # remember=False renders a look that must not become the diff baseline,
         # so the next build still qualifies for a full brief (env.reset uses it).
+        # The loop uses it too, and calls remember_last() once the model has
+        # replied: a brief nobody read must not be what the next delta diffs
+        # against, or its changes are never shown.
+        self._unremembered = (use_full, snapshot(state))
         if remember:
-            self._turns_since_full = 0 if use_full else self._turns_since_full + 1
-            self._previous = snapshot(state)
+            self.remember_last()
         return Observation(
             turn=turn,
             state=state,

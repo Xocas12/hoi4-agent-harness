@@ -69,6 +69,15 @@ class LLMConfig:
         if not self.model:
             self.model = DEFAULT_MODELS.get(self.provider, "")
 
+    def switch_provider(self, provider: str) -> None:
+        """Change provider. A model that was only the old provider's default goes
+        with it -- otherwise ``--provider anthropic`` would send the model name
+        ``scripted`` to the real API -- while a model someone chose is kept."""
+        if self.model == DEFAULT_MODELS.get(self.provider, ""):
+            self.model = ""
+        self.provider = provider
+        self.__post_init__()
+
     @classmethod
     def from_env(cls, prefix: str = "HOI4_LLM") -> LLMConfig:
         provider = os.environ.get(f"{prefix}_PROVIDER", "scripted").strip().lower()
@@ -210,7 +219,9 @@ class HarnessConfig:
     # grants a window (handover.py). For playing alongside a person, not for
     # scoring -- the eval runner refuses a handover run.
     handover: bool = False
-    country: str = "SWE"
+    # The player's tag. Unset, the mock plays Sweden and the log reader follows
+    # whichever human country the game reports; set, the reader keeps to it.
+    country: str | None = None
     start_date: str = "1936-01-01"
     seed: int = 1936
     # --- the playset: what identifiers exist --------------------------------
@@ -256,7 +267,7 @@ class HarnessConfig:
             clock_owner=os.environ.get("HOI4_CLOCK_OWNER", "harness").strip(),
             clock_probe_seconds=_env_float("HOI4_CLOCK_PROBE_SECONDS", 10.0) or 10.0,
             handover=_env_bool("HOI4_HANDOVER", False),
-            country=os.environ.get("HOI4_COUNTRY", "SWE"),
+            country=(os.environ.get("HOI4_COUNTRY") or "").strip().upper() or None,
             start_date=os.environ.get("HOI4_START_DATE", "1936-01-01"),
             seed=_env_int("HOI4_SEED", 1936),
             game_dir=Path(os.environ["HOI4_GAME_DIR"]) if os.environ.get("HOI4_GAME_DIR") else None,
@@ -289,13 +300,16 @@ class HarnessConfig:
             if key == "planner" and isinstance(value, dict):
                 role = getattr(self, key)
                 for sub_key, sub_value in value.items():
-                    setattr(role, sub_key, sub_value)
+                    if sub_key == "provider":
+                        role.switch_provider(sub_value)
+                    else:
+                        setattr(role, sub_key, sub_value)
                 role.__post_init__()
             elif key == "budget" and isinstance(value, dict):
                 for sub_key, sub_value in value.items():
                     setattr(self.budget, sub_key, sub_value)
-            elif key in {"run_dir", "save_dir", "system_prompt_path", "game_dir", "ui_scripts_path",
-                         "calibration_path"} and value is not None:
+            elif key in {"run_dir", "save_dir", "log_path", "system_prompt_path", "game_dir",
+                         "ui_scripts_path", "calibration_path"} and value is not None:
                 setattr(self, key, Path(value))
             elif key == "mod_dirs":
                 self.mod_dirs = [Path(v) for v in value]

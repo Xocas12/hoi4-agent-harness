@@ -38,7 +38,7 @@ engine chatter:
 
 ```
 LLMB|v1|state|date=1936.2.14|tag=SWE|pp=42|stab=63|ws=18|civ=12|mil=5|doc=4|mp=214000
-LLMB|v1|evt|tag=SWE|kind=1|detail=Germany declared war
+LLMB|v1|evt|tag=GER|other=SWE|kind=1|detail=0
 ```
 
 Rules the parser holds to, all of them tested in
@@ -59,6 +59,12 @@ Rules the parser holds to, all of them tested in
 - **Fields the mod does not emit yet are declared unknown up front** (research,
   production, construction, fronts, wars, focus).
 - **Only new bytes are read**, and a truncated or rotated log resets the offset.
+  A last line the game has not finished writing is left for the next read: read
+  early, `mp=214000` is `mp=21` and `kind=12` is `kind=1`, a war.
+- **Lines are kept to one country only when you name it** (`--country`,
+  `HOI4_COUNTRY`); otherwise the reader follows whichever human country the game
+  reports. An event matches on `tag` or `other`: a war is logged in the
+  declarer's scope with the target as `other`, so a war declared on you counts.
 - **Events stay queued until the loop has answered them.** No read drains the
   queue, the clock wait's polls included, so a war declaration that cuts the
   wait short is still there when the next turn's wake rule looks, and it is in

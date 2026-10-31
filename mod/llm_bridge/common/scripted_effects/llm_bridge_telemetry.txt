@@ -50,3 +50,11 @@ llm_bridge_emit_army = {
 llm_bridge_emit_event = {
 	log = "LLMB|v[?LLMB_SCHEMA_VERSION]|evt|tag=[ROOT.GetTag]|kind=[?llmb_event_kind]|detail=[?llmb_event_detail]"
 }
+
+# A war is logged in the declarer's scope (ROOT); the side it was declared on is
+# FROM. Both are printed, so a reader that keeps to one country sees a war
+# declared on it as well as one it declared. VERIFY: FROM is the target in
+# on_declare_war in your version.
+llm_bridge_emit_war = {
+	log = "LLMB|v[?LLMB_SCHEMA_VERSION]|evt|tag=[ROOT.GetTag]|other=[FROM.GetTag]|kind=[?llmb_event_kind]|detail=[?llmb_event_detail]"
+}

@@ -60,6 +60,8 @@ Both the log-tail and savegame adapters locate the game's user directory through
 `hoi4_harness.paths`, which searches OneDrive-redirected Documents as well as the
 plain one. That is not hypothetical: on the machine this was checked against, the
 only copy lived under `OneDrive\Documents` and every previous default missed it.
+The native Linux build keeps the directory under `~/.local/share` (or
+`$XDG_DATA_HOME`), which is searched too.
 
 A path you supply explicitly is used or it fails — discovery never runs as a
 fallback, because searching on after you named a directory would mean reading a
@@ -153,7 +155,9 @@ through the reader the composite attached:
 The cost is the stop check: every pause watches a still date for
 `clock_probe_seconds`, so each turn takes that much longer.
 `speed` in `resume(speed)` is still not applied; the game runs at whatever speed
-it was left at.
+it was left at. For the same reason `set_game_speed` with a speed above 0 is
+refused rather than pressing `+` and reporting a speed nobody checked: set the
+speed in the game before the run.
 
 ### UI scripts: act, then prove it
 

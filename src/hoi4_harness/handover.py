@@ -166,10 +166,39 @@ class HandoverQueue:
         self.run_dir.mkdir(parents=True, exist_ok=True)
         payload = [
             {"position": p.position, "action": p.call.name, "arguments": p.call.arguments,
-             "queued_on": p.queued_on, "rationale": p.call.rationale}
+             "queued_on": p.queued_on, "queued_turn": p.queued_turn,
+             "rationale": p.call.rationale}
             for p in self.pending
         ]
         (self.run_dir / QUEUE_FILENAME).write_text(json.dumps(payload, indent=2), encoding="utf-8")
+
+    def restore(self) -> int:
+        """Reload the queue a stopped run left behind (``play --resume``).
+
+        The file is what the player was shown, so it is what they expect to run
+        when they hand over. Returns how many actions came back.
+        """
+        path = self.run_dir / QUEUE_FILENAME
+        if not path.exists():
+            return 0
+        items = json.loads(path.read_text(encoding="utf-8"))
+        self.pending = [
+            Pending(
+                call=ActionCall(name=item["action"], arguments=item.get("arguments") or {},
+                                rationale=item.get("rationale")),
+                queued_on=item.get("queued_on", ""),
+                queued_turn=int(item.get("queued_turn", 0)),
+                position=int(item["position"]),
+            )
+            for item in items
+        ]
+        self._next = max((p.position for p in self.pending), default=0) + 1
+        return len(self.pending)
+
+    def clear(self) -> None:
+        """Start a fresh run with an empty queue, not the last run's leftovers."""
+        self.pending = []
+        self._publish()
 
     def describe(self) -> list[str]:
         if not self.pending:
