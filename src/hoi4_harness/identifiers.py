@@ -256,6 +256,8 @@ class IdentifierIndex:
     tech_places: dict[str, TechPlace] = field(default_factory=dict)
     #: ``(folder, "<root>_tree")`` -> the sub-tree's box in countrytechtreeview.gui.
     tech_gridboxes: dict[tuple[str, str], Gridbox] = field(default_factory=dict)
+    #: technology -> the technologies its ``path = { leads_to_tech }`` blocks name.
+    tech_leads: dict[str, list[str]] = field(default_factory=dict)
     _focus_names: dict[str, str] | None = field(default=None, repr=False)
     _advisors: dict[str, list[AdvisorRole]] | None = field(default=None, repr=False)
     _equipment: set[str] | None = field(default=None, repr=False)
@@ -286,6 +288,7 @@ class IdentifierIndex:
                         leads[key] = [str(t) for p in _as_list(value.get("path"))
                                       if isinstance(p, dict)
                                       for t in _as_list(p.get("leads_to_tech")) if isinstance(t, str)]
+        index.tech_leads = leads
         _attach_roots(index.tech_places, leads)
         for path in playset.layered("interface", "countrytechtreeview.gui"):
             index.tech_gridboxes = parse_gridboxes(path.read_text(encoding="utf-8-sig", errors="replace"))

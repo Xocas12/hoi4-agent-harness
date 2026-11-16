@@ -17,7 +17,7 @@ import pytest
 
 from hoi4_harness.adapters.ui_resolve import Unresolvable, tech_point
 from hoi4_harness.identifiers import IdentifierIndex, Playset
-from hoi4_harness.techtree import Gridbox, parse_gridboxes
+from hoi4_harness.techtree import Gridbox, gui_point, parse_gridboxes
 
 FIXTURE = Path(__file__).parent / "fixtures" / "techtree"
 SCREEN = (1920, 1080)
@@ -134,3 +134,89 @@ MEASURED = [
 def test_the_real_install_reproduces_the_measured_infantry_tab(tech, truth):
     x, y = point(_real_index(), tech)
     assert abs(x - truth[0]) <= 25 and abs(y - truth[1]) <= 25, (tech, (x, y), truth)
+
+
+# --- internal consistency of the rotated tabs (not measured live) ------------
+
+SCREEN_GUI_WIDTH = 1536      # 1920 px at the 1.25 scale
+ROTATED = ("armour_folder", "nsb_armour_folder", "artillery_folder", "air_techs_folder",
+           "bba_air_techs_folder", "industry_folder", "electronics_folder")
+#: ``techtree_stripes`` (or the ``size_filler``) container size per folder, from the
+#: interface file; a folder's techs must sit inside it. Electronics' filler is 710
+#: wide but its subtitles and techs run to 1400, so only its height is a bound.
+CONTENT_SIZE = {
+    "armour_folder": (1450, 1090), "nsb_armour_folder": (1900, 1090),
+    "artillery_folder": (1515, 1390), "air_techs_folder": (2500, 1300),
+    "bba_air_techs_folder": (2240, 1300), "industry_folder": (1650, 1000),
+    "electronics_folder": (None, 1100),
+}
+
+
+def _placed(folder):
+    """tech -> {GUI centre per root that has a box}, for one folder of the install."""
+    index = _real_index()
+    out = {}
+    for tech, place in index.tech_places.items():
+        if place.folder != folder:
+            continue
+        out[tech] = {
+            gui_point(box, place.column, place.row, SCREEN_GUI_WIDTH)
+            for root in place.roots
+            if (box := index.tech_gridboxes.get((folder, f"{root}_tree")))
+        }
+    return out
+
+
+@pytest.mark.skipif(_install() is None, reason="no HOI4 install to read the layout from")
+@pytest.mark.parametrize("folder", ROTATED)
+def test_every_rotated_tech_gets_one_place_and_no_two_share_it(folder):
+    placed = _placed(folder)
+    assert placed
+    assert [t for t, pts in placed.items() if len(pts) != 1] == []
+    seen: dict[tuple[float, float], str] = {}
+    for tech, pts in placed.items():
+        (pt,) = pts
+        assert pt not in seen, (tech, seen[pt], pt)
+        seen[pt] = tech
+
+
+@pytest.mark.skipif(_install() is None, reason="no HOI4 install to read the layout from")
+@pytest.mark.parametrize("folder", ROTATED)
+def test_a_rotated_chain_runs_down_the_tab_never_back_up(folder):
+    index, placed = _real_index(), _placed(folder)
+    for tech, targets in index.tech_leads.items():
+        for nxt in targets:
+            if tech in placed and nxt in placed:
+                (_, y), (_, next_y) = next(iter(placed[tech])), next(iter(placed[nxt]))
+                assert next_y >= y, (tech, nxt, y, next_y)
+
+
+@pytest.mark.skipif(_install() is None, reason="no HOI4 install to read the layout from")
+@pytest.mark.parametrize("folder", ROTATED)
+def test_the_techs_of_one_year_share_a_height_within_a_box(folder):
+    """The year is the position's y, so two techs of one sub-tree on the same y
+    must be level, and a later y strictly lower."""
+    index = _real_index()
+    by_box: dict[tuple[str, int], float] = {}
+    for place in index.tech_places.values():
+        if place.folder != folder:
+            continue
+        for root in place.roots:
+            box = index.tech_gridboxes.get((folder, f"{root}_tree"))
+            if box:
+                _, y = gui_point(box, place.column, place.row, SCREEN_GUI_WIDTH)
+                assert by_box.setdefault((root, place.column), y) == y
+    for (root, column), y in by_box.items():
+        for (other, later), later_y in by_box.items():
+            if other == root and later > column:
+                assert later_y > y
+
+
+@pytest.mark.skipif(_install() is None, reason="no HOI4 install to read the layout from")
+@pytest.mark.parametrize("folder", ROTATED)
+def test_every_rotated_tech_is_inside_the_folders_content(folder):
+    width, height = CONTENT_SIZE[folder]
+    for tech, pts in _placed(folder).items():
+        for x, y in pts:
+            assert x >= 0 and (width is None or x <= width), (tech, x, y)
+            assert 0 <= y <= height, (tech, x, y)
