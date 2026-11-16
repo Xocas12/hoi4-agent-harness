@@ -17,6 +17,7 @@
     hoi4-harness verify-bridge              check the mod's tokens against an install and a log
     hoi4-harness save-inspect               what a save contains, for mapping it
     hoi4-harness check-scripts              pre-flight the input driver's scripts and calibration
+    hoi4-harness map --state 141            where a state or province is, in map pixels
     hoi4-harness mod-directives --tags ...  regenerate the mod's per-target directives
     hoi4-harness mod-probe                  regenerate the focus/research probe from the install
 
@@ -432,6 +433,64 @@ def cmd_mod_probe(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_map(args: argparse.Namespace) -> int:
+    """Where a state or province is on the map: centroid, a point inside it, neighbours."""
+    from .identifiers import Playset
+    from .mapdata import MapError, MapLayer
+
+    config = _config_from_args(args)
+    if config.game_dir is None:
+        print("map: point --game-dir (or HOI4_GAME_DIR) at the HOI4 install", file=sys.stderr)
+        return 2
+    if (args.state is None) == (args.province is None):
+        print("map: give exactly one of --state or --province", file=sys.stderr)
+        return 2
+    try:
+        playset = Playset.from_paths(config.game_dir, config.mod_dirs)
+        cache = False if args.no_cache else (Path(args.cache_dir) if args.cache_dir else None)
+        layer = MapLayer.load(playset, cache)
+        print(f"map              {layer.width}x{layer.height} px, {len(layer.provinces)} provinces, "
+              f"{len(layer.states)} states ({'cache' if layer.from_cache else 'read from the picture'})")
+        if args.state is not None:
+            _print_state(layer, args.state)
+        else:
+            _print_province(layer, args.province)
+    except (FileNotFoundError, MapError) as exc:
+        print(f"map: {exc}", file=sys.stderr)
+        return 1
+    return 0
+
+
+def _print_state(layer, sid: int) -> None:
+    state = layer._state(sid)
+    cx, cy = layer.state_centroid(sid)
+    ix, iy = layer.interior_point("state", sid)
+    inside = layer.state_of(layer.province_at(round(cx), round(cy)) or -1) == sid
+    print(f"state {sid}        {state.name_key}" + (f"  owner {state.owner}" if state.owner else ""))
+    print(f"provinces        {len(state.provinces)}: {' '.join(str(p) for p in state.provinces)}")
+    print(f"pixels           {layer.state_pixels(sid)}")
+    print(f"bounding box     x {layer.state_bbox(sid)[0]}..{layer.state_bbox(sid)[2]}, "
+          f"y {layer.state_bbox(sid)[1]}..{layer.state_bbox(sid)[3]}")
+    print(f"centroid         ({cx:.1f}, {cy:.1f})" + ("" if inside else "  -- outside the state"))
+    print(f"click point      ({ix}, {iy})  province {layer.province_at(ix, iy)}")
+
+
+def _print_province(layer, pid: int) -> None:
+    prov = layer.provinces.get(pid)
+    if prov is None or not prov.pixels:
+        raise FileNotFoundError(f"province {pid} is not on the map")
+    ix, iy = layer.interior_point("province", pid)
+    print(f"province {pid}    {prov.kind}, {prov.terrain}" + (", coastal" if prov.coastal else ""))
+    state = layer.state_of(pid)
+    print(f"state            {state if state is not None else '-'}")
+    print(f"pixels           {prov.pixels}")
+    print(f"bounding box     x {prov.bbox[0]}..{prov.bbox[2]}, y {prov.bbox[1]}..{prov.bbox[3]}")
+    print(f"centroid         ({prov.centroid[0]:.1f}, {prov.centroid[1]:.1f})")
+    print(f"click point      ({ix}, {iy})")
+    shown = [f"{n}{'~' if n in layer.straits.get(pid, ()) else ''}" for n in layer.neighbours(pid)]
+    print(f"neighbours       {' '.join(shown) or '-'}   (~ = strait, no shared border)")
+
+
 def cmd_index(args: argparse.Namespace) -> int:
     """What exists in the configured playset: countries, focuses, technologies, states."""
     config = _config_from_args(args)
@@ -781,6 +840,16 @@ def build_parser() -> argparse.ArgumentParser:
     # --country (from the common flags) picks the country whose tree is shown.
     index.add_argument("--all", action="store_true", help="with --country: list every focus")
     index.set_defaults(func=cmd_index)
+
+    mapcmd = sub.add_parser("map", help="where a state or province is, in map pixels")
+    common(mapcmd)
+    mapcmd.add_argument("--state", type=int, help="a state id")
+    mapcmd.add_argument("--province", type=int, help="a province id")
+    mapcmd.add_argument("--cache-dir", dest="cache_dir", metavar="PATH",
+                        help="where the parsed map is cached (default: the user cache folder)")
+    mapcmd.add_argument("--no-cache", dest="no_cache", action="store_true",
+                        help="read the picture every time")
+    mapcmd.set_defaults(func=cmd_map)
 
     moddir = sub.add_parser(
         "mod-directives", help="regenerate the mod's per-target directive blocks"
