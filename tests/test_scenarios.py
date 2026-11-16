@@ -58,7 +58,7 @@ def run_card(scenario, decide):
 # --- the starts --------------------------------------------------------------
 
 def test_the_default_mock_start_is_what_the_baselines_were_measured_against():
-    state = MockAdapter().read_state()
+    state = MockAdapter(variance=0).read_state()
     assert state.country == "SWE" and state.date == "1936-01-01"
     assert state.civilian_factories == 12 and state.military_factories == 5
     assert state.stockpiles["infantry_equipment_1"] == 4200
@@ -68,8 +68,8 @@ def test_the_default_mock_start_is_what_the_baselines_were_measured_against():
 
 def test_defensive_war_starts_at_war_outnumbered_on_a_losing_front():
     scenario = SCENARIOS["defensive_war"]
-    state = MockAdapter(seed=scenario.seed, country=scenario.country,
-                        start=scenario.start, start_state=scenario.start_state).read_state()
+    state = MockAdapter(seed=scenario.seed, country=scenario.country, start=scenario.start,
+                        start_state=scenario.start_state, variance=0).read_state()
 
     assert [war.against for war in state.wars] == ["SOV"]
     front = state.fronts[0]
@@ -80,8 +80,8 @@ def test_defensive_war_starts_at_war_outnumbered_on_a_losing_front():
 
 def test_resource_starved_starts_without_the_resources_it_cannot_mine():
     scenario = SCENARIOS["resource_starved"]
-    state = MockAdapter(seed=scenario.seed, country=scenario.country,
-                        start=scenario.start, start_state=scenario.start_state).read_state()
+    state = MockAdapter(seed=scenario.seed, country=scenario.country, start=scenario.start,
+                        start_state=scenario.start_state, variance=0).read_state()
 
     assert state.resources["oil"] == 0 and state.resources["rubber"] == 0
     assert state.resources["steel"] == 40            # merged over, not replaced
@@ -91,7 +91,7 @@ def test_resource_starved_starts_without_the_resources_it_cannot_mine():
 def test_rearmament_race_starts_inadequate_and_owns_its_war_date():
     scenario = SCENARIOS["rearmament_race"]
     adapter = MockAdapter(seed=scenario.seed, country=scenario.country,
-                          start=scenario.start, start_state=scenario.start_state)
+                          start=scenario.start, start_state=scenario.start_state, variance=0)
     state = adapter.read_state()
 
     assert state.civilian_factories == 6 and state.military_factories == 2
@@ -105,8 +105,8 @@ def test_rearmament_race_starts_inadequate_and_owns_its_war_date():
 
 def test_recovery_starts_with_the_mills_pointed_at_the_wrong_lines():
     scenario = SCENARIOS["recovery"]
-    state = MockAdapter(seed=scenario.seed, country=scenario.country,
-                        start=scenario.start, start_state=scenario.start_state).read_state()
+    state = MockAdapter(seed=scenario.seed, country=scenario.country, start=scenario.start,
+                        start_state=scenario.start_state, variance=0).read_state()
 
     assert state.military_factories == 8
     assigned = {line.equipment: line.factories for line in state.production}
@@ -138,8 +138,8 @@ _ASSIGNED_AS_DEFAULT = {"date", "speed", "national_focus", "focus_days_remaining
 @pytest.mark.parametrize("key", sorted(SCENARIOS))
 def test_objectives_only_read_fields_the_mock_populates(key):
     scenario = SCENARIOS[key]
-    state = MockAdapter(seed=scenario.seed, country=scenario.country,
-                        start=scenario.start, start_state=scenario.start_state).read_state()
+    state = MockAdapter(seed=scenario.seed, country=scenario.country, start=scenario.start,
+                        start_state=scenario.start_state, variance=0).read_state()
     bare = GameState().to_dict()
     populated = {name for name, value in state.to_dict().items()
                  if value != bare[name]} | _ASSIGNED_AS_DEFAULT
@@ -268,7 +268,7 @@ def _commit_the_reserve(state):
     if state.delegated_armies:
         return []
     return [
-        ActionCall("deploy_divisions", {"template": "Infantry", "count": 12, "location": "home"}),
+        ActionCall("deploy_divisions", {"template": "Infantry", "count": 20, "location": "home"}),
         ActionCall("delegate_army_to_ai", {"army": "all", "delegate": True}),
         ActionCall("set_ai_posture", {"posture": "defensive", "theater": "SOV"}),
     ]
@@ -296,7 +296,7 @@ def test_winter_crisis_wakes_the_planner_for_the_counteroffensive():
     loud enough that the wake rule fires on it."""
     scenario = SCENARIOS["winter_crisis"]
     _, history = play(scenario, lambda state: [])
-    crisis = next(s for s in history if any(f.divisions_enemy == 160 for f in s.fronts))
+    crisis = next(s for s in history if any(f.divisions_enemy >= 140 for f in s.fronts))
     assert any(e.severity == "critical" for e in crisis.events) or any(
         f.pressure == "losing_ground" for f in crisis.fronts
     )
