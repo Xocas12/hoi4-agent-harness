@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import functools
 import os
+import re
 from pathlib import Path
 
 import pytest
@@ -232,3 +233,14 @@ def test_every_rotated_tech_is_inside_the_folders_content(folder):
         for x, y in pts:
             assert x >= 0 and (width is None or x <= width), (tech, x, y)
             assert 0 <= y <= height, (tech, x, y)
+
+
+@pytest.mark.skipif(_install() is None, reason="no HOI4 install to read the layout from")
+def test_the_points_live_session_md_asks_you_to_measure_are_what_tech_point_says():
+    text = (Path(__file__).parent.parent / "docs" / "live-session.md").read_text(encoding="utf-8")
+    rows = re.findall(r"`(\w+)` \|[^|\n]*\| \((\d+), (\d+)\) \|$|\| `(\w+)` \| \((\d+), (\d+)\) \|$",
+                      text, re.M)
+    rows = [(a or d, int(b or e), int(c or f)) for a, b, c, d, e, f in rows]
+    assert len(rows) >= 15
+    for tech, x, y in rows:
+        assert point(_real_index(), tech) == (x, y), tech
