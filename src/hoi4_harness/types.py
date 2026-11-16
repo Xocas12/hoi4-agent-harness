@@ -17,9 +17,10 @@ UNKNOWN = "unknown"
 @dataclass
 class ProductionLine:
     equipment: str
-    factories: int
-    efficiency: float = 0.0
-    output_per_day: float = 0.0
+    factories: int | None
+    efficiency: float | None = 0.0
+    output_per_day: float | None = 0.0
+    kind: str = "military"  # military | naval; distinguishes factory assignment
 
 
 @dataclass
@@ -42,7 +43,7 @@ class DivisionGroup:
     template: str
     count: int
     location: str = "unassigned"
-    strength: float = 1.0
+    strength: float | None = 1.0
 
 
 @dataclass

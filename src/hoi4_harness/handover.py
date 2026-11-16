@@ -93,7 +93,10 @@ def stale_reason(call: ActionCall, state: GameState) -> str | None:
         if any(slot.technology == args.get("technology") for slot in state.research):
             return "already being researched"
     if call.name == "set_production" and state.known("military_factories"):
-        others = sum(line.factories for line in state.production
+        military = [line for line in state.production if line.kind == "military"]
+        if not state.known("production") or any(line.factories is None for line in military):
+            return None
+        others = sum(line.factories for line in military
                      if line.equipment != args.get("equipment"))
         if others + int(args.get("factories", 0)) > state.military_factories:
             return "not enough free military factories any more"

@@ -334,6 +334,11 @@ def verify(
         # and directives from the very event line the action makes the mod
         # write, which may land after the first read.
         unseen = [name for name in needs if not state.known(name)]
+        if call.name == "set_production" and any(
+            line.equipment == call.arguments["equipment"] and line.factories is None
+            for line in state.production
+        ):
+            unseen.append("production.factories")
         return unseen, None if unseen else check(before, state, call.arguments)
 
     def no_fresh_day(state: GameState) -> bool:

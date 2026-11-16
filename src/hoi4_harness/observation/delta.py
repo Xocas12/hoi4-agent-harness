@@ -61,21 +61,37 @@ def render_delta(previous: GameState, current: GameState) -> str:
         now = current.national_focus or "NONE SELECTED"
         lines.append(f"Focus: {was} -> {now}")
 
-    before_free = sum(1 for s in previous.research if not s.technology)
-    after_free = sum(1 for s in current.research if not s.technology)
+    def free_slots(state: GameState) -> int | str:
+        if not state.known("research"):
+            return "unknown"
+        return sum(1 for slot in state.research if not slot.technology)
+
+    before_free, after_free = free_slots(previous), free_slots(current)
     if after_free != before_free:
         lines.append(f"Research slots free: {before_free} -> {after_free}")
 
     if len(previous.construction) != len(current.construction):
         lines.append(f"Construction queue: {len(previous.construction)} -> {len(current.construction)}")
 
-    before_lines = {line.equipment: line.factories for line in previous.production}
-    after_lines = {line.equipment: line.factories for line in current.production}
+    def production_counts(state: GameState) -> dict[str, int | None]:
+        counts: dict[str, int | None] = {}
+        for line in state.production:
+            was = counts.get(line.equipment, 0)
+            counts[line.equipment] = (
+                was + line.factories if was is not None and line.factories is not None else None
+            )
+        return counts
+
+    before_lines, after_lines = production_counts(previous), production_counts(current)
+    if previous.known("production") and not current.known("production"):
+        lines.append("Production: unknown")
     for equipment in sorted(set(before_lines) | set(after_lines)):
-        if before_lines.get(equipment, 0) != after_lines.get(equipment, 0):
+        before = before_lines.get(equipment, 0) if previous.known("production") else None
+        after = after_lines.get(equipment, 0) if current.known("production") else None
+        if before != after:
             lines.append(
-                f"Production {equipment}: {before_lines.get(equipment, 0)} -> "
-                f"{after_lines.get(equipment, 0)} factories"
+                f"Production {equipment}: {before if before is not None else 'unknown'} -> "
+                f"{after if after is not None else 'unknown'} factories"
             )
 
     before_wars = {w.against for w in previous.wars}

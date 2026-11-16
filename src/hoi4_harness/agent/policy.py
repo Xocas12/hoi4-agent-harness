@@ -215,11 +215,13 @@ class Policy:
                 )
             )
 
-        if state.known("military_factories") and state.production:
-            assigned = sum(line.factories for line in state.production)
+        military = [line for line in state.production if line.kind == "military"]
+        if (state.known("military_factories") and state.known("production") and military
+                and all(line.factories is not None for line in military)):
+            assigned = sum(line.factories for line in military)
             idle = state.military_factories - assigned
             if idle > 0:
-                main = max(state.production, key=lambda line: line.factories)
+                main = max(military, key=lambda line: line.factories)
                 actions.append(
                     ActionCall(
                         name="set_production",
