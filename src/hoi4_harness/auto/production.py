@@ -21,6 +21,15 @@ DEFAULT_RATIOS = {"infantry_equipment_1": 0.6, "support_equipment_1": 0.15,
                   "artillery_equipment_1": 0.15, "anti_air_equipment_1": 0.1}
 
 
+def _military_lines(state: GameState):
+    """The military lines, or None when a line's factory count is unknown (a save that did not
+    say): idle factories cannot be counted then, and a top-up would write a guess."""
+    lines = [line for line in state.production if line.kind == "military"]
+    if any(line.factories is None for line in lines):
+        return None
+    return lines
+
+
 class ProductionScript(Script):
     domain = "production"
     name = "production ratios"
@@ -31,11 +40,12 @@ class ProductionScript(Script):
 
     def reflex(self, state: GameState) -> list[ActionCall]:
         """The old reflex, exactly: idle military factories go to the biggest line."""
-        if state.known("military_factories") and state.production:
-            assigned = sum(line.factories for line in state.production)
+        military = _military_lines(state)
+        if state.known("military_factories") and state.known("production") and military:
+            assigned = sum(line.factories for line in military)
             idle = state.military_factories - assigned
             if idle > 0:
-                main = max(state.production, key=lambda line: line.factories)
+                main = max(military, key=lambda line: line.factories)
                 return [ActionCall(
                     name="set_production",
                     arguments={"equipment": main.equipment, "factories": main.factories + idle},
@@ -48,10 +58,13 @@ class ProductionScript(Script):
             return []
         if not state.known("production"):
             return []
-        idle = state.military_factories - sum(line.factories for line in state.production)
+        military = _military_lines(state)
+        if military is None:
+            return []
+        idle = state.military_factories - sum(line.factories for line in military)
         if idle <= 0:
             return []
-        have = {line.equipment: line.factories for line in state.production}
+        have = {line.equipment: line.factories for line in military}
         total = state.military_factories
         want = {eq: share * total for eq, share in self.ratios.items()
                 if not self.blocked(eq, state.date)}
@@ -65,8 +78,8 @@ class ProductionScript(Script):
         out = [call("set_production", f"{n} idle factories go to the line under its share",
                     equipment=eq, factories=have.get(eq, 0) + n) for eq, n in add.items()]
         left = idle - sum(add.values())
-        if left > 0 and state.production:
-            main = max(state.production, key=lambda line: line.factories)
+        if left > 0 and military:
+            main = max(military, key=lambda line: line.factories)
             if main.equipment not in add:
                 out.append(call("set_production", f"{left} idle factories go to the biggest line",
                                 equipment=main.equipment, factories=main.factories + left))

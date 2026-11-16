@@ -157,15 +157,21 @@ def render_full(state: GameState, max_events: int = 6, max_fronts: int = 3) -> s
         lines.append(f"Research: {detail}" + (f" | {free} SLOT(S) FREE" if free else ""))
 
     if state.production:
-        assigned = sum(line.factories for line in state.production)
+        military = [line for line in state.production if line.kind == "military"]
+        assigned = sum(line.factories or 0 for line in military)
+        assignments_known = all(line.factories is not None for line in military)
         detail = "; ".join(
-            f"{line.equipment} x{line.factories} ({_pct(line.efficiency)} eff)"
+            f"{line.equipment} x{line.factories if line.factories is not None else 'unknown'} "
+            f"({_pct(line.efficiency) if line.efficiency is not None else 'unknown'} eff)"
             for line in state.production[:6]
         )
         if len(state.production) > 6:
             rest = state.production[6:]
-            detail += f"; +{len(rest)} more line(s), {sum(r.factories for r in rest)} factories"
-        idle = (state.military_factories - assigned) if state.known("military_factories") else 0
+            detail += f"; +{len(rest)} more line(s), {sum(r.factories or 0 for r in rest)} factories"
+        idle = (
+            state.military_factories - assigned
+            if state.known("military_factories") and assignments_known else 0
+        )
         lines.append(f"Production: {detail}" + (f" | {idle} MIL FACTORIES IDLE" if idle > 0 else ""))
 
     if state.construction:

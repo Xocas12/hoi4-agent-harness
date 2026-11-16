@@ -297,7 +297,8 @@ RECOVERY = Scenario(
     objectives=[
         Objective(
             "infantry_line_rebuilt",
-            lambda s: any(line.equipment == "infantry_equipment_1" and line.factories >= 4
+            lambda s: any(line.equipment == "infantry_equipment_1"
+                          and line.factories is not None and line.factories >= 4
                           for line in s.production),
             description="the infantry line is running again (4+ factories)",
         ),
