@@ -15,7 +15,7 @@ from pathlib import Path
 
 import pytest
 
-from hoi4_harness.adapters.ui_resolve import tech_point
+from hoi4_harness.adapters.ui_resolve import Unresolvable, tech_point
 from hoi4_harness.identifiers import IdentifierIndex, Playset
 from hoi4_harness.techtree import Gridbox, parse_gridboxes
 
@@ -32,12 +32,17 @@ def point(index, tech):
     return tech_point(index.tech_places[tech], {}, SCREEN, tech, index.tech_gridboxes)
 
 
-def test_gridboxes_are_read_per_folder_without_comments_percent_or_other_folders(fixture_index):
+def test_gridboxes_are_read_per_folder_without_comments_or_other_folders(fixture_index):
     boxes = fixture_index.tech_gridboxes
     assert boxes[("infantry_folder", "support_weapons_tree")] == Gridbox(140, 210, 70, 70, "LEFT")
     assert boxes[("infantry_folder", "infantry_weapons_tree")].y == 325   # not the commented copy
-    assert ("infantry_folder", "percent_tree") not in boxes
+    percent = boxes[("infantry_folder", "percent_tree")]
+    assert (percent.x, percent.x_percent, percent.y_percent, percent.width) == (10, True, False, None)
     assert boxes[("armour_folder", "armour1_tree")].format == "UPPER_LEFT"
+    wide = boxes[("air_techs_folder", "wide_tree")]
+    assert (wide.width, wide.width_percent, wide.margin_left, wide.margin_right) == (80, True, 0, 25)
+    assert boxes[("air_techs_folder", "early_fighter_tree")].width == 400
+    assert boxes[("armour_folder", "armour1_tree")].margin_left == 13     # the default
     assert parse_gridboxes("gridboxtype = { name = \"x\" position = { x = 1 y = 2 } }") == {}
 
 
@@ -55,6 +60,41 @@ def test_the_layout_rule_on_the_fixture(fixture_index):
     assert point(fixture_index, "support_weapons") == (230, 435)
     assert point(fixture_index, "infantry_weapons") == (142, 579)     # column -1
     assert point(fixture_index, "infantry_at") == (1280, 754)         # row 2
+
+
+# --- the rotated formats ----------------------------------------------------
+# GUI = (box + ...) as in techtree.py; screen = (origin + GUI) * 1.25, origin (9, 103),
+# less 13 GUI units of x in a folder whose left margin is 0 (the air tabs).
+
+
+def test_upper_left_swaps_the_axes_and_starts_at_the_top_left(fixture_index):
+    # armour1: row (x) 2, column (y) 3 -> GUI (0 + 70*2.5, 40 + 70*3.5) = (175, 285)
+    assert point(fixture_index, "armour1") == (230, 485)
+
+
+def test_up_centres_row_zero_on_the_box_and_runs_the_years_down(fixture_index):
+    # box (300, 32) 400 wide, slots 60x70, left margin 0: x = 300 + 200 + 60*row - 13
+    assert point(fixture_index, "early_fighter") == (620, 388)
+    assert point(fixture_index, "fighter1") == (620, 475)          # a year later: lower
+    assert point(fixture_index, "cas1") == (320, 475)              # row -4: 240 units left
+
+
+def test_up_boxes_placed_and_sized_by_percent_use_the_width_between_the_margins(fixture_index):
+    # 1536 GUI wide, margins 0 + 25: 10% + 80% / 2 of 1511 = 742.5, less 13, plus 70 for row 1
+    x, y = point(fixture_index, "wide1")
+    assert abs(x - 1027) <= 1 and y == 560
+
+
+def test_a_box_that_cannot_be_placed_is_refused_with_the_reason(fixture_index):
+    with pytest.raises(Unresolvable, match="UP box has no size"):
+        point(fixture_index, "percent")
+    with pytest.raises(Unresolvable, match="different places"):
+        point(fixture_index, "up_shared")
+
+
+def test_roots_that_draw_a_tech_in_the_same_place_do_not_make_it_ambiguous(fixture_index):
+    assert fixture_index.tech_places["tw_shared"].roots == ("tw1", "tw2")
+    assert point(fixture_index, "tw_shared") == (580, 885)
 
 
 @functools.cache

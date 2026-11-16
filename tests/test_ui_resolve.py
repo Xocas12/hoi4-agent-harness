@@ -135,8 +135,8 @@ def test_a_cell_off_the_screen_is_refused_not_clicked(index):
         tech_point(far, {}, (1920, 1080), "far_tech", index.tech_gridboxes)
 
 
-def test_a_subtree_without_a_box_or_in_a_turned_layout_is_not_guessed(index):
-    for tech, why in (("orphan_root", "no sub-tree box"), ("armour1", "UPPER_LEFT")):
+def test_a_subtree_without_a_box_or_a_centre_is_not_guessed(index):
+    for tech, why in (("orphan_root", "no sub-tree box"), ("percent", "UP box has no size")):
         with pytest.raises(Unresolvable, match=why):
             tech_point(index.tech_places[tech], {}, (1920, 1080), tech, index.tech_gridboxes)
 
