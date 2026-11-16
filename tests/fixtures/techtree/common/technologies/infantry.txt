@@ -88,5 +88,8 @@ technologies = {
 	up_shared = {
 		folder = { name = air_techs_folder position = { x = 0 y = 2 } }
 	}
+	# a percent wide box at an absolute x: the base of the percent is unclear
+	mixed = {
+		folder = { name = air_techs_folder position = { x = 0 y = 0 } }
+	}
 }
-

@@ -28,7 +28,9 @@ numbers sit where the cells are). ``column`` is the position's ``y`` and ``row``
   ``y = box.y + h*(column + 1/2)``. A box with no ``size`` has no centre, and is refused.
 
 A percent ``x`` or ``width`` is a share of the folder's inner width (the screen's
-width in GUI units less the folder margins), and is approximate. The rotated formats
+width in GUI units less the folder margins), and is approximate. A box that is a percent
+wide but at an absolute ``x`` (artillery) is refused: its subtitles sit ~100 GUI units
+from where that reading puts the cells. The rotated formats
 have not been measured live: see docs/live-session.md.
 """
 
@@ -147,6 +149,11 @@ def gui_point(box: Gridbox, column: int, row: int, screen_width: float | None = 
     if box.format == "UP":
         if box.width is None:
             raise LayoutUnknown("its UP box has no size, so its centre is unknown")
+        if box.width_percent and not box.x_percent:
+            raise LayoutUnknown(
+                "its UP box is a percent wide at an absolute x, and the subtitles drawn over "
+                "such a tree sit about 100 GUI units from where the rule puts it, so the "
+                "base of the percent is unclear")
         return (left + across(box.width, box.width_percent) / 2 + box.slot_width * row,
                 box.y + box.slot_height * (column + 0.5))
     raise LayoutUnknown(f"its box has format {box.format}, which the rule does not know")

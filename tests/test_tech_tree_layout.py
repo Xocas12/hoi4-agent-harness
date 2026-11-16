@@ -88,6 +88,8 @@ def test_up_boxes_placed_and_sized_by_percent_use_the_width_between_the_margins(
 def test_a_box_that_cannot_be_placed_is_refused_with_the_reason(fixture_index):
     with pytest.raises(Unresolvable, match="UP box has no size"):
         point(fixture_index, "percent")
+    with pytest.raises(Unresolvable, match="percent wide at an absolute x"):
+        point(fixture_index, "mixed")
     with pytest.raises(Unresolvable, match="different places"):
         point(fixture_index, "up_shared")
 
@@ -139,17 +141,27 @@ def test_the_real_install_reproduces_the_measured_infantry_tab(tech, truth):
 # --- internal consistency of the rotated tabs (not measured live) ------------
 
 SCREEN_GUI_WIDTH = 1536      # 1920 px at the 1.25 scale
-ROTATED = ("armour_folder", "nsb_armour_folder", "artillery_folder", "air_techs_folder",
+ROTATED = ("armour_folder", "nsb_armour_folder", "air_techs_folder",
            "bba_air_techs_folder", "industry_folder", "electronics_folder")
 #: ``techtree_stripes`` (or the ``size_filler``) container size per folder, from the
 #: interface file; a folder's techs must sit inside it. Electronics' filler is 710
 #: wide but its subtitles and techs run to 1400, so only its height is a bound.
 CONTENT_SIZE = {
     "armour_folder": (1450, 1090), "nsb_armour_folder": (1900, 1090),
-    "artillery_folder": (1515, 1390), "air_techs_folder": (2500, 1300),
+    "air_techs_folder": (2500, 1300),
     "bba_air_techs_folder": (2240, 1300), "industry_folder": (1650, 1000),
     "electronics_folder": (None, 1100),
 }
+
+
+@pytest.mark.skipif(_install() is None, reason="no HOI4 install to read the layout from")
+def test_artillery_is_refused_whole_because_its_percent_box_is_unclear():
+    index = _real_index()
+    techs = [t for t, p in index.tech_places.items() if p.folder == "artillery_folder"]
+    assert techs
+    for tech in techs:
+        with pytest.raises(Unresolvable, match="percent wide at an absolute x"):
+            point(index, tech)
 
 
 def _placed(folder):
