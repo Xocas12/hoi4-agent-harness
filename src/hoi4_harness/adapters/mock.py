@@ -11,6 +11,16 @@ with fronts, starved of resources, sabotaged). The mock interprets any described
 start; it never special-cases which scenario is speaking.
 
 Every test in this repo runs against it.
+
+What the seed drives (see ``docs/evaluation.md``, "What a seed varies"): research
+durations, and -- scaled together by ``variance`` -- the opening position (enemy
+strength, supply, stockpiles, manpower, line efficiency), the dates of scripted
+history and of a scenario's dated war changes, daily combat dice on every front,
+winter blizzards, how fast attrition bleeds a losing front, how long a focus takes
+and how much a construction project overruns. All of it is drawn from streams
+that depend only on the seed (and a front's name or an item's order), never on
+what the agent does, so two agents on one seed face the same weather and the same
+dice. ``variance=0`` switches every one of them off.
 """
 
 from __future__ import annotations
@@ -55,6 +65,29 @@ SCRIPTED_EVENTS = {
 }
 
 
+#: Noise bands at ``variance=1``. Each is the half-width of a uniform draw or the
+#: standard deviation of a gaussian one, sized against the scenarios' margins: a
+#: scenario's designed answer still wins by a clear margin, a marginal answer
+#: (parity with no slack) wins about as often as it loses, and ignoring the
+#: crisis never wins. Change one and re-run the spread table in docs/evaluation.md.
+START_ENEMY_BAND = 0.06      # opening enemy divisions, +-6%
+START_SUPPLY_BAND = 0.05     # opening front supply, +-0.05
+START_STOCK_BAND = 0.03      # opening equipment stockpiles, +-3%
+START_MANPOWER_BAND = 0.05   # opening manpower, +-5%
+START_EFFICIENCY_BAND = 0.04  # opening line efficiency, +-0.04
+START_STABILITY_BAND = 0.02  # opening stability, +-0.02
+DICE_SD = 0.035              # daily combat dice: sd of the enemy-strength shock
+DICE_PERSISTENCE = 0.9       # a good or bad run of days carries over
+DICE_CLAMP = 0.09            # the shock never exceeds +-9% of the enemy's strength
+BLIZZARD_CHANCE = 0.012      # per front per winter day
+BLIZZARD_FRIENDLY = 0.95     # friendly effectiveness while one lasts
+EVENT_JITTER_DAYS = 3        # scripted history and dated war changes, +-days
+ATTRITION_BAND = 0.5         # bleed rate of a losing front, x0.5..x1.5 per day
+FOCUS_JITTER_DAYS = 3        # a focus takes its nominal time +-days
+CONSTRUCTION_OVERRUN = (0.90, 1.20)  # a project's cost multiplier, drawn once
+WINTER_MONTHS = (11, 12, 1, 2)
+
+
 class MockAdapter(GameAdapter):
     supported_actions = frozenset(
         {
@@ -82,11 +115,22 @@ class MockAdapter(GameAdapter):
         country: str = "SWE",
         start: str = "1936-01-01",
         start_state: ScenarioStart | None = None,
+        variance: float = 1.0,
     ):
         """``start`` is the date; ``start_state`` is everything else a scenario
         wants different about the opening position. Without one, this is the
-        same neutral 1936 Sweden it has always been."""
+        same neutral 1936 Sweden it has always been.
+
+        ``variance`` scales every seed-driven noise source below (1.0 is the
+        calibrated amount, 0 is the old fixed mock)."""
+        self.seed = seed
+        self.variance = max(0.0, variance)
         self.rng = random.Random(seed)
+        self._streams: dict[str, random.Random] = {}
+        self._shock: dict[str, float] = {}
+        self._blizzard: dict[str, int] = {}
+        self._items_queued = 0
+        self._overrun: dict[int, float] = {}
         self.date = dt.date.fromisoformat(start)
         self.templates: dict[str, dict] = {
             "Infantry": {"battalions": 9, "width": 18.0},
@@ -119,7 +163,7 @@ class MockAdapter(GameAdapter):
             resources={"steel": 40, "aluminium": 25, "oil": 12, "rubber": 20,
                        "tungsten": 10, "chromium": 12},
         )
-        self.scripted_events = dict(SCRIPTED_EVENTS)
+        self.scripted_events = self._jittered_history(SCRIPTED_EVENTS)
         #: Events not yet acknowledged, in order. They stay until the loop
         #: passes them to ``acknowledge_events``, as the adapter contract says.
         self._pending: list[GameEvent] = []
@@ -130,6 +174,69 @@ class MockAdapter(GameAdapter):
         self._timeline: dict[str, list[WarChange]] = {}
         if start_state is not None:
             self._apply_start(start_state)
+        self._jitter_opening()
+
+    # --- seeded noise --------------------------------------------------------
+
+    def _stream(self, name: str) -> random.Random:
+        """A named random stream that depends on the seed and the name alone.
+
+        One shared generator would make every draw depend on how many came
+        before it, and so on what the agent did; a stream per front keeps one
+        front's weather the same whatever happens on another.
+        """
+        if name not in self._streams:
+            self._streams[name] = random.Random(f"{self.seed}/{name}")
+        return self._streams[name]
+
+    def _band(self, stream: str, half_width: float) -> float:
+        """A uniform draw in +-half_width, scaled by ``variance``."""
+        if not self.variance:
+            return 0.0
+        return self._stream(stream).uniform(-1.0, 1.0) * half_width * self.variance
+
+    def _shift_days(self, stream: str) -> int:
+        if not self.variance:
+            return 0
+        span = max(1, round(EVENT_JITTER_DAYS * self.variance))
+        return self._stream(stream).randint(-span, span)
+
+    def _jittered_history(self, events: dict) -> dict:
+        """Scripted history, each event a few days early or late. The war itself
+        is exempt: it is the deadline several scenarios are scored against."""
+        out: dict = {}
+        for iso, event in events.items():
+            shift = 0 if event[0] == "war" else self._shift_days(f"history/{iso}")
+            moved = (dt.date.fromisoformat(iso) + dt.timedelta(days=shift)).isoformat()
+            out[moved] = event
+        return out
+
+    def _jitter_opening(self) -> None:
+        """Nudge the opening position inside a small band, after the scenario's
+        description is laid down: the scenario owns the picture, the seed owns
+        the few percent either side of it."""
+        if not self.variance:
+            return
+        s = self.state
+        s.stability = round(min(1.0, max(0.0, s.stability
+                                         + self._band("open/stability", START_STABILITY_BAND))), 3)
+        s.manpower = int(s.manpower * (1 + self._band("open/manpower", START_MANPOWER_BAND)))
+        for equipment in sorted(s.stockpiles):
+            if s.stockpiles[equipment] > 0:
+                factor = 1 + self._band(f"open/stock/{equipment}", START_STOCK_BAND)
+                s.stockpiles[equipment] = int(s.stockpiles[equipment] * factor)
+        for line in s.production:
+            line.efficiency = round(min(1.0, max(0.0, line.efficiency + self._band(
+                f"open/efficiency/{line.equipment}", START_EFFICIENCY_BAND))), 3)
+        for front in s.fronts:
+            self._jitter_enemy(front, front.divisions_enemy, f"open/{front.name}")
+            if front.supply is not None:
+                front.supply = round(min(1.0, max(0.2, front.supply + self._band(
+                    f"open/supply/{front.name}", START_SUPPLY_BAND))), 2)
+
+    def _jitter_enemy(self, front, strength: int, stream: str) -> None:
+        """Set a front's enemy strength to ``strength`` give or take a few percent."""
+        front.divisions_enemy = max(1, round(strength * (1 + self._band(stream, START_ENEMY_BAND))))
 
     def _apply_start(self, described: ScenarioStart) -> None:
         """Lay a scenario's described start over the default one.
@@ -160,7 +267,10 @@ class MockAdapter(GameAdapter):
         if described.events:
             self.scripted_events.update(described.events)
         for change in described.timeline or []:
-            self._timeline.setdefault(change.date, []).append(copy.deepcopy(change))
+            moved = copy.deepcopy(change)
+            shift = self._shift_days(f"timeline/{change.date}")
+            moved.date = (dt.date.fromisoformat(change.date) + dt.timedelta(days=shift)).isoformat()
+            self._timeline.setdefault(moved.date, []).append(moved)
         # A front's friendly count is derived from where the divisions stand,
         # as every tick does; doing it now means day zero agrees with day one
         # instead of reporting whatever number the description guessed.
@@ -247,11 +357,13 @@ class MockAdapter(GameAdapter):
         if s.construction:
             item = s.construction[0]
             speed = max(1, s.civilian_factories - len(s.construction) + 1)
-            item.progress = min(1.0, item.progress + speed / (BUILD_DAYS.get(item.building, 100) * 5))
+            cost = BUILD_DAYS.get(item.building, 100) * 5 * self._overrun.get(id(item), 1.0)
+            item.progress = min(1.0, item.progress + speed / cost)
             if item.days_remaining is not None:
                 item.days_remaining = max(0, item.days_remaining - 1)
             if item.progress >= 1.0:
                 self._finish_building(item)
+                self._overrun.pop(id(item), None)
                 s.construction.pop(0)
 
         # Crudest possible shortage model: military lines run at half output
@@ -310,18 +422,59 @@ class MockAdapter(GameAdapter):
             )
             posture = self.posture_on(front.name) if s.delegated_armies else None
             front.stance = "offensive" if posture == "offensive" else "hold"
-            holds = front.divisions_friendly * 2 >= front.divisions_enemy
+            # The day's dice and weather move the enemy's effective strength
+            # and ours; the order of battle the agent reads is unchanged.
+            enemy_now = front.divisions_enemy * (1 + self._dice(front))
+            friendly_now = front.divisions_friendly * self._weather(front)
+            holds = friendly_now * 2 >= enemy_now
             if not holds:
                 front.pressure = "losing_ground"
-            elif posture == "offensive" and front.divisions_friendly * 2 >= front.divisions_enemy * 3:
+            elif posture == "offensive" and friendly_now * 2 >= enemy_now * 3:
                 front.pressure = "advancing"
             else:
                 front.pressure = "stable"
             self._tick_front_flags(front)
             if not holds:
-                self._attrition[front.name] = self._attrition.get(front.name, 0.0) + 0.1
+                rate = 0.1 * (1 + self._band(f"bleed/{front.name}", ATTRITION_BAND))
+                self._attrition[front.name] = self._attrition.get(front.name, 0.0) + rate
                 if self._attrition[front.name] >= 1.0 and self._bleed_one_division(front.name):
                     self._attrition[front.name] -= 1.0
+
+    def _dice(self, front) -> float:
+        """Today's combat dice on one front, as a fraction of the enemy's strength.
+
+        A slowly wandering shock rather than a fresh coin each day: real fronts
+        have good and bad weeks, and a front that flips between holding and
+        losing every tick would read as noise rather than as a battle.
+        """
+        if not self.variance:
+            return 0.0
+        sd = DICE_SD * self.variance
+        # Innovation sized so the stationary sd is ``sd``.
+        step = self._stream(f"dice/{front.name}").gauss(0.0, sd * (1 - DICE_PERSISTENCE ** 2) ** 0.5)
+        limit = DICE_CLAMP * self.variance
+        shock = self._shock.get(front.name, 0.0) * DICE_PERSISTENCE + step
+        shock = max(-limit, min(limit, shock))
+        self._shock[front.name] = shock
+        return shock
+
+    def _weather(self, front) -> float:
+        """Friendly effectiveness on one front today: 1.0, or less in a winter
+        blizzard, which also strips supply when it hits."""
+        if not self.variance:
+            return 1.0
+        stream = self._stream(f"weather/{front.name}")
+        # Both draws every day, so the stream does not depend on whether a
+        # blizzard happened to be running.
+        starts, length = stream.random(), stream.randint(4, 9)
+        left = self._blizzard.get(front.name, 0)
+        if left > 0:
+            self._blizzard[front.name] = left - 1
+        elif self.date.month in WINTER_MONTHS and starts < BLIZZARD_CHANCE * self.variance:
+            self._blizzard[front.name] = length
+            if front.supply is not None:
+                front.supply = round(max(0.2, front.supply - 0.15), 2)
+        return BLIZZARD_FRIENDLY if self._blizzard.get(front.name, 0) > 0 else 1.0
 
     def _tick_front_flags(self, front) -> None:
         """Supply, pockets and the capital, at the same level of crudeness.
@@ -368,7 +521,7 @@ class MockAdapter(GameAdapter):
         for name, count in change.enemy_divisions.items():
             for front in s.fronts:
                 if front.name == name:
-                    front.divisions_enemy = count
+                    self._jitter_enemy(front, count, f"strike/{name}/{count}")
         for name, supply in change.supply.items():
             for front in s.fronts:
                 if front.name == name:
@@ -475,6 +628,8 @@ class MockAdapter(GameAdapter):
         if self.state.national_focus:
             return self._fail(call, f"'{self.state.national_focus}' is already in progress.")
         days = 35 + 7 * (len(focus) % 4)
+        if self.variance:
+            days += self._stream(f"focus/{focus}").randint(-FOCUS_JITTER_DAYS, FOCUS_JITTER_DAYS)
         self.state.national_focus = focus
         self.state.focus_days_remaining = days
         return self._ok(call, f"Started focus '{focus}' ({days} days).", focus=focus, days=days)
@@ -496,11 +651,15 @@ class MockAdapter(GameAdapter):
         if building not in BUILD_DAYS:
             return self._fail(call, f"Unknown building '{building}'.", "invalid_args")
         for _ in range(count):
-            self.state.construction.append(
-                ConstructionItem(
-                    building=building, state=state_name, days_remaining=BUILD_DAYS[building]
-                )
+            item = ConstructionItem(
+                building=building, state=state_name, days_remaining=BUILD_DAYS[building]
             )
+            self._items_queued += 1
+            if self.variance:
+                low, high = CONSTRUCTION_OVERRUN
+                draw = self._stream(f"build/{self._items_queued}").uniform(low, high)
+                self._overrun[id(item)] = 1 + (draw - 1) * self.variance
+            self.state.construction.append(item)
         return self._ok(
             call,
             f"Queued {count}x {building} in {state_name}.",
