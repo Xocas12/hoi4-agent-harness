@@ -268,7 +268,7 @@ kept apart on purpose ([`ui_scripts.py`](../src/hoi4_harness/adapters/ui_scripts
   |---|---|---|
   | `{focus_name}` | the focus id's English name (`localisation/english`), as its longest ASCII-only run of words | no name, or nothing typable (`[...]` scripted loc, `ö`) |
   | `{state_name}` | the same, for the state | the same |
-  | `{tech_folder}`, click target `research.tech_point` | the tech's sub-tree and `position` (see start_research below) | the point is off the screen or on the tab strip (the tree is not scrolled), or the sub-tree has no `LEFT` box in the interface file |
+  | `{tech_folder}`, click target `research.tech_point` | the tech's sub-tree and `position` (see start_research below) | the point is off the screen or on the tab strip (the tree is not scrolled), the sub-tree has no box in the interface file, its box is one the rule refuses (a `UP` box with no `size`, or a percent wide at an absolute `x`), or two roots draw it in different places |
 
   These need the game's files: pass `--game-dir`.
 
@@ -357,10 +357,25 @@ install.
   4 px (`tests/test_tech_tree_layout.py`). Nothing needs calibrating; optional
   overrides are `research.tree.origin` (the screen point of the content's GUI
   (0, 0), if a UI scale or layout moves it) and an exact `research.tech.<id>`.
-  Not placed, and refused rather than guessed: sub-trees whose box is not
-  `format = "LEFT"` (the armour, air, industry and electronics tabs are turned
-  `UP`/`UPPER_LEFT`), boxes placed by percentages, techs with no `<root>_tree`
-  box (mods), and only the infantry tab has been measured live. Then a tech is
+  The other box formats are the same rule turned, read off the labels the interface
+  file itself draws (subtitles and year numbers): `UPPER_LEFT` swaps the axes
+  (`x = box.x + w*(row + 1/2)`, `y = box.y + h*(column + 1/2)`), and `UP` runs the
+  years down with the box centred on its `size` width, so row 0 is the middle lane
+  and negative rows go left (`x = box.x + width/2 + w*row`). A percent `x` or `size`
+  is a share of the screen width less the folder's margins. A folder with a different
+  left margin (the air tabs have 0) moves its content by the difference.
+  **UNVERIFIED: the rotated tabs** (`armour_folder`, `nsb_armour_folder`,
+  `air_techs_folder`, `bba_air_techs_folder`, `industry_folder`, `electronics_folder`).
+  Without the game, they are checked only against themselves
+  (`tests/test_tech_tree_layout.py`): no two techs of a folder share a point, chains
+  only run down, and everything is inside the folder's content box. The points to
+  measure are in [live-session.md](live-session.md) step 6b.
+  Refused rather than guessed: techs with no `<root>_tree` box (mods, and the
+  `mtgnaval*` folders), a `UP` box with no `size`, a percent-wide `UP` box at an
+  absolute `x` (all of artillery), techs two of whose roots draw them in different
+  places, and points off the screen (this driver does not scroll the tree; at
+  1920x1080 that is most of every tab's lower years). Only the infantry tab has been
+  measured live.
   picked with `enter` on its detail window (the Research button's shortcut).
 - **hire_advisor**: `q` opens Political; advisor slots and candidates are icons
   (`politics.slot.<slot>`, `politics.candidate.<advisor_id>`), calibrated per name.
@@ -496,6 +511,9 @@ not a code change. `docs/live-session.md` step 7 has the exact checks.
    line like the UI's.
 7. **Whether an open console is closed by `grave`**, and whether the console
    keeps text between uses (a stale line would prefix the `run`).
+8. **The rotated tech tabs' click points** (armour, air, industry, electronics),
+   which are computed from the interface file but not measured:
+   `docs/live-session.md` step 6b.
 
 ## composite
 

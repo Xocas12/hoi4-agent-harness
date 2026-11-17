@@ -18,6 +18,18 @@ guiTypes = {
 				format = "LEFT"
 			}
 			gridboxtype = {
+				name = "tw1_tree"
+				position = { x = 140 y = 500 }
+				slotsize = { width = 70 height = 70 }
+				format = "LEFT"
+			}
+			gridboxtype = {
+				name = "tw2_tree"
+				position = { x = 140 y = 500 }
+				slotsize = { width = 70 height = 70 }
+				format = "LEFT"
+			}
+			gridboxtype = {
 				name = "percent_tree"
 				position = { x = 10% y = 172 }
 				slotsize = { width = 70 height = 70 }
@@ -31,6 +43,45 @@ guiTypes = {
 				position = { x = 0 y = 40 }
 				slotsize = { width = 70 height = 70 }
 				format = "UPPER_LEFT"
+			}
+		}
+		containerWindowType = {
+			name = "air_techs_folder"
+			margin = { top = 13 left = 0 bottom = 24 right = 25}
+			gridboxtype = {
+				name = "early_fighter_tree"
+				position = { x = 300 y = 32 }
+				size = { width = 400 height = 1000 }
+				slotsize = { width = 60 height = 70 }
+				format = "UP"
+			}
+			gridboxtype = {
+				name = "wide_tree"
+				position = { x = 10% y = 100 }
+				size = { width = 80% height = 80% }
+				slotsize = { width = 70 height = 70 }
+				format = "UP"
+			}
+			gridboxtype = {
+				name = "mixed_tree"
+				position = { x = 300 y = 172 }
+				size = { width = 80% height = 80% }
+				slotsize = { width = 70 height = 70 }
+				format = "UP"
+			}
+			gridboxtype = {
+				name = "up_a_tree"
+				position = { x = 100 y = 32 }
+				size = { width = 70 height = 1000 }
+				slotsize = { width = 70 height = 70 }
+				format = "UP"
+			}
+			gridboxtype = {
+				name = "up_b_tree"
+				position = { x = 500 y = 32 }
+				size = { width = 70 height = 1000 }
+				slotsize = { width = 70 height = 70 }
+				format = "UP"
 			}
 		}
 	}

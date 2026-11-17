@@ -37,6 +37,59 @@ technologies = {
 	}
 	# a turned layout the rule does not understand
 	armour1 = {
-		folder = { name = armour_folder position = { x = 1 y = 3 } }
+		folder = { name = armour_folder position = { x = 2 y = 3 } }
+	}
+
+	# percent-placed UP box with no size: its centre is unknown
+	percent = {
+		folder = { name = infantry_folder position = { x = 0 y = 1 } }
+	}
+	# two roots drawn in the same box agree on where their shared tech goes
+	tw1 = {
+		path = { leads_to_tech = tw_shared }
+		folder = { name = infantry_folder position = { x = 0 y = 0 } }
+	}
+	tw2 = {
+		path = { leads_to_tech = tw_shared }
+		folder = { name = infantry_folder position = { x = 0 y = 0 } }
+	}
+	tw_shared = {
+		folder = { name = infantry_folder position = { x = 1 y = 4 } }
+	}
+	# UP: years run down, row 0 is the middle of the box, negative rows go left
+	early_fighter = {
+		path = { leads_to_tech = fighter1 }
+		path = { leads_to_tech = cas1 }
+		folder = { name = air_techs_folder position = { x = 0 y = 2 } }
+	}
+	fighter1 = {
+		folder = { name = air_techs_folder position = { x = 0 y = 3 } }
+	}
+	cas1 = {
+		folder = { name = air_techs_folder position = { x = -4 y = 3 } }
+	}
+	# UP box placed and sized by percent
+	wide = {
+		path = { leads_to_tech = wide1 }
+		folder = { name = air_techs_folder position = { x = 0 y = 0 } }
+	}
+	wide1 = {
+		folder = { name = air_techs_folder position = { x = 1 y = 3 } }
+	}
+	# two roots in different boxes: where the shared tech is drawn is ambiguous
+	up_a = {
+		path = { leads_to_tech = up_shared }
+		folder = { name = air_techs_folder position = { x = 0 y = 0 } }
+	}
+	up_b = {
+		path = { leads_to_tech = up_shared }
+		folder = { name = air_techs_folder position = { x = 0 y = 0 } }
+	}
+	up_shared = {
+		folder = { name = air_techs_folder position = { x = 0 y = 2 } }
+	}
+	# a percent wide box at an absolute x: the base of the percent is unclear
+	mixed = {
+		folder = { name = air_techs_folder position = { x = 0 y = 0 } }
 	}
 }

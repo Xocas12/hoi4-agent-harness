@@ -133,6 +133,49 @@ reads them — expected at this stage; the result is still the evidence that the
 click path works, so note what you saw happen in-game. Paste a transcript
 excerpt into #3; delegation's result into #8.
 
+### 6b. The rotated tech tabs (#3)
+
+The armour, air, industry and electronics tabs are drawn turned: the years run
+down the screen. The click points for them are computed from the interface file
+(`techtree.py`) but only the infantry tab has been measured. In the research tree,
+1920x1080, UI scale 1.0, the tab **not scrolled** (scrollbars at their start), put
+the cursor on the centre of each tech's icon and compare with the prediction
+(within about 10 px is a match; the percent-placed armour tab may be a little
+further off). Predictions are what
+`tech_point` returns, screen px (x, y):
+
+| Tab | Technology | Predicted |
+|---|---|---|
+| Armour (`UP`, percent box) | `gwtank` (the root, top middle) | (948, 388) |
+| | `basic_light_tank` | (598, 562) |
+| | `basic_heavy_tank` | (1298, 562) |
+| Armour, new tank design (`UPPER_LEFT`) | `gwtank_chassis` | (1168, 222) |
+| | `armor_tech_1` | (318, 485) |
+| | `improved_light_tank_chassis` | (905, 572) |
+| Air (`UP`, no left margin) | `early_fighter` | (620, 388) |
+| | `CAS1` | (320, 562) |
+| | `tactical_bomber1` | (1564, 562) |
+| Air, BBA (`UP`, no left margin) | `iw_small_airframe` | (358, 388) |
+| | `iw_large_airframe` | (876, 388) |
+| | `early_bombs` | (1682, 388) |
+| Industry (`UP`) | `basic_machine_tools` | (336, 388) |
+| | `construction1` | (1049, 562) |
+| | `fuel_refining` | (1756, 562) |
+| Electronics (`UP`) | `electronic_mechanical_engineering` | (361, 381) |
+| | `radio` | (211, 531) |
+| | `atomic_research` | (1374, 381) |
+
+The names are ids; the tab shows localised names, so find each tech by its year
+row and by its column (the light, medium and heavy tanks are three columns four
+cells apart; `CAS1` is the leftmost air column).
+If a tab is off by a constant, that is the origin (set
+`research.tree.origin`); if the columns are mirrored or the rows run the other way,
+the format rule is wrong. Report the measured centres in #3. The artillery tab is
+not computed (its tree is a percent wide at an absolute `x`): measure one tech
+there too (`interwar_artillery`, the middle of the second row) and report it, with
+the predicted `x` 1135 under the rule that gives the other tabs, if you want it
+enabled.
+
 ## 7. The console channel (#83)
 
 Do this in a non-ironman game, with the mod loaded and telemetry flowing (step 3),
