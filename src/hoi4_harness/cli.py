@@ -20,6 +20,7 @@
     hoi4-harness map --state 141            where a state or province is, in map pixels
     hoi4-harness mod-directives --tags ...  regenerate the mod's per-target directives
     hoi4-harness mod-probe                  regenerate the focus/research probe from the install
+    hoi4-harness tactics run hold_line --controller scripted --seeds 20   tactical simulator (#85)
 
 Everything defaults to the mock adapter and the scripted model, so a fresh clone
 does something useful with no API key and no game installed.
@@ -617,6 +618,35 @@ def calibration_targets(config: HarnessConfig) -> list[str]:
     return [t for t in targets if "{" not in t] or list(DEFAULT_TARGETS)
 
 
+def cmd_tactics(args: argparse.Namespace) -> int:
+    from .tactics import CONTROLLERS, list_scenarios
+    from .tactics.evaluate import evaluate, run_episode, table
+
+    if args.tactics_command == "list":
+        for name in list_scenarios():
+            print(name)
+        return 0
+    names = list_scenarios() if args.scenario == "all" else [args.scenario]
+    unknown = [n for n in names if n not in list_scenarios()]
+    if unknown:
+        known = ", ".join(list_scenarios())
+        print(f"tactics: unknown scenario {unknown[0]!r}. Known: {known}", file=sys.stderr)
+        return 2
+    controllers = list(CONTROLLERS) if args.controller == "both" else [args.controller]
+    if args.tactics_command == "episode":
+        print(json.dumps(run_episode(names[0], args.seed, controllers[0], args.opponent), indent=2))
+        return 0
+    rows = [evaluate(n, c, args.seeds, args.opponent, args.first_seed) for n in names for c in controllers]
+    if args.json:
+        print(json.dumps(rows, indent=2))
+    else:
+        print(table(rows))
+        rate = sum(r["steps_per_second"] for r in rows) / len(rows)
+        print(f"\n{args.seeds} seeds per row against the {args.opponent} opponent; "
+              f"about {rate:.0f} environment steps per second (6 game hours each, controller included).")
+    return 0
+
+
 def cmd_check_scripts(args: argparse.Namespace) -> int:
     """Pre-flight for the input driver: scripts parse, placeholders exist,
     every concrete click target is calibrated. Nothing touches the game."""
@@ -875,6 +905,22 @@ def build_parser() -> argparse.ArgumentParser:
     )
     common(check_scripts)
     check_scripts.set_defaults(func=cmd_check_scripts)
+
+    tactics = sub.add_parser("tactics", help="run the tactical simulator and its baseline controllers")
+    tsub = tactics.add_subparsers(dest="tactics_command", required=True)
+    tsub.add_parser("list", help="list the scenarios").set_defaults(func=cmd_tactics)
+    for verb, helptext in (("run", "play a scenario over several seeds and summarise"),
+                           ("episode", "play one seeded episode and print its metrics")):
+        tp = tsub.add_parser(verb, help=helptext)
+        tp.add_argument("scenario", help="scenario name, or 'all' (run only)")
+        tp.add_argument("--controller", choices=["vanilla", "scripted", "both"], default="scripted")
+        tp.add_argument("--opponent", choices=["vanilla", "scripted"], default="vanilla",
+                        help="who plays the other side (default: the vanilla-like AI)")
+        tp.add_argument("--seeds", type=int, default=20)
+        tp.add_argument("--first-seed", dest="first_seed", type=int, default=0)
+        tp.add_argument("--seed", type=int, default=0, help="the seed for 'episode'")
+        tp.add_argument("--json", action="store_true", help="machine-readable output")
+        tp.set_defaults(func=cmd_tactics)
 
     calibrate = sub.add_parser("calibrate", help="record screen coordinates for the input driver")
     common(calibrate)

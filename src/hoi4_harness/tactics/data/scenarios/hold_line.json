@@ -1,0 +1,390 @@
+{
+ "name": "hold_line",
+ "scored_side": "A",
+ "max_hours": 240,
+ "step_hours": 6,
+ "description": "Six infantry divisions hold a river line (forest, town, forest) against ten, two of them armoured. Win by keeping all three column-3 provinces for ten days.",
+ "provinces": [
+  {
+   "id": "c0r0",
+   "terrain": "plains",
+   "controller": "A",
+   "x": 0,
+   "y": 0
+  },
+  {
+   "id": "c0r1",
+   "terrain": "plains",
+   "controller": "A",
+   "x": 0,
+   "y": 1,
+   "hub": "A"
+  },
+  {
+   "id": "c0r2",
+   "terrain": "plains",
+   "controller": "A",
+   "x": 0,
+   "y": 2
+  },
+  {
+   "id": "c1r0",
+   "terrain": "plains",
+   "controller": "A",
+   "x": 1,
+   "y": 0
+  },
+  {
+   "id": "c1r1",
+   "terrain": "plains",
+   "controller": "A",
+   "x": 1,
+   "y": 1
+  },
+  {
+   "id": "c1r2",
+   "terrain": "plains",
+   "controller": "A",
+   "x": 1,
+   "y": 2
+  },
+  {
+   "id": "c2r0",
+   "terrain": "hills",
+   "controller": "A",
+   "x": 2,
+   "y": 0
+  },
+  {
+   "id": "c2r1",
+   "terrain": "hills",
+   "controller": "A",
+   "x": 2,
+   "y": 1
+  },
+  {
+   "id": "c2r2",
+   "terrain": "hills",
+   "controller": "A",
+   "x": 2,
+   "y": 2
+  },
+  {
+   "id": "c3r0",
+   "terrain": "forest",
+   "controller": "A",
+   "x": 3,
+   "y": 0
+  },
+  {
+   "id": "c3r1",
+   "terrain": "urban",
+   "controller": "A",
+   "x": 3,
+   "y": 1
+  },
+  {
+   "id": "c3r2",
+   "terrain": "forest",
+   "controller": "A",
+   "x": 3,
+   "y": 2
+  },
+  {
+   "id": "c4r0",
+   "terrain": "plains",
+   "controller": "B",
+   "x": 4,
+   "y": 0
+  },
+  {
+   "id": "c4r1",
+   "terrain": "plains",
+   "controller": "B",
+   "x": 4,
+   "y": 1
+  },
+  {
+   "id": "c4r2",
+   "terrain": "plains",
+   "controller": "B",
+   "x": 4,
+   "y": 2
+  },
+  {
+   "id": "c5r0",
+   "terrain": "plains",
+   "controller": "B",
+   "x": 5,
+   "y": 0
+  },
+  {
+   "id": "c5r1",
+   "terrain": "plains",
+   "controller": "B",
+   "x": 5,
+   "y": 1
+  },
+  {
+   "id": "c5r2",
+   "terrain": "plains",
+   "controller": "B",
+   "x": 5,
+   "y": 2
+  },
+  {
+   "id": "c6r0",
+   "terrain": "plains",
+   "controller": "B",
+   "x": 6,
+   "y": 0
+  },
+  {
+   "id": "c6r1",
+   "terrain": "plains",
+   "controller": "B",
+   "x": 6,
+   "y": 1,
+   "hub": "B"
+  },
+  {
+   "id": "c6r2",
+   "terrain": "plains",
+   "controller": "B",
+   "x": 6,
+   "y": 2
+  }
+ ],
+ "edges": [
+  [
+   "c0r0",
+   "c1r0",
+   0
+  ],
+  [
+   "c0r0",
+   "c0r1",
+   0
+  ],
+  [
+   "c0r1",
+   "c1r1",
+   0
+  ],
+  [
+   "c0r1",
+   "c0r2",
+   0
+  ],
+  [
+   "c0r2",
+   "c1r2",
+   0
+  ],
+  [
+   "c1r0",
+   "c2r0",
+   0
+  ],
+  [
+   "c1r0",
+   "c1r1",
+   0
+  ],
+  [
+   "c1r1",
+   "c2r1",
+   0
+  ],
+  [
+   "c1r1",
+   "c1r2",
+   0
+  ],
+  [
+   "c1r2",
+   "c2r2",
+   0
+  ],
+  [
+   "c2r0",
+   "c3r0",
+   0
+  ],
+  [
+   "c2r0",
+   "c2r1",
+   0
+  ],
+  [
+   "c2r1",
+   "c3r1",
+   0
+  ],
+  [
+   "c2r1",
+   "c2r2",
+   0
+  ],
+  [
+   "c2r2",
+   "c3r2",
+   0
+  ],
+  [
+   "c3r0",
+   "c4r0",
+   1
+  ],
+  [
+   "c3r0",
+   "c3r1",
+   0
+  ],
+  [
+   "c3r1",
+   "c4r1",
+   1
+  ],
+  [
+   "c3r1",
+   "c3r2",
+   0
+  ],
+  [
+   "c3r2",
+   "c4r2",
+   1
+  ],
+  [
+   "c4r0",
+   "c5r0",
+   0
+  ],
+  [
+   "c4r0",
+   "c4r1",
+   0
+  ],
+  [
+   "c4r1",
+   "c5r1",
+   0
+  ],
+  [
+   "c4r1",
+   "c4r2",
+   0
+  ],
+  [
+   "c4r2",
+   "c5r2",
+   0
+  ],
+  [
+   "c5r0",
+   "c6r0",
+   0
+  ],
+  [
+   "c5r0",
+   "c5r1",
+   0
+  ],
+  [
+   "c5r1",
+   "c6r1",
+   0
+  ],
+  [
+   "c5r1",
+   "c5r2",
+   0
+  ],
+  [
+   "c5r2",
+   "c6r2",
+   0
+  ],
+  [
+   "c6r0",
+   "c6r1",
+   0
+  ],
+  [
+   "c6r1",
+   "c6r2",
+   0
+  ]
+ ],
+ "divisions": [
+  {
+   "side": "A",
+   "template": "inf_9",
+   "province": "c3r0"
+  },
+  {
+   "side": "A",
+   "template": "inf_9",
+   "province": "c3r1",
+   "count": 2
+  },
+  {
+   "side": "A",
+   "template": "inf_9",
+   "province": "c3r2"
+  },
+  {
+   "side": "A",
+   "template": "inf_9",
+   "province": "c2r1",
+   "count": 2
+  },
+  {
+   "side": "B",
+   "template": "inf_9",
+   "province": "c4r0",
+   "count": 2
+  },
+  {
+   "side": "B",
+   "template": "inf_9",
+   "province": "c4r1",
+   "count": 2
+  },
+  {
+   "side": "B",
+   "template": "armor_6",
+   "province": "c4r1"
+  },
+  {
+   "side": "B",
+   "template": "inf_9",
+   "province": "c4r2",
+   "count": 2
+  },
+  {
+   "side": "B",
+   "template": "inf_9",
+   "province": "c5r1"
+  }
+ ],
+ "goals": {
+  "A": {
+   "kind": "hold",
+   "provinces": [
+    "c3r0",
+    "c3r1",
+    "c3r2"
+   ]
+  },
+  "B": {
+   "kind": "capture",
+   "provinces": [
+    "c3r0",
+    "c3r1",
+    "c3r2"
+   ]
+  }
+ }
+}
