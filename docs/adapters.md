@@ -515,6 +515,101 @@ not a code change. `docs/live-session.md` step 7 has the exact checks.
    which are computed from the interface file but not measured:
    `docs/live-session.md` step 6b.
 
+## map layer -- province coordinates for unit orders (#85)
+
+Unit orders are clicks on the map, so the harness needs to know where a state or
+province is. `hoi4_harness/mapdata.py` reads it from the game's own files and
+`hoi4_harness/mapcamera.py` turns a map pixel into a screen point.
+
+```
+hoi4-harness map --game-dir PATH --state 141
+hoi4-harness map --game-dir PATH --province 6050
+```
+
+prints the pixel count, bounding box, centroid, a **click point** (a pixel
+inside the target) and, for a province, its terrain and neighbours (`~` marks a
+strait with no shared border).
+
+### What it reads
+
+- `map/provinces.bmp`, 24-bit uncompressed, one flat colour per province. A small
+  pure-Python reader handles bottom-up and top-down files and the 4-byte row
+  padding. Coordinates are image coordinates: **y grows downward from the top of
+  the picture**, the same as the screen. The BMP's storage order never leaks out.
+- `map/definition.csv`: colour to province id, land/sea/lake, terrain, coastal.
+- `map/adjacencies.csv`: straits that share no border. Rows with `-1` and the
+  end marker are skipped. Shared pixel edges give the land and coastal borders
+  (a corner touch does not count).
+- `history/states`: each state's provinces and owner.
+
+The playset is followed the way the identifier index follows it: a mod's file at
+the same path wins, `replace_path` drops the folder, and `map/default.map` can
+rename the three map files.
+
+The scan is one pass and takes about 6 s for vanilla (5632x2048, 13 414
+provinces). Its result is cached as JSON (about 1.5 MB, loads in well under a
+second) in the user cache folder (`%LOCALAPPDATA%\hoi4-harness\map`, or
+`$XDG_CACHE_HOME`; `HOI4_MAP_CACHE` or `--cache-dir` overrides, `--no-cache`
+skips it). The key is the three files' names, sizes and mtimes plus the playset
+name, so editing a map or adding a map mod rebuilds it.
+
+### The click point
+
+The centroid of a crescent, an archipelago or a state wrapped around a bay can
+fall outside it, and a click there selects the sea. So the click point is the
+pixel farthest from anything outside the target (a chamfer distance transform
+over the target's bounding box), ties broken toward the centroid. It is checked
+to map back to the state in the tests, for Stockholm's state and every Swedish
+state. It is computed on demand, not cached.
+
+### Map pixel to screen: a model, not a measurement
+
+```
+screen = origin + scale * (map pixel - anchor)        x and y both grow right/down
+```
+
+`Camera.from_references` fits `scale` and the offset from two measured points,
+and refuses a pair that disagrees with the model (an axis flipped, or x and y
+scales more than 3% apart). `Camera.centred_on` encodes "the map search centres
+the camera on the target". `screen_point(layer, "state", id, camera)` refuses,
+with `OffScreen`, a target outside the viewport or within 4 px of its edge
+rather than clamping, because a clamped click lands on a UI panel or the wrong
+province. `Viewport` takes the margins for the top bar and the bottom panel.
+
+### UNVERIFIED: settle these in a live game
+
+None of this was run against the game. What the model assumes, and could be
+wrong about:
+
+1. **The map is flat.** HOI4 tilts the map at some zoom levels, which makes
+   scale differ between the top and bottom of the screen. The fit refuses that
+   case instead of averaging over it.
+2. **One scale per zoom step**, and the zoom steps are discrete. Measure each
+   step you intend to use; do not interpolate.
+3. **The map wraps horizontally** in the game. The layer does not: a target near
+   x=0 or x=5631 has its click point on one side only. Pan before clicking there.
+4. **The viewport margins** (what the top bar, the bottom panel and any open
+   window cover) are not known. They default to zero.
+5. **That the map search centres the camera** on the state, and at what scale.
+
+The check, at 1920x1080 and one zoom level, in a started game, with the harness
+not sending input (the operator moves the mouse):
+
+1. `hoi4-harness map --state N` for two states far apart (several hundred map
+   pixels in both x and y) that are both visible, e.g. Stockholm's state 141 and
+   a state about 500 px west and 300 px south of it.
+2. Hover the mouse over each province in turn and read the province id from
+   its tooltip (or the map search), then `map --province P` for its click
+   point. Record (click point, mouse position) for both, with the mouse on the
+   province's visible middle. The click point is inside the province, so the
+   pair is known to be on it even if the centroid is not.
+3. `Camera.from_references(pair1, pair2, Viewport(1920, 1080, ...))`. If it
+   raises, that is finding 1 or an axis mix-up; if it fits, hover a third
+   province and compare `camera.to_screen` to where it is. More than a few
+   pixels off means the model needs a perspective term.
+4. Open the map search, pick a state, and see whether the click point is at the
+   viewport centre (item 5). If so `Camera.centred_on` needs only the scale.
+
 ## composite
 
 Pairs a reader with a writer: `--adapter logtail+input`, `savegame+input` or
