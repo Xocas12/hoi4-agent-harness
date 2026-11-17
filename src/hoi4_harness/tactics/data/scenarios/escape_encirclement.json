@@ -1,0 +1,392 @@
+{
+ "name": "escape_encirclement",
+ "scored_side": "A",
+ "max_hours": 300,
+ "step_hours": 6,
+ "description": "Four divisions are cut off in column 3 with a relief force of three behind the ring. Break the weakest ring province and reconnect, keeping at least three divisions.",
+ "provinces": [
+  {
+   "id": "c0r0",
+   "terrain": "plains",
+   "controller": "A",
+   "x": 0,
+   "y": 0
+  },
+  {
+   "id": "c0r1",
+   "terrain": "plains",
+   "controller": "A",
+   "x": 0,
+   "y": 1,
+   "hub": "A"
+  },
+  {
+   "id": "c0r2",
+   "terrain": "plains",
+   "controller": "A",
+   "x": 0,
+   "y": 2
+  },
+  {
+   "id": "c1r0",
+   "terrain": "plains",
+   "controller": "A",
+   "x": 1,
+   "y": 0
+  },
+  {
+   "id": "c1r1",
+   "terrain": "plains",
+   "controller": "A",
+   "x": 1,
+   "y": 1
+  },
+  {
+   "id": "c1r2",
+   "terrain": "plains",
+   "controller": "A",
+   "x": 1,
+   "y": 2
+  },
+  {
+   "id": "c2r0",
+   "terrain": "hills",
+   "controller": "B",
+   "x": 2,
+   "y": 0
+  },
+  {
+   "id": "c2r1",
+   "terrain": "plains",
+   "controller": "B",
+   "x": 2,
+   "y": 1
+  },
+  {
+   "id": "c2r2",
+   "terrain": "mountain",
+   "controller": "B",
+   "x": 2,
+   "y": 2
+  },
+  {
+   "id": "c3r0",
+   "terrain": "plains",
+   "controller": "A",
+   "x": 3,
+   "y": 0
+  },
+  {
+   "id": "c3r1",
+   "terrain": "plains",
+   "controller": "A",
+   "x": 3,
+   "y": 1
+  },
+  {
+   "id": "c3r2",
+   "terrain": "plains",
+   "controller": "A",
+   "x": 3,
+   "y": 2
+  },
+  {
+   "id": "c4r0",
+   "terrain": "plains",
+   "controller": "B",
+   "x": 4,
+   "y": 0
+  },
+  {
+   "id": "c4r1",
+   "terrain": "plains",
+   "controller": "B",
+   "x": 4,
+   "y": 1
+  },
+  {
+   "id": "c4r2",
+   "terrain": "plains",
+   "controller": "B",
+   "x": 4,
+   "y": 2
+  },
+  {
+   "id": "c5r0",
+   "terrain": "plains",
+   "controller": "B",
+   "x": 5,
+   "y": 0
+  },
+  {
+   "id": "c5r1",
+   "terrain": "plains",
+   "controller": "B",
+   "x": 5,
+   "y": 1
+  },
+  {
+   "id": "c5r2",
+   "terrain": "plains",
+   "controller": "B",
+   "x": 5,
+   "y": 2
+  },
+  {
+   "id": "c6r0",
+   "terrain": "plains",
+   "controller": "B",
+   "x": 6,
+   "y": 0
+  },
+  {
+   "id": "c6r1",
+   "terrain": "plains",
+   "controller": "B",
+   "x": 6,
+   "y": 1,
+   "hub": "B"
+  },
+  {
+   "id": "c6r2",
+   "terrain": "plains",
+   "controller": "B",
+   "x": 6,
+   "y": 2
+  }
+ ],
+ "edges": [
+  [
+   "c0r0",
+   "c1r0",
+   0
+  ],
+  [
+   "c0r0",
+   "c0r1",
+   0
+  ],
+  [
+   "c0r1",
+   "c1r1",
+   0
+  ],
+  [
+   "c0r1",
+   "c0r2",
+   0
+  ],
+  [
+   "c0r2",
+   "c1r2",
+   0
+  ],
+  [
+   "c1r0",
+   "c2r0",
+   0
+  ],
+  [
+   "c1r0",
+   "c1r1",
+   0
+  ],
+  [
+   "c1r1",
+   "c2r1",
+   0
+  ],
+  [
+   "c1r1",
+   "c1r2",
+   0
+  ],
+  [
+   "c1r2",
+   "c2r2",
+   0
+  ],
+  [
+   "c2r0",
+   "c3r0",
+   0
+  ],
+  [
+   "c2r0",
+   "c2r1",
+   0
+  ],
+  [
+   "c2r1",
+   "c3r1",
+   0
+  ],
+  [
+   "c2r1",
+   "c2r2",
+   0
+  ],
+  [
+   "c2r2",
+   "c3r2",
+   0
+  ],
+  [
+   "c3r0",
+   "c4r0",
+   0
+  ],
+  [
+   "c3r0",
+   "c3r1",
+   0
+  ],
+  [
+   "c3r1",
+   "c4r1",
+   0
+  ],
+  [
+   "c3r1",
+   "c3r2",
+   0
+  ],
+  [
+   "c3r2",
+   "c4r2",
+   0
+  ],
+  [
+   "c4r0",
+   "c5r0",
+   0
+  ],
+  [
+   "c4r0",
+   "c4r1",
+   0
+  ],
+  [
+   "c4r1",
+   "c5r1",
+   0
+  ],
+  [
+   "c4r1",
+   "c4r2",
+   0
+  ],
+  [
+   "c4r2",
+   "c5r2",
+   0
+  ],
+  [
+   "c5r0",
+   "c6r0",
+   0
+  ],
+  [
+   "c5r0",
+   "c5r1",
+   0
+  ],
+  [
+   "c5r1",
+   "c6r1",
+   0
+  ],
+  [
+   "c5r1",
+   "c5r2",
+   0
+  ],
+  [
+   "c5r2",
+   "c6r2",
+   0
+  ],
+  [
+   "c6r0",
+   "c6r1",
+   0
+  ],
+  [
+   "c6r1",
+   "c6r2",
+   0
+  ]
+ ],
+ "divisions": [
+  {
+   "side": "A",
+   "template": "inf_9",
+   "province": "c3r1",
+   "count": 2,
+   "strength": 0.8
+  },
+  {
+   "side": "A",
+   "template": "inf_9",
+   "province": "c3r0",
+   "strength": 0.8
+  },
+  {
+   "side": "A",
+   "template": "inf_9",
+   "province": "c3r2",
+   "strength": 0.8
+  },
+  {
+   "side": "A",
+   "template": "inf_9",
+   "province": "c1r1"
+  },
+  {
+   "side": "A",
+   "template": "armor_6",
+   "province": "c1r2"
+  },
+  {
+   "side": "B",
+   "template": "inf_9",
+   "province": "c2r0"
+  },
+  {
+   "side": "B",
+   "template": "inf_9",
+   "province": "c2r1",
+   "count": 2
+  },
+  {
+   "side": "B",
+   "template": "inf_9",
+   "province": "c2r2"
+  },
+  {
+   "side": "B",
+   "template": "inf_9",
+   "province": "c4r1",
+   "count": 2
+  },
+  {
+   "side": "B",
+   "template": "inf_9",
+   "province": "c1r0"
+  }
+ ],
+ "goals": {
+  "A": {
+   "kind": "escape",
+   "min_alive": 3
+  },
+  "B": {
+   "kind": "hold",
+   "provinces": [
+    "c2r0",
+    "c2r1",
+    "c2r2"
+   ]
+  }
+ }
+}
