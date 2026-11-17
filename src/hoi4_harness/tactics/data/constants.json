@@ -1,0 +1,81 @@
+{
+  "_about": "Land-combat constants for the tactical simulator. Entries with source 'install' were read by hand from a 1.19.5 install (file and line noted); 'estimate' and 'sim' entries are not in the game files and are the calibration knobs for stage 1 (docs/tactics.md).",
+  "combat": {
+    "str_dice": {"value": 2, "source": "install common/defines/00_defines.lua LAND_COMBAT_STR_DICE_SIZE"},
+    "org_dice": {"value": 4, "source": "install common/defines/00_defines.lua LAND_COMBAT_ORG_DICE_SIZE"},
+    "str_dice_armor_extra": {"value": 2, "source": "install LAND_COMBAT_STR_ARMOR_ON_SOFT_DICE_SIZE"},
+    "org_dice_armor_extra": {"value": 6, "source": "install LAND_COMBAT_ORG_ARMOR_ON_SOFT_DICE_SIZE"},
+    "str_damage_modifier": {"value": 0.060, "source": "install LAND_COMBAT_STR_DAMAGE_MODIFIER"},
+    "org_damage_modifier": {"value": 0.053, "source": "install LAND_COMBAT_ORG_DAMAGE_MODIFIER"},
+    "str_armor_deflection": {"value": 0.5, "source": "install LAND_COMBAT_STR_ARMOR_DEFLECTION_FACTOR"},
+    "org_armor_deflection": {"value": 0.5, "source": "install LAND_COMBAT_ORG_ARMOR_DEFLECTION_FACTOR"},
+    "minimum_combat_hours": {"value": 4, "source": "install COMBAT_MINIMUM_TIME"},
+    "river_attack_small": {"value": -0.3, "source": "install RIVER_CROSSING_PENALTY"},
+    "river_attack_large": {"value": -0.6, "source": "install RIVER_CROSSING_PENALTY_LARGE"},
+    "river_speed_small": {"value": -0.25, "source": "install RIVER_CROSSING_SPEED_PENALTY"},
+    "river_speed_large": {"value": -0.5, "source": "install RIVER_CROSSING_SPEED_PENALTY_LARGE"},
+    "multiple_directions_defense": {"value": -0.5, "source": "install MULTIPLE_COMBATS_PENALTY"},
+    "stacking_start": {"value": 5, "source": "install COMBAT_STACKING_START"},
+    "stacking_penalty": {"value": -0.02, "source": "install COMBAT_STACKING_PENALTY"},
+    "over_width_penalty": {"value": -1.0, "source": "install COMBAT_OVER_WIDTH_PENALTY (per unit fraction over)"},
+    "over_width_penalty_max": {"value": -0.33, "source": "install COMBAT_OVER_WIDTH_PENALTY_MAX"},
+    "supply_lack_attacker_attack": {"value": -0.25, "source": "install COMBAT_SUPPLY_LACK_ATTACKER_ATTACK"},
+    "supply_lack_attacker_defend": {"value": -0.65, "source": "install COMBAT_SUPPLY_LACK_ATTACKER_DEFEND"},
+    "supply_lack_defender_attack": {"value": -0.35, "source": "install COMBAT_SUPPLY_LACK_DEFENDER_ATTACK"},
+    "supply_lack_defender_defend": {"value": -0.15, "source": "install COMBAT_SUPPLY_LACK_DEFENDER_DEFEND"},
+    "encircled_penalty": {"value": -0.3, "source": "install ENCIRCLED_PENALTY"},
+    "supply_grace_hours": {"value": 72, "source": "install SUPPLY_GRACE"},
+    "retreat_speed_bonus": {"value": 0.25, "source": "install RETREAT_SPEED_FACTOR"},
+    "org_loss_on_conquer": {"value": 0.2, "source": "install ORG_LOSS_FACTOR_ON_CONQUER (fraction of max org)"},
+    "hit_rate": {"value": 0.30, "source": "sim: hit attempts per point of attack per hour; calibration knob, not in the files"},
+    "hit_pass_scale": {"value": 2.0, "source": "sim: A/(A+D) is multiplied by this, so equal attack and defense passes 1.0"},
+    "min_org_to_attack": {"value": 0.2, "source": "sim: fraction of max org below which a division will not start or join an attack"},
+    "rotation_org": {"value": 0.4, "source": "sim: fraction of max org below which a division in a battle is replaced by a fresher one in reserve"},
+    "disengage_org_loss": {"value": 0.05, "source": "sim: fraction of max org lost pulling out of a live battle"},
+    "extra_direction_width": {"value": 0.5, "source": "sim: extra combat width (fraction) per additional attack direction"}
+  },
+  "movement": {
+    "edge_length_km": {"value": 60, "source": "sim: default distance between province centres"},
+    "combat_speed_factor": {"value": 0.33, "source": "install COMBAT_MOVEMENT_SPEED (unused: units in combat do not move)"}
+  },
+  "recovery": {
+    "org_regain_per_hour_fraction": {"value": 0.0125, "source": "sim: fraction of max org regained per hour when not fighting and supplied"},
+    "str_reinforce_per_hour_fraction": {"value": 0.0015, "source": "sim: fraction of max strength reinforced per hour, supplied and not fighting"},
+    "encircled_attrition_per_hour_fraction": {"value": 0.002, "source": "sim: fraction of max strength lost per hour after the supply grace, standing in for OUT_OF_SUPPLY_ATTRITION"},
+    "supply_range_hops": {"value": 4, "source": "sim: full supply within this many provinces of a hub"},
+    "supply_falloff_per_hop": {"value": 0.2, "source": "sim: supply fraction lost per hop beyond the range"}
+  },
+  "terrain": {
+    "plains":   {"width": 70, "movement_cost": 1.0,  "attack": 0.0,   "source": "install common/terrain/00_terrain.txt:107-117"},
+    "forest":   {"width": 60, "movement_cost": 1.5,  "attack": -0.15, "source": "install 00_terrain.txt:29-48"},
+    "hills":    {"width": 70, "movement_cost": 1.5,  "attack": -0.25, "source": "install 00_terrain.txt:55-74"},
+    "mountain": {"width": 50, "movement_cost": 2.0,  "attack": -0.5,  "source": "install 00_terrain.txt:80-100"},
+    "urban":    {"width": 80, "movement_cost": 1.2,  "attack": -0.3,  "source": "install 00_terrain.txt:121-139"},
+    "marsh":    {"width": 50, "movement_cost": 2.0,  "attack": -0.4,  "source": "install 00_terrain.txt:174-195"},
+    "jungle":   {"width": 60, "movement_cost": 1.5,  "attack": -0.3,  "source": "install 00_terrain.txt:144-165"},
+    "desert":   {"width": 70, "movement_cost": 1.05, "attack": 0.0,   "source": "install 00_terrain.txt:201-210"}
+  },
+  "unit_terrain": {
+    "armor": {
+      "forest": -0.3, "hills": -0.1, "mountain": -0.2, "jungle": -0.4, "marsh": -0.1, "urban": -0.4, "river": -0.2,
+      "source": "install common/units/medium_armor.txt (per-battalion attack modifiers; movement modifiers not modelled)"
+    }
+  },
+  "battalions": {
+    "infantry": {
+      "width": 2, "hp": 25, "org": 60, "speed": 4,
+      "soft_attack": 6, "hard_attack": 1, "defense": 22, "breakthrough": 3, "armor": 0, "piercing": 4, "hardness": 0,
+      "source": "install units/infantry.txt (width, hp, org) and equipment/infantry.txt infantry_equipment_1 (stats); speed 4 is the equipment maximum_speed"
+    },
+    "medium_armor": {
+      "width": 2, "hp": 30, "org": 30, "speed": 5,
+      "soft_attack": 8, "hard_attack": 7, "defense": 5, "breakthrough": 12, "armor": 30, "piercing": 20, "hardness": 0.85,
+      "source": "width and org scale from units/medium_armor.txt, armor 30 and speed 5 from equipment/tank_chassis.txt medium_tank_chassis_1; hp, attack, piercing, breakthrough are ESTIMATES (module stats not parsed)"
+    }
+  },
+  "templates": {
+    "inf_9": {"battalions": {"infantry": 9}},
+    "inf_5": {"battalions": {"infantry": 5}},
+    "armor_6": {"battalions": {"medium_armor": 6}}
+  }
+}
