@@ -507,3 +507,11 @@ def test_the_exact_clock_still_pauses_a_game_a_critical_event_cut_short(tmp_path
     assert any(e.kind == "war_declared" for e in state.events)
     assert fake.date < "1939-09-09" and fake.paused   # stopped by the harness, not the deadline
     assert fake.keylog.count("space") > len(fake.runs)           # the pause key, pressed
+
+
+def test_observe_without_a_log_says_so_instead_of_a_traceback(tmp_path, capsys, monkeypatch):
+    from hoi4_harness.cli import main
+
+    monkeypatch.setenv("HOI4_LOG_PATH", str(tmp_path / "nope.log"))
+    assert main(["observe", "--headless", "--country", "SWE", "--run-dir", str(tmp_path)]) == 1
+    assert "No game.log found" in capsys.readouterr().err

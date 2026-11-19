@@ -53,9 +53,10 @@ your journal. Call advance_time to end the turn, as usual."""
 
 HEADLESS = """This run is headless: the harness reads the game from the mod's log and acts
 through the console and the keyboard. It has no mouse and no screen. Some actions
-need clicks, so they do not exist here: {gone}. You cannot start research or hand
-an army to the game's AI; an idle research slot stays idle, so do not plan around it.
-Everything else works as described.
+need clicks, so they do not exist here:
+{gone}.
+You cannot start research or hand an army to the game's AI; an idle research slot
+stays idle, so do not plan around it. Everything else works as described.
 
 Two things follow from reading a log. The game logs once per in-game day, so a
 result marked "unverified" means the log has not shown the change yet, not that

@@ -14,6 +14,7 @@
     hoi4-harness experiment defensive_war   model-only vs AI-only vs hybrid, same seeds
     hoi4-harness play --headless            no mouse, no screen: the log in, the console and keys out
     hoi4-harness play --headless --fake-game   the same against a fake game, no HOI4 at all
+    hoi4-harness headless-check --live      measure what headless play rests on, in the real game
     hoi4-harness fakegame                   a fake game as its own process (play --fake-game-files)
     hoi4-harness play --handover            co-op: queue actions until the player hands over
     hoi4-harness handover                   hand the keyboard to a --handover session
@@ -111,10 +112,14 @@ def _config_from_args(args: argparse.Namespace) -> HarnessConfig:
         config.log_path = Path(args.log_path_arg)
     if getattr(args, "mods", None):
         config.mod_dirs = [Path(m) for m in args.mods]
+    if getattr(args, "operational_control", None):
+        config.operational_control = args.operational_control
     if getattr(args, "script", None):
         config.planner.extra["script"] = args.script
     if getattr(args, "headless", False):
         config.adapter = "headless"
+    if getattr(args, "headless_clock", None):
+        config.headless_clock = args.headless_clock
     if getattr(args, "fake_game", False) or getattr(args, "fake_game_dir", None):
         config.fake_game = True
     if getattr(args, "fake_game_dir", None):
@@ -208,10 +213,10 @@ def cmd_observe(args: argparse.Namespace) -> int:
     config = _config_from_args(args)
     try:
         env = _env_from_config(config)
-    except FileNotFoundError as exc:
+        observation = env.reset()
+    except (FileNotFoundError, RuntimeError) as exc:
         print(f"observe: {exc}", file=sys.stderr)
         return 1
-    observation = env.reset()
     print(observation.brief)
     return 0
 
@@ -224,10 +229,10 @@ def cmd_play(args: argparse.Namespace) -> int:
         return 2
     try:
         env = _env_from_config(config)
-    except FileNotFoundError as exc:
+        env.reset()
+    except (FileNotFoundError, RuntimeError) as exc:
         print(f"play: {exc}", file=sys.stderr)
         return 1
-    env.reset()
     run_dir = config.run_dir
     resume = bool(getattr(args, "resume", False))
 
@@ -266,6 +271,28 @@ def cmd_play(args: argparse.Namespace) -> int:
     loop.memory.save(run_dir / "memory.json")
     print(json.dumps(report.to_dict(), indent=2, default=str))
     return 0
+
+
+def cmd_headless_check(args: argparse.Namespace) -> int:
+    from .headless_check import run_checks
+
+    args.headless = True
+    config = _config_from_args(args)
+    if config.dry_run:
+        print("headless-check: it sends keys and starts the clock, so it needs --live "
+              "(or a fake game). Load the game, pause it, put it in front, and re-run.",
+              file=sys.stderr)
+        return 2
+    try:
+        adapter = build_adapter(config)
+    except (FileNotFoundError, ValueError) as exc:
+        print(f"headless-check: {exc}", file=sys.stderr)
+        return 1
+    results = run_checks(adapter, days=args.days or 7)
+    failed = [r.name for r in results if not r.ok]
+    print(f"{len(results) - len(failed)} of {len(results)} passed"
+          + (f"; failed: {', '.join(failed)}" if failed else ""))
+    return 1 if failed else 0
 
 
 def cmd_fakegame(args: argparse.Namespace) -> int:
@@ -782,6 +809,9 @@ def build_parser() -> argparse.ArgumentParser:
                        help="skip the confirmation gate on irreversible actions")
         p.add_argument("--no-reflex", dest="no_reflex", action="store_true",
                        help="disable the deterministic reflex layer; the model decides everything")
+        p.add_argument("--operational-control", dest="operational_control", choices=["llm", "ai"],
+                       help="llm: the model moves units; ai: the game's AI does, and the model "
+                            "sets directives and postures")
         p.add_argument("--player-clock", dest="player_clock", action="store_true",
                        help="a person is playing: never pause, resume or set game speed")
         p.add_argument("--no-llm", dest="no_llm", action="store_true",
@@ -795,6 +825,9 @@ def build_parser() -> argparse.ArgumentParser:
         p.add_argument("--headless", action="store_true",
                        help="read the game's log, act through the console and the keyboard: "
                             "no mouse, no screen (docs/headless.md)")
+        p.add_argument("--headless-clock", dest="headless_clock",
+                       choices=["auto", "console", "keys", "exact"],
+                       help="with --headless: how the clock is driven (docs/headless.md)")
         p.add_argument("--fake-game", dest="fake_game", action="store_true",
                        help="with --headless: run against a fake game in this process, no HOI4")
         p.add_argument("--fake-game-dir", dest="fake_game_dir", metavar="PATH",
@@ -841,6 +874,13 @@ def build_parser() -> argparse.ArgumentParser:
     play.add_argument("--confirm", action="store_true",
                       help="ask a person before every irreversible action (needs --live)")
     play.set_defaults(func=cmd_play)
+
+    check = sub.add_parser(
+        "headless-check",
+        help="try each claim headless play rests on (console clock, refresh) and say which hold")
+    common(check)
+    check.add_argument("--days", type=int, help="days for the pause_in_hours check (default 7)")
+    check.set_defaults(func=cmd_headless_check)
 
     fakegame = sub.add_parser(
         "fakegame", help="run a fake HOI4 that speaks the mod's log, run file and keys")

@@ -1,0 +1,11 @@
+[
+  {"text": "One of each, so the live run shows every channel.", "calls": [
+    {"name": "set_national_focus", "arguments": {"focus_id": "SWE_defense_act"}},
+    {"name": "queue_construction", "arguments": {"building": "civilian_factory", "state": "capital", "count": 1}},
+    {"name": "set_production", "arguments": {"equipment": "infantry_equipment_1", "factories": 1}},
+    {"name": "set_ai_directive", "arguments": {"directive": "protect", "target": "POL"}},
+    {"name": "set_ai_posture", "arguments": {"posture": "defensive", "theater": "GER"}},
+    {"name": "advance_time", "arguments": {"days": 7, "reason": "let the orders land"}}
+  ]},
+  {"text": "Look, change nothing.", "calls": [{"name": "advance_time", "arguments": {"days": 7, "reason": "wait"}}]}
+]

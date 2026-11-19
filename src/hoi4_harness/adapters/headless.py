@@ -185,10 +185,12 @@ class HeadlessWriter(GameAdapter):
         self.router.attach_reader(read_state)
 
     def info(self) -> AdapterInfo:
-        inner = self.router.info()
+        driver = self.router.driver
+        used = sorted(n for n, c in self.router.channels.items() if c == "console")
         return AdapterInfo(
             name="headless", readable=False, writable=True, clock_control=True,
-            notes=f"no mouse, no screen; clock via {self.clock.mode}; {inner.notes}")
+            notes=(f"no mouse, no screen; clock via {self.clock.mode}; "
+                   f"dry_run={driver.dry_run}; console channel for: {', '.join(used)}"))
 
     def read_state(self) -> GameState:
         return self.router.read_state()
