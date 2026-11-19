@@ -233,3 +233,48 @@ def test_a_raised_directive_reads_with_its_target(tmp_path):
     raised = "[10:52:52][1936.01.01.12]: LLMB|v4|evt|tag=SWE|kind=14|detail=protect POL\n"
     state = LogTailAdapter(write_log(tmp_path, STATE, raised)).read_state()
     assert state.events[0].text == "directive raised: protect POL"
+
+
+# --- #2: the completion codes, from the lines the 1.19.5/1.20 game wrote -------
+# The game has no completion on_action, so the reader derives focus_complete (3),
+# research_done (4) and construction_complete (5) from the daily state line and the
+# probe lines. Each case below is the shape the live game printed.
+
+def _day(day, techs=32, built_civ=0, focus=None):
+    lines = [
+        f"[20:00:00][1938.01.{day:02d}.21]: LLMB|v{SCHEMA_VERSION}|state|date= 21:00, {day} January, "
+        f"1938|tag=SWE|pp=900|stab=87|ws=0|civ=21|mil=3|doc=4|mp=33000|techs={techs}"
+        f"|built_civ={built_civ}|built_mil=0|built_dock=0|built_infra=0\n",
+    ]
+    if focus:
+        lines.append(f"[20:00:00][1938.01.{day:02d}.21]: LLMB|v{SCHEMA_VERSION}|focus|tag=SWE"
+                     f"|id={focus}\n")
+    return lines
+
+
+def _events(tmp_path, *days):
+    adapter = LogTailAdapter(write_log(tmp_path, *[line for d in days for line in d]),
+                             country="SWE")
+    adapter.read_state()
+    return [(e.kind, e.severity) for e in adapter._pending]
+
+
+def test_2_a_focus_that_stops_running_is_a_notable_focus_complete(tmp_path):
+    got = _events(tmp_path, _day(1, focus="SWE_defense_act"), _day(2, focus="SWE_defense_act"),
+                  _day(3), _day(4))
+    assert ("focus_complete", "notable") in got
+
+
+def test_2_a_rise_in_researched_techs_is_a_notable_research_done(tmp_path):
+    got = _events(tmp_path, _day(1, techs=32), _day(2, techs=33))
+    assert ("research_done", "notable") in got
+
+
+def test_2_a_built_factory_is_a_notable_construction_complete(tmp_path):
+    got = _events(tmp_path, _day(1, built_civ=0), _day(2, built_civ=1))
+    assert ("construction_complete", "notable") in got
+
+
+def test_2_nothing_finishing_is_no_event(tmp_path):
+    got = _events(tmp_path, _day(1, focus="SWE_x"), _day(2, focus="SWE_x"), _day(3, focus="SWE_x"))
+    assert not [k for k, _ in got if k.endswith(("_complete", "_done"))]
