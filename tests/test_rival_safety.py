@@ -287,7 +287,7 @@ def make_driver(stub):
                                 sleep=lambda s: None)
     watch = KeyWatch(stub, "grave")
     driver.key_watch = watch
-    keys.on_send = watch.own_input
+    keys.on_send, keys.before_send = watch.own_input, watch.check
     return driver, watch, sent
 
 
@@ -337,3 +337,23 @@ def test_untypable_text_is_refused_before_any_key_goes_out():
     with pytest.raises(ValueError):
         driver.type_text("abö")
     assert sent == []
+
+
+def test_a_keypress_inside_one_of_our_chords_is_seen_at_the_next_event_and_never_leaves_a_key_down():
+    stub = Stub()
+    driver, watch, sent = make_driver(stub)
+    watch.begin()
+    events = []
+    real = driver._keys()._send
+
+    def spy(scan, up):
+        events.append((scan, up))
+        if not up:
+            stub.reason = "the person started using the keyboard or mouse"   # between down and up
+        real(scan, up)
+    driver._keys()._send = spy
+    driver.press("grave")                       # the chord completes: its key-up still goes out
+    assert events == [(0x29, False), (0x29, True)]
+    assert watch.tripped
+    with pytest.raises(InputInterrupted):
+        driver.press("enter")                   # and the next key is refused

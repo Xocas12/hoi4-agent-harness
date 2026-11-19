@@ -148,8 +148,14 @@ class ScanCodeKeys:
         #: Called right after every key event goes out. Rival mode uses it to take the
         #: system's last-input stamp as its own, so a stamp that differs later is a person's.
         self.on_send: Callable[[], None] | None = None
+        #: Called right before every key event goes out (and may only observe: raising here
+        #: would leave a key down). Rival mode checks for the person's input between two of
+        #: our events, so one that falls inside a chord is seen at its next event.
+        self.before_send: Callable[[], None] | None = None
 
     def _emit(self, code: int, up: bool) -> None:
+        if self.before_send is not None:
+            self.before_send()
         self._send(code, up)
         if self.on_send is not None:
             self.on_send()

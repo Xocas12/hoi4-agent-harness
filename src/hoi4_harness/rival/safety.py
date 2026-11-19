@@ -23,8 +23,10 @@ Nothing here is a guarantee, and docs/rival.md says where it can fail. The check
   is sent, and Escape never is.
 
 The harness's own keys show up in ``GetLastInputInfo`` too (SendInput is input). So the guard
-does not compare idle time: it remembers the last-input stamp right after each key it sent
-(``ScanCodeKeys.on_send``) and treats any other stamp as the person.
+does not compare idle time: it remembers the last-input stamp right after each key event it sent
+(``ScanCodeKeys.on_send``), looks again right before the next one (``before_send``) and treats
+any other stamp as the person. Whatever the person does between two of our key events is seen;
+what is not seen is input in the milliseconds between that look and the event itself.
 """
 
 from __future__ import annotations
@@ -333,3 +335,11 @@ class KeyWatch:
         """``ScanCodeKeys.on_send``: a key of ours has just gone out."""
         if self.active:
             self.policy.note_own_input()
+
+    def check(self) -> None:
+        """``ScanCodeKeys.before_send``: look for the person right before each key event.
+
+        Only records (the next ``before`` raises): stopping between a key's down and up would
+        leave it held. This is what catches a keypress that falls inside one of our chords."""
+        if self.active and self.tripped is None:
+            self.tripped = self.policy.interrupted()
