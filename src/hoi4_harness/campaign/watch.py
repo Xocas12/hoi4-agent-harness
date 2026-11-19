@@ -119,7 +119,11 @@ class PatientFocus:
         retry_seconds: float = 60.0,
         max_wait_seconds: float = 6 * 3600.0,
         log: Callable[[str], None] | None = None,
+        take: Callable[[str], bool] | None = None,
     ):
+        #: Opt-in (``campaign_take_focus``): asked to bring the window to the front each time
+        #: it is found elsewhere, before waiting. None: wait, and never take the keyboard.
+        self.take = take
         self.check, self.sleep = check, sleep
         self.retry_seconds, self.max_wait_seconds = retry_seconds, max_wait_seconds
         self.log = log
@@ -138,6 +142,15 @@ class PatientFocus:
                 raise GameLost(
                     f"the game window has not come back to the front in "
                     f"{self.waited / 60:.0f} minutes ({result.reason})")
+            if self.take is not None:
+                taken = self.take(title)
+                if self.log:
+                    self.log("campaign_take_focus is on: "
+                             + ("asked Windows to bring the game window to the front"
+                                if taken else "could not bring the game window to the front"))
+                result = self.check(title)
+                if result.focused or not result.supported:
+                    break
             if self.log:
                 self.log(f"waiting for the game window to take the focus back "
                          f"({result.reason}); {(self.waited - started) / 60:.0f} min so far")
