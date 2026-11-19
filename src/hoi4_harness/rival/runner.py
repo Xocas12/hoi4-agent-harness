@@ -347,6 +347,10 @@ def run_rival(
     from ..cli import _env_from_config
 
     _check_ready(config)
+    # Before anything is typed: a planner that cannot be built (no key, no script) must not
+    # leave the rival marked.
+    if planner is None and config.planner_enabled:
+        planner = build_llm(config.planner)
     run_dir = Path(config.run_dir)
     run_dir.mkdir(parents=True, exist_ok=True)
     out = echo or (lambda line: None)
@@ -374,29 +378,26 @@ def run_rival(
         log.line(f"cannot start: {exc}")
         raise
     supervisor = RivalSupervisor(config, session, tracker, log)
-    loop = AgentLoop(
-        env=env,
-        planner=planner if planner is not None
-        else (build_llm(config.planner) if config.planner_enabled else None),
-        config=config,
-        memory=Memory.load(run_dir / "memory.json") if resume else Memory(),
-        transcript_path=run_dir / "transcript.jsonl",
-        resume=resume,
-        progress=None,
-        supervisor=supervisor,
-    )
-    supervisor.loop = session.loop = loop
-    lost = False
+    lost, loop = False, None
     try:
+        loop = AgentLoop(
+            env=env, planner=planner, config=config,
+            memory=Memory.load(run_dir / "memory.json") if resume else Memory(),
+            transcript_path=run_dir / "transcript.jsonl", resume=resume, progress=None,
+            supervisor=supervisor,
+        )
+        supervisor.loop = session.loop = loop
         report = loop.run(config.turns, until=until)
         lost = bool(report.stopped_reason) and "game" in report.stopped_reason.lower()
     except Exception as exc:
         log.line(f"CRASH: {type(exc).__name__}: {exc}")
-        loop.transcript.write("crash", error=f"{type(exc).__name__}: {exc}",
-                              trace=traceback.format_exc(limit=8))
+        if loop is not None:
+            loop.transcript.write("crash", error=f"{type(exc).__name__}: {exc}",
+                                  trace=traceback.format_exc(limit=8))
         raise
     finally:
-        loop.memory.save(run_dir / "memory.json")
+        if loop is not None:
+            loop.memory.save(run_dir / "memory.json")
         finish(session, config, log, lost)
     reason = report.stopped_reason or (
         "reached the end date" if report.reached_end_date else "ran out of turns")

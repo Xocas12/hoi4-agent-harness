@@ -406,3 +406,32 @@ def test_actions_the_game_ai_owns_are_not_offered_and_the_model_cannot_take_the_
                           "queue_construction", "set_production", "move_division"}
     result = env.act(ActionCall("set_game_speed", {"speed": 0}))
     assert not result.ok
+
+
+def test_a_crash_after_the_start_still_unmarks_the_rival(tmp_path, monkeypatch):
+    import pytest
+
+    from hoi4_harness.agent.loop import AgentLoop
+
+    def boom(self, *args, **kwargs):
+        raise RuntimeError("the loop fell over")
+    monkeypatch.setattr(AgentLoop, "run", boom)
+    config = rival_config(tmp_path, script=human_cycle(run=30, pause=60), rival_exit_wait_seconds=500)
+    env = build_env(config)
+    with pytest.raises(RuntimeError, match="fell over"):
+        run_rival(config, planner=LazyClient(nap=30), env=env, until="1936-06-01")
+    fake = env.adapter.fake_game
+    assert "llmb_harness" not in fake.flags and fake.runs[-1] == ["effect SWE llm_bridge_unmark_harness"]
+    assert "CRASH: RuntimeError: the loop fell over" in rival_log(tmp_path)
+
+
+def test_a_planner_that_cannot_be_built_fails_before_a_single_key_is_typed(tmp_path):
+    import pytest
+
+    config = rival_config(tmp_path, script=human_cycle(run=30, pause=60))
+    config.planner.provider = "scripted"
+    config.planner.extra["script"] = str(tmp_path / "no-such-script.json")
+    env = build_env(config)
+    with pytest.raises(FileNotFoundError):
+        run_rival(config, env=env, until="1936-06-01")
+    assert env.adapter.fake_game.keylog == [] and not env.adapter.fake_game.flags

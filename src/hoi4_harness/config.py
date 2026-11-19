@@ -322,8 +322,9 @@ class HarnessConfig:
     rival_paused_seconds: float = 10.0
     #: ``paused``: no key or mouse input from anyone for this many seconds.
     rival_idle_seconds: float = 5.0
-    #: A queued action older than this many in-game days is reported stale, not run.
-    rival_stale_days: int = 60
+    #: A queued action older than this many in-game days is reported stale, not run (0: never
+    #: by age). A person can play months of game time between two pauses, so this is long.
+    rival_stale_days: int = 180
     #: How long the start waits for a window in which to mark the country.
     rival_start_wait_minutes: float = 30.0
     #: How long the exit waits for a window in which to unmark it (then it says what to type).
