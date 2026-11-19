@@ -347,6 +347,12 @@ def run_rival(
     from ..cli import _env_from_config
 
     _check_ready(config)
+    if len(config.rivals) > 1:
+        # Several countries (rival/multi.py): the same start, windows and exit, one strategist each.
+        from .multi import run_rivals
+
+        return run_rivals(config, planner=planner, resume=resume, quiet=quiet, echo=echo,
+                          env=env, until=until)
     # Before anything is typed: a planner that cannot be built (no key, no script) must not
     # leave the rival marked.
     if planner is None and config.planner_enabled:

@@ -154,6 +154,14 @@ def _config_from_args(args: argparse.Namespace) -> HarnessConfig:
         config.rival = args.rival.upper()
     if getattr(args, "rival_act_when", None):
         config.rival_act_when = args.rival_act_when
+    for item in getattr(args, "rival_share", None) or []:
+        tag, _, weight = item.partition("=")
+        try:
+            config.rival_shares[tag.strip().upper()] = float(weight)
+        except ValueError:
+            raise SystemExit(f"play: --rival-share wants TAG=WEIGHT (FRA=2), not {item!r}") from None
+    if getattr(args, "rival_window_cap", None) is not None:
+        config.rival_window_cap = args.rival_window_cap
     if getattr(args, "rival_paused_seconds", None) is not None:
         config.rival_paused_seconds = args.rival_paused_seconds
     if getattr(args, "rival_idle_seconds", None) is not None:
@@ -1105,9 +1113,17 @@ def build_parser() -> argparse.ArgumentParser:
     play.add_argument("--no-verify-ai", dest="no_verify_ai", action="store_true",
                       help="campaign: carry on when the state line still reads ai=0 after human_ai "
                            "(only if you can see the AI running the country yourself)")
-    play.add_argument("--rival", metavar="TAG",
+    play.add_argument("--rival", metavar="TAG[,TAG...]",
                       help="single player: steer this AI country (the game's AI runs it) while "
-                           "you play another; acts only in your pauses; see docs/rival.md")
+                           "you play another; acts only in your pauses; several at once as "
+                           "FRA,ENG,SOV, or 'majors' for the 1936 great powers minus yours; "
+                           "see docs/rival.md")
+    play.add_argument("--rival-share", dest="rival_share", action="append", metavar="TAG=WEIGHT",
+                      help="several rivals: this country's weight in the split of --max-usd "
+                           "(default 1 each, an equal split); repeat per country")
+    play.add_argument("--rival-window-cap", dest="rival_window_cap", type=int, metavar="N",
+                      help="several rivals: the most actions one window types across all of "
+                           "them, taken in turn (default 12)")
     play.add_argument("--rival-act-when", dest="rival_act_when", choices=["paused", "handover", "never"],
                       help="rival: when the queue may be typed: paused (you paused and left the "
                            "keyboard alone), handover (only when you run `hoi4-harness handover`), "

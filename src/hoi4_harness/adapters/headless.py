@@ -297,12 +297,15 @@ def build_fake(config: HarnessConfig):
         # harness's, an AI country; the person's is whatever else they play.
         from ..fakerival import FakeRivalGame, human_cycle, load_script
 
-        config.country = config.rival
-        human = config.fake_rival_human if config.fake_rival_human != config.rival else "POL"
+        # (Several rivals: the first is the game's own country, the rest ride along.)
+        tags = config.rivals or [config.rival]
+        config.country = tags[0]
+        human = config.fake_rival_human if config.fake_rival_human not in tags else "POL"
         script = (load_script(config.fake_human_script) if config.fake_human_script
                   else human_cycle())
-        fake = FakeRivalGame(base / "user", rival=config.rival, human=human, human_script=script,
-                             seed=config.seed, start=config.start_date, index=index)
+        fake = FakeRivalGame(base / "user", rival=tags[0], human=human, human_script=script,
+                             extra_rivals=tuple(tags[1:]), seed=config.seed,
+                             start=config.start_date, index=index)
         config.log_path, config.console_dir = fake.log_path, fake.user_dir
         config.save_dir = config.save_dir or fake.save_dir
         return fake

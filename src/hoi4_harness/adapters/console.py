@@ -536,7 +536,7 @@ class ConsoleChannel:
                 and any(c.name in SAVE_VERIFIED for c in calls))
 
     def execute_shared(
-        self, parts: list[tuple["ConsoleChannel", list[ActionCall]]],
+        self, parts: list[tuple[ConsoleChannel, list[ActionCall]]],
     ) -> list[list[ActionResult]]:
         """Several countries' actions in ONE run file and one pass of the keys (rival mode
         with more than one rival).
@@ -573,7 +573,7 @@ class ConsoleChannel:
         return self._send_flat([(self, before, p) for p in planned])
 
     def _send_flat(
-        self, flat: list[tuple["ConsoleChannel", GameState, Planned]],
+        self, flat: list[tuple[ConsoleChannel, GameState, Planned]],
     ) -> dict[int, ActionResult]:
         """The shared half of ``_send``: ``flat`` is one ``(console, state before, plan)`` per
         action, the console being whichever one planned it (always ``self`` for one country)."""
