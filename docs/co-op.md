@@ -49,6 +49,13 @@ A file rather than a keyboard hook, because a hook in this process listening for
 your keys would itself be input contention, and a file is the one signal every
 platform, terminal and hotkey tool can produce.
 
+## Rival: the model plays another country
+
+In a single-player game there is one human country, so the model cannot be a second player.
+`play --rival TAG` makes it the strategist of an AI country instead, with the same queue and
+the same grant file as handover, plus a policy that opens windows on its own when you pause
+and leave the keyboard alone: [rival.md](rival.md).
+
 ## Split portfolio
 
 Divide by domain rather than by time: the model takes the economy, you keep the

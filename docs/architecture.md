@@ -43,7 +43,7 @@ schema validation, identifier checks against the playset (`identifiers.py`, when
 one is configured), the confirmation gate on irreversible actions, the per-turn
 action cap (applied by `act_many` to the reflexes; the planner's calls arrive one
 `act` at a time over several tool rounds, so the loop counts them across the turn
-and Env supplies the `budget` refusal), the co-op handover queue (`handover.py`),
+and Env supplies the `budget` refusal), the co-op handover queue (`handover.py`; `rival/queue.py` for rival mode),
 and exception containment (an adapter fault becomes a failed action, not a dead
 run). It also keeps the
 directive tracker, which diffs what each standing directive has visibly changed.

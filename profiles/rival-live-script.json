@@ -1,0 +1,18 @@
+[
+  {
+    "text": "Hold the line against the Soviets and keep the army defensive. Two orders, so one window carries both.",
+    "calls": [
+      {"name": "set_ai_directive", "arguments": {"directive": "contain", "target": "SOV"}},
+      {"name": "set_ai_posture", "arguments": {"posture": "defensive"}},
+      {"name": "note", "arguments": {"text": "Plan: contain SOV, defensive. Clear both at the next review."}},
+      {"name": "advance_time", "arguments": {"days": 14, "reason": "let the orders land"}}
+    ]
+  },
+  {
+    "text": "Clear the standing orders again, to see a second window and the cleared event.",
+    "calls": [
+      {"name": "clear_ai_directives", "arguments": {}},
+      {"name": "advance_time", "arguments": {"days": 14, "reason": "second window"}}
+    ]
+  }
+]
