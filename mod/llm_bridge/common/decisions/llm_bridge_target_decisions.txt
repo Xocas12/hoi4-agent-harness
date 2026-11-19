@@ -595,6 +595,522 @@ llm_bridge_target_category = {
 		ai_will_do = { factor = 0 }
 	}
 
+	llmb_target_AFA = {
+		icon = generic_political_actions
+		cost = 0
+		fire_only_once = no
+		days_re_enable = 0
+		available = { always = yes }
+		complete_effect = {
+			llm_bridge_select_AFA = yes
+		}
+		ai_will_do = { factor = 0 }
+	}
+
+	llmb_target_AFG = {
+		icon = generic_political_actions
+		cost = 0
+		fire_only_once = no
+		days_re_enable = 0
+		available = { always = yes }
+		complete_effect = {
+			llm_bridge_select_AFG = yes
+		}
+		ai_will_do = { factor = 0 }
+	}
+
+	llmb_target_BHU = {
+		icon = generic_political_actions
+		cost = 0
+		fire_only_once = no
+		days_re_enable = 0
+		available = { always = yes }
+		complete_effect = {
+			llm_bridge_select_BHU = yes
+		}
+		ai_will_do = { factor = 0 }
+	}
+
+	llmb_target_BOL = {
+		icon = generic_political_actions
+		cost = 0
+		fire_only_once = no
+		days_re_enable = 0
+		available = { always = yes }
+		complete_effect = {
+			llm_bridge_select_BOL = yes
+		}
+		ai_will_do = { factor = 0 }
+	}
+
+	llmb_target_BRM = {
+		icon = generic_political_actions
+		cost = 0
+		fire_only_once = no
+		days_re_enable = 0
+		available = { always = yes }
+		complete_effect = {
+			llm_bridge_select_BRM = yes
+		}
+		ai_will_do = { factor = 0 }
+	}
+
+	llmb_target_CHL = {
+		icon = generic_political_actions
+		cost = 0
+		fire_only_once = no
+		days_re_enable = 0
+		available = { always = yes }
+		complete_effect = {
+			llm_bridge_select_CHL = yes
+		}
+		ai_will_do = { factor = 0 }
+	}
+
+	llmb_target_COL = {
+		icon = generic_political_actions
+		cost = 0
+		fire_only_once = no
+		days_re_enable = 0
+		available = { always = yes }
+		complete_effect = {
+			llm_bridge_select_COL = yes
+		}
+		ai_will_do = { factor = 0 }
+	}
+
+	llmb_target_COS = {
+		icon = generic_political_actions
+		cost = 0
+		fire_only_once = no
+		days_re_enable = 0
+		available = { always = yes }
+		complete_effect = {
+			llm_bridge_select_COS = yes
+		}
+		ai_will_do = { factor = 0 }
+	}
+
+	llmb_target_CUB = {
+		icon = generic_political_actions
+		cost = 0
+		fire_only_once = no
+		days_re_enable = 0
+		available = { always = yes }
+		complete_effect = {
+			llm_bridge_select_CUB = yes
+		}
+		ai_will_do = { factor = 0 }
+	}
+
+	llmb_target_DOM = {
+		icon = generic_political_actions
+		cost = 0
+		fire_only_once = no
+		days_re_enable = 0
+		available = { always = yes }
+		complete_effect = {
+			llm_bridge_select_DOM = yes
+		}
+		ai_will_do = { factor = 0 }
+	}
+
+	llmb_target_ECU = {
+		icon = generic_political_actions
+		cost = 0
+		fire_only_once = no
+		days_re_enable = 0
+		available = { always = yes }
+		complete_effect = {
+			llm_bridge_select_ECU = yes
+		}
+		ai_will_do = { factor = 0 }
+	}
+
+	llmb_target_ELS = {
+		icon = generic_political_actions
+		cost = 0
+		fire_only_once = no
+		days_re_enable = 0
+		available = { always = yes }
+		complete_effect = {
+			llm_bridge_select_ELS = yes
+		}
+		ai_will_do = { factor = 0 }
+	}
+
+	llmb_target_GUA = {
+		icon = generic_political_actions
+		cost = 0
+		fire_only_once = no
+		days_re_enable = 0
+		available = { always = yes }
+		complete_effect = {
+			llm_bridge_select_GUA = yes
+		}
+		ai_will_do = { factor = 0 }
+	}
+
+	llmb_target_GXC = {
+		icon = generic_political_actions
+		cost = 0
+		fire_only_once = no
+		days_re_enable = 0
+		available = { always = yes }
+		complete_effect = {
+			llm_bridge_select_GXC = yes
+		}
+		ai_will_do = { factor = 0 }
+	}
+
+	llmb_target_HAI = {
+		icon = generic_political_actions
+		cost = 0
+		fire_only_once = no
+		days_re_enable = 0
+		available = { always = yes }
+		complete_effect = {
+			llm_bridge_select_HAI = yes
+		}
+		ai_will_do = { factor = 0 }
+	}
+
+	llmb_target_HON = {
+		icon = generic_political_actions
+		cost = 0
+		fire_only_once = no
+		days_re_enable = 0
+		available = { always = yes }
+		complete_effect = {
+			llm_bridge_select_HON = yes
+		}
+		ai_will_do = { factor = 0 }
+	}
+
+	llmb_target_ICE = {
+		icon = generic_political_actions
+		cost = 0
+		fire_only_once = no
+		days_re_enable = 0
+		available = { always = yes }
+		complete_effect = {
+			llm_bridge_select_ICE = yes
+		}
+		ai_will_do = { factor = 0 }
+	}
+
+	llmb_target_INS = {
+		icon = generic_political_actions
+		cost = 0
+		fire_only_once = no
+		days_re_enable = 0
+		available = { always = yes }
+		complete_effect = {
+			llm_bridge_select_INS = yes
+		}
+		ai_will_do = { factor = 0 }
+	}
+
+	llmb_target_JOR = {
+		icon = generic_political_actions
+		cost = 0
+		fire_only_once = no
+		days_re_enable = 0
+		available = { always = yes }
+		complete_effect = {
+			llm_bridge_select_JOR = yes
+		}
+		ai_will_do = { factor = 0 }
+	}
+
+	llmb_target_KUW = {
+		icon = generic_political_actions
+		cost = 0
+		fire_only_once = no
+		days_re_enable = 0
+		available = { always = yes }
+		complete_effect = {
+			llm_bridge_select_KUW = yes
+		}
+		ai_will_do = { factor = 0 }
+	}
+
+	llmb_target_LEB = {
+		icon = generic_political_actions
+		cost = 0
+		fire_only_once = no
+		days_re_enable = 0
+		available = { always = yes }
+		complete_effect = {
+			llm_bridge_select_LEB = yes
+		}
+		ai_will_do = { factor = 0 }
+	}
+
+	llmb_target_LIB = {
+		icon = generic_political_actions
+		cost = 0
+		fire_only_once = no
+		days_re_enable = 0
+		available = { always = yes }
+		complete_effect = {
+			llm_bridge_select_LIB = yes
+		}
+		ai_will_do = { factor = 0 }
+	}
+
+	llmb_target_MAL = {
+		icon = generic_political_actions
+		cost = 0
+		fire_only_once = no
+		days_re_enable = 0
+		available = { always = yes }
+		complete_effect = {
+			llm_bridge_select_MAL = yes
+		}
+		ai_will_do = { factor = 0 }
+	}
+
+	llmb_target_MEN = {
+		icon = generic_political_actions
+		cost = 0
+		fire_only_once = no
+		days_re_enable = 0
+		available = { always = yes }
+		complete_effect = {
+			llm_bridge_select_MEN = yes
+		}
+		ai_will_do = { factor = 0 }
+	}
+
+	llmb_target_MON = {
+		icon = generic_political_actions
+		cost = 0
+		fire_only_once = no
+		days_re_enable = 0
+		available = { always = yes }
+		complete_effect = {
+			llm_bridge_select_MON = yes
+		}
+		ai_will_do = { factor = 0 }
+	}
+
+	llmb_target_NEP = {
+		icon = generic_political_actions
+		cost = 0
+		fire_only_once = no
+		days_re_enable = 0
+		available = { always = yes }
+		complete_effect = {
+			llm_bridge_select_NEP = yes
+		}
+		ai_will_do = { factor = 0 }
+	}
+
+	llmb_target_NIC = {
+		icon = generic_political_actions
+		cost = 0
+		fire_only_once = no
+		days_re_enable = 0
+		available = { always = yes }
+		complete_effect = {
+			llm_bridge_select_NIC = yes
+		}
+		ai_will_do = { factor = 0 }
+	}
+
+	llmb_target_OMA = {
+		icon = generic_political_actions
+		cost = 0
+		fire_only_once = no
+		days_re_enable = 0
+		available = { always = yes }
+		complete_effect = {
+			llm_bridge_select_OMA = yes
+		}
+		ai_will_do = { factor = 0 }
+	}
+
+	llmb_target_PAL = {
+		icon = generic_political_actions
+		cost = 0
+		fire_only_once = no
+		days_re_enable = 0
+		available = { always = yes }
+		complete_effect = {
+			llm_bridge_select_PAL = yes
+		}
+		ai_will_do = { factor = 0 }
+	}
+
+	llmb_target_PAN = {
+		icon = generic_political_actions
+		cost = 0
+		fire_only_once = no
+		days_re_enable = 0
+		available = { always = yes }
+		complete_effect = {
+			llm_bridge_select_PAN = yes
+		}
+		ai_will_do = { factor = 0 }
+	}
+
+	llmb_target_PAR = {
+		icon = generic_political_actions
+		cost = 0
+		fire_only_once = no
+		days_re_enable = 0
+		available = { always = yes }
+		complete_effect = {
+			llm_bridge_select_PAR = yes
+		}
+		ai_will_do = { factor = 0 }
+	}
+
+	llmb_target_PRU = {
+		icon = generic_political_actions
+		cost = 0
+		fire_only_once = no
+		days_re_enable = 0
+		available = { always = yes }
+		complete_effect = {
+			llm_bridge_select_PRU = yes
+		}
+		ai_will_do = { factor = 0 }
+	}
+
+	llmb_target_SHX = {
+		icon = generic_political_actions
+		cost = 0
+		fire_only_once = no
+		days_re_enable = 0
+		available = { always = yes }
+		complete_effect = {
+			llm_bridge_select_SHX = yes
+		}
+		ai_will_do = { factor = 0 }
+	}
+
+	llmb_target_SIK = {
+		icon = generic_political_actions
+		cost = 0
+		fire_only_once = no
+		days_re_enable = 0
+		available = { always = yes }
+		complete_effect = {
+			llm_bridge_select_SIK = yes
+		}
+		ai_will_do = { factor = 0 }
+	}
+
+	llmb_target_SLO = {
+		icon = generic_political_actions
+		cost = 0
+		fire_only_once = no
+		days_re_enable = 0
+		available = { always = yes }
+		complete_effect = {
+			llm_bridge_select_SLO = yes
+		}
+		ai_will_do = { factor = 0 }
+	}
+
+	llmb_target_SYR = {
+		icon = generic_political_actions
+		cost = 0
+		fire_only_once = no
+		days_re_enable = 0
+		available = { always = yes }
+		complete_effect = {
+			llm_bridge_select_SYR = yes
+		}
+		ai_will_do = { factor = 0 }
+	}
+
+	llmb_target_TAN = {
+		icon = generic_political_actions
+		cost = 0
+		fire_only_once = no
+		days_re_enable = 0
+		available = { always = yes }
+		complete_effect = {
+			llm_bridge_select_TAN = yes
+		}
+		ai_will_do = { factor = 0 }
+	}
+
+	llmb_target_TIB = {
+		icon = generic_political_actions
+		cost = 0
+		fire_only_once = no
+		days_re_enable = 0
+		available = { always = yes }
+		complete_effect = {
+			llm_bridge_select_TIB = yes
+		}
+		ai_will_do = { factor = 0 }
+	}
+
+	llmb_target_URG = {
+		icon = generic_political_actions
+		cost = 0
+		fire_only_once = no
+		days_re_enable = 0
+		available = { always = yes }
+		complete_effect = {
+			llm_bridge_select_URG = yes
+		}
+		ai_will_do = { factor = 0 }
+	}
+
+	llmb_target_VEN = {
+		icon = generic_political_actions
+		cost = 0
+		fire_only_once = no
+		days_re_enable = 0
+		available = { always = yes }
+		complete_effect = {
+			llm_bridge_select_VEN = yes
+		}
+		ai_will_do = { factor = 0 }
+	}
+
+	llmb_target_XSM = {
+		icon = generic_political_actions
+		cost = 0
+		fire_only_once = no
+		days_re_enable = 0
+		available = { always = yes }
+		complete_effect = {
+			llm_bridge_select_XSM = yes
+		}
+		ai_will_do = { factor = 0 }
+	}
+
+	llmb_target_YEM = {
+		icon = generic_political_actions
+		cost = 0
+		fire_only_once = no
+		days_re_enable = 0
+		available = { always = yes }
+		complete_effect = {
+			llm_bridge_select_YEM = yes
+		}
+		ai_will_do = { factor = 0 }
+	}
+
+	llmb_target_YUN = {
+		icon = generic_political_actions
+		cost = 0
+		fire_only_once = no
+		days_re_enable = 0
+		available = { always = yes }
+		complete_effect = {
+			llm_bridge_select_YUN = yes
+		}
+		ai_will_do = { factor = 0 }
+	}
+
 	llmb_directive_invade = {
 		icon = generic_political_actions
 		cost = 0

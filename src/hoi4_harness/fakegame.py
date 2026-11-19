@@ -5,7 +5,7 @@ commands into ``llmb_turn.txt`` and presses a fixed key sequence (the console
 key, ``run llmb_turn.txt``, enter, the console key), plus a keyboard script for
 national focuses. This module is the other end of all three:
 
-* it appends schema-v4 ``LLMB|`` lines to ``<user dir>/logs/game.log`` with the
+* it appends schema-v5 ``LLMB|`` lines to ``<user dir>/logs/game.log`` with the
   engine's date prefix, one ``state`` line (and its ``army``, ``focus`` and
   ``research`` lines) per in-game day, a ``war`` line per enemy while the player
   is at war, ``evt`` lines for what the mod logs;
@@ -55,7 +55,7 @@ from .fakearmy import FakeArmy, FakeGui
 from .identifiers import IdentifierIndex, Playset
 from .types import ActionCall, ConstructionItem, ProductionLine, ResearchSlot, ScenarioStart
 
-SCHEMA_VERSION = 4
+SCHEMA_VERSION = 5
 MONTHS = ("January", "February", "March", "April", "May", "June", "July", "August",
           "September", "October", "November", "December")
 #: Wall-clock seconds one in-game day takes at each game speed.
@@ -314,6 +314,8 @@ class FakeGame:
         self.army = army
         # A game loads paused.
         self.paused = True
+        #: The console's ``human_ai`` toggle: the game's AI runs the player's country.
+        self.human_ai = False
         self.speed = max(1, min(5, speed))
         #: Game hours left before ``pause_in_hours`` stops the game; None when unset.
         self.pause_in: float | None = None
@@ -392,7 +394,7 @@ class FakeGame:
             pp=f"{s.political_power:.4f}", stab=f"{s.stability * 100:.3f}",
             ws=f"{s.war_support * 100:.0f}", civ=s.civilian_factories, mil=s.military_factories,
             doc=s.dockyards, owned=s.civilian_factories + s.military_factories + s.dockyards,
-            mp=s.manpower, techs=w.techs, **w.built)]
+            mp=s.manpower, ai=int(self.human_ai), techs=w.techs, **w.built)]
         lines.append(self._llmb("army", tag=tag, divisions=sum(g.count for g in s.divisions),
                                 delegated=0))
         # focus_progress > 0: a focus started today has none yet, as in the game.

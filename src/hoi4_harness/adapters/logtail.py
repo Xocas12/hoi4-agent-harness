@@ -16,12 +16,21 @@ from datetime import date
 from pathlib import Path
 
 from ..paths import find_in_game_dir
-from ..types import ActionCall, ActionResult, GameEvent, GameState, ResearchSlot, StateForces, War
+from ..types import (
+    ActionCall,
+    ActionResult,
+    CampaignStats,
+    GameEvent,
+    GameState,
+    ResearchSlot,
+    StateForces,
+    War,
+)
 from .base import AdapterInfo, GameAdapter
 from .clock import wait_for_days
 
 #: Must match LLMB_SCHEMA_VERSION in the mod's telemetry effect.
-SCHEMA_VERSION = 4
+SCHEMA_VERSION = 5
 
 PREFIX = "LLMB|"
 LINE = re.compile(r"LLMB\|v(?P<version>\d+)\|(?P<kind>\w+)\|(?P<fields>.*)$")
@@ -45,6 +54,8 @@ EVENT_CODES = {
     "14": ("directive_raised", "info"),
     # Mirrored from modgen.EVENT_THEATER_POSTURE; detail is "<posture> <TAG>".
     "15": ("theater_posture", "info"),
+    # Schema v5: the harness marked the player's country (llm_bridge_mark_player).
+    "16": ("player_marked", "info"),
 }
 
 #: Counters on the state line that only ever go up. The game has no on_action
@@ -338,6 +349,8 @@ class LogTailAdapter(GameAdapter):
                     if attribute in state.unknown_fields:
                         state.unknown_fields.remove(attribute)
             if kind == "state":
+                if fields.get("ai") in ("0", "1"):
+                    state.ai_controlled = fields["ai"] == "1"
                 self._split_trade(fields)
                 self._derive_completions(fields)
                 self._open_tick(fields)
@@ -347,6 +360,8 @@ class LogTailAdapter(GameAdapter):
             self._war_line(fields)
         elif kind in {"div", "divend"}:
             self._front(kind, fields)
+        elif kind == "camp":
+            self._campaign(fields)
         elif kind == "evt":
             code = fields.get("kind", "")
             event_kind, severity = EVENT_CODES.get(code, (code or "unknown", "info"))
@@ -389,6 +404,20 @@ class LogTailAdapter(GameAdapter):
                     date=state.date,
                 )
             )
+
+    def _campaign(self, fields: dict[str, str]) -> None:
+        """The weekly ``camp`` line: the conquest numbers, as of the line's day."""
+        def flag(key: str) -> bool | None:
+            return {"1": True, "0": False}.get(fields.get(key, "").strip())
+
+        self._state.campaign = CampaignStats(
+            date=fields.get("_engine_date") or self._state.date,
+            owned_states=_int(fields.get("ostates")), controlled_states=_int(fields.get("cstates")),
+            divisions=_int(fields.get("divs")), enemies=_int(fields.get("enemies")),
+            capitulated=_int(fields.get("capit")), in_faction=flag("infac"),
+            faction_leader=flag("leader"), faction_members=_int(fields.get("fmem")),
+            countries_existing=_int(fields.get("exist")),
+            countries_independent=_int(fields.get("indep")), world_states=_int(fields.get("wstates")))
 
     def _front(self, kind: str, fields: dict[str, str]) -> None:
         """The front picture: ``div`` lines (one per state holding a division),

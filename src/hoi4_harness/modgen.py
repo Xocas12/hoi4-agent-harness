@@ -43,13 +43,20 @@ from .adapters.logtail import SCHEMA_VERSION
 if TYPE_CHECKING:
     from .identifiers import IdentifierIndex
 
-#: The countries a vanilla campaign most plausibly names in a directive.
+#: The countries a directive can name: the ones a 1936 campaign most plausibly names
+#: first, then the rest of the world, so a world-conquest run can target anyone.
 DEFAULT_TAGS = (
     "GER", "ENG", "FRA", "ITA", "SOV", "USA", "JAP", "CHI", "PRC", "MAN",
     "POL", "CZE", "AUS", "HUN", "ROM", "YUG", "GRE", "BUL", "ALB", "TUR",
     "SPR", "POR", "BEL", "HOL", "LUX", "DEN", "NOR", "SWE", "FIN", "EST",
     "LAT", "LIT", "SWI", "IRE", "CAN", "AST", "NZL", "SAF", "RAJ", "SIA",
     "PHI", "MEX", "BRA", "ARG", "PER", "IRQ", "SAU", "EGY", "ETH",
+    # The rest of the 1936 world: every other tag that owns a state in the base game's
+    # history/states at the 1936 start (a conquest campaign names any of them).
+    "AFA", "AFG", "BHU", "BOL", "BRM", "CHL", "COL", "COS", "CUB", "DOM", "ECU", "ELS",
+    "GUA", "GXC", "HAI", "HON", "ICE", "INS", "JOR", "KUW", "LEB", "LIB", "MAL", "MEN",
+    "MON", "NEP", "NIC", "OMA", "PAL", "PAN", "PAR", "PRU", "SHX", "SIK", "SLO", "SYR",
+    "TAN", "TIB", "URG", "VEN", "XSM", "YEM", "YUN",
 )
 
 #: Directive -> the ai_strategy entries it raises, as (type, value).

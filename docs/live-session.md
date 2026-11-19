@@ -308,7 +308,7 @@ measure the thing the project exists to ask.
 documentation. Everything below it is **assumed from the documentation** and
 encoded in the fake game; this is the sitting that finds out which assumptions
 the real game keeps. Run it with the game loaded and **paused**, SWE, the LLM
-Bridge mod last in the playset (**regenerated for schema v4**: copy the repo's
+Bridge mod last in the playset (**regenerated for schema v5**: copy the repo's
 `mod/llm_bridge` over the installed one, and **restart the game**, since mods load
 at start), `save_as_binary=no` in `settings.txt`, and the game window in front. Keep your hands off
 the keyboard and the mouse from step 4 on: the harness types into whatever has
@@ -350,7 +350,7 @@ hoi4-harness observe --headless --country SWE --game-dir "$HOI4_GAME_DIR"
 ```
 
 A brief with real political power, stability, factories and manpower. `game.log`
-should hold `LLMB|v4|state|...|tag=SWE|...` lines, one per game day since the
+should hold `LLMB|v5|state|...|tag=SWE|...` lines, one per game day since the
 mod loaded (a `v3` line means the old mod is still loaded: the reader refuses it
 by name). At peace there are no `war` lines, and the brief has no `AT WAR` line.
 No input is sent; the mouse does not move, and with `observe` no save is taken
@@ -490,13 +490,13 @@ Pick a start with an imminent war, or declare one yourself in the game (the cons
 
 ```bash
 hoi4-harness observe --headless --country SWE --game-dir "$HOI4_GAME_DIR"
-grep -c "LLMB|v4|war|" "$HOI4_LOG_PATH"
+grep -c "LLMB|v5|war|" "$HOI4_LOG_PATH"
 ```
 
 Expected `game.log` lines, one per enemy per day while the war lasts, none at peace:
 
 ```
-[..][1939.09.03.21]: LLMB|v4|war|tag=SWE|enemy=GER|divs=84|border=1|surr=0
+[..][1939.09.03.21]: LLMB|v5|war|tag=SWE|enemy=GER|divs=84|border=1|surr=0
 ```
 
 and in the brief `AT WAR with GER since 1939-09-03 (enemy 84 divisions, borders us,
@@ -622,12 +622,12 @@ first step that does not give the expected result and paste what you saw into #8
 `llm_bridge_divisions.txt` and `llm_bridge_front_on_actions.txt`), unpause two days, pause.
 
 ```bash
-grep "LLMB|v4|div" "$HOI4_LOG_PATH" | tail -12
+grep "LLMB|v5|div" "$HOI4_LOG_PATH" | tail -12
 hoi4-harness observe --adapter logtail --country POL
 ```
 
-Expected: a block of `LLMB|v4|div|tag=POL|state=<id>|ctl=<TAG>|own=<n>|own_weak=<n>|foe=<n>|foe_weak=<n>`
-lines, then `LLMB|v4|divend|tag=POL|n=<how many>`, every day; and a brief with a
+Expected: a block of `LLMB|v5|div|tag=POL|state=<id>|ctl=<TAG>|own=<n>|own_weak=<n>|foe=<n>|foe_weak=<n>`
+lines, then `LLMB|v5|divend|tag=POL|n=<how many>`, every day; and a brief with a
 `Front picture (...)` line whose counts you can check against the map by hand (look at
 two or three states: the number of counters should match `own` and `foe`). Things that
 can go wrong, and what each says: no `div` lines and no `divend` means the on_actions file

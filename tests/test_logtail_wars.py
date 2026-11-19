@@ -17,9 +17,9 @@ from hoi4_harness.observation.render import render_full
 
 def _day(day: int, wars: dict[str, tuple[int, int, int]] | None = None, extra: str = "") -> str:
     stamp = f"[10:00:00][1939.09.{day:02d}.21]"
-    lines = [f"{stamp}: LLMB|v4|state|date=x|tag=SWE|pp=42|stab=63|ws=18|civ=12|mil=5|doc=4|mp=1\n"]
+    lines = [f"{stamp}: LLMB|v5|state|date=x|tag=SWE|pp=42|stab=63|ws=18|civ=12|mil=5|doc=4|mp=1\n"]
     for enemy, (divs, border, surr) in (wars or {}).items():
-        lines.append(f"{stamp}: LLMB|v4|war|tag=SWE|enemy={enemy}|divs={divs}|border={border}"
+        lines.append(f"{stamp}: LLMB|v5|war|tag=SWE|enemy={enemy}|divs={divs}|border={border}"
                      f"|surr={surr}\n")
     return "".join(lines) + extra
 
@@ -64,7 +64,7 @@ def test_a_war_that_appears_is_a_critical_event_and_records_its_date(tmp_path):
 
 
 def test_the_mods_own_declaration_is_not_repeated_by_the_war_line(tmp_path):
-    declared = ("[10:00:00][1939.09.02.10]: LLMB|v4|evt|tag=SWE|other=POL|kind=1|detail=0\n")
+    declared = ("[10:00:00][1939.09.02.10]: LLMB|v5|evt|tag=SWE|other=POL|kind=1|detail=0\n")
     state = _read(tmp_path, _day(1), declared, _day(2, {"POL": (40, 1, 0)}), _day(3))
     assert len([e for e in state.events if e.kind == "war_declared"]) == 1
 
@@ -97,7 +97,7 @@ def test_a_war_line_that_did_not_expand_is_a_missing_number_not_zero(tmp_path):
 
 
 def test_the_mods_declaration_puts_the_enemy_on_the_list_before_any_war_line(tmp_path):
-    declared = "[10:00:00][1939.09.02.10]: LLMB|v4|evt|tag=POL|other=SWE|kind=1|detail=0\n"
+    declared = "[10:00:00][1939.09.02.10]: LLMB|v5|evt|tag=POL|other=SWE|kind=1|detail=0\n"
     state = _read(tmp_path, _day(1), declared)
     assert [(w.against, w.since) for w in state.wars] == [("POL", "1939-09-02")]
     assert "AT WAR with POL since 1939-09-02 (war score +0)" in render_full(state)

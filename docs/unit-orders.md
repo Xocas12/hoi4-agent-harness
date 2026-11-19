@@ -44,8 +44,8 @@ whose owner is at war with the player, each with a count of the ones under half
 closing line:
 
 ```
-LLMB|v4|div|tag=SWE|state=64|ctl=GER|own=3|own_weak=1|foe=5|foe_weak=0
-LLMB|v4|divend|tag=SWE|n=7
+LLMB|v5|div|tag=SWE|state=64|ctl=GER|own=3|own_weak=1|foe=5|foe_weak=0
+LLMB|v5|divend|tag=SWE|n=7
 ```
 
 Two hooks call it: `llm_bridge_front_on_actions.txt` (a second `on_daily` block for the

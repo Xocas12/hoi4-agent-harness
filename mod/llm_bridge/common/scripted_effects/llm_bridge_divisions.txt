@@ -9,8 +9,8 @@
 # every_state_division (effects l.4174, STATE scope), the way the game's own
 # 00_scripted_effects.txt does for paratroopers. So the front picture is per state:
 #
-#   LLMB|v4|div|tag=SWE|state=64|ctl=GER|own=3|own_weak=1|foe=5|foe_weak=0
-#   LLMB|v4|divend|tag=SWE|n=7
+#   LLMB|v5|div|tag=SWE|state=64|ctl=GER|own=3|own_weak=1|foe=5|foe_weak=0
+#   LLMB|v5|divend|tag=SWE|n=7
 #
 # One div line per state that holds a division of either side, then one divend
 # line with how many div lines this run printed (the reader keeps the last n and
@@ -78,10 +78,10 @@ llm_bridge_emit_front = {
 				set_variable = { llmb_f_foe = llmb_foe }
 				set_variable = { llmb_f_foe_weak = llmb_foe_weak }
 				add_to_temp_variable = { llmb_front_n = 1 }
-				log = "LLMB|v4|div|tag=[ROOT.GetTag]|state=[THIS.GetID]|ctl=[THIS.Controller.GetTag]|own=[?llmb_f_own]|own_weak=[?llmb_f_own_weak]|foe=[?llmb_f_foe]|foe_weak=[?llmb_f_foe_weak]"
+				log = "LLMB|v5|div|tag=[ROOT.GetTag]|state=[THIS.GetID]|ctl=[THIS.Controller.GetTag]|own=[?llmb_f_own]|own_weak=[?llmb_f_own_weak]|foe=[?llmb_f_foe]|foe_weak=[?llmb_f_foe_weak]"
 			}
 		}
 	}
 	set_variable = { llmb_front_states = llmb_front_n }
-	log = "LLMB|v4|divend|tag=[THIS.GetTag]|n=[?llmb_front_states]"
+	log = "LLMB|v5|divend|tag=[THIS.GetTag]|n=[?llmb_front_states]"
 }

@@ -12,7 +12,7 @@ from hoi4_harness.adapters.combined import CombinedReader
 from hoi4_harness.adapters.logtail import LogTailAdapter
 
 FIXTURE = Path(__file__).parent / "fixtures" / "swe_1938_02_04.hoi4"
-STATE = ("[10:00:00][1938.02.{d:02d}.21]: LLMB|v4|state|date=x|tag=SWE|pp=7|stab=50|ws=10"
+STATE = ("[10:00:00][1938.02.{d:02d}.21]: LLMB|v5|state|date=x|tag=SWE|pp=7|stab=50|ws=10"
          "|civ=1|mil=1|doc=1|mp=5\n")
 
 

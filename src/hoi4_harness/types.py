@@ -104,6 +104,36 @@ class War:
 
 
 @dataclass
+class CampaignStats:
+    """The conquest numbers of a campaign run, from the mod's weekly ``camp`` line
+    (schema v5). Every field is None when the line did not carry it (a token the game
+    did not expand), never a zero."""
+
+    date: str | None = None
+    owned_states: int | None = None
+    controlled_states: int | None = None
+    divisions: int | None = None
+    #: Countries at war with the player, and how many of those have capitulated.
+    enemies: int | None = None
+    capitulated: int | None = None
+    in_faction: bool | None = None
+    faction_leader: bool | None = None
+    faction_members: int | None = None
+    #: Countries that exist (puppets included), those that are nobody's subject, and
+    #: every state in the world (the denominator of the player's share).
+    countries_existing: int | None = None
+    countries_independent: int | None = None
+    world_states: int | None = None
+
+    @property
+    def state_share(self) -> float | None:
+        """The player's share of the world's states, 0-1."""
+        if self.owned_states is None or not self.world_states:
+            return None
+        return self.owned_states / self.world_states
+
+
+@dataclass
 class WarChange:
     """One dated change to a war the mock is scripted to fight.
 
@@ -236,6 +266,11 @@ class GameState:
     fronts: list[Front] = field(default_factory=list)
     wars: list[War] = field(default_factory=list)
     faction: str | None = None
+    #: Whether the game's AI runs this country (the state line's ``ai=``, schema v5):
+    #: None is "not observed". Campaign mode checks it after the console's ``human_ai``.
+    ai_controlled: bool | None = None
+    #: The weekly conquest numbers of a campaign run; None until the first line.
+    campaign: CampaignStats | None = None
     # --- hybrid control: what the native AI has been told to do ---------
     delegated_armies: list[str] = field(default_factory=list)
     ai_directives: list[str] = field(default_factory=list)

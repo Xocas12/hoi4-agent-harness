@@ -240,7 +240,7 @@ def test_delegation_through_the_log_reader_is_unverified_not_assumed(tmp_path):
     from hoi4_harness.adapters.logtail import LogTailAdapter
 
     log = tmp_path / "game.log"
-    log.write_text("[x]: LLMB|v4|state|date=1936.1.1|tag=SWE|pp=1|stab=50|ws=10\n")
+    log.write_text("[x]: LLMB|v5|state|date=1936.1.1|tag=SWE|pp=1|stab=50|ws=10\n")
     reader = LogTailAdapter(log)
     driver = InputDriverAdapter(
         InputConfig(coordinates={"army.all": (1, 1), "army.ai_control_toggle": (2, 2)}),
@@ -257,15 +257,15 @@ def test_the_log_reader_learns_posture_from_the_mods_events(tmp_path):
     from hoi4_harness.adapters.logtail import LogTailAdapter
 
     log = tmp_path / "game.log"
-    log.write_text("[x]: LLMB|v4|state|date=1936.1.1|tag=SWE|pp=1|stab=50|ws=10\n")
+    log.write_text("[x]: LLMB|v5|state|date=1936.1.1|tag=SWE|pp=1|stab=50|ws=10\n")
     reader = LogTailAdapter(log)
     assert not reader.read_state().known("posture")
     with log.open("a") as handle:
-        handle.write("[x]: LLMB|v4|evt|tag=SWE|kind=10\n")
+        handle.write("[x]: LLMB|v5|evt|tag=SWE|kind=10\n")
     state = reader.read_state()
     assert state.known("posture") and state.posture == "defensive"
     with log.open("a") as handle:
-        handle.write("[x]: LLMB|v4|evt|tag=SWE|kind=12\n")
+        handle.write("[x]: LLMB|v5|evt|tag=SWE|kind=12\n")
     assert reader.read_state().posture is None
 
 
@@ -273,8 +273,8 @@ def test_verification_polling_does_not_drain_the_events_the_wake_rule_needs(tmp_
     from hoi4_harness.adapters.logtail import LogTailAdapter
 
     log = tmp_path / "game.log"
-    log.write_text("[x]: LLMB|v4|state|date=1936.1.1|tag=SWE|pp=1|stab=50|ws=10\n"
-                   "[x]: LLMB|v4|evt|tag=SWE|kind=1|detail=war\n")
+    log.write_text("[x]: LLMB|v5|state|date=1936.1.1|tag=SWE|pp=1|stab=50|ws=10\n"
+                   "[x]: LLMB|v5|evt|tag=SWE|kind=1|detail=war\n")
     reader = LogTailAdapter(log)
     writer = InputDriverAdapter(dry_run=True)
     CompositeAdapter(reader, writer)
@@ -294,8 +294,8 @@ def test_a_theater_posture_through_the_log_reader_is_unverified(tmp_path):
     from hoi4_harness.adapters.logtail import LogTailAdapter
 
     log = tmp_path / "game.log"
-    log.write_text("[x]: LLMB|v4|state|date=1936.1.1|tag=SWE|pp=1|stab=50|ws=10\n"
-                   "[x]: LLMB|v4|evt|tag=SWE|kind=10\n")
+    log.write_text("[x]: LLMB|v5|state|date=1936.1.1|tag=SWE|pp=1|stab=50|ws=10\n"
+                   "[x]: LLMB|v5|evt|tag=SWE|kind=10\n")
     driver = InputDriverAdapter(
         InputConfig(coordinates={"p": (1, 1)}), dry_run=False,
         focus_check=lambda t: FocusCheck(True, "Hearts of Iron IV"),

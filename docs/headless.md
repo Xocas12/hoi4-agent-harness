@@ -15,7 +15,7 @@ log do not care what is on screen.
 
 | Job | Headless path | Evidence |
 |---|---|---|
-| See the game | `adapters/combined.py` (`headless_reader = "log+save"`, the default): the mod's daily `LLMB|v4|` lines from `game.log` for the live numbers, wars and events, plus a text save the console writes on demand for production, the construction queue, divisions and completed focuses | log live 1.19.5; save written live 1.20.0, the console-saves-then-harness-reads loop **not yet live** |
+| See the game | `adapters/combined.py` (`headless_reader = "log+save"`, the default): the mod's daily `LLMB|v5|` lines from `game.log` for the live numbers, wars and events, plus a text save the console writes on demand for production, the construction queue, divisions and completed focuses | log live 1.19.5; save written live 1.20.0, the console-saves-then-harness-reads loop **not yet live** |
 | `queue_construction`, `set_production`, `hire_advisor` | console: `eval_effect TAG = { ... }` in `llmb_turn.txt`, then console key, `run llmb_turn.txt`, enter, console key. Construction and production end the file with `savegame` and are verified through it | effects live 1.19.5; verification through the save not yet live |
 | `set_ai_directive`, `set_ai_posture`, `clear_ai_directives` | console: `effect TAG llm_bridge_*` (the mod's scripted effects) | live 1.19.5 |
 | `set_national_focus` | keyboard only: alt+q, ctrl+f, the localised name, shift+enter | live 1.19.5 |
@@ -187,7 +187,7 @@ Schema v4 adds one `war` line per enemy per in-game day while the player is at
 war and none at peace:
 
 ```
-LLMB|v4|war|tag=SWE|enemy=GER|divs=84|border=1|surr=3
+LLMB|v5|war|tag=SWE|enemy=GER|divs=84|border=1|surr=3
 ```
 
 `divs` is the enemy's `num_divisions`, `border` is `is_neighbor_of` the player

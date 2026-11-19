@@ -1,0 +1,21 @@
+# LLM Bridge -- who the bridge reports on.
+#
+# The mod used to limit every on_action to `is_ai = no`. Under the console's
+# `human_ai` ("Toggles AI for Human countries", console_commands_documentation.md
+# :1048) the player's country counts as AI and every one of those limits went
+# false, so the log fell silent. The harness's campaign mode therefore marks the
+# player's country with a flag (llm_bridge_mark_player, scripted_effects/
+# llm_bridge_telemetry.txt) and every limit asks this trigger instead.
+#
+#   is_ai               triggers_documentation.md:5293
+#   has_country_flag    triggers_documentation.md:3660
+#
+# A scripted trigger is called as `llm_bridge_is_player = yes` in the scope to
+# test (a COUNTRY), and works inside OR / FROM blocks like any trigger.
+
+llm_bridge_is_player = {
+	OR = {
+		is_ai = no
+		has_country_flag = llmb_player
+	}
+}
