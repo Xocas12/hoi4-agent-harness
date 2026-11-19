@@ -90,8 +90,15 @@ def build_adapter(config: HarnessConfig) -> GameAdapter:
         calibration = config.calibration_path or config.run_dir / "calibration.json"
         if Path(calibration).exists():
             writer.load_calibration(Path(calibration))
-        return CompositeAdapter(reader, _with_console(writer, config),
-                                clock_owner=config.clock_owner)
+        router = _with_console(writer, config)
+        ledger = getattr(router, "order_ledger", None)
+        if ledger is not None:
+            from .unit_orders import OrdersComposite, state_names
+
+            return OrdersComposite(
+                reader, router, ledger, state_names(router.order_layer, config.build_index()),
+                clock_owner=config.clock_owner)
+        return CompositeAdapter(reader, router, clock_owner=config.clock_owner)
     raise ValueError(f"Unknown adapter {name!r}. Known: {', '.join(ADAPTERS)}")
 
 
@@ -113,8 +120,12 @@ def _with_console(driver, config: HarnessConfig):
             guards=config.console_guards,
             archive_dir=Path(config.run_dir),
             country=config.country,
-            refresh=bool(config.console_refresh),
+            refresh=bool(config.console_refresh), refresh_front=bool(config.console_refresh),
         ),
         index=config.build_index(),
     )
+    if config.unit_orders:
+        from .unit_orders import enable_from_config
+
+        enable_from_config(driver, console, config)
     return ChannelRouter(driver, console, channels)

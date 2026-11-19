@@ -51,6 +51,7 @@ from . import fakesave, modgen
 from .actions.catalog import AI_DIRECTIVES
 from .adapters.keys import key_name
 from .adapters.mock import MockAdapter
+from .fakearmy import FakeArmy, FakeGui
 from .identifiers import IdentifierIndex, Playset
 from .types import ActionCall, ConstructionItem, ProductionLine, ResearchSlot, ScenarioStart
 
@@ -295,6 +296,7 @@ class FakeGame:
         target_tags: tuple[str, ...] = modgen.DEFAULT_TAGS,
         speed: int = 3,
         save_delay: float = 2.0,
+        army: FakeArmy | None = None,
     ):
         self.user_dir = Path(user_dir)
         self.user_dir.mkdir(parents=True, exist_ok=True)
@@ -308,6 +310,8 @@ class FakeGame:
                             variance=variance)
         self.world.on_event = self._world_event
         self.world.on_built = self._built
+        #: Divisions on a map (fakearmy.py); None: no front, the mod prints n=0.
+        self.army = army
         # A game loads paused.
         self.paused = True
         self.speed = max(1, min(5, speed))
@@ -422,6 +426,23 @@ class FakeGame:
     def end_war(self, enemy: str) -> None:
         state = self.world.state
         state.wars = [w for w in state.wars if w.against != enemy]
+    def emit_front(self) -> None:
+        """The mod's ``llm_bridge_emit_front``: a ``div`` line per state with a
+        division of either side on the front, then ``divend`` with the count. At
+        peace (nobody at war with the player) only the ``divend`` is printed."""
+        rows = self.army.front_rows() if self.army is not None and self.army.at_war else []
+        lines = [self._llmb("div", tag=self.country, state=r["state"], ctl=r["ctl"], own=r["own"],
+                            own_weak=r["own_weak"], foe=r["foe"], foe_weak=r["foe_weak"])
+                 for r in rows]
+        lines.append(self._llmb("divend", tag=self.country, n=len(rows)))
+        self._write(*lines)
+
+    @property
+    def gui(self) -> FakeGui:
+        """The mouse, for a driver built with ``gui=``: clicks land on the army's map."""
+        if self.army is None:
+            raise RuntimeError("this fake game has no army, so it has no map to click on")
+        return FakeGui(self.army, lambda: self._held)
 
     def _event(self, code: int, detail: str = "0", other: str | None = None) -> None:
         fields = {"tag": self.country}
@@ -452,7 +473,10 @@ class FakeGame:
                 self.start_war(enemy, divisions)
             else:
                 self.end_war(enemy)
+        if self.army is not None:
+            self.army.tick_day()
         self.emit_state()
+        self.emit_front()
 
     def _built(self, item: ConstructionItem) -> None:
         """A finished building leaves the queue and takes its slot for good."""
@@ -670,6 +694,8 @@ class FakeGame:
             return self._gamespeed(rest.strip())
         if command == "pause_in_hours":
             return self._pause_in_hours(rest.strip())
+        if command in ("goto_province", "goto_state"):
+            return self._goto(command, rest.strip())
         if command == "effect":
             return self._scripted_effect(rest)
         if command == "eval_effect":
@@ -700,6 +726,25 @@ class FakeGame:
             self.paused = True
         else:
             self.paused, self.speed = False, speed
+
+    def _goto(self, command: str, rest: str) -> None:
+        """Centre the view (console_commands_documentation.md: "Centers to province")."""
+        if self.army is None:
+            raise ScriptError(f"{command}: this fake game has no map")
+        try:
+            ident = int(rest)
+        except ValueError:
+            raise ScriptError(f"{command} <id>") from None
+        layer = self.army.layer
+        if command == "goto_state":
+            info = layer.states.get(ident)
+            if info is None or not info.provinces:
+                raise ScriptError(f"{command}: no state {ident}")
+            ident = sorted(info.provinces)[0]
+        try:
+            self.army.goto(ident)
+        except ValueError as exc:
+            raise ScriptError(str(exc)) from None
 
     def _pause_in_hours(self, rest: str) -> None:
         try:
@@ -887,6 +932,8 @@ class FakeGame:
     def _scripted(self, name: str) -> None:
         if name == "llm_bridge_emit_state":
             return self.emit_state()
+        if name == "llm_bridge_emit_front":
+            return self.emit_front()
         if name == "llm_bridge_clear_directives":
             self.directives, self.global_posture, self.theater_postures = [], None, {}
             self.target = None

@@ -396,3 +396,59 @@ ACTIONS += [
 ]
 
 BY_NAME = {spec.name: spec for spec in ACTIONS}
+
+# --- division orders (#85) --------------------------------------------------
+# By click, because no script reaches a division's order (docs/unit-orders.md).
+# States are the brief's coordinates (the front picture counts divisions per
+# state); a province id narrows an order to one stack or one target.
+
+_STATE_ID = {"type": "integer", "minimum": 1}
+
+ACTIONS += [
+    ActionSpec(
+        name="move_division",
+        category="army",
+        description=(
+            "March the player's divisions from one state to another over land, "
+            "by selecting them on the map and right-clicking the destination. "
+            "Only where the front picture shows your divisions; a destination "
+            "with enemy divisions is an attack_province. It takes days and "
+            "cannot be confirmed at once: the brief's Order lines report it."
+        ),
+        parameters=_schema(
+            {
+                "from_state": {**_STATE_ID, "description": "State holding the divisions (front picture)."},
+                "to_state": {**_STATE_ID, "description": "State to march to."},
+                "from_province": {"type": "integer", "minimum": 1, "description": (
+                    "Optional: click this province's stack instead of boxing the whole state.")},
+                "to_province": {"type": "integer", "minimum": 1, "description": (
+                    "Optional: a province of to_state; default is its middle.")},
+                "via": {"type": "array", "maxItems": 4, "items": _STATE_ID, "description": (
+                    "Optional waypoint states, visited in order before to_state is reached.")},
+            },
+            ["from_state", "to_state"],
+        ),
+    ),
+    ActionSpec(
+        name="attack_province",
+        category="army",
+        description=(
+            "Attack an enemy-held, adjacent state from the state your divisions "
+            "stand in. Same click path as move_division; refused when the target "
+            "does not border the attacker or shows nothing hostile."
+        ),
+        parameters=_schema(
+            {
+                "from_state": {**_STATE_ID, "description": "State holding the attackers (front picture)."},
+                "to_state": {**_STATE_ID, "description": "Adjacent enemy-held state to attack."},
+                "from_province": {"type": "integer", "minimum": 1, "description": (
+                    "Optional: attack from this province's stack only.")},
+                "to_province": {"type": "integer", "minimum": 1, "description": (
+                    "Optional: the province of to_state to attack; it must border the attacker.")},
+            },
+            ["from_state", "to_state"],
+        ),
+    ),
+]
+
+BY_NAME = {spec.name: spec for spec in ACTIONS}

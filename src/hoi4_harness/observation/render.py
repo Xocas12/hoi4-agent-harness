@@ -13,6 +13,7 @@ delta. Rules applied here:
 from __future__ import annotations
 
 from ..types import GameState
+from .forces import forces_lines, order_lines
 from .fronts import summarise_fronts
 
 _SEV = {"critical": "!!", "notable": "!", "info": "-"}
@@ -144,6 +145,8 @@ def render_full(state: GameState, max_events: int = 6, max_fronts: int = 3) -> s
         for war in state.wars:
             lines.append(_war_line(war))
     lines.extend(summarise_fronts(state.fronts, limit=max_fronts))
+    lines.extend(forces_lines(state))
+    lines.extend(order_lines(state))
 
     if state.delegated_armies or state.ai_directives or state.posture or state.theater_postures:
         bits = []

@@ -12,6 +12,7 @@ they are the reason the turn is happening.
 from __future__ import annotations
 
 from ..types import GameState
+from .forces import forces_changes, order_lines
 from .fronts import front_changes
 
 SCALARS = [
@@ -86,6 +87,9 @@ def render_delta(previous: GameState, current: GameState) -> str:
         lines.append(f"War ended: {tag}")
 
     lines.extend(front_changes(previous.fronts, current.fronts))
+    lines.extend(forces_changes(previous, current))
+    if current.order_status != previous.order_status:
+        lines.extend(order_lines(current))
 
     if previous.posture != current.posture:
         lines.append(f"AI posture: {previous.posture or 'default'} -> {current.posture}")

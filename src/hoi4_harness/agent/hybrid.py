@@ -34,7 +34,9 @@ That last one is the interesting question and it is issue-tracked, not answered.
 from __future__ import annotations
 
 #: Actions that only make sense when the model is commanding units directly.
-OPERATIONAL_ACTIONS = frozenset({"set_army_order", "set_air_mission", "set_naval_mission"})
+OPERATIONAL_ACTIONS = frozenset({
+    "set_army_order", "set_air_mission", "set_naval_mission", "move_division", "attack_province",
+})
 
 #: Actions that only make sense when the native AI is executing.
 DIRECTIVE_ACTIONS = frozenset(

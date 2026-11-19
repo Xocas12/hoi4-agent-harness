@@ -605,3 +605,94 @@ harness sends nothing; you move the mouse and read the screen.
    A matrix is valid for one view only; moving the camera needs a refit.
 9. Then click-test: `screen_point(layer, "province", id, camera)` for a province in
    view, move the mouse there yourself and see that the tooltip names that province.
+
+## 12. Division orders (#85)
+
+[unit-orders.md](unit-orders.md) says what is built and what each assumption is. This is
+the sitting that finds out whether the game keeps them. It needs step 3 (telemetry),
+step 7 (the console channel) and step 11 (the camera) to have passed, and a game in which
+**your country is at war with divisions on the front**: a 1939 start as Poland, or a save
+a few weeks into any war, non-ironman, paused, 1920x1080 at UI scale 1.0, the LLM Bridge
+mod last. Keep your hands off the mouse and keyboard whenever the harness is sending.
+
+Order matters: camera validation first, then one move, then one attack. Stop at the
+first step that does not give the expected result and paste what you saw into #85.
+
+**A. The front picture (no input).** With the mod reloaded (the new files are
+`llm_bridge_divisions.txt` and `llm_bridge_front_on_actions.txt`), unpause two days, pause.
+
+```bash
+grep "LLMB|v4|div" "$HOI4_LOG_PATH" | tail -12
+hoi4-harness observe --adapter logtail --country POL
+```
+
+Expected: a block of `LLMB|v4|div|tag=POL|state=<id>|ctl=<TAG>|own=<n>|own_weak=<n>|foe=<n>|foe_weak=<n>`
+lines, then `LLMB|v4|divend|tag=POL|n=<how many>`, every day; and a brief with a
+`Front picture (...)` line whose counts you can check against the map by hand (look at
+two or three states: the number of counters should match `own` and `foe`). Things that
+can go wrong, and what each says: no `div` lines and no `divend` means the on_actions file
+did not load (the game's `error.log` will say); `divend` but no `div` lines while divisions
+stand on the front means `ROOT` or `OWNER` did not resolve as assumed; a literal
+`[?llmb_f_own]` or `[THIS.GetID]` in a line means that token does not expand in a state
+scope (paste the line). Also run `effect POL llm_bridge_emit_front` from the console once
+and check that it prints a run on demand.
+
+**B. The camera (this settles the numbers orders aim with).**
+
+1. Console: `goto_province <P>`, P a province on the front with a victory-point city.
+   Do not pan, zoom or click afterwards. Screenshot.
+2. Read the screen position of at least five VP markers (step 11's method) and run
+   `scripts/record_camera.py --fit-province <P> --ref ... --hold ... --out runs/camera.json`
+   with two held out. Expected: `model: perspective` (or `flat`), held-out errors under 8
+   px, and a **centre rule** table: one rule within a few map pixels of where the viewport
+   centre falls. That answers "where does `goto_province` centre the view"; paste the table.
+   `validated: True` is printed only when every held-out marker is within 8 px.
+3. Second province, to test the slide: `goto_province <Q>`, a province 100+ map pixels from
+   P, and **without recording anything** read one marker. The record predicts where it should
+   be: `CameraRecord.load("runs/camera.json").camera_for(layer, Q)` then `.to_screen(*layer.anchor(city, 38))`.
+   Within about 10 px passes; a constant offset means the zoom changed on centring
+   (re-record per view, or set the zoom first); anything else means the shift model is wrong
+   and orders may only be given in the view the fit was recorded in.
+4. Unit counters: hover a stack in P and note whether the counter sits at the province's
+   **type 0** anchor (`layer.anchor(P, 0)` through the camera). If it is offset, say by how
+   many px; that is `--counter-offset dx,dy`.
+
+**C. One move order.** `profiles/unit-orders.json` turns the actions on (`unit_orders`,
+`camera_path`, the console refresh that also asks for the front picture, dry run on); set
+`HOI4_GAME_DIR`, `HOI4_LOG_PATH` and `HOI4_COUNTRY` as before. Pick two adjacent states on the front: A holding your divisions (the picture says so) and
+B with none of the enemy's, so the order is a plain move. Dry run first, from a Python
+prompt as in step 7:
+
+```python
+cfg = HarnessConfig.from_file("profiles/unit-orders.json")   # dry_run is true; set it False to go live
+game = build_adapter(cfg)
+print(game.apply(ActionCall("move_division", {"from_state": A, "to_state": B})))
+```
+
+Expected: `not_executed`, the message listing `drag (x0, y0) -> (x1, y1) (box over state A)`
+and `right-click (x, y) (target province ...)`, and `runs/console/*-llmb_turn.txt`
+holding `goto_province <p>`. Check by eye that the box covers the counters of A and that
+the right-click point is inside B on the screen. Then live (`dry_run` False, click the game
+window within five seconds): the console opens and closes, the view jumps, the divisions of
+A are selected (the box), and a movement arrow appears towards B. The result is
+`unverified` with `order #1 sent`. Unpause two days: the `Order:` line should read
+`underway: N division(s) have left state A`, and the front picture's `own` count for A falls
+and B's rises (if B is listed). A selection that took nothing (no arrow) is the likeliest
+failure: the counter offset or the camera.
+
+**D. One attack.** An enemy-held state E adjacent to A that the picture shows with enemy
+divisions. `ActionCall("attack_province", {"from_state": A, "to_state": E})`. Dry run
+shows the same shape; live, the divisions get an attack arrow into a province of E. Unpause
+a few days: `Order:` goes `landing: enemy divisions in state E went x -> y` while the
+battle is fought and `taken` if the state falls to you. Paste the `div` lines for A and E
+before and after.
+
+Then, if all four held: a short scripted-controller session on the live front, as a
+smoke test of the plumbing only, not a result:
+
+```python
+from hoi4_harness.tactics import ScriptedController
+from hoi4_harness.tactics.bridge import ControllerBridge
+bridge = ControllerBridge(layer, ScriptedController())
+print(bridge.decide(game.read_state()))       # look at the actions it would take; apply none yet
+```

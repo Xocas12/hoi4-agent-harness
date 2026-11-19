@@ -41,7 +41,11 @@ from .ui_scripts import DEFAULT_FILENAME, Step, load_scripts, parse_steps
 from .window import FocusCheck
 
 #: Actions with no path that avoids the mouse. Removed from the tool list.
-MOUSE_ACTIONS = frozenset({"start_research", "delegate_army_to_ai"})
+MOUSE_ACTIONS = frozenset({
+    "start_research", "delegate_army_to_ai",
+    # Division orders are a selection and a right-click (adapters/unit_orders.py).
+    "move_division", "attack_province",
+})
 #: Actions the log cannot make safe. add_equipment_production adds a second line
 #: for equipment that already has one (seen live on 1.19.5), and only a reader
 #: that sees production -- a text save -- can check that first.
@@ -363,7 +367,8 @@ def build_headless(config: HarnessConfig, fake=None) -> CompositeAdapter:
             open_key=config.console_key, close_key=config.console_key,
             effect_command=config.console_effect_command, hybrid_via=config.console_hybrid_via,
             guards=config.console_guards, archive_dir=Path(config.run_dir),
-            country=config.country, refresh=refresh and config.headless_reader != "savegame"),
+            country=config.country, refresh=refresh and config.headless_reader != "savegame",
+            refresh_front=refresh and config.headless_reader != "savegame"),
         index=index, sleep=sleep)
     if config.headless_reader == "log+save":
         reader.take = lambda: console.send_lines(["savegame"])
