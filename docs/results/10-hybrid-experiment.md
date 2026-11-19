@@ -1,5 +1,14 @@
 # Hybrid experiment (#10): model-only vs AI-only vs hybrid
 
+> **Caveat, added after the run.** This experiment ran on the low-variance mock:
+> at the time a seed drew research durations only, which is why almost every arm
+> below has sd 0.00. Eight seeds showed that the runs were reproducible, not that
+> the result is robust, and the hybrid arm's 8/8 is not evidence it holds up
+> against dice. The mock now varies opening strength, combat dice, blizzards,
+> event timing and more by seed (see [evaluation.md](../evaluation.md#what-a-seed-varies)).
+> The numbers below were not re-run (that costs money) and should be, with the
+> same commands, before this is quoted anywhere.
+
 Mock world only. Model `claude-opus-5-5` (anthropic), 8 seeds (1936-1943) per
 arm per scenario, same seeds across arms. Prices: $4 / $20 per M input / output,
 $0.20 cached input, $5 cache write. Reproduce with

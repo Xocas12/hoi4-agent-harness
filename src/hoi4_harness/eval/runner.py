@@ -24,9 +24,11 @@ def run_scenario(
     transcript_dir: Path | None = None,
     seed: int | None = None,
     operational_control: str | None = None,
+    mock_variance: float = 1.0,
 ) -> ScoreCard:
     """One run of one scenario. ``seed`` overrides the scenario's own mock seed,
-    which is how a multi-seed run varies what actually varies."""
+    which is how a multi-seed run varies what actually varies. ``mock_variance``
+    scales the mock's seed-driven noise (0 is the old fixed mock)."""
     if isinstance(scenario, str):
         if scenario not in SCENARIOS:
             raise KeyError(f"Unknown scenario {scenario!r}. Known: {', '.join(SCENARIOS)}")
@@ -58,6 +60,7 @@ def run_scenario(
         country=scenario.country,
         start=scenario.start,
         start_state=scenario.start_state,
+        variance=mock_variance,
     )
     env = HOI4Env(adapter, config, index=index)
     env.reset()

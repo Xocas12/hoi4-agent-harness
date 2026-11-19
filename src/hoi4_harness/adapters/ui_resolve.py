@@ -24,7 +24,7 @@ import re
 from dataclasses import dataclass, field
 
 from ..identifiers import IdentifierIndex, TechPlace
-from ..techtree import CONTENT_ORIGIN, REFERENCE_HEIGHT, Gridbox, gui_point
+from ..techtree import CONTENT_ORIGIN, REFERENCE_HEIGHT, Gridbox, LayoutUnknown, gui_point
 
 #: Click targets computed per call rather than recorded, and the recorded targets
 #: each is computed from. ``hoi4-harness calibrate`` asks for the latter.
@@ -128,27 +128,40 @@ def tech_point(
     (the screen point where the content's GUI (0, 0) lands) replaces that guess if
     a layout or UI scale differs. An exact ``research.tech.<id>`` beats the rule. A
     point off the screen or on the tab strip is refused: this driver does not
-    scroll the tree. So is a technology whose sub-tree the rule cannot place.
+    scroll the tree. So is a technology whose sub-tree the rule cannot place, or whose
+    roots' boxes disagree on where it is. The rotated formats (``UP``, ``UPPER_LEFT``)
+    are read from the interface file but not yet measured live (techtree.py).
     """
     exact = coordinates.get(f"research.tech.{tech}") if tech else None
     if exact is not None:
         return exact
-    box = next((gridboxes[(place.folder, f"{root}_tree")] for root in place.roots
-                if (place.folder, f"{root}_tree") in (gridboxes or {})), None)
-    if box is None:
+    boxes = {root: gridboxes[(place.folder, f"{root}_tree")] for root in place.roots
+             if (place.folder, f"{root}_tree") in (gridboxes or {})}
+    if not boxes:
         raise Unresolvable(
             f"{tech or 'the technology'} hangs off {', '.join(place.roots) or 'no root'} in "
             f"{place.folder}, which has no sub-tree box in interface/countrytechtreeview.gui, "
             "so its place on the tab is unknown; calibrate research.tech.<id> for it"
         )
-    if box.format != "LEFT":
-        raise Unresolvable(
-            f"{tech or 'the technology'} is in a {box.format} sub-tree of {place.folder}; only "
-            "LEFT layouts are understood, so its place is unknown; calibrate research.tech.<id>"
-        )
     width, height = screen if screen else (1920, 1080)
     scale = height / REFERENCE_HEIGHT
-    gx, gy = gui_point(box, place.column, place.row)
+    points = set()
+    for root, box in boxes.items():
+        try:
+            points.add(gui_point(box, place.column, place.row, width / scale))
+        except LayoutUnknown as why:
+            raise Unresolvable(
+                f"{tech or 'the technology'} is in the {root} sub-tree of {place.folder} "
+                f"({box.format}) and {why}; calibrate research.tech.<id> for it"
+            ) from None
+    if len(points) > 1:
+        raise Unresolvable(
+            f"{tech or 'the technology'} is reached from {', '.join(boxes)} in {place.folder}, "
+            "whose boxes put it in different places, so which one is drawn is unknown; "
+            "calibrate research.tech.<id> for it"
+        )
+    box = next(iter(boxes.values()))
+    (gx, gy), = points
     origin = coordinates.get("research.tree.origin")
     ox, oy = origin if origin else (CONTENT_ORIGIN[0] * scale, CONTENT_ORIGIN[1] * scale)
     x, y = round(ox + gx * scale), round(oy + gy * scale)

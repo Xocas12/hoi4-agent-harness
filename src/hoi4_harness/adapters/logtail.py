@@ -187,7 +187,10 @@ class LogTailAdapter(GameAdapter):
         #: Both, because a deleted and recreated file can get the same inode.
         self._identity: tuple[int, int] | None = None
         self._head = b""
-        self._state = GameState(unknown_fields=list(NOT_EMITTED))
+        # The log reader sees the game a tick at a time, counting from zero. None
+        # means 'sees it whole' to verification, which then rejected a change the
+        # paused game had not ticked to show yet (seen live on a fresh load).
+        self._state = GameState(unknown_fields=list(NOT_EMITTED), telemetry_ticks=0)
         self._pending: list[GameEvent] = []
         self._seen_any = False
         #: tag -> last counter values seen, for completion events.
@@ -238,7 +241,7 @@ class LogTailAdapter(GameAdapter):
             # Size alone misses a new log that has already grown past the old
             # offset before this poll: it would be read from the middle.
             self._offset = 0
-            self._state = GameState(unknown_fields=list(NOT_EMITTED))
+            self._state = GameState(unknown_fields=list(NOT_EMITTED), telemetry_ticks=0)
             self._pending = []
             self._counters = {}
             self._ticks, self._closed, self._research_event = {}, {}, {}
@@ -431,10 +434,11 @@ class LogTailAdapter(GameAdapter):
         """Separate owned civilian factories from ones on loan through trade.
 
         The game's civilian count includes trade (seen live: 20, of which 9
-        owned and 11 from trade). ``owned`` is ``num_of_factories``, which the
-        game documents as excluding trade and lend-lease; what it leaves after
-        military factories and dockyards is the owned civilian count. A split
-        that does not add up is not used.
+        owned and 11 from trade). ``owned`` is ``num_of_controlled_factories``
+        -- measured live, it matches the top bar's own count, while
+        ``num_of_factories`` includes trade despite its documentation. What it
+        leaves after military factories and dockyards is the owned civilian
+        count. A split that does not add up is not used.
         """
         state = self._state
         try:

@@ -11,13 +11,14 @@ from __future__ import annotations
 
 import functools
 import os
+import re
 from pathlib import Path
 
 import pytest
 
-from hoi4_harness.adapters.ui_resolve import tech_point
+from hoi4_harness.adapters.ui_resolve import Unresolvable, tech_point
 from hoi4_harness.identifiers import IdentifierIndex, Playset
-from hoi4_harness.techtree import Gridbox, parse_gridboxes
+from hoi4_harness.techtree import Gridbox, gui_point, parse_gridboxes
 
 FIXTURE = Path(__file__).parent / "fixtures" / "techtree"
 SCREEN = (1920, 1080)
@@ -32,12 +33,17 @@ def point(index, tech):
     return tech_point(index.tech_places[tech], {}, SCREEN, tech, index.tech_gridboxes)
 
 
-def test_gridboxes_are_read_per_folder_without_comments_percent_or_other_folders(fixture_index):
+def test_gridboxes_are_read_per_folder_without_comments_or_other_folders(fixture_index):
     boxes = fixture_index.tech_gridboxes
     assert boxes[("infantry_folder", "support_weapons_tree")] == Gridbox(140, 210, 70, 70, "LEFT")
     assert boxes[("infantry_folder", "infantry_weapons_tree")].y == 325   # not the commented copy
-    assert ("infantry_folder", "percent_tree") not in boxes
+    percent = boxes[("infantry_folder", "percent_tree")]
+    assert (percent.x, percent.x_percent, percent.y_percent, percent.width) == (10, True, False, None)
     assert boxes[("armour_folder", "armour1_tree")].format == "UPPER_LEFT"
+    wide = boxes[("air_techs_folder", "wide_tree")]
+    assert (wide.width, wide.width_percent, wide.margin_left, wide.margin_right) == (80, True, 0, 25)
+    assert boxes[("air_techs_folder", "early_fighter_tree")].width == 400
+    assert boxes[("armour_folder", "armour1_tree")].margin_left == 13     # the default
     assert parse_gridboxes("gridboxtype = { name = \"x\" position = { x = 1 y = 2 } }") == {}
 
 
@@ -55,6 +61,44 @@ def test_the_layout_rule_on_the_fixture(fixture_index):
     assert point(fixture_index, "support_weapons") == (230, 435)
     assert point(fixture_index, "infantry_weapons") == (142, 579)     # column -1
     assert point(fixture_index, "infantry_at") == (1280, 754)         # row 2
+
+
+# --- the rotated formats ----------------------------------------------------
+# GUI = (box + ...) as in techtree.py, plus ROTATED_Y_OFFSET (40) in y; screen =
+# (origin + GUI) * 1.25, origin (9, 103),
+# less 13 GUI units of x in a folder whose left margin is 0 (the air tabs).
+
+
+def test_upper_left_swaps_the_axes_and_starts_at_the_top_left(fixture_index):
+    # armour1: row (x) 2, column (y) 3 -> GUI (0 + 70*2.5, 40 + 70*3.5) = (175, 285)
+    assert point(fixture_index, "armour1") == (230, 535)
+
+
+def test_up_centres_row_zero_on_the_box_and_runs_the_years_down(fixture_index):
+    # box (300, 32) 400 wide, slots 60x70, left margin 0: x = 300 + 200 + 60*row - 13
+    assert point(fixture_index, "early_fighter") == (620, 438)
+    assert point(fixture_index, "fighter1") == (620, 525)          # a year later: lower
+    assert point(fixture_index, "cas1") == (320, 525)              # row -4: 240 units left
+
+
+def test_up_boxes_placed_and_sized_by_percent_use_the_width_between_the_margins(fixture_index):
+    # 1536 GUI wide, margins 0 + 25: 10% + 80% / 2 of 1511 = 742.5, less 13, plus 70 for row 1
+    x, y = point(fixture_index, "wide1")
+    assert abs(x - 1027) <= 1 and y == 610
+
+
+def test_a_box_that_cannot_be_placed_is_refused_with_the_reason(fixture_index):
+    with pytest.raises(Unresolvable, match="UP box has no size"):
+        point(fixture_index, "percent")
+    with pytest.raises(Unresolvable, match="percent wide at an absolute x"):
+        point(fixture_index, "mixed")
+    with pytest.raises(Unresolvable, match="different places"):
+        point(fixture_index, "up_shared")
+
+
+def test_roots_that_draw_a_tech_in_the_same_place_do_not_make_it_ambiguous(fixture_index):
+    assert fixture_index.tech_places["tw_shared"].roots == ("tw1", "tw2")
+    assert point(fixture_index, "tw_shared") == (580, 885)
 
 
 @functools.cache
@@ -94,3 +138,110 @@ MEASURED = [
 def test_the_real_install_reproduces_the_measured_infantry_tab(tech, truth):
     x, y = point(_real_index(), tech)
     assert abs(x - truth[0]) <= 25 and abs(y - truth[1]) <= 25, (tech, (x, y), truth)
+
+
+# --- internal consistency of the rotated tabs (not measured live) ------------
+
+SCREEN_GUI_WIDTH = 1536      # 1920 px at the 1.25 scale
+ROTATED = ("armour_folder", "nsb_armour_folder", "air_techs_folder",
+           "bba_air_techs_folder", "industry_folder", "electronics_folder")
+#: ``techtree_stripes`` (or the ``size_filler``) container size per folder, from the
+#: interface file; a folder's techs must sit inside it. Electronics' filler is 710
+#: wide but its subtitles and techs run to 1400, so only its height is a bound.
+CONTENT_SIZE = {
+    "armour_folder": (1450, 1090), "nsb_armour_folder": (1900, 1090),
+    "air_techs_folder": (2500, 1300),
+    "bba_air_techs_folder": (2240, 1300), "industry_folder": (1650, 1000),
+    "electronics_folder": (None, 1100),
+}
+
+
+@pytest.mark.skipif(_install() is None, reason="no HOI4 install to read the layout from")
+def test_artillery_is_refused_whole_because_its_percent_box_is_unclear():
+    index = _real_index()
+    techs = [t for t, p in index.tech_places.items() if p.folder == "artillery_folder"]
+    assert techs
+    for tech in techs:
+        with pytest.raises(Unresolvable, match="percent wide at an absolute x"):
+            point(index, tech)
+
+
+def _placed(folder):
+    """tech -> {GUI centre per root that has a box}, for one folder of the install."""
+    index = _real_index()
+    out = {}
+    for tech, place in index.tech_places.items():
+        if place.folder != folder:
+            continue
+        out[tech] = {
+            gui_point(box, place.column, place.row, SCREEN_GUI_WIDTH)
+            for root in place.roots
+            if (box := index.tech_gridboxes.get((folder, f"{root}_tree")))
+        }
+    return out
+
+
+@pytest.mark.skipif(_install() is None, reason="no HOI4 install to read the layout from")
+@pytest.mark.parametrize("folder", ROTATED)
+def test_every_rotated_tech_gets_one_place_and_no_two_share_it(folder):
+    placed = _placed(folder)
+    assert placed
+    assert [t for t, pts in placed.items() if len(pts) != 1] == []
+    seen: dict[tuple[float, float], str] = {}
+    for tech, pts in placed.items():
+        (pt,) = pts
+        assert pt not in seen, (tech, seen[pt], pt)
+        seen[pt] = tech
+
+
+@pytest.mark.skipif(_install() is None, reason="no HOI4 install to read the layout from")
+@pytest.mark.parametrize("folder", ROTATED)
+def test_a_rotated_chain_runs_down_the_tab_never_back_up(folder):
+    index, placed = _real_index(), _placed(folder)
+    for tech, targets in index.tech_leads.items():
+        for nxt in targets:
+            if tech in placed and nxt in placed:
+                (_, y), (_, next_y) = next(iter(placed[tech])), next(iter(placed[nxt]))
+                assert next_y >= y, (tech, nxt, y, next_y)
+
+
+@pytest.mark.skipif(_install() is None, reason="no HOI4 install to read the layout from")
+@pytest.mark.parametrize("folder", ROTATED)
+def test_the_techs_of_one_year_share_a_height_within_a_box(folder):
+    """The year is the position's y, so two techs of one sub-tree on the same y
+    must be level, and a later y strictly lower."""
+    index = _real_index()
+    by_box: dict[tuple[str, int], float] = {}
+    for place in index.tech_places.values():
+        if place.folder != folder:
+            continue
+        for root in place.roots:
+            box = index.tech_gridboxes.get((folder, f"{root}_tree"))
+            if box:
+                _, y = gui_point(box, place.column, place.row, SCREEN_GUI_WIDTH)
+                assert by_box.setdefault((root, place.column), y) == y
+    for (root, column), y in by_box.items():
+        for (other, later), later_y in by_box.items():
+            if other == root and later > column:
+                assert later_y > y
+
+
+@pytest.mark.skipif(_install() is None, reason="no HOI4 install to read the layout from")
+@pytest.mark.parametrize("folder", ROTATED)
+def test_every_rotated_tech_is_inside_the_folders_content(folder):
+    width, height = CONTENT_SIZE[folder]
+    for tech, pts in _placed(folder).items():
+        for x, y in pts:
+            assert x >= 0 and (width is None or x <= width), (tech, x, y)
+            assert 0 <= y <= height, (tech, x, y)
+
+
+@pytest.mark.skipif(_install() is None, reason="no HOI4 install to read the layout from")
+def test_the_points_live_session_md_asks_you_to_measure_are_what_tech_point_says():
+    text = (Path(__file__).parent.parent / "docs" / "live-session.md").read_text(encoding="utf-8")
+    rows = re.findall(r"`(\w+)` \|[^|\n]*\| \((\d+), (\d+)\) \|$|\| `(\w+)` \| \((\d+), (\d+)\) \|$",
+                      text, re.M)
+    rows = [(a or d, int(b or e), int(c or f)) for a, b, c, d, e, f in rows]
+    assert len(rows) >= 15
+    for tech, x, y in rows:
+        assert point(_real_index(), tech) == (x, y), tech

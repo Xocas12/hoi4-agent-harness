@@ -12,52 +12,140 @@
   "schema": 1,
   "scripts": {
     "set_national_focus": [
-      {"press": "national_focus"},
-      {"wait": 0.8},
-      {"press": "ctrl+f"},
-      {"wait": 0.3},
-      {"type": "{focus_name}"},
-      {"wait": 0.6},
-      {"press": "shift+enter"}
+      {
+        "press": "national_focus"
+      },
+      {
+        "wait": 0.8
+      },
+      {
+        "press": "ctrl+f"
+      },
+      {
+        "wait": 0.3
+      },
+      {
+        "type": "{focus_name}"
+      },
+      {
+        "wait": 0.6
+      },
+      {
+        "press": "shift+enter"
+      }
     ],
     "start_research": [
-      {"press": "research"},
-      {"wait": 0.8},
-      {"click": "research.free_slot"},
-      {"wait": 0.8},
-      {"click": "research.tab.{tech_folder}"},
-      {"wait": 0.5},
-      {"click": "research.tech_point"},
-      {"wait": 0.8},
-      {"press": "enter"}
+      {
+        "press": "production"
+      },
+      {
+        "wait": 0.5
+      },
+      {
+        "press": "research"
+      },
+      {
+        "wait": 0.8
+      },
+      {
+        "click": "research.free_slot"
+      },
+      {
+        "wait": 0.8
+      },
+      {
+        "click": "research.tab.{tech_folder}"
+      },
+      {
+        "wait": 0.5
+      },
+      {
+        "click": "research.tech_point"
+      },
+      {
+        "wait": 0.8
+      },
+      {
+        "press": "enter"
+      },
+      {
+        "wait": 0.8
+      },
+      {
+        "press": "enter"
+      }
     ],
     "queue_construction": [
-      {"press": "construction"},
-      {"wait": 0.8},
-      {"click": "construction.building.{building}"},
-      {"press": "ctrl+f"},
-      {"wait": 0.3},
-      {"type": "{state_name}"},
-      {"wait": 0.6},
-      {"click": "map.search.first_result"},
-      {"wait": 1.2},
-      {"click": "map.centre"},
-      {"repeat": "{count}"}
+      {
+        "press": "construction"
+      },
+      {
+        "wait": 0.8
+      },
+      {
+        "click": "construction.building.{building}"
+      },
+      {
+        "press": "ctrl+f"
+      },
+      {
+        "wait": 0.3
+      },
+      {
+        "type": "{state_name}"
+      },
+      {
+        "wait": 0.6
+      },
+      {
+        "click": "map.search.first_result"
+      },
+      {
+        "wait": 1.2
+      },
+      {
+        "click": "map.centre"
+      },
+      {
+        "repeat": "{count}"
+      }
     ],
     "set_production": [
-      {"press": "production"},
-      {"wait": 0.8},
-      {"click": "production.line.{equipment}"},
-      {"click": "production.factories_field"},
-      {"type": "{factories}"},
-      {"press": "enter"}
+      {
+        "press": "production"
+      },
+      {
+        "wait": 0.8
+      },
+      {
+        "click": "production.line.{equipment}"
+      },
+      {
+        "click": "production.factories_field"
+      },
+      {
+        "type": "{factories}"
+      },
+      {
+        "press": "enter"
+      }
     ],
     "hire_advisor": [
-      {"press": "politics"},
-      {"wait": 0.8},
-      {"click": "politics.slot.{slot}"},
-      {"wait": 0.5},
-      {"click": "politics.candidate.{advisor_id}"}
+      {
+        "press": "politics"
+      },
+      {
+        "wait": 0.8
+      },
+      {
+        "click": "politics.slot.{slot}"
+      },
+      {
+        "wait": 0.5
+      },
+      {
+        "click": "politics.candidate.{advisor_id}"
+      }
     ]
   }
 }

@@ -268,7 +268,7 @@ kept apart on purpose ([`ui_scripts.py`](../src/hoi4_harness/adapters/ui_scripts
   |---|---|---|
   | `{focus_name}` | the focus id's English name (`localisation/english`), as its longest ASCII-only run of words | no name, or nothing typable (`[...]` scripted loc, `ö`) |
   | `{state_name}` | the same, for the state | the same |
-  | `{tech_folder}`, click target `research.tech_point` | the tech's sub-tree and `position` (see start_research below) | the point is off the screen or on the tab strip (the tree is not scrolled), or the sub-tree has no `LEFT` box in the interface file |
+  | `{tech_folder}`, click target `research.tech_point` | the tech's sub-tree and `position` (see start_research below) | the point is off the screen or on the tab strip (the tree is not scrolled), the sub-tree has no box in the interface file, its box is one the rule refuses (a `UP` box with no `size`, or a percent wide at an absolute `x`), or two roots draw it in different places |
 
   These need the game's files: pass `--game-dir`.
 
@@ -357,10 +357,31 @@ install.
   4 px (`tests/test_tech_tree_layout.py`). Nothing needs calibrating; optional
   overrides are `research.tree.origin` (the screen point of the content's GUI
   (0, 0), if a UI scale or layout moves it) and an exact `research.tech.<id>`.
-  Not placed, and refused rather than guessed: sub-trees whose box is not
-  `format = "LEFT"` (the armour, air, industry and electronics tabs are turned
-  `UP`/`UPPER_LEFT`), boxes placed by percentages, techs with no `<root>_tree`
-  box (mods), and only the infantry tab has been measured live. Then a tech is
+  The other box formats are the same rule turned, read off the labels the interface
+  file itself draws (subtitles and year numbers): `UPPER_LEFT` swaps the axes
+  (`x = box.x + w*(row + 1/2)`, `y = box.y + h*(column + 1/2)`), and `UP` runs the
+  years down with the box centred on its `size` width, so row 0 is the middle lane
+  and negative rows go left (`x = box.x + width/2 + w*row`). A percent `x` or `size`
+  is a share of the screen width less the folder's margins. A folder with a different
+  left margin (the air tabs have 0) moves its content by the difference.
+  **Measured live on 1.19.5 (1920x1080):** in `nsb_armour_folder`, `bba_air_techs_folder`,
+  `industry_folder` and `electronics_folder` the rule put x on the icon every time and y
+  40 GUI units (50 px) high, on 12 techs; `ROTATED_Y_OFFSET` corrects that, and all 12
+  then landed on their icons. `armour_folder` and `air_techs_folder` are the trees without
+  the tank and aircraft designer DLCs and were not shown by this install, so they and
+  artillery stay unmeasured. Before the measurement:
+  **UNVERIFIED: the rotated tabs** (`armour_folder`, `nsb_armour_folder`,
+  `air_techs_folder`, `bba_air_techs_folder`, `industry_folder`, `electronics_folder`).
+  Without the game, they are checked only against themselves
+  (`tests/test_tech_tree_layout.py`): no two techs of a folder share a point, chains
+  only run down, and everything is inside the folder's content box. The points to
+  measure are in [live-session.md](live-session.md) step 6b.
+  Refused rather than guessed: techs with no `<root>_tree` box (mods, and the
+  `mtgnaval*` folders), a `UP` box with no `size`, a percent-wide `UP` box at an
+  absolute `x` (all of artillery), techs two of whose roots draw them in different
+  places, and points off the screen (this driver does not scroll the tree; at
+  1920x1080 that is most of every tab's lower years). Only the infantry tab has been
+  measured live.
   picked with `enter` on its detail window (the Research button's shortcut).
 - **hire_advisor**: `q` opens Political; advisor slots and candidates are icons
   (`politics.slot.<slot>`, `politics.candidate.<advisor_id>`), calibrated per name.
@@ -496,6 +517,117 @@ not a code change. `docs/live-session.md` step 7 has the exact checks.
    line like the UI's.
 7. **Whether an open console is closed by `grave`**, and whether the console
    keeps text between uses (a stale line would prefix the `run`).
+8. **The rotated tech tabs' click points**: settled on 1.19.5 for nsb armour, bba air,
+   industry and electronics (see the tech tree section); still open for the non-DLC
+   armour and air trees and for artillery. Originally:
+   **The rotated tech tabs' click points** (armour, air, industry, electronics),
+   which are computed from the interface file but not measured:
+   `docs/live-session.md` step 6b.
+
+## map layer -- province coordinates for unit orders (#85)
+
+Unit orders are clicks on the map, so the harness needs to know where a state or
+province is. `hoi4_harness/mapdata.py` reads it from the game's own files and
+`hoi4_harness/mapcamera.py` turns a map pixel into a screen point.
+
+```
+hoi4-harness map --game-dir PATH --state 141
+hoi4-harness map --game-dir PATH --province 6050
+```
+
+prints the pixel count, bounding box, centroid, a **click point** (a pixel
+inside the target) and, for a province, its terrain and neighbours (`~` marks a
+strait with no shared border).
+
+### What it reads
+
+- `map/provinces.bmp`, 24-bit uncompressed, one flat colour per province. A small
+  pure-Python reader handles bottom-up and top-down files and the 4-byte row
+  padding. Coordinates are image coordinates: **y grows downward from the top of
+  the picture**, the same as the screen. The BMP's storage order never leaks out.
+- `map/definition.csv`: colour to province id, land/sea/lake, terrain, coastal.
+- `map/adjacencies.csv`: straits that share no border. Rows with `-1` and the
+  end marker are skipped. Shared pixel edges give the land and coastal borders
+  (a corner touch does not count).
+- `history/states`: each state's provinces and owner.
+
+The playset is followed the way the identifier index follows it: a mod's file at
+the same path wins, `replace_path` drops the folder, and `map/default.map` can
+rename the three map files.
+
+The scan is one pass and takes about 6 s for vanilla (5632x2048, 13 414
+provinces). Its result is cached as JSON (about 1.5 MB, loads in well under a
+second) in the user cache folder (`%LOCALAPPDATA%\hoi4-harness\map`, or
+`$XDG_CACHE_HOME`; `HOI4_MAP_CACHE` or `--cache-dir` overrides, `--no-cache`
+skips it). The key is the three files' names, sizes and mtimes plus the playset
+name, so editing a map or adding a map mod rebuilds it.
+
+### The click point
+
+The centroid of a crescent, an archipelago or a state wrapped around a bay can
+fall outside it, and a click there selects the sea. So the click point is the
+pixel farthest from anything outside the target (a chamfer distance transform
+over the target's bounding box), ties broken toward the centroid. It is checked
+to map back to the state in the tests, for Stockholm's state and every Swedish
+state. It is computed on demand, not cached.
+
+### Map pixel to screen: a model, not a measurement
+
+```
+screen = origin + scale * (map pixel - anchor)        x and y both grow right/down
+```
+
+`Camera.from_references` fits `scale` and the offset from two measured points,
+and refuses a pair that disagrees with the model (an axis flipped, or x and y
+scales more than 3% apart). `Camera.centred_on` encodes "the map search centres
+the camera on the target". `screen_point(layer, "state", id, camera)` refuses,
+with `OffScreen`, a target outside the viewport or within 4 px of its edge
+rather than clamping, because a clamped click lands on a UI panel or the wrong
+province. `Viewport` takes the margins for the top bar and the bottom panel.
+
+### UNVERIFIED: settle these in a live game
+
+None of this was run against the game. What the model assumes, and could be
+wrong about:
+
+1. **The map is flat: FALSE at the zoom the map search uses** (measured live on
+   1.19.5, 1920x1080). After searching Södermanland, four victory-point markers
+   (Stockholm, Uppsala, Gävle, Falun; positions from `map/unitstacks.txt`, type 38,
+   image y = 2048 - z) gave a steady y scale of 15.5-17 screen px per map pixel but
+   an x scale of 20 between the two northern cities and up to 28 lower down: a
+   perspective camera. `Camera.from_references` refuses such a fit, correctly. A
+   perspective model (or a fully zoomed-out view, unmeasured) is needed before unit
+   orders can be aimed, and province centroids are poor anchors at this zoom; use
+   the `unitstacks.txt` positions. The map search also did not put the state's
+   click point at the screen centre. Original note:
+   HOI4 tilts the map at some zoom levels, which makes
+   scale differ between the top and bottom of the screen. The fit refuses that
+   case instead of averaging over it.
+2. **One scale per zoom step**, and the zoom steps are discrete. Measure each
+   step you intend to use; do not interpolate.
+3. **The map wraps horizontally** in the game. The layer does not: a target near
+   x=0 or x=5631 has its click point on one side only. Pan before clicking there.
+4. **The viewport margins** (what the top bar, the bottom panel and any open
+   window cover) are not known. They default to zero.
+5. **That the map search centres the camera** on the state, and at what scale.
+
+The check, at 1920x1080 and one zoom level, in a started game, with the harness
+not sending input (the operator moves the mouse):
+
+1. `hoi4-harness map --state N` for two states far apart (several hundred map
+   pixels in both x and y) that are both visible, e.g. Stockholm's state 141 and
+   a state about 500 px west and 300 px south of it.
+2. Hover the mouse over each province in turn and read the province id from
+   its tooltip (or the map search), then `map --province P` for its click
+   point. Record (click point, mouse position) for both, with the mouse on the
+   province's visible middle. The click point is inside the province, so the
+   pair is known to be on it even if the centroid is not.
+3. `Camera.from_references(pair1, pair2, Viewport(1920, 1080, ...))`. If it
+   raises, that is finding 1 or an axis mix-up; if it fits, hover a third
+   province and compare `camera.to_screen` to where it is. More than a few
+   pixels off means the model needs a perspective term.
+4. Open the map search, pick a state, and see whether the click point is at the
+   viewport centre (item 5). If so `Camera.centred_on` needs only the scale.
 
 ## composite
 

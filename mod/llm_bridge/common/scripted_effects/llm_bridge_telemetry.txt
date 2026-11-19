@@ -29,9 +29,11 @@ llm_bridge_emit_state = {
 	set_variable = { llmb_civ = num_of_civilian_factories }
 	set_variable = { llmb_mil = num_of_military_factories }
 	set_variable = { llmb_doc = num_of_naval_factories }
-	# Excludes trade and lend-lease (dynamic_variables_documentation.md); the
-	# civilian count above includes trade, so the harness splits the two.
-	set_variable = { llmb_owned = num_of_factories }
+	# Factories in controlled states, without trade. Measured live on 1.19.5:
+	# num_of_factories read 30 (it includes trade, whatever its documentation
+	# says) while num_of_controlled_factories read 18, the top bar's figure
+	# (11 owned civilian + 3 military + 4 dockyards; 12 more civilian traded).
+	set_variable = { llmb_owned = num_of_controlled_factories }
 	set_variable = { llmb_mp = manpower }
 
 	# Completion signals (#2). 1.19.5 has no on_action for a finished focus,
