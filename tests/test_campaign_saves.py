@@ -101,3 +101,18 @@ def test_a_fake_campaign_prunes_its_own_saves_and_leaves_the_users(tmp_path):
     assert len(on_disk) <= 3 and on_disk <= names
     log = (tmp_path / "run" / "campaign.log").read_text(encoding="utf-8")
     assert "pruned" in log
+
+
+def test_an_autosave_or_named_save_in_the_window_is_never_claimed(tmp_path):
+    saves, run = dirs(tmp_path)
+    tracker = SaveTracker(run, saves, keep=1)
+    tracker.before_send("1937-01-01")
+    make(saves, "autosave.hoi4")                 # the game's own autosave, same window
+    make(saves, "my germany.hoi4")               # the person saves under a name of their own
+    make(saves, "GER_1937_01_01_14.hoi4")        # what console savegame writes
+    tracker.collect()
+    assert [s["name"] for s in load_harness_saves(run)["saves"]] == ["GER_1937_01_01_14.hoi4"]
+    for n in range(2, 6):
+        take(tracker, saves, f"GER_1937_{n:02d}_01_14.hoi4", f"1937-{n:02d}-01")
+    tracker.prune()
+    assert (saves / "autosave.hoi4").exists() and (saves / "my germany.hoi4").exists()

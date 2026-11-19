@@ -17,6 +17,7 @@ the person's saves above all, is not looked at beyond its name.
 from __future__ import annotations
 
 import json
+import re
 import time
 from collections.abc import Callable
 from pathlib import Path
@@ -24,6 +25,9 @@ from pathlib import Path
 SAVES_FILE = "harness_saves.json"
 #: How long after asking for a save a new file in the folder is taken to be it.
 CLAIM_SECONDS = 15 * 60.0
+#: The name console ``savegame`` gives a save: ``<TAG>_<Y>_<M>_<D>_<H>.hoi4``. Anything else
+#: that appears in the window (an autosave, a save the person names) is never claimed.
+SAVEGAME_NAME = re.compile(r"^[A-Z][A-Z0-9]{2}_\d{4}_\d{1,2}_\d{1,2}_\d{1,2}\.hoi4$")
 
 
 def _stat_record(path: Path) -> dict | None:
@@ -88,6 +92,8 @@ class SaveTracker:
         known = {s["name"] for s in self.data["saves"]}
         before = set(pending.get("before", []))
         for name in sorted(self._listing() - before - known):
+            if not SAVEGAME_NAME.match(name):
+                continue
             record = _stat_record(self.save_dir / name)
             if record:
                 self.data["saves"].append({**record, "date": pending.get("date")})
