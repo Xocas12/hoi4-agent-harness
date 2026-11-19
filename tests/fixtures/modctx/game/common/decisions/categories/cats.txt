@@ -1,0 +1,11 @@
+swe_cat = {
+	priority = 20
+	allowed = { tag = SWE }
+}
+swe_targets_cat = {
+	allowed = { original_tag = SWE }
+}
+ger_cat = {
+	allowed = { tag = GER }
+	scripted_gui = ger_cat_window
+}

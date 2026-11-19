@@ -1,0 +1,26 @@
+focus_tree = {
+	id = swe_tree
+	country = { factor = 0 modifier = { add = 10 tag = SWE } }
+	focus = {
+		id = SWE_root
+		cost = 10
+		available = { has_war = no }
+	}
+	focus = {
+		id = SWE_left
+		prerequisite = { focus = SWE_root }
+		mutually_exclusive = { focus = SWE_right }
+		bypass = { has_country_flag = swe_skip }
+		cost = 5
+	}
+	focus = {
+		id = SWE_right
+		prerequisite = { focus = SWE_root }
+		mutually_exclusive = { focus = SWE_left }
+	}
+	focus = {
+		id = SWE_end
+		prerequisite = { focus = SWE_left focus = SWE_right }
+		prerequisite = { focus = SWE_root }
+	}
+}

@@ -1,0 +1,4 @@
+capital = 1
+add_ideas = { SWE_neutrality civilian_economy }
+1936.1.1 = { add_ideas = late_one }
+1939.1.1 = { add_ideas = too_late }

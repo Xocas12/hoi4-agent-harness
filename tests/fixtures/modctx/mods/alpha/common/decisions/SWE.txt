@@ -1,0 +1,11 @@
+swe_cat = {
+	swe_cheap = {
+		cost = 40
+		days_remove = 10
+		complete_effect = { add_stability = 0.05 }
+	}
+	alpha_new = {
+		cost = 5
+		complete_effect = { add_stability = 0.05 }
+	}
+}

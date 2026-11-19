@@ -93,6 +93,7 @@ def build_system(
     playset: str | None = None,
     headless: bool = False,
     headless_reader: str = "log+save",
+    playset_context: str = "",
 ) -> str:
     """Assemble the system prompt.
 
@@ -115,6 +116,9 @@ def build_system(
         parts.append(HEADLESS.format(gone=", ".join(unavailable_actions(headless_reader))))
     if playset and playset != "vanilla":
         parts.append(playset_note(playset))
+    if playset_context:
+        # Deterministic text (modcontext.prompt), so it stays in the cached prefix.
+        parts.append(playset_context)
     text = load_guidance(guidance)
     if text:
         parts.append(text)
@@ -152,6 +156,14 @@ def system_for(config, index=None) -> str:
     and ``hoi4-harness prompt`` all call it, so the prompt they show is the
     prompt the run had.
     """
+    context = ""
+    if getattr(config, "mod_context", False) and index is not None:
+        from ..modcontext import playset_section
+
+        context = playset_section(
+            index, config.country, max_tokens=config.mod_context_tokens,
+            cache_dir=config.mod_context_cache_dir, offline=not config.mod_context_fetch,
+            tools="list_decisions" not in set(config.disabled_actions))
     return build_system(
         guidance=config.guidance,
         extra=config.system_prompt_extra,
@@ -161,6 +173,7 @@ def system_for(config, index=None) -> str:
         playset=index.playset.name if index is not None else None,
         headless=config.adapter == "headless",
         headless_reader=config.headless_reader,
+        playset_context=context,
     )
 
 

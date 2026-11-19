@@ -200,10 +200,44 @@ ACTIONS += [
         ),
     ),
     ActionSpec(
-        name="enact_decision",
+        name="take_decision",
         category="politics",
-        description="Take a decision or mission from the decisions view.",
-        parameters=_schema({"decision_id": {"type": "string"}}, ["decision_id"]),
+        description=(
+            "Take a decision from the decisions view, as the player would: the game's own "
+            "conditions and its political power cost are checked first. A targeted decision "
+            "also needs a target (a country tag or state id from its targets). Missions are "
+            "activated by the game and cannot be taken. Find ids with list_decisions."
+        ),
+        parameters=_schema(
+            {"decision_id": {"type": "string"},
+             "target": {"type": "string",
+                        "description": "Country tag or state id, for a targeted decision."}},
+            ["decision_id"],
+        ),
+    ),
+    ActionSpec(
+        name="list_decisions",
+        category="query",
+        description=(
+            "Read-only: the decisions your country can have in this playset, with category, "
+            "cost and duration. Filter by category id or a word in the id or name; "
+            "nothing happens in the game."
+        ),
+        parameters=_schema(
+            {"category": {"type": "string"}, "query": {"type": "string"},
+             "limit": {"type": "integer", "minimum": 1, "maximum": 60}},
+            [],
+        ),
+    ),
+    ActionSpec(
+        name="describe_action",
+        category="query",
+        description=(
+            "Read-only: everything the game files say about one id -- a decision, a focus of "
+            "your tree, a technology or idea this playset adds -- including its conditions, cost "
+            "and whether the harness can do it. Nothing happens in the game."
+        ),
+        parameters=_schema({"id": {"type": "string"}}, ["id"]),
     ),
     ActionSpec(
         name="diplomacy",
@@ -271,6 +305,9 @@ ACTIONS += [
         parameters=_schema({"text": {"type": "string", "maxLength": 500}}, ["text"]),
     ),
 ]
+
+#: Read-only tools the harness answers from the playset's files; the game is not touched.
+QUERY_ACTIONS = frozenset({"list_decisions", "describe_action"})
 
 BY_NAME: dict[str, ActionSpec] = {spec.name: spec for spec in ACTIONS}
 

@@ -276,6 +276,15 @@ class HarnessConfig:
     # checked against what the game actually loads -- see identifiers.py.
     game_dir: Path | None = None
     mod_dirs: list[Path] = field(default_factory=list)
+    # --- mod context (docs/mods.md): a "This playset" section in the system prompt
+    # (a world brief per mod, the country's decisions and focus tree, what the
+    # mods add) and the read-only list_decisions / describe_action tools. Off by
+    # default: it changes the prompt. The Workshop pages it summarises are read from
+    # the cache unless ``mod_context_fetch`` lets the run fetch a missing one.
+    mod_context: bool = False
+    mod_context_fetch: bool = False
+    mod_context_tokens: int = 900
+    mod_context_cache_dir: Path | None = None
 
     @classmethod
     def from_env(cls) -> HarnessConfig:
@@ -367,7 +376,7 @@ class HarnessConfig:
                     setattr(self.budget, sub_key, sub_value)
             elif key in {"run_dir", "save_dir", "log_path", "system_prompt_path", "game_dir",
                          "ui_scripts_path", "calibration_path", "console_dir",
-                         "fake_game_dir", "fake_game_files"} and value is not None:
+                         "fake_game_dir", "fake_game_files", "mod_context_cache_dir"} and value is not None:
                 setattr(self, key, Path(value))
             elif key == "mod_dirs":
                 self.mod_dirs = [Path(v) for v in value]

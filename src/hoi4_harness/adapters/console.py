@@ -59,7 +59,7 @@ from .ui_scripts import verify
 #: skip the time and cost a player pays, which is a different game.
 CONSOLE_ACTIONS = frozenset({
     "queue_construction", "set_production", "hire_advisor",
-    "set_ai_directive", "set_ai_posture", "clear_ai_directives",
+    "set_ai_directive", "set_ai_posture", "clear_ai_directives", "take_decision",
 })
 #: The console for every action it has a faithful effect for: settled live on
 #: 1.19.5 (run reads the user directory, needs no -debug, and eval_effect takes
@@ -192,6 +192,8 @@ class ConsoleChannel:
         self._sleep = sleep or driver._sleep
         self.verify_timeout = verify_timeout
         self.runs = 0
+        #: fire_only_once decisions this run has taken: no trigger can say so.
+        self.taken_once: set[str] = set()
         #: The last file written and the keys of the last run, for the transcript.
         self.last_lines: list[str] = []
         #: A reader that can take and read text saves (``combined.CombinedReader``).
@@ -213,6 +215,8 @@ class ConsoleChannel:
             return self._plan_production(call, args, country, state)
         if call.name == "hire_advisor":
             return self._plan_advisor(call, args, country, state)
+        if call.name == "take_decision":
+            return self._plan_decision(call, args, country, state)
         return self._plan_hybrid(call, args, country)
 
     def _country(self, state: GameState) -> str:
@@ -339,6 +343,58 @@ class ConsoleChannel:
             body = f"if = {{ limit = {{ has_political_power > {cost - 0.01:g} }} {body} }}"
         return Planned(call, [self._inline(country, body)], ["the advisor's allowed/available "
                        "conditions", "cost modifiers (the base cost is charged)"])
+
+    def _plan_decision(self, call, args, country, state) -> Planned:
+        decision_id = str(args["decision_id"])
+        index = self._need_index("reading the decision's conditions")
+        ctx = index.mod_context()
+        if ctx.find_decision(decision_id) is None:
+            raise Refused(f"there is no decision {decision_id!r} in this playset")
+        if decision_id not in {d.id for d in ctx.decision_for(country)}:
+            raise Refused(f"{decision_id!r} is not a decision {country} can have (its allowed/"
+                          "visible tests name another country)")
+        plan = ctx.plan_take(decision_id, country, args.get("target"), self.config.effect_command)
+        if not plan.executable:
+            raise Refused(f"{decision_id} cannot be taken faithfully from the console: {plan.reason}")
+        decision = plan.decision
+        if decision.fire_only_once and decision_id in self.taken_once:
+            raise Refused(f"{decision_id} is fire-only-once and this run already took it")
+        if plan.cost:
+            if not state.known("political_power"):
+                raise Refused("the reader cannot see political power, so affordability is unknown")
+            if state.political_power < plan.cost:
+                raise Refused(f"{decision_id} costs {plan.cost:g} political power, "
+                              f"{state.political_power:g} held")
+        if decision.fire_only_once and not self.driver.dry_run:
+            self.taken_once.add(decision_id)
+        return Planned(call, [plan.line], plan.unchecked)
+
+    def _verify_decision(self, call: ActionCall, before: GameState, planned: Planned):
+        """Decisions are not in the telemetry, so the only trace is political power.
+        A drop of at least half the cost proves the take; anything else is reported
+        as unverified, never as done."""
+        cost = 0.0
+        ctx = self.index.mod_context() if self.index else None
+        decision = ctx.find_decision(str(call.arguments["decision_id"])) if ctx else None
+        if decision and decision.cost:
+            cost = decision.cost
+        if cost and before.known("political_power"):
+            deadline, waited = self.verify_timeout, 0.0
+            while True:
+                after = self._read_state()
+                dropped = before.political_power - after.political_power
+                if after.known("political_power") and dropped >= cost / 2:
+                    return True, None, (f"taken: political power fell from {before.political_power:g} "
+                                        f"to {after.political_power:g}")
+                if waited >= deadline:
+                    break
+                self._sleep(0.25)
+                waited += 0.25
+        return False, "unverified", (
+            "input sent, but decisions are not in the telemetry"
+            + (", and political power did not fall by the cost yet" if cost else
+               " and this one costs nothing to compare")
+            + ". Treat it as not done until a later brief shows its effect.")
 
     def _plan_hybrid(self, call, args, country) -> Planned:
         via = self.config.hybrid_via
@@ -510,6 +566,10 @@ class ConsoleChannel:
         save_error = self.saves.collect() if needs_save else None
         out = {}
         for i, p in enumerate(planned):
+            if p.call.name == "take_decision":
+                ok, kind, message = self._verify_decision(p.call, before, p)
+                out[i] = _result(p.call, ok, kind, message, lines=p.lines, unchecked=p.unchecked)
+                continue
             via_save = needs_save and p.call.name in SAVE_VERIFIED
             baseline = before
             if via_save and save_error is None:

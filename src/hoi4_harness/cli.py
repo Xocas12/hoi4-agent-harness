@@ -11,6 +11,7 @@
     hoi4-harness compare economy_ramp       the same scenario across models, one table
     hoi4-harness measure --campaign wartime_1939_1941   brief size and wake rate in a war
     hoi4-harness index --game-dir PATH      what countries and focuses a playset defines
+    hoi4-harness mod-actions --country GER what a country can do in a playset, and what its mods are
     hoi4-harness experiment defensive_war   model-only vs AI-only vs hybrid, same seeds
     hoi4-harness play --headless            no mouse, no screen: the log in, the console and keys out
     hoi4-harness play --headless --fake-game   the same against a fake game, no HOI4 at all
@@ -112,6 +113,10 @@ def _config_from_args(args: argparse.Namespace) -> HarnessConfig:
         config.log_path = Path(args.log_path_arg)
     if getattr(args, "mods", None):
         config.mod_dirs = [Path(m) for m in args.mods]
+    if getattr(args, "mod_context", False):
+        config.mod_context = True
+    if getattr(args, "fetch_workshop", False):
+        config.mod_context_fetch = True
     if getattr(args, "operational_control", None):
         config.operational_control = args.operational_control
     if getattr(args, "script", None):
@@ -602,6 +607,86 @@ def cmd_index(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_mod_actions(args: argparse.Namespace) -> int:
+    """What a country can do in the playset, and what the mods are about."""
+    import time
+
+    from .modcontext import playset_briefs
+
+    config = _config_from_args(args)
+    if config.game_dir is None:
+        print("mod-actions: point --game-dir (or HOI4_GAME_DIR) at the HOI4 install", file=sys.stderr)
+        return 2
+    started = time.perf_counter()
+    try:
+        index = config.build_index()
+    except FileNotFoundError as exc:
+        print(f"mod-actions: {exc}", file=sys.stderr)
+        return 1
+    indexed = time.perf_counter() - started
+    ctx = index.mod_context()
+    tag = (args.country or config.country or "").upper()
+    if not tag:
+        print("mod-actions: name a country with --country TAG", file=sys.stderr)
+        return 2
+    if index.tags and tag not in index.tags:
+        print(f"mod-actions: there is no country '{tag}' in this playset", file=sys.stderr)
+        return 1
+    surface = ctx.surface(tag)
+    surface_time = time.perf_counter() - started - indexed
+    briefs = playset_briefs(index.playset.mods, cache_dir=config.mod_context_cache_dir,
+                            offline=args.offline)
+    timing = {"index_s": round(indexed, 1), "surface_s": round(surface_time, 1)}
+    if args.json:
+        data = surface.to_dict()
+        if not args.all:
+            data["decisions"] = data["decisions"][:args.limit]
+            data["focus"]["details"] = data["focus"]["details"][:args.limit]
+            data["new_technologies"] = data["new_technologies"][:args.limit]
+        data["world"] = [b.to_dict() for b in briefs]
+        data["timing"] = timing
+        print(json.dumps(data, indent=2, ensure_ascii=False))
+        return 0
+    print(f"playset          {surface.playset}  [{index.fingerprint()}]")
+    for b in briefs:
+        print(f"world            {b.text}   [{b.source}{', ' + b.how if b.how else ''}]")
+    print(f"country          {tag}")
+    for key, value in surface.counts.items():
+        print(f"  {key.replace('_', ' '):<26}{value}")
+    print(f"  {'timing':<26}index {timing['index_s']}s, surface {timing['surface_s']}s")
+    cap = None if args.all else args.limit
+    print("\ncategories")
+    for c in surface.categories[:cap]:
+        gui = "  [custom GUI]" if c.get("custom_gui") else ""
+        print(f"  {c['id']:<40} {c['decisions']:>4}  {c['name']}{gui}")
+    print("\ndecisions")
+    for d in surface.decisions[:cap]:
+        cost = f" {d['cost']:g}pp" if d.get("cost") else ""
+        days = f" {d['days_remove']}d" if d.get("days_remove") else ""
+        kind = "never" if d.get("blocked") else "inert" if d.get("inert") else d["kind"]
+        print(f"  {d['id']:<48} {kind:<8}{cost}{days}  {d.get('name', '')}")
+    print(f"\nfocus tree       {', '.join(surface.focus['trees']) or 'none'} "
+          f"({surface.focus['focuses']} focuses)")
+    for f in surface.focus["available_now"][:cap]:
+        print(f"  start with     {f['id']}  {f['name']}")
+    print(f"\nnew technologies {len(surface.new_technologies)}")
+    for t in surface.new_technologies[:cap]:
+        print(f"  {t['id']:<40} {t['folder'] or '-':<24} {t['name']}")
+    mech = surface.mechanics
+    for label in ("ideologies", "resources", "buildings", "on_actions"):
+        entry = mech[label]
+        print(f"new {label:<13}{len(entry['new'])} ({entry['dropped']} base ones dropped): "
+              f"{' '.join(entry['new'][:12])}")
+    print(f"spirits / laws / advisors   {len(surface.spirits)} / {len(surface.laws)} / "
+          f"{len(surface.advisors)}")
+    ev = surface.events
+    print(f"events           {ev['events']} in {ev['namespaces']} namespaces; {tag}: "
+          f"{', '.join(f'{k} ({v})' for k, v in list(ev['country'].items())[:8]) or 'none'}")
+    for line in surface.excluded:
+        print(f"excluded         {line}")
+    return 0
+
+
 def cmd_experiment(args: argparse.Namespace) -> int:
     from .eval.experiment import run_experiment
 
@@ -847,6 +932,12 @@ def build_parser() -> argparse.ArgumentParser:
                        help="with --headless: talk to a `hoi4-harness fakegame` process by its files")
         p.add_argument("--mod", dest="mods", action="append", metavar="PATH",
                        help="an active mod folder; repeat in load order")
+        p.add_argument("--mod-context", dest="mod_context", action="store_true",
+                       help="add a 'This playset' section to the prompt and the list_decisions / "
+                            "describe_action tools (docs/mods.md); needs --game-dir")
+        p.add_argument("--fetch-workshop", dest="fetch_workshop", action="store_true",
+                       help="with --mod-context: fetch a mod's Steam page when it is not cached "
+                            "(default: cache only, no network)")
 
     doctor = sub.add_parser("doctor", help="check the environment")
     common(doctor)
@@ -982,6 +1073,16 @@ def build_parser() -> argparse.ArgumentParser:
     save_inspect.add_argument("save", nargs="?", metavar="PATH",
                               help="a .hoi4 text save (default: the newest in the save folder)")
     save_inspect.set_defaults(func=cmd_save_inspect)
+
+    mod_actions = sub.add_parser(
+        "mod-actions", help="what a country can do in the playset: decisions, focuses, new techs")
+    common(mod_actions)
+    mod_actions.add_argument("--json", action="store_true", help="the whole surface as JSON")
+    mod_actions.add_argument("--all", action="store_true", help="no cap on the lists")
+    mod_actions.add_argument("--limit", type=int, default=25, help="rows per list (default 25)")
+    mod_actions.add_argument("--offline", action="store_true",
+                             help="never fetch a Workshop page: cache and local files only")
+    mod_actions.set_defaults(func=cmd_mod_actions)
 
     index = sub.add_parser("index", help="list the countries and focuses a playset defines")
     common(index)
