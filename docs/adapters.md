@@ -80,12 +80,18 @@ save (it starts `HOI4bin`) is refused with that instruction. This is separate
 from ironman, which also forbids reading.
 
 A save is 60-100 MB, so nothing parses all of it. `read_save()` cuts out four
-blocks by **brace matching** and parses each alone: the player's country inside
-`countries`, `states`, `division_templates` and `equipments`. (Brace matching,
-not indentation: the real save writes some nested blocks at column 0, such as
-`CAN={` inside ENG's block, so "the next line at the same indent" cuts a country
-short.) On the 63 MB checked save the whole read is about 4 s, nearly all of it
-reading the file.
+blocks and parses each alone: the player's country inside `countries`, `states`,
+`division_templates` and `equipments`. A block's end is found by **brace
+matching**, not indentation (the real save writes some nested blocks at column 0,
+such as `CAN={` inside ENG's block, so "the next line at the same indent" cuts a
+country short), but a block's *start* is found by searching, not by matching the
+braces of everything before it: brace-matching all of `countries` (3 million lines
+in a 1.20.0 save) was 1.8 s of a 4 s read, and the 72,000-line `equipments` block is
+scanned for `name={ id={ id=N` instead of parsed. On the 66 MB checked save
+(`SWE_1938_02_04_22.hoi4`, written by the console's `savegame` command) the whole
+read is **0.85-1.0 s**, of which about half is reading and decoding the file.
+`scripts/trim_save.py` cuts such a save down to the committed fixture
+(`tests/fixtures/swe_1938_02_04.hoi4`, 57 kB: account name scrubbed, seeds gone).
 
 ### What the 1.19.5 save contains, and where each field comes from
 
@@ -126,11 +132,30 @@ Things that are not what they look like:
 * `days_remaining` for research and focus is not stored (only points so far), so
   it stays unset.
 
+### What the 1.20.0 save added (`SWE_1938_02_04_22.hoi4`)
+
+The construction queue **is** in the country block; the earlier claim that it was
+absent came from a save whose queue was empty (a save writes an empty queue as no
+key at all: of 439 `production` blocks in the checked save, 102 have
+`general_lines` and none has it empty). The tests are
+`tests/test_savegame_queue.py`.
+
+| GameState field | Where | Checked against |
+| --- | --- | --- |
+| `construction` | `production.general_lines.building`: `{ produced cost speed amount building={ template location } }`. `template` is the game's building id (`industrial_complex`), `location` the state id, `cost` one level's points, `amount` the levels still queued (one item each, the first carrying `produced / cost`), `speed` points a day | a civilian factory in state 38: 4076.4 of 10800, 120.75 a day, amount 2 |
+| `production` (a line just opened) | a `military_lines` entry with `queued_factories` and **no** `active_factories`, `speed` or `produced`: it has asked for factories and been given none yet. `factories` is `requested_factories`; efficiency and output stay 0 | the second infantry line a `set_production` left behind |
+| `completed_focuses` | `focus.completed`, one entry per finished focus (a bare string when there is one) | `SWE_defense_act`, `SWE_urbanization` |
+| `fuel` | `fuel_status.fuel` | 55,912 |
+
+`general_lines` also holds `rail_way` entries, which are not buildings and are
+skipped. The mod's own variables (`llmb_pp`, `llmb_civ` ... and the schema-v3
+`llmb_schema_version`) are in `variables` too, written at the last telemetry
+tick.
+
 ### Still unknown (reported in `unknown_fields`, never defaulted)
 
-`construction` (the country block holds no queue; `country_reports.construction`
-is a daily count of factories on construction, not the items), `completed_focuses`
-(not in the country block), `wars`, `fronts`, the hybrid-control fields
+`wars`, `fronts` (the log reader has wars; neither is in the country block),
+`convoys`, the hybrid-control fields
 (`delegated_armies`, `ai_directives`, `posture`, `theater_postures`), and now
 `fuel` and `convoys`, which the brief used to print as `0`. Division `location`
 and `strength` are not read either: the save gives a province id and raw

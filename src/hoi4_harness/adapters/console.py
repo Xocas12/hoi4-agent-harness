@@ -298,11 +298,14 @@ class ConsoleChannel:
         if any(line.equipment == equipment for line in state.production):
             raise Refused(f"a {equipment} line already exists; the effect would add a second "
                           "line instead of changing it. Change an existing line on the ui channel")
-        free = state.military_factories - sum(line.factories for line in state.production)
+        used = sum(line.factories for line in state.production)
+        free = max(state.military_factories - used, 0)
         if factories > free:
+            # A line just opened counts its requested factories though it may have
+            # none yet, so "on other lines" can exceed the factories there are.
             raise Refused(f"{factories} factories asked for, {free} free "
-                          f"({state.military_factories} military, "
-                          f"{state.military_factories - free} on other lines)")
+                          f"({state.military_factories} military, {used} asked for by the "
+                          f"{len(state.production)} existing line(s))")
         body = (f"add_equipment_production = {{ equipment = {{ type = {equipment} }} "
                 f"requested_factories = {factories} }}")
         return Planned(call, [self._inline(country, body)], unchecked)

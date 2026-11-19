@@ -292,3 +292,14 @@ def test_the_wars_wake_rule_fires_on_the_event_the_log_reader_derived(tmp_path):
     assert [w.against for w in state.wars] == ["POL"]
     assert ActionCall  # imported for the type used in other tests
     assert isinstance(tmp_path, Path)
+
+
+def test_the_command_line_picks_the_reader_and_the_save_cadence():
+    from hoi4_harness.cli import _config_from_args, build_parser
+
+    args = build_parser().parse_args(["play", "--headless", "--headless-reader", "logtail",
+                                      "--save-days", "3"])
+    config = _config_from_args(args)
+    assert (config.headless_reader, config.headless_save_days) == ("logtail", 3)
+    args = build_parser().parse_args(["play", "--headless"])
+    assert _config_from_args(args).headless_reader == "log+save"

@@ -120,6 +120,10 @@ def _config_from_args(args: argparse.Namespace) -> HarnessConfig:
         config.adapter = "headless"
     if getattr(args, "headless_clock", None):
         config.headless_clock = args.headless_clock
+    if getattr(args, "headless_reader", None):
+        config.headless_reader = args.headless_reader
+    if getattr(args, "save_days", None) is not None:
+        config.headless_save_days = args.save_days
     if getattr(args, "fake_game", False) or getattr(args, "fake_game_dir", None):
         config.fake_game = True
     if getattr(args, "fake_game_dir", None):
@@ -828,6 +832,13 @@ def build_parser() -> argparse.ArgumentParser:
         p.add_argument("--headless-clock", dest="headless_clock",
                        choices=["auto", "console", "keys", "exact"],
                        help="with --headless: how the clock is driven (docs/headless.md)")
+        p.add_argument("--headless-reader", dest="headless_reader",
+                       choices=["log+save", "logtail", "savegame"],
+                       help="with --headless: what reads the game (default log+save: the log "
+                            "plus a text save taken through the console)")
+        p.add_argument("--save-days", dest="save_days", type=int, metavar="N",
+                       help="with log+save: at most one periodic save per N in-game days "
+                            "(0: only at the start and around verified actions)")
         p.add_argument("--fake-game", dest="fake_game", action="store_true",
                        help="with --headless: run against a fake game in this process, no HOI4")
         p.add_argument("--fake-game-dir", dest="fake_game_dir", metavar="PATH",

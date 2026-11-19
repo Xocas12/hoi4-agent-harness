@@ -281,7 +281,9 @@ measure the thing the project exists to ask.
 documentation. Everything below it is **assumed from the documentation** and
 encoded in the fake game; this is the sitting that finds out which assumptions
 the real game keeps. Run it with the game loaded and **paused**, SWE, the LLM
-Bridge mod last in the playset, and the game window in front. Keep your hands off
+Bridge mod last in the playset (**regenerated for schema v4**: copy the repo's
+`mod/llm_bridge` over the installed one, and **restart the game**, since mods load
+at start), `save_as_binary=no` in `settings.txt`, and the game window in front. Keep your hands off
 the keyboard and the mouse from step 4 on: the harness types into whatever has
 the focus, and a stray key lands in the game.
 
@@ -290,6 +292,7 @@ Set once:
 ```bash
 export HOI4_GAME_DIR="C:/Program Files (x86)/Steam/steamapps/common/Hearts of Iron IV"
 export HOI4_LOG_PATH="$HOME/OneDrive/Documents/Paradox Interactive/Hearts of Iron IV/logs/game.log"
+export HOI4_SAVE_DIR="$HOME/OneDrive/Documents/Paradox Interactive/Hearts of Iron IV/save games"
 ```
 
 (`--country SWE` below keeps the reader to Sweden. The game need not be in
@@ -299,7 +302,7 @@ export HOI4_LOG_PATH="$HOME/OneDrive/Documents/Paradox Interactive/Hearts of Iro
 
 ```bash
 PYTHONPATH=src python -m pytest -q
-hoi4-harness headless-check --fake-game --run-dir runs/fake-check      # 7 of 7 passed
+hoi4-harness headless-check --fake-game --run-dir runs/fake-check      # 9 of 9 passed
 hoi4-harness play --profile profiles/headless-fake.json --run-dir runs/fake-demo
 ```
 
@@ -320,8 +323,12 @@ hoi4-harness observe --headless --country SWE --game-dir "$HOI4_GAME_DIR"
 ```
 
 A brief with real political power, stability, factories and manpower. `game.log`
-should hold `LLMB|v3|state|...|tag=SWE|...` lines, one per game day since the
-mod loaded. No input is sent; the mouse does not move.
+should hold `LLMB|v4|state|...|tag=SWE|...` lines, one per game day since the
+mod loaded (a `v3` line means the old mod is still loaded: the reader refuses it
+by name). At peace there are no `war` lines, and the brief has no `AT WAR` line.
+No input is sent; the mouse does not move, and with `observe` no save is taken
+either (a dry run never sends `savegame`; production and the queue read
+`unknown` until step 5).
 
 **3. Dry run of the actions.** Writes the run files and logs the keys; sends nothing.
 
@@ -343,9 +350,16 @@ never moves; that is the dry run, not a hang.)
 hoi4-harness headless-check --live --country SWE --game-dir "$HOI4_GAME_DIR"
 ```
 
-Takes one to two minutes (each "it stopped" proof waits the probe window). Expect
-`7 of 7 passed`. In the game: the date at the top moves during claims 3, 5 and 6
-and stops after each, and `game.log` shows the `[Y.M.D.H]` prefixes advancing.
+Takes one to two minutes (each "it stopped" proof waits the probe window, and the
+save claim waits for a 66 MB file). Expect `9 of 9 passed`. In the game: the date
+at the top moves during the three clock claims and stops after each, and
+`game.log` shows the `[Y.M.D.H]` prefixes advancing. The two new claims read, for
+example:
+
+```
+PASS  savegame writes a text save the harness can read: SWE_1938_02_04_22.hoi4 (66 MB, read in 1.0 s): 4 production line(s), 2 queued building(s), 12 division(s); save of 1938-02-04
+PASS  the war lines are readable: at peace: nothing to read (the war lines can only be proved in a war; declare one, or run this again then)
+```
 What a FAIL means, and the setting that routes around it:
 
 | FAIL | The assumption that broke | Set |
@@ -356,6 +370,8 @@ What a FAIL means, and the setting that routes around it:
 | the space key stops it | the key did not reach the game (focus? the console left open?) | `--headless-clock console` |
 | `gamespeed 0` stops it | informational only; space is the primary pause | none |
 | `pause_in_hours` stops the game | the command differs from its one-line description | do not use `exact` |
+| `savegame` writes a text save | no new `*.hoi4` in `save games/` within 30 s (is the console key right? is `HOI4_SAVE_DIR` the folder the game writes to?), or the save is binary (the message says `save_as_binary=no`), or it is not 1.20 layout (the message names the missing block) | `--headless-reader logtail`: production and the queue stay unseen, `set_production` is not offered |
+| the war lines are readable | `wars are unknown` (old mod, or no complete day yet: run a day), a literal `war.divs=[?llmb_war_divs]` (that token did not expand), or `state lines tagged GER` (`[PREV.GetTag]` is the enemy, not us: the scope in `llm_bridge_emit_wars` is wrong) | fix `llm_bridge_telemetry.txt`; at peace this claim only proves the field exists |
 
 Write down, from the game, **how many seconds a day takes at speed 3**: it sets
 `clock_probe_seconds` (which must be longer than a day).
@@ -374,8 +390,7 @@ the game itself):
 | Action | Result in the transcript | `game.log` | In the game |
 |---|---|---|---|
 | `set_national_focus` SWE_defense_act | `unverified` | no `focus` line right after it; one from the next day on: `LLMB\|v3\|focus\|tag=SWE\|id=SWE_defense_act` | the focus is running (top left) |
-| `queue_construction` capital | `unverified` ("reader cannot see construction"), `changed.channel = console` | nothing; `built_civ` rises on completion | a civilian factory in the capital's queue (look after the run) |
-| `set_production` infantry_equipment_1 | `unverified` | nothing | a line for it, or the game declined because no factory was free: say which |
+| `queue_construction` state 38 | `done and verified` (the save shows one more civilian factory in state 38); `changed.channel = console`. If it says `unverified`, read the tail: `The save could not be used: ...` | nothing; `built_civ` rises on completion | a civilian factory in Gavleborg's queue |
 | `set_ai_directive` protect POL | verified | `evt ... kind=13 detail=POL`, `kind=14 detail=protect POL` | the AI control line in the brief |
 | `set_ai_posture` defensive GER | verified | `evt ... kind=13 detail=GER`, `kind=15 detail=defensive GER` | the brief shows `GER: defensive` |
 
@@ -392,6 +407,82 @@ The questions this step answers, each a plain yes or no:
 * Did each turn advance exactly 7 days, and was the game paused at the end?
   (`turn_end` dates in the transcript; the PAUSED banner.)
 * Did the pointer ever move? It must not.
+
+**5b. The save loop, on its own.** The claim the new reader rests on. Game paused,
+in front, hands off. Use the save script (it queues a civilian factory in state 38
+and opens an artillery line; **free one military factory first**, by taking the
+stray empty line out of the production screen by hand or by starting from a save
+that has one: with every factory busy the harness refuses the production order
+before sending it, which is correct and is also worth seeing once):
+
+```bash
+hoi4-harness play --headless --live --country SWE --game-dir "$HOI4_GAME_DIR" \
+    --operational-control ai --script profiles/headless-live-save-script.json \
+    --turns 2 --days 3 --run-dir runs/live-save
+```
+
+Expected, in order (`runs/live-save/transcript.jsonl`, `runs/live-save/console/`,
+the `save games` folder, the game):
+
+1. **A save at the start**: before the first turn a `savegame` run
+   (`runs/live-save/console/*-llmb_turn.txt` holds the single line `savegame`),
+   and a new `SWE_<date>_<hh>.hoi4` in `save games/` a few seconds later. The
+   first brief reads `Production: ...` and `Construction: ...` with the numbers in
+   the production and construction screens, followed by
+   `(production, construction queue and army as of the save of <date>)` only if
+   the save is from an earlier day than the brief.
+2. **Before the actions**, if that save is not from today's in-game day, a second
+   `savegame` run; then one run file whose lines are
+   `eval_effect SWE = { 38 = { if = { limit = { is_owned_by = SWE free_building_slots ... add_building_construction ...`,
+   `eval_effect SWE = { add_equipment_production = { equipment = { type = artillery_equipment_1 } requested_factories = 1 } }`,
+   two `effect SWE llm_bridge_emit_state`, and **`savegame` last**.
+3. **Results**: `queue_construction` -> `done and verified`, `set_production` ->
+   `done and verified`. In the game: the civilian factory is in the queue, and
+   there is an artillery line with one factory.
+4. **The next brief** shows `Construction: 1 queued` (more if the game already had
+   some) and `Production: ... artillery_equipment_1 x1`.
+5. Timing: from the `savegame` keys to the verified result should be 5-15 s. Note
+   how long the file takes to appear (the harness waits up to 30 s).
+
+Answer, each yes or no: Did the file appear in `save games/` with the console
+still closed afterwards? Was it text (open it: `HOI4txt` on the first line)? Does
+the game's own autosave rotation get disturbed (`autosave*.hoi4` still there)? Did
+two `savegame` commands in the same in-game hour give one file or two (the harness
+copes either way, but the answer tells whether `mark` by mtime was needed)? Does
+the `amount=` in the queue entry match the levels you queued (two queued levels
+read as `amount=2` in the checked save)?
+
+Failure on purpose: set `save_as_binary=yes`, run the same command, and expect
+`queue_construction` -> `unverified ... save_as_binary=no` and `set_production`
+refused with the same hint in brackets, nothing crashed, and the factory still
+queued in the game. Put it back to `no`.
+
+**5c. A war.** The war lines are a mod change and have only been seen in the fake.
+Pick a start with an imminent war, or declare one yourself in the game (the console
+`declare_war` or the diplomacy screen: any war the player is in will do), then:
+
+```bash
+hoi4-harness observe --headless --country SWE --game-dir "$HOI4_GAME_DIR"
+grep -c "LLMB|v4|war|" "$HOI4_LOG_PATH"
+```
+
+Expected `game.log` lines, one per enemy per day while the war lasts, none at peace:
+
+```
+[..][1939.09.03.21]: LLMB|v4|war|tag=SWE|enemy=GER|divs=84|border=1|surr=0
+```
+
+and in the brief `AT WAR with GER since 1939-09-03 (enemy 84 divisions, borders us,
+surrender progress 0%)`. Then `hoi4-harness verify-bridge --log "$HOI4_LOG_PATH"
+--country SWE` must show `war lines: N, enemies GER` and no `LITERAL` or `TAG` line.
+Answer: Is `tag=` the player (not the enemy: that is `[PREV.GetTag]` inside
+`every_enemy_country`)? Is `divs` plausible against the intel screen (it is the
+enemy's own count, which may be more than the player can see)? Is `surr` 0-100 or
+0-1 times 100 (the documentation gives no unit)? Does `border=1` match who actually
+touches whom? Then, in a play run (`--turns 3 --days 14`): the clock stops early on
+the declaration and the brief it wakes with names the enemy; when the war ends
+(peace, or a capitulation) the lines stop and the next brief says
+`War ended: GER`.
 
 **6. The advisor.** Pick an affordable political advisor from
 `common/characters/` (a `slot = political_advisor` block with a `cost`), add
@@ -426,13 +517,23 @@ the game's console (`grave`), outside the harness. Say what happened:
   does the answer also reach `game.log`? If yes, on-demand probes (free building
   slots, an advisor) are possible without a mod change.
 * `fast_forward 3`: what does it do, and does it stop by itself?
-* `savegame headless_probe` with `save_as_binary=no`: where does the file land, and
-  does `hoi4-harness observe --adapter savegame` show production and construction?
-  If so, a save-then-read after each action would make the two "unverified"
-  actions verifiable with no mouse.
+* `savegame headless_probe`: does the console command take a name? (The
+  documentation says only "Creates a save file".) If it does, the harness can write
+  to a distinct name and never collide with a save from the same game hour.
 * Open the tech screen (`w`) and try Tab and the arrow keys: does anything select?
   If one does, `start_research` has a keyboard path after all.
 
-**Decision.** If steps 4 and 5 hold, headless is the default for everything but
-research and delegation. If only the refresh fails, the mode still works but every
-log-verified action reads "unverified" until a day has passed.
+**Not available headless, and why** (so a failing step is not mistaken for these):
+`start_research` (the tech tree is click-only; no effect or console command starts
+research faithfully), `delegate_army_to_ai` (no effect), changing a running
+production line (only `add_equipment_production`, which adds a line), unit orders
+and per-front figures (mouse-only; no trigger exposes them). The `war` lines give
+the enemy list and a coarse picture, not fronts.
+
+**Decision.** If steps 4, 5 and 5b hold, headless is the default for everything but
+research and delegation, with construction and production verified. If only the
+refresh fails, the mode still works but every log-verified action reads
+"unverified" until a day has passed. If only the save claim fails, use
+`--headless-reader logtail`: construction stays unverified and `set_production` is
+not offered. If the war claim fails, the war lines are wrong but nothing else is:
+fix `llm_bridge_emit_wars`.

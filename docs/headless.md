@@ -15,14 +15,15 @@ log do not care what is on screen.
 
 | Job | Headless path | Evidence |
 |---|---|---|
-| See the game | `adapters/logtail.py` reads the mod's daily `LLMB|v3|` lines from `game.log` (a text save is an option, `headless_reader = "savegame"`) | live 1.19.5 |
-| `queue_construction`, `set_production`, `hire_advisor` | console: `eval_effect TAG = { ... }` in `llmb_turn.txt`, then console key, `run llmb_turn.txt`, enter, console key | live 1.19.5 |
+| See the game | `adapters/combined.py` (`headless_reader = "log+save"`, the default): the mod's daily `LLMB|v4|` lines from `game.log` for the live numbers, wars and events, plus a text save the console writes on demand for production, the construction queue, divisions and completed focuses | log live 1.19.5; save written live 1.20.0, the console-saves-then-harness-reads loop **not yet live** |
+| `queue_construction`, `set_production`, `hire_advisor` | console: `eval_effect TAG = { ... }` in `llmb_turn.txt`, then console key, `run llmb_turn.txt`, enter, console key. Construction and production end the file with `savegame` and are verified through it | effects live 1.19.5; verification through the save not yet live |
 | `set_ai_directive`, `set_ai_posture`, `clear_ai_directives` | console: `effect TAG llm_bridge_*` (the mod's scripted effects) | live 1.19.5 |
 | `set_national_focus` | keyboard only: alt+q, ctrl+f, the localised name, shift+enter | live 1.19.5 |
 | Resume | console `gamespeed N` (sets the speed outright), date watched to confirm | **documented, not yet live** |
 | Pause | the space key (one press), console `gamespeed 0` as the other path | space live; `gamespeed` not yet |
 | Exact turns (`headless_clock = "exact"`) | console `pause_in_hours`: the game stops itself after N days | **documented, not yet live** |
 | Fresh telemetry while paused | the run file ends with two `effect TAG llm_bridge_emit_state` | **not yet live** (see below) |
+| Wars | the mod's `war` lines (schema v4), one per enemy per day: enemy, its divisions, whether it borders us, how close it is to surrendering | **not yet live** (tokens are from the install's documentation; see "Wars") |
 
 Every key goes out as a hardware scan code (`adapters/keys.py`). The harness
 still refuses to send input unless the game is the focused window, so the game
@@ -30,7 +31,7 @@ has to be in front when keys go; `--no-window-guard` is the explicit opt-out.
 
 ### What it cannot do
 
-Two actions are removed from the tool list, and the system prompt says so
+These actions are removed from the tool list, and the system prompt says so
 (`agent/prompts.py`, `HEADLESS`), because the model should not plan around a tool
 that will not work:
 
@@ -41,9 +42,24 @@ that will not work:
 * **`delegate_army_to_ai`.** No effect exists, and the per-army AI toggle is a
   button.
 
+* **`set_production`, with the log alone.** `add_equipment_production` adds a
+  *second* line for equipment that already has one (seen live on 1.19.5) and no
+  trigger tells the effect a line exists, so it is only offered when the reader
+  sees production (`log+save`, `savegame`). It then refuses an equipment that has
+  a line and more factories than are free; changing a running line is not possible
+  from the console (use the UI channel).
+
 Also still on the mouse, and not offered by any adapter today: unit orders on the
 map (#85 is the province layer). The idle research slots stay idle, so headless
 turns the "research slot idle" wake rule off.
+
+**What is still not available headless, and why**, in one place: research (the
+tech tree is click-only and no effect starts research: the "research" table below),
+delegating an army to the AI (no effect), changing a production line's factory
+count (no effect; `add_equipment_production` only adds), unit orders and fronts
+(no per-front data exists in the log, and orders are mouse-only), the hybrid
+fields `delegated_armies` (the mod cannot see the per-army toggle). Research and
+delegation are settled: do not reopen them.
 
 ## The hunt for a no-mouse path
 
@@ -100,8 +116,8 @@ paused while the command is typed), and the console command sets an exact speed.
 | the mod's `log` lines | **Used.** The only channel known to reach `game.log`. |
 | console `get_var`, `list_vars`, `get_flag`, `list_flags`, `eval_trigger`, `trigger`, `focus_count`, `time` | these print to the console window; the documentation does not say they reach `game.log`. If one does, it is an on-demand probe (free building slots, an advisor) the daily line cannot give. A live check. |
 | trigger `is_hired_as_advisor` | exists. A generated probe line per advisor would make `hire_advisor` verifiable exactly instead of by political power falling. A mod change (schema v4). |
-| construction and production queues | no trigger or variable exposes them (only finished buildings, counted by `total_constructed_*`). So those two are **unverifiable from the log**; they stay "unverified" and a person or a save has to confirm. |
-| console `savegame <name>` | "Creates a save file". With `save_as_binary = no` the save has production, construction and research. A save-then-read loop would make the queues observable with no mouse. Not built; the plan is in `live-session.md`. |
+| construction and production queues | no trigger or variable exposes them (only finished buildings, counted by `total_constructed_*`). So they are **unverifiable from the log** and come from a save. |
+| console `savegame` | "Creates a save file" (the documentation names no argument). **Used.** Written live on 1.20.0: a text save, 66 MB, `<TAG>_<Y>_<MM>_<DD>_<HH>.hoi4` in `save games/`, within a few seconds, with `save_as_binary=no`. The queue is `production.general_lines` ([adapters.md](adapters.md)). Whether `savegame <name>` takes a name is unknown, so the default name is used, and two saves in the same in-game hour are one file (the harness compares modification times, not names). |
 
 ## Verification while the clock is stopped
 
@@ -116,9 +132,10 @@ Results you will see:
 
 * **Verified:** advisor hired (political power fell), directive raised, theater
   posture set. Those show up in the log at once.
-* **Unverified, because the log cannot show it:** `queue_construction` and
-  `set_production`. Whether the game did it is in the fake's state in tests, and
-  in a live run it is something a person (or a save) has to check.
+* **Verified through a save** (`log+save`): `queue_construction` and
+  `set_production`. See "The save reader" below. With the log alone
+  (`headless_reader = "logtail"`) they stay "unverified", because the log cannot
+  show them.
 * **Unverified for now:** a focus. The probe reports a focus only once
   `focus_progress > 0`, which takes a day. The brief shows it after the first
   day. The system prompt tells the model not to repeat it.
@@ -128,6 +145,78 @@ Results you will see:
   slot, no free military factory, an advisor slot already taken. The effect's own
   `limit` makes the game do nothing, which the harness sees as "unverified" or,
   for an advisor, as political power not falling.
+
+## The save reader (`log+save`)
+
+`adapters/combined.py`. The log is the live view; a save sits under it:
+
+* **The log wins** for what it has (political power, stability, war support,
+  factories, manpower, the running focus and research, wars, events). **The save
+  fills** production, the construction queue, divisions, completed focuses and
+  fuel, and anything the log has not yet said right after a load. A field that
+  came from a save is as old as the save: the brief says
+  `(production, construction queue and army as of the save of 1938-02-04)` when
+  that is not today.
+* **When a save is taken**, never inside a poll: once at the start; before any
+  `queue_construction` or `set_production` batch if the last save is not from the
+  same in-game day (so the "before" is today's, and set_production can see the
+  existing lines); after such a batch, as the last line of the same run file
+  (`savegame` after the effects and the telemetry refresh); and every
+  `headless_save_days` (default 7, 0 = never) in-game days otherwise, once a turn.
+* **How it finds the save**: `mark` the newest modification time in `save games/`
+  before the command, then wait (up to `headless_save_timeout`, 30 s) for a
+  `*.hoi4` whose mtime is newer and whose size has stopped changing. By time and
+  not name because two saves in the same game hour share a name. It never deletes
+  or overwrites anything it did not just ask the game to write.
+* **Cost**: the game writes 66 MB in a few seconds; reading it is 0.85-1.0 s (see
+  [adapters.md](adapters.md)). A turn that acts on construction or production
+  therefore costs two saves (one before, one after), about two console runs and
+  ~2 s of parsing.
+* **Failure**: a binary save is refused with `save_as_binary=no` (set it in
+  `settings.txt`), a save that never appears times out, an unreadable one is an
+  error. In every case the fields the save filled turn **unknown** (not stale) and
+  the reason goes on the result: `queue_construction` is "unverified ... The save
+  could not be used: ...", `set_production` is refused with the reason in
+  brackets, and the harness does not crash.
+* **Names**: the save gives a state by id; the reader reports the name from the
+  game's files, and the console checks "state 10" or "capital" against that name.
+
+## Wars
+
+Schema v4 adds one `war` line per enemy per in-game day while the player is at
+war and none at peace:
+
+```
+LLMB|v4|war|tag=SWE|enemy=GER|divs=84|border=1|surr=3
+```
+
+`divs` is the enemy's `num_divisions`, `border` is `is_neighbor_of` the player
+(controlled territory), `surr` is `surrender_progress` times 100. Tokens, all in
+the install's `documentation/`: `has_war` (triggers_documentation.md:5073),
+`every_enemy_country` (effects_documentation.md:3898), `num_divisions`
+(dynamic_variables_documentation.md:560), `is_neighbor_of`
+(triggers_documentation.md:6075), `surrender_progress`
+(dynamic_variables_documentation.md:798, triggers_documentation.md:7718). The
+effect is `llm_bridge_emit_wars` in `llm_bridge_telemetry.txt`, called from
+`llm_bridge_emit_state`; the variables are set on the enemy's scope, not the
+player's.
+
+The reader keeps `state.wars` from them. A war shows **at once**, on its first
+line (or the mod's own `war_declared` event, which arrives a day sooner and puts
+the enemy on the list with nothing known about it), and comes off only once a
+complete day passes without a line for it. Events: `war_declared` (critical: it
+wakes the planner and ends the clock wait early) once per new enemy, and
+`war_ended` (notable) when the lines stop. A war already on when the harness
+starts is a baseline, not news (its `since` is "already on when telemetry
+began"). The brief reads
+`AT WAR with GER since 1939-09-03 (enemy 84 divisions, borders us, surrender progress 3%)`.
+
+Not provided: fronts. `state.fronts` stays unknown headless; `border` and the enemy
+division count are the coarse picture, and there is no per-front supply, pocket or
+pressure figure in any trigger the install documents. To read the war lines live,
+`headless-check --live` claims "the war lines are readable" (at peace it can only
+say it cannot prove them) and `verify-bridge --log` reports them and flags a
+literal token or a wrong tag.
 
 ## Running it
 
@@ -174,10 +263,10 @@ and nothing is sent.
 
 ## The fake game, and what it proves
 
-`fakegame.py` is the other end of the three interfaces. It writes schema-v3
+`fakegame.py` is the other end of the interfaces: the log, the run file and the keyboard, and (`fakesave.py`) the console's `savegame`. It writes schema-v4
 telemetry with the engine's date prefix (one `state`, `army`, `focus`, `research`
-set per in-game day, `evt` lines for directives and postures, a war line on the
-mock's scripted war), reads the run file when a `run` arrives through the key
+set per in-game day, a `war` line per enemy, `evt` lines for directives, postures and
+war declarations), reads the run file when a `run` arrives through the key
 sink, applies `eval_effect` and `effect` to the mock's world with the refusals
 above, and honours the keyboard: console key, typed text, the focus panel's
 search, space, kp_plus, kp_minus, and the Escape menu that swallows a key. Typed
@@ -187,7 +276,7 @@ It proves the **harness**: the log reader, the console channel, the key layer,
 the clock logic, verification and the loop work together, and every failure path
 has a test. It does **not** prove the **game**: whether HOI4 accepts a given
 console line, how it splits it, what `gamespeed` and `pause_in_hours` really do,
-or whether the probe emits a focus at progress zero. Every such assumption is a
+whether the probe emits a focus at progress zero, whether `savegame` writes while the game is paused and lands where `save games` is, or whether `PREV` and `surrender_progress` mean in the war lines what the documentation says. Every such assumption is a
 step in the live plan, and the fake encodes the documented behaviour so a live
 run that disagrees fails visibly against it.
 
@@ -198,7 +287,10 @@ run that disagrees fails visibly against it.
 | `adapter = "headless"` / `--headless` | | the mode |
 | `headless_clock` | `auto` | `auto` (console resume, key pause, each falling back to the other), `console`, `keys`, `exact` (`pause_in_hours`) |
 | `headless_game_speed` | 3 | speed the harness runs the game at (`set_game_speed` changes it for the next advance) |
-| `headless_reader` | `logtail` | or `savegame` (no telemetry, so no refresh and no `unknown` fields filled by the log) |
+| `headless_reader` | `log+save` | the log every tick plus on-demand text saves; `logtail` (the log alone: no production or queue, so no `set_production`); or `savegame` (a save only: no telemetry, so no refresh) |
+| `headless_save_days` | 7 | with `log+save`: at most one periodic save per this many in-game days (0: only at the start and around verified actions) |
+| `headless_save_timeout` | 30 | seconds to wait for a save to appear after `savegame` |
+| `save_dir` (`HOI4_SAVE_DIR`) | the game's `save games` folder | where the saves are read from |
 | `console_refresh` | on for headless | the two `llm_bridge_emit_state` lines at the end of a run file |
 | `clock_probe_seconds` | 10 | how long the date must stand still before the game counts as paused; lower it only when the game runs fast |
 | `headless_poll_seconds`, `headless_time_scale` | 0.5, 1.0 | polling interval; a multiplier on every real sleep (tests shrink it) |

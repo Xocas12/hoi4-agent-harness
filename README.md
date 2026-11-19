@@ -152,7 +152,7 @@ intent through.
 
 It has been run in a live HOI4 1.19.5.0 game (Sweden, 1936–37; the mod declares
 `supported_version 1.19.*`). It loads with nothing in `error.log`, including the
-2.4 MB generated probe. Telemetry schema v3 reports real values for political
+2.4 MB generated probe. Telemetry schema v4 (v3 plus a `war` line per enemy per day, not yet seen live) reports real values for political
 power, stability, war support, factories, manpower, techs and construction
 counters, the running focus and the technologies being researched, and war and
 capitulation lines for the player's own wars only. A completed focus was reported
@@ -203,7 +203,7 @@ verification checklist: [docs/mod-bridge.md](docs/mod-bridge.md).
 | Mock adapter | Working, tested, deterministic |
 | Log-tail adapter (reads the mod's telemetry) | Working, tested, run against a live 1.19.5 log; `verify-bridge` checks tag consistency and date shapes, and the brief shows focus, research and theater postures |
 | Hybrid control vocabulary + mode switch | Working, tested; directives and theater posture raised and read back live; the AI's response to them not verified; mock-only experiment (#10) |
-| LLM Bridge mod | Verified live on 1.19.5.0: loads clean, schema v3 telemetry (daily, player's tick), focus completion seen; research completion and the `owned` field not yet seen live |
+| LLM Bridge mod | Verified live on 1.19.5.0: loads clean, schema v3 telemetry (daily, player's tick), focus completion seen; schema v4 (`war` lines), research completion and the `owned` field not yet seen live |
 | Eval runner + scenarios | Working, tested (7 scenarios, multi-seed, cross-model) |
 | Cost measurement (`measure`) | Working, tested; measured against the mock with `claude-opus-5-5` (#14): the scripted estimate was 2.2x low on input in peace, 3.2x in war |
 | Wartime brief + wake rules | Working, tested against synthetic and scripted wars; measured on the mock with a real model; unmeasured in a real game war |
@@ -259,9 +259,11 @@ calls, but not compared with a Console invoice (#23).
 
 ## Headless: no mouse, no screen
 
-`hoi4-harness play --headless` reads the game from the mod's log and acts through
-the console and the keyboard, with the clock driven the same way. No clicks, no
-screenshots, no calibration. Two actions that need clicks (`start_research`,
+`hoi4-harness play --headless` reads the game from the mod's log (and, for
+production, the construction queue and divisions, a text save it asks the console
+to write) and acts through the console and the keyboard, with the clock driven the
+same way. No clicks, no screenshots, no calibration. Wars are read from the mod's
+`war` lines. Two actions that need clicks (`start_research`,
 `delegate_army_to_ai`) are not offered, and the prompt says why. A fake game that
 speaks the same files (`--fake-game`) runs the whole stack with no HOI4 at all.
 What was checked in the game's documentation, what is verified and what is still
