@@ -1,11 +1,11 @@
 [
   {
-    "text": "One of each the log can verify or honestly not: a focus available after Defense Act, a factory where Sweden has free slots, a directive and a theater posture.",
+    "text": "One of each the log can verify or honestly not: a focus available after Urbanization, a factory where Sweden has free slots, a directive and a theater posture.",
     "calls": [
       {
         "name": "set_national_focus",
         "arguments": {
-          "focus_id": "SWE_urbanization"
+          "focus_id": "SWE_work_projects_for_the_unemployed"
         }
       },
       {
