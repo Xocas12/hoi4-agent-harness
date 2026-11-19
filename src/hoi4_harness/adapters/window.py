@@ -108,6 +108,50 @@ def check_focus(expected_title: str) -> FocusCheck:
     return FocusCheck(False, title, reason=f"focused window is {title!r}")
 
 
+def take_focus(title: str) -> bool:
+    """Ask Windows to bring the visible top-level window whose title contains ``title`` to
+    the front. Used only when ``campaign_take_focus`` is on; True if one was found and the
+    request was made. Sends no key. Windows only: False elsewhere."""
+    if sys.platform != "win32" or not title.strip():
+        return False
+    import ctypes
+    from ctypes import wintypes
+
+    user32 = ctypes.windll.user32
+    found: list[int] = []
+    callback_type = ctypes.WINFUNCTYPE(wintypes.BOOL, wintypes.HWND, wintypes.LPARAM)
+
+    def visit(hwnd, _lparam):
+        if user32.IsWindowVisible(hwnd):
+            length = user32.GetWindowTextLengthW(hwnd)
+            buffer = ctypes.create_unicode_buffer(length + 1)
+            user32.GetWindowTextW(hwnd, buffer, length + 1)
+            if title.strip().lower() in buffer.value.lower():
+                found.append(hwnd)
+                return False
+        return True
+
+    user32.EnumWindows(callback_type(visit), 0)
+    if not found:
+        return False
+    hwnd = found[0]
+    if user32.IsIconic(hwnd):
+        user32.ShowWindow(hwnd, 9)           # SW_RESTORE
+    # Windows only lets the foreground thread hand the focus over; attaching to its input
+    # queue for the call is the sanctioned way, and sends no key.
+    foreground = user32.GetForegroundWindow()
+    this_thread = ctypes.windll.kernel32.GetCurrentThreadId()
+    fg_thread = user32.GetWindowThreadProcessId(foreground, None) if foreground else 0
+    attached = bool(fg_thread and fg_thread != this_thread
+                    and user32.AttachThreadInput(this_thread, fg_thread, True))
+    try:
+        user32.SetForegroundWindow(hwnd)
+    finally:
+        if attached:
+            user32.AttachThreadInput(this_thread, fg_thread, False)
+    return True
+
+
 def client_rect() -> tuple[int, int, int, int] | None:
     """The focused window's client area as ``(x, y, width, height)`` in screen
     pixels, or None where it cannot be read (not Windows, no window).

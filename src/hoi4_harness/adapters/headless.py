@@ -428,7 +428,11 @@ def _watch_for_campaign(adapter, config: HarnessConfig, fake, driver, sleep) -> 
     # Every key the harness sends is gated on this; it now waits for the focus (a minute at
     # a time) where it used to refuse, and still never sends a key to another window.
     inner = driver._focus_check
-    patient = PatientFocus(inner, sleep=sleep, max_wait_seconds=config.campaign_focus_wait_minutes * 60)
+    take = None
+    if config.campaign_take_focus and fake is None:
+        from .window import take_focus as take
+    patient = PatientFocus(inner, sleep=sleep, max_wait_seconds=config.campaign_focus_wait_minutes * 60,
+                           take=take)
     driver._focus_check = patient
     adapter.patient_focus = patient
 
