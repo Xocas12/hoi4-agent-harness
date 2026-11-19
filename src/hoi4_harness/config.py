@@ -308,6 +308,31 @@ class HarnessConfig:
     #: Stop unless the state line's ``ai=`` reads 1 after the toggle.
     campaign_verify_ai: bool = True
 
+    # --- rival mode (rival/, docs/rival.md) -----------------------------------------
+    # One human, one single-player game: the harness steers an AI country (``rival``,
+    # a tag) while the person plays another. Every action is queued and typed only in a
+    # window the person's own behaviour makes safe; the clock is never touched.
+    rival: str = ""
+    #: When the queue may be typed: ``paused`` (the person has paused the game, has not
+    #: touched the keyboard or mouse for a while and the game is in front), ``handover``
+    #: (only when ``hoi4-harness handover`` grants it) or ``never`` (shown, not run).
+    rival_act_when: str = "paused"
+    #: ``paused``: the in-game date in game.log must have stood still this many seconds.
+    #: A day takes at most ~3 s at the slowest speed, so 10 is a pause, not a slow day.
+    rival_paused_seconds: float = 10.0
+    #: ``paused``: no key or mouse input from anyone for this many seconds.
+    rival_idle_seconds: float = 5.0
+    #: A queued action older than this many in-game days is reported stale, not run.
+    rival_stale_days: int = 60
+    #: How long the start waits for a window in which to mark the country.
+    rival_start_wait_minutes: float = 30.0
+    #: How long the exit waits for a window in which to unmark it (then it says what to type).
+    rival_exit_wait_seconds: float = 60.0
+    #: The fake game's person: the country they play, and a JSON script of what they do and
+    #: when (``[[seconds, "pause"], ...]``; default: play 45 s, pause 90 s, repeat).
+    fake_rival_human: str = "GER"
+    fake_human_script: Path | None = None
+
     # Co-op turn-taking: every action is queued and runs only when the player
     # grants a window (handover.py). For playing alongside a person, not for
     # scoring -- the eval runner refuses a handover run.
@@ -423,7 +448,8 @@ class HarnessConfig:
                     setattr(self.budget, sub_key, sub_value)
             elif key in {"run_dir", "save_dir", "log_path", "system_prompt_path", "game_dir",
                          "ui_scripts_path", "calibration_path", "console_dir", "camera_path",
-                         "fake_game_dir", "fake_game_files", "mod_context_cache_dir"} and value is not None:
+                         "fake_game_dir", "fake_game_files", "mod_context_cache_dir",
+                         "fake_human_script"} and value is not None:
                 setattr(self, key, Path(value))
             elif key == "mod_dirs":
                 self.mod_dirs = [Path(v) for v in value]
@@ -432,6 +458,12 @@ class HarnessConfig:
             else:
                 raise KeyError(f"Unknown configuration key {key!r}")
         return self
+
+    @property
+    def paced(self) -> bool:
+        """Whether the model is woken on the campaign's review schedule (a campaign, or
+        rival mode: both steer a game AI that runs everything else)."""
+        return bool(self.campaign or self.rival)
 
     def build_index(self):
         """The identifier index for the configured playset, or None without one."""

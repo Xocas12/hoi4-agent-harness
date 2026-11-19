@@ -213,8 +213,12 @@ class HandoverQueue:
         self,
         read_state: Callable[[], GameState],
         apply: Callable[[ActionCall], ActionResult],
+        apply_batch: Callable[[list[ActionCall]], list[ActionResult]] | None = None,
     ) -> HandoverReport | None:
-        """Run the queue if the player has granted a window. None if not."""
+        """Run the queue if the player has granted a window. None if not.
+
+        ``apply_batch`` is for queues that send everything at once (rival mode); this one
+        runs its actions one at a time and ignores it."""
         if not self.granted():
             return None
         report = HandoverReport(granted_on=read_state().date)
