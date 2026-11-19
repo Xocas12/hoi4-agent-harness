@@ -51,18 +51,23 @@ would if you were playing: concrete calls are the advice. `note` still writes \
 your journal. Call advance_time to end the turn, as usual."""
 
 
-HEADLESS = """This run is headless: the harness reads the game from the mod's log and acts
-through the console and the keyboard. It has no mouse and no screen. Some actions
-need clicks, so they do not exist here:
+HEADLESS = """This run is headless: the harness reads the game from the mod's log and from
+text saves it asks the game to write, and acts through the console and the keyboard.
+It has no mouse and no screen. Some actions need clicks or a view the harness does
+not have, so they do not exist here:
 {gone}.
 You cannot start research or hand an army to the game's AI; an idle research slot
-stays idle, so do not plan around it. Production lines stay as they are unless
-set_production is listed as available. Everything else works as described.
+stays idle, so do not plan around it. set_production only opens a line for equipment
+that has none yet and refuses when one exists or no military factory is free; it does
+not change a running line. Everything else works as described.
 
 Two things follow from reading a log. The game logs once per in-game day, so a
-result marked "unverified" means the log has not shown the change yet, not that
-it failed; check the next report before repeating it (a repeated queue_construction
-queues twice). And a focus you start appears in the log only after a day of progress."""
+result marked "unverified" means the harness has not been able to see the change
+yet, not that it failed; check the next report before repeating it (a repeated
+queue_construction queues twice). Construction and production are checked against a
+save the harness takes itself; when that save cannot be read the result says so, and
+the brief shows production and the queue as of the last save it did read. A focus you
+start appears in the log only after a day of progress."""
 
 
 def playset_note(name: str) -> str:
@@ -87,6 +92,7 @@ def build_system(
     advisor: bool = False,
     playset: str | None = None,
     headless: bool = False,
+    headless_reader: str = "log+save",
 ) -> str:
     """Assemble the system prompt.
 
@@ -106,7 +112,7 @@ def build_system(
     if headless:
         from ..adapters.headless import unavailable_actions
 
-        parts.append(HEADLESS.format(gone=", ".join(unavailable_actions())))
+        parts.append(HEADLESS.format(gone=", ".join(unavailable_actions(headless_reader))))
     if playset and playset != "vanilla":
         parts.append(playset_note(playset))
     text = load_guidance(guidance)
@@ -154,6 +160,7 @@ def system_for(config, index=None) -> str:
         advisor=config.advisor,
         playset=index.playset.name if index is not None else None,
         headless=config.adapter == "headless",
+        headless_reader=config.headless_reader,
     )
 
 

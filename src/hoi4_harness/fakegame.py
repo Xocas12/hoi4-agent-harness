@@ -5,9 +5,10 @@ commands into ``llmb_turn.txt`` and presses a fixed key sequence (the console
 key, ``run llmb_turn.txt``, enter, the console key), plus a keyboard script for
 national focuses. This module is the other end of all three:
 
-* it appends schema-v3 ``LLMB|`` lines to ``<user dir>/logs/game.log`` with the
+* it appends schema-v4 ``LLMB|`` lines to ``<user dir>/logs/game.log`` with the
   engine's date prefix, one ``state`` line (and its ``army``, ``focus`` and
-  ``research`` lines) per in-game day, ``evt`` lines for what the mod logs;
+  ``research`` lines) per in-game day, a ``war`` line per enemy while the player
+  is at war, ``evt`` lines for what the mod logs;
 * it receives hardware scan codes through ``send(scan, up)`` -- the very
   function the real key layer calls with SendInput -- and plays them into a
   small model of the screen: the console, the focus panel and its search box,
@@ -17,7 +18,10 @@ national focuses. This module is the other end of all three:
   console commands the channel writes (``eval_effect TAG = { ... }``,
   ``effect TAG name``, ``gamespeed N``) and applies them to the game model,
   refusing what the real game would refuse: not owned, no free building slot,
-  no free factory, not enough political power, an advisor slot already taken.
+  no free factory, not enough political power, an advisor slot already taken;
+* ``savegame`` writes a text save into ``<user dir>/save games`` a couple of
+  seconds later (``fakesave.py``: the layout the real game wrote on 1.20.0), or a
+  binary one, or none, when a test asks for those failures.
 
 The game model is the mock adapter's (``adapters/mock.py``), so the same seeded
 world drives the daily numbers. Nothing here is a HOI4 simulator and it says so:
@@ -36,13 +40,14 @@ driven by the wall clock instead, and takes its keys from a file.
 from __future__ import annotations
 
 import datetime as dt
+import os
 import re
 import threading
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from . import modgen
+from . import fakesave, modgen
 from .actions.catalog import AI_DIRECTIVES
 from .adapters.keys import key_name
 from .adapters.mock import MockAdapter
@@ -289,6 +294,7 @@ class FakeGame:
         slots_used: int = 4,
         target_tags: tuple[str, ...] = modgen.DEFAULT_TAGS,
         speed: int = 3,
+        save_delay: float = 2.0,
     ):
         self.user_dir = Path(user_dir)
         self.user_dir.mkdir(parents=True, exist_ok=True)
@@ -326,6 +332,20 @@ class FakeGame:
         self.runs: list[list[str]] = []
         self.errors: list[str] = []
         self.speed_log: list[int] = []
+        # --- saves: the console's savegame command writes one a few seconds later
+        self.save_dir = self.user_dir / "save games"
+        #: Wall-clock seconds from the command to the file appearing.
+        self.save_delay = save_delay
+        #: A test's way to make the next saves fail like a misconfigured game:
+        #: ``binary`` writes what ``save_as_binary=yes`` would, ``none`` writes nothing.
+        self.save_mode = "text"
+        self.saves_written: list[Path] = []
+        self._wall = 0.0
+        self._pending_saves: list[tuple[float, str]] = []
+        self._last_save_mtime = 0.0
+        #: iso date -> (``declare`` | ``peace``, tag, enemy divisions), played when the
+        #: day comes, for a war a test wants declared (or ended) mid-run.
+        self.war_script: dict[str, tuple[str, str, int]] = {}
         self.states = self._build_states(slots, slots_used)
         self._key_offset = 0
         self._started = time.strftime("%H:%M:%S")
@@ -377,7 +397,31 @@ class FakeGame:
             lines.append(self._llmb("focus", tag=tag, id=s.national_focus))
         lines += [self._llmb("research", tag=tag, id=slot.technology)
                   for slot in s.research if slot.technology]
+        lines += [self._llmb("war", tag=tag, enemy=war.against, divs=self._enemy_divisions(war),
+                             border=int(war.borders is not False),
+                             surr=f"{(war.surrender_progress or 0) * 100:.0f}")
+                  for war in s.wars]
         self._write(*lines)
+
+    def _enemy_divisions(self, war) -> int:
+        if war.enemy_divisions is not None:
+            return war.enemy_divisions
+        return sum(f.divisions_enemy for f in self.world.state.fronts if f.enemy == war.against)
+
+    def start_war(self, enemy: str, divisions: int = 30) -> None:
+        """The player is at war with ``enemy`` from now: the mod's ``war_declared``
+        event, and a ``war`` line in every state tick from here on."""
+        from .types import War
+
+        state = self.world.state
+        if not any(w.against == enemy for w in state.wars):
+            state.wars.append(War(against=enemy, since=self.date, enemy_divisions=divisions,
+                                  borders=True, surrender_progress=0.0))
+        self._write(self._llmb("evt", tag=enemy, other=self.country, kind=1, detail=0))
+
+    def end_war(self, enemy: str) -> None:
+        state = self.world.state
+        state.wars = [w for w in state.wars if w.against != enemy]
 
     def _event(self, code: int, detail: str = "0", other: str | None = None) -> None:
         fields = {"tag": self.country}
@@ -401,6 +445,13 @@ class FakeGame:
         """One in-game day: the model moves, and the mod logs it."""
         self.world.date += dt.timedelta(days=1)
         self.world._tick_one_day()
+        scripted = self.war_script.pop(self.date, None)
+        if scripted is not None:
+            action, enemy, divisions = scripted
+            if action == "declare":
+                self.start_war(enemy, divisions)
+            else:
+                self.end_war(enemy)
         self.emit_state()
 
     def _built(self, item: ConstructionItem) -> None:
@@ -426,6 +477,9 @@ class FakeGame:
     def sleep(self, seconds: float) -> None:
         """Let ``seconds`` of wall clock pass: in-game days go by while the game
         runs, none while it is paused. Never really waits."""
+        if seconds > 0:
+            self._wall += seconds
+            self._write_due_saves()
         if self.paused or seconds <= 0:
             return
         self._acc += seconds
@@ -441,6 +495,40 @@ class FakeGame:
             self.tick_day()
         if self.paused:
             self._acc = 0.0
+
+    # --- saves ----------------------------------------------------------------
+
+    def _savegame(self) -> None:
+        """The console's ``savegame``: the state *now*, on disk a few seconds on."""
+        if self.save_mode == "none":
+            return
+        text = fakesave.render_save(self, hour=TICK_HOUR + 1)
+        self._pending_saves.append((self._wall + self.save_delay, text))
+
+    def _write_due_saves(self) -> None:
+        due = [p for p in self._pending_saves if p[0] <= self._wall]
+        self._pending_saves = [p for p in self._pending_saves if p[0] > self._wall]
+        for _, text in due:
+            self.write_save(text)
+
+    def write_save(self, text: str | None = None) -> Path:
+        """A save file as the game names them, ``<TAG>_<Y>_<MM>_<DD>_<HH>.hoi4``: two
+        in the same game hour are the same file, which is why the harness compares
+        modification times and not names. Its mtime always moves forward."""
+        d = self.world.date
+        if text is None:
+            text = fakesave.render_save(self, hour=TICK_HOUR + 1)
+        self.save_dir.mkdir(parents=True, exist_ok=True)
+        name = f"{self.country}_{d.year}_{d.month:02d}_{d.day:02d}_{TICK_HOUR + 1:02d}.hoi4"
+        path = self.save_dir / name
+        if self.save_mode == "binary":
+            path.write_bytes(b"HOI4bin\x00\x01" + text.encode("utf-8")[:64])
+        else:
+            path.write_text(text, encoding="utf-8", newline="\n")
+        self._last_save_mtime = max(time.time(), self._last_save_mtime + 1.0)
+        os.utime(path, (self._last_save_mtime, self._last_save_mtime))
+        self.saves_written.append(path)
+        return path
 
     # --- the keyboard ---------------------------------------------------------
 
@@ -586,6 +674,8 @@ class FakeGame:
             return self._scripted_effect(rest)
         if command == "eval_effect":
             return self._eval_effect(rest)
+        if command in ("savegame", "save"):
+            return self._savegame()
         raise ScriptError(f"Unknown command: {command}")
 
     def _run_file(self, name: str) -> None:

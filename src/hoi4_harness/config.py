@@ -236,8 +236,17 @@ class HarnessConfig:
     #: How the clock is driven: console (gamespeed N), keys (space), auto (console,
     #: then keys when the console did not take).
     headless_clock: str = "auto"
-    #: What reads the game: logtail (the mod's telemetry) or savegame (a text save).
-    headless_reader: str = "logtail"
+    #: What reads the game: ``log+save`` (the mod's telemetry every tick, a text
+    #: save the console writes on demand for production, construction, divisions
+    #: and completed focuses), ``logtail`` (the log alone: production and the queue
+    #: stay unseen, so set_production is not offered) or ``savegame`` (a save only).
+    headless_reader: str = "log+save"
+    #: With ``log+save``: take a save every this many in-game days at most (0: only
+    #: at the start and around verified actions). A save is ~66 MB and takes a few
+    #: seconds to write and ~1.4 s to read, so this is a cost, not a free refresh.
+    headless_save_days: int = 7
+    #: Seconds to wait for a save to appear after the console's ``savegame``.
+    headless_save_timeout: float = 30.0
     #: The speed the harness runs the game at when it advances (1-5).
     headless_game_speed: int = 3
     headless_poll_seconds: float = 0.5

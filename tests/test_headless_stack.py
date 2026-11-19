@@ -33,6 +33,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def config_for(tmp_path, **overrides) -> HarnessConfig:
     options = dict(adapter="headless", fake_game=True, fake_game_dir=tmp_path / "fake",
+                   headless_reader="logtail",
                    run_dir=tmp_path / "run", dry_run=False, operational_control="ai",
                    days_per_turn=30, turns=6)
     options.update(overrides)
