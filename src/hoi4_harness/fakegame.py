@@ -345,6 +345,11 @@ class FakeGame:
         self.advisors: dict[str, list[str]] = {}
         # --- the record, for tests and for a person reading what happened
         self.keylog: list[str] = []
+        #: Keys that arrived with no console open: nothing the harness sends in a console-only
+        #: mode (rival) should ever be here, and the pause key would be.
+        self.stray_keys: list[str] = []
+        #: The wall-clock second each ``run`` file was read at, parallel to ``runs``.
+        self.run_walls: list[float] = []
         self.runs: list[list[str]] = []
         self.errors: list[str] = []
         self.speed_log: list[int] = []
@@ -368,7 +373,8 @@ class FakeGame:
         self._key_offset = 0
         self._started = time.strftime("%H:%M:%S")
         self._write(self._stamp() + ": Fake HOI4 starting (hoi4-harness fakegame)")
-        self.emit_state()
+        if self.visible:          # the mod's on_startup limits on llm_bridge_is_harness too
+            self.emit_state()
 
     # --- the files ------------------------------------------------------------
 
@@ -628,6 +634,8 @@ class FakeGame:
         mods = frozenset(self._held)
         label = "+".join([*sorted(mods), name])
         self.keylog.append(label)
+        if not self.console_open and name != "grave":
+            self.stray_keys.append(label)
         self._key(name, mods)
 
     @staticmethod
@@ -774,6 +782,7 @@ class FakeGame:
         lines = [ln for ln in path.read_text(encoding="utf-8").splitlines()
                  if ln.strip() and not ln.lstrip().startswith("#")]
         self.runs.append(lines)
+        self.run_walls.append(self._wall)
         for ln in lines:
             self._console(ln)
 

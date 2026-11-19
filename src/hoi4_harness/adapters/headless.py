@@ -229,6 +229,15 @@ class HeadlessWriter(GameAdapter):
             return self.unsupported(call)
         return self.router.apply(call)
 
+    def apply_batch(self, calls: list[ActionCall]) -> list[ActionResult]:
+        """Several actions: the console ones share one run file (``ChannelRouter.apply_batch``)."""
+        own = [c for c in calls if c.name == "set_game_speed" or c.name in self.excluded]
+        out = {id(c): self.apply(c) for c in own}
+        rest = [c for c in calls if id(c) not in out]
+        if rest:
+            out.update({id(c): r for c, r in zip(rest, self.router.apply_batch(rest), strict=True)})
+        return [out[id(c)] for c in calls]
+
     def _set_speed(self, call: ActionCall) -> ActionResult:
         speed = int(call.arguments["speed"])
         if not 0 <= speed <= 5:
@@ -283,6 +292,20 @@ def build_fake(config: HarnessConfig):
         index = demo_index(config.game_dir)
     else:
         index = config.build_index()
+    if config.rival:
+        # Two countries and a person at the keyboard (fakerival.py): the rival is the
+        # harness's, an AI country; the person's is whatever else they play.
+        from ..fakerival import FakeRivalGame, human_cycle, load_script
+
+        config.country = config.rival
+        human = config.fake_rival_human if config.fake_rival_human != config.rival else "POL"
+        script = (load_script(config.fake_human_script) if config.fake_human_script
+                  else human_cycle())
+        fake = FakeRivalGame(base / "user", rival=config.rival, human=human, human_script=script,
+                             seed=config.seed, start=config.start_date, index=index)
+        config.log_path, config.console_dir = fake.log_path, fake.user_dir
+        config.save_dir = config.save_dir or fake.save_dir
+        return fake
     config.country = config.country or "SWE"
     fake = FakeGame(base / "user", country=config.country, seed=config.seed,
                     start=config.start_date, index=index)
