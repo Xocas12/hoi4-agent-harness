@@ -12,7 +12,7 @@ checklist is [live-session.md](live-session.md).
 
 **Verified live**
 
-- #1 mod and telemetry: loads on 1.19.5 (`supported_version 1.19.*`) with no
+- #1 mod and telemetry: loads on 1.19.5 and 1.20.0 (`supported_version 1.20.*`) with no
   errors in `error.log`, including the 2.4 MB generated probe. Schema v3: one state
   line a day on the player's own tick, real values for political power, stability,
   war support, factories, manpower, techs and `built_*`; daily probe lines name the
