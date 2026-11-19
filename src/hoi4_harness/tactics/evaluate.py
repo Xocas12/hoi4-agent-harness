@@ -12,11 +12,11 @@ from .scenario import Scenario, list_scenarios, load_scenario
 
 
 def run_episode(
-    scenario: str | Scenario, seed: int, controller: str = "scripted", opponent: str = "vanilla"
+    scenario: str | Scenario, seed: int, controller: Any = "scripted", opponent: str = "vanilla"
 ) -> dict[str, Any]:
     env = TacticalEnv(opponent=CONTROLLERS[opponent]())
     env.reset(scenario, seed=seed)
-    ctrl = CONTROLLERS[controller]()
+    ctrl = CONTROLLERS[controller]() if isinstance(controller, str) else controller
     done = False
     steps = 0
     while not done:
@@ -29,11 +29,12 @@ def run_episode(
 
 
 def evaluate(
-    scenario: str | Scenario, controller: str, seeds: int, opponent: str = "vanilla", first_seed: int = 0
+    scenario: str | Scenario, controller: Any, seeds: int, opponent: str = "vanilla", first_seed: int = 0
 ) -> dict[str, Any]:
     sc = load_scenario(scenario) if isinstance(scenario, str) else scenario
     t0 = time.perf_counter()
     runs = [run_episode(sc, first_seed + i, controller, opponent) for i in range(seeds)]
+    label = controller if isinstance(controller, str) else getattr(controller, "name", "custom")
     elapsed = time.perf_counter() - t0
     wins = sum(r["outcome"] == "win" for r in runs)
     steps = sum(r["steps"] for r in runs)
@@ -45,7 +46,7 @@ def evaluate(
 
     return {
         "scenario": sc.name,
-        "controller": controller,
+        "controller": label,
         "opponent": opponent,
         "seeds": seeds,
         "wins": wins,
