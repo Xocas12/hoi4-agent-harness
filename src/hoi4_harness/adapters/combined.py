@@ -102,8 +102,19 @@ class CombinedReader(GameAdapter):
         self._mark_ns = self._newest_ns()
 
     def fresh_for(self, iso_date: str | None) -> bool:
-        """Whether the cached save is from this in-game day."""
-        return self._cache is not None and iso_date is not None and self._cache_date == iso_date
+        """Whether the cached save is from this in-game day, or the one after it.
+
+        The day after because the log's date is the last daily tick (21:00) and a
+        paused game stands some hours later, at 04:00 of the next day in a live
+        session; a save taken then is dated the next day and is still "now".
+        """
+        if self._cache is None or iso_date is None or self._cache_date is None:
+            return False
+        try:
+            gap = (dt.date.fromisoformat(self._cache_date) - dt.date.fromisoformat(iso_date)).days
+        except ValueError:
+            return False
+        return 0 <= gap <= 1
 
     def due(self, iso_date: str | None) -> bool:
         """Whether a save should be taken now, outside any action: none yet, or the
