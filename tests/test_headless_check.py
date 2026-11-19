@@ -24,7 +24,7 @@ def test_every_claim_holds_against_a_game_that_does_what_the_documentation_says(
     adapter, fake = rig(tmp_path)
     lines = []
     results = run_checks(adapter, days=7, echo=lines.append)
-    assert [r.ok for r in results] == [True] * 7, lines
+    assert [r.ok for r in results] == [True] * 9, lines
     assert fake.paused                                  # left paused
     assert all(line.startswith("PASS") for line in lines)
 
@@ -75,4 +75,38 @@ def test_the_command_runs_against_the_fake_and_reports_a_count(tmp_path, capsys)
     code = main(["headless-check", "--fake-game", "--fake-game-dir", str(tmp_path / "f"),
                  "--run-dir", str(tmp_path / "run")])
     out = capsys.readouterr().out
-    assert code == 0 and "7 of 7 passed" in out
+    assert code == 0 and "9 of 9 passed" in out
+
+
+def test_the_save_claim_reports_what_it_read_and_why_it_failed(tmp_path):
+    adapter, fake = rig(tmp_path)
+    got = named(run_checks(adapter, echo=lambda line: None))
+    save = got["savegame writes a text save the harness can read"]
+    assert save.ok and "SWE_1936_01_01_22.hoi4" in save.detail and "1 production line(s)" in save.detail
+    adapter, fake = rig(tmp_path / "b")
+    fake.save_mode = "binary"
+    got = named(run_checks(adapter, echo=lambda line: None))
+    save = got["savegame writes a text save the harness can read"]
+    assert not save.ok and "save_as_binary=no" in save.detail
+
+
+def test_the_war_claim_reads_an_enemy_and_catches_a_bad_line(tmp_path):
+    adapter, fake = rig(tmp_path)
+    fake.start_war("POL", divisions=33)
+    fake.run_days(2)
+    got = named(run_checks(adapter, echo=lambda line: None))
+    war = got["the war lines are readable"]
+    assert war.ok and "POL: 33 divisions, borders us" in war.detail
+    adapter, fake = rig(tmp_path / "b")
+    fake.start_war("POL", divisions=33)
+    fake.run_days(2)
+    fake.log_path.write_text(fake.log_path.read_text(encoding="utf-8").replace(
+        "divs=33", "divs=[?llmb_war_divs]"), encoding="utf-8")
+    got = named(run_checks(adapter, echo=lambda line: None))
+    assert not got["the war lines are readable"].ok
+
+
+def test_at_peace_the_war_claim_says_it_cannot_be_proved(tmp_path):
+    adapter, fake = rig(tmp_path)
+    got = named(run_checks(adapter, echo=lambda line: None))
+    assert got["the war lines are readable"].ok and "at peace" in got["the war lines are readable"].detail

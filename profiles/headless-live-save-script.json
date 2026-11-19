@@ -1,0 +1,41 @@
+[
+  {
+    "text": "Open a production line for equipment Sweden has none of, and queue a civilian factory where it has a free slot: both are checked against a save the harness takes itself.",
+    "calls": [
+      {
+        "name": "queue_construction",
+        "arguments": {
+          "building": "civilian_factory",
+          "state": "38",
+          "count": 1
+        }
+      },
+      {
+        "name": "set_production",
+        "arguments": {
+          "equipment": "artillery_equipment_1",
+          "factories": 1
+        }
+      },
+      {
+        "name": "advance_time",
+        "arguments": {
+          "days": 3,
+          "reason": "let the orders land"
+        }
+      }
+    ]
+  },
+  {
+    "text": "Look, change nothing.",
+    "calls": [
+      {
+        "name": "advance_time",
+        "arguments": {
+          "days": 3,
+          "reason": "wait"
+        }
+      }
+    ]
+  }
+]

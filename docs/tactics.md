@@ -136,6 +136,94 @@ controller (about 9,000 game hours per second); 150-230 steps per second with a 
 included, the scripted one's planning dominating. Fast enough to batch for RL at small scale; a
 numpy or compiled core would be the next step if it is not (kept out of the core on purpose).
 
+## Stage 3: a learned controller
+
+`tactics/learned.py` is a policy that scores orders; `tactics/train.py` trains it. Parameters
+are committed in `tactics/data/learned_params.json`.
+
+**Policy.** For each division the controller lists candidate orders: hold, attack or move to a
+neighbour, retreat, and a move to a few far provinces worth heading for (objective, front,
+hubs, the nearest enemy ground). Each becomes a feature vector (31 features, a separate weight
+block per order kind, 124 weights): local odds, terrain and river, organisation, strength,
+supply, objective distance, travel time, enemy pressure, cut-off potential for the enemy and
+risk for us, combat-width usage, how many friendly divisions already head there, and the goal
+kind. A linear score picks the best candidate; no randomness, so the same parameters on the same
+game give the same orders. Divisions are handled in id order and see each other's choices through
+the load feature. A division keeps its current order unless a different one scores higher.
+
+**Training** (`hoi4-harness tactics train`, one process, 12 minutes of wall time):
+
+1. Behaviour cloning: 10 seeds x 4 scenarios x 2 opponents of the scripted controller playing
+   side A (about 19,000 decisions), softmax regression over each division's candidates.
+2. Antithetic evolution strategies (6 pairs, sigma 0.15) with rank-shaped fitness, one game seed
+   per scenario/opponent pair per generation. Fitness per episode is 1 for a win plus half the
+   share of casualties the enemy took. Training seeds are 0-299 and the pool is all four
+   scenarios against both the vanilla-like and the scripted opponent.
+3. The ES result is kept only if it beats the clone on four validation seeds (200-203).
+
+The run used the whole 12 minutes: 21 s of demonstrations, a few seconds of cloning (top-1
+agreement with the scripted choice 85%), then 23 ES generations. Validation fitness went from
+1.046 (clone) to 1.093 (ES), which is inside the noise of four seeds.
+
+**Results.** Held-out seeds 1000-1029 (never used in training), learned/scripted/vanilla-like
+as side A against each opponent. Regenerate with `scripts/tactics_heldout.py`; the numbers are
+in `tactics/data/learned_results.json` and a test replays one row.
+
+Against the vanilla-like opponent:
+
+| scenario | controller | win rate | casualty ratio | pockets closed |
+|---|---|---|---|---|
+| break_line | vanilla | 27/30 (90%) | 1.03 | 0 |
+| break_line | scripted | 30/30 (100%) | 3.43 | 0 |
+| break_line | learned | 29/30 (97%) | 2.68 | 0 |
+| close_encirclement | vanilla | 3/30 (10%) | 0.89 | 0.4 |
+| close_encirclement | scripted | 29/30 (97%) | 4.32 | 2.9 |
+| close_encirclement | learned | 30/30 (100%) | 8.32 | 4.9 |
+| escape_encirclement | vanilla | 14/30 (47%) | 0.22 | 1 |
+| escape_encirclement | scripted | 30/30 (100%) | 1.42 | 1 |
+| escape_encirclement | learned | 30/30 (100%) | 1.20 | 2 |
+| hold_line | vanilla | 1/30 (3%) | 1.39 | 0 |
+| hold_line | scripted | 19/30 (63%) | 1.83 | 0 |
+| hold_line | learned | 23/30 (77%) | 3.08 | 0 |
+
+Against the scripted opponent:
+
+| scenario | controller | win rate | casualty ratio | pockets closed |
+|---|---|---|---|---|
+| break_line | vanilla | 28/30 (93%) | 3.60 | 0 |
+| break_line | scripted | 29/30 (97%) | 3.85 | 0 |
+| break_line | learned | 24/30 (80%) | 4.01 | 0.03 |
+| close_encirclement | vanilla | 0/30 (0%) | 0.35 | 0 |
+| close_encirclement | scripted | 5/30 (17%) | 4.14 | 0.4 |
+| close_encirclement | learned | 0/30 (0%) | 3.46 | 1 |
+| escape_encirclement | vanilla | 0/30 (0%) | 0.18 | 1 |
+| escape_encirclement | scripted | 30/30 (100%) | 3.87 | 1 |
+| escape_encirclement | learned | 30/30 (100%) | 1.86 | 1 |
+| hold_line | vanilla | 30/30 (100%) | 2.52 | 0 |
+| hold_line | scripted | 30/30 (100%) | 2.48 | 0 |
+| hold_line | learned | 26/30 (87%) | 2.56 | 0 |
+
+**Reading it honestly.**
+
+- The learned controller is a distillation of the scripted one that ends up near it, not past
+  it. It is ahead on `hold_line` and `close_encirclement` against the vanilla-like opponent, and
+  behind on `break_line` and `hold_line` against the scripted opponent (80% vs 97%, 87% vs 100%)
+  and on `close_encirclement` against it (0/30 vs 5/30).
+- Gaps of one or two games out of 30 (97% vs 100%) are not distinguishable. The hold_line
+  win-rate gain (23 vs 19) is also within what 30 seeds can show; the casualty ratio gain there
+  (3.08 vs 1.83) is larger.
+- ES added little. Fitness on its batches (one seed per pairing) was noisy, centre fitness moved
+  between 0.83 and 1.25 with no trend, and the validation gain is not significant. Nearly all of
+  the behaviour comes from cloning the scripted controller; a fair summary is "ES found no
+  clear improvement in 23 generations at this budget".
+- The scenarios were co-tuned with the scripted controller, and the learned one is cloned from
+  it, so high win rates here say little about play outside these four maps. The policy is tied
+  to this simulator's features (full information, hop-distance supply).
+- Sim-only. Whether it transfers to the real game is stage 1/2's open question: the constants
+  are calibrated by hand, and the real game has fog of war, which these features ignore.
+
+Try it: `hoi4-harness tactics run all --controller all --seeds 30 --first-seed 1000`.
+
 ## Gap list against the real game
 
 Simplifications, each with the mechanic it stands in for:

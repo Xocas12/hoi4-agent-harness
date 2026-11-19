@@ -1,0 +1,4 @@
+add_namespace = alpha
+country_event = {
+	id = alpha.1
+}

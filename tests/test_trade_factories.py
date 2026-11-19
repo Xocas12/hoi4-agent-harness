@@ -8,7 +8,7 @@ that says "20 civ" overstates what the country builds with once trade ends.
 from hoi4_harness.adapters.logtail import LogTailAdapter
 from hoi4_harness.observation import render_full
 
-LINE = ("[12:00:00][1937.04.12.21]: LLMB|v3|state|date=1937.4.12|tag=SWE|pp=881|stab=82|ws=0"
+LINE = ("[12:00:00][1937.04.12.21]: LLMB|v4|state|date=1937.4.12|tag=SWE|pp=881|stab=82|ws=0"
         "|civ={civ}|mil=3|doc=3{owned}|mp=32980\n")
 
 

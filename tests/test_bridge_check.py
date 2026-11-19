@@ -45,9 +45,9 @@ def test_triggers_are_checked_against_the_installs_documentation():
 def test_the_log_check_names_fields_that_did_not_expand(tmp_path):
     log = tmp_path / "game.log"
     log.write_text(
-        "[17:34:20][1936.01.02.01][x.cpp:1]: LLMB|v3|state|date=1936.1.2|tag=SWE|pp=42"
+        "[17:34:20][1936.01.02.01][x.cpp:1]: LLMB|v4|state|date=1936.1.2|tag=SWE|pp=42"
         "|stab=[?llmb_stab]|ws=18\n"
-        "[17:34:21][1936.01.03.01][x.cpp:1]: LLMB|v3|evt|tag=SWE|kind=1|detail=war\n"
+        "[17:34:21][1936.01.03.01][x.cpp:1]: LLMB|v4|evt|tag=SWE|kind=1|detail=war\n"
         "noise\n"
     )
     report = check_log(log)
@@ -60,7 +60,7 @@ def test_the_log_check_names_fields_that_did_not_expand(tmp_path):
 
 def test_a_field_that_expanded_once_is_real(tmp_path):
     log = tmp_path / "game.log"
-    log.write_text("[x]: LLMB|v3|state|tag=SWE|pp=[?llmb_pp]\n[x]: LLMB|v3|state|tag=SWE|pp=5\n")
+    log.write_text("[x]: LLMB|v4|state|tag=SWE|pp=[?llmb_pp]\n[x]: LLMB|v4|state|tag=SWE|pp=5\n")
     report = check_log(log)
     assert report.literal == {} and report.ok
 
@@ -73,7 +73,7 @@ def test_a_log_with_no_telemetry_says_so(tmp_path):
 
 def test_the_command_runs_both_checks(tmp_path, capsys):
     log = tmp_path / "game.log"
-    log.write_text("[x]: LLMB|v3|state|tag=SWE|pp=5|stab=60|ws=10|civ=1|mil=1|doc=1|mp=5\n")
+    log.write_text("[x]: LLMB|v4|state|tag=SWE|pp=5|stab=60|ws=10|civ=1|mil=1|doc=1|mp=5\n")
     assert main(["verify-bridge", "--game-dir", str(GAME), "--log", str(log)]) == 0
     out = capsys.readouterr().out
     assert "tokens, against the install" in out and "log: 1 telemetry line" in out
@@ -84,7 +84,7 @@ def test_the_command_needs_something_to_check(capsys, monkeypatch, tmp_path):
     assert main(["verify-bridge", "--log", str(tmp_path / "missing.log")]) == 2
 
 
-STATE_LINE = ("[11:04:29][1936.01.{d:02d}.21]: LLMB|v3|state|date= 21:00, {d} January, 1936|tag={tag}"
+STATE_LINE = ("[11:04:29][1936.01.{d:02d}.21]: LLMB|v4|state|date= 21:00, {d} January, 1936|tag={tag}"
               "|pp=1.9|stab=83.2|ws=0|civ=9|mil=3|doc=3|mp={mp}\n")
 
 
@@ -95,7 +95,7 @@ def _log(tmp_path, *lines):
 
 
 def test_the_game_date_text_is_reported_parsed(tmp_path):
-    log = _log(tmp_path, "[10:52:52][1936.01.01.12]: LLMB|v3|boot|tag=SWE|start= 12:00, 1 January, 1936\n")
+    log = _log(tmp_path, "[10:52:52][1936.01.01.12]: LLMB|v4|boot|tag=SWE|start= 12:00, 1 January, 1936\n")
     report = check_log(log)
     assert report.mod_date_shapes == {"parsed"}
 
@@ -131,7 +131,7 @@ def test_with_a_known_player_any_other_tag_is_wrong(tmp_path):
 
 def test_army_lines_are_held_to_the_same_tag(tmp_path):
     report = check_log(_log(tmp_path, STATE_LINE.format(d=2, tag="SWE", mp=5),
-                            "[x]: LLMB|v3|army|tag=POL|divisions=12|delegated=0\n"))
+                            "[x]: LLMB|v4|army|tag=POL|divisions=12|delegated=0\n"))
     assert report.tags == ["SWE", "POL"] and not report.ok
 
 
@@ -139,3 +139,17 @@ def test_the_new_counters_are_checked_for_expansion(tmp_path):
     line = STATE_LINE.format(d=2, tag="SWE", mp=5).rstrip("\n") + "|techs=[?llmb_techs]|built_civ=3\n"
     report = check_log(_log(tmp_path, line))
     assert report.literal == {"techs": "[?llmb_techs]"} and report.expanded["built_civ"] == "3"
+
+
+def test_the_log_check_reads_war_lines_and_catches_a_literal_or_a_wrong_tag(tmp_path):
+    good = "[10:00:00][1939.09.02.21]: LLMB|v4|war|tag=SWE|enemy=GER|divs=84|border=1|surr=3\n"
+    log = tmp_path / "game.log"
+    log.write_text(good, encoding="utf-8")
+    report = check_log(log, player="SWE")
+    assert report.war_lines == 1 and report.war_enemies == ["GER"] and report.ok
+    assert "war lines: 1, enemies GER" in report.render()
+    log.write_text(good.replace("divs=84", "divs=[?llmb_war_divs]"), encoding="utf-8")
+    assert check_log(log, player="SWE").literal == {"war.divs": "[?llmb_war_divs]"}
+    # PREV.GetTag printing the enemy instead of the player is the scope bug to catch.
+    log.write_text(good.replace("tag=SWE", "tag=GER"), encoding="utf-8")
+    assert check_log(log, player="SWE").tag_problems

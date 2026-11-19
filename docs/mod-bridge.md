@@ -37,11 +37,19 @@ One pipe-delimited line per tick, prefixed so it can be found in a log full of
 engine chatter:
 
 ```
-LLMB|v3|state|date= 12:00, 1 January, 1936|tag=SWE|pp=1.933|stab=83.248|ws=0|civ=9|mil=3|doc=3|owned=15|mp=31153|techs=12|built_civ=0|built_mil=0|built_dock=0|built_infra=2
-LLMB|v3|focus|tag=SWE|id=SWE_rearm
-LLMB|v3|research|tag=SWE|id=gwtank
-LLMB|v3|evt|tag=SWE|kind=13|detail=POL
+LLMB|v4|state|date= 12:00, 1 January, 1936|tag=SWE|pp=1.933|stab=83.248|ws=0|civ=9|mil=3|doc=3|owned=15|mp=31153|techs=12|built_civ=0|built_mil=0|built_dock=0|built_infra=2
+LLMB|v4|focus|tag=SWE|id=SWE_rearm
+LLMB|v4|research|tag=SWE|id=gwtank
+LLMB|v4|evt|tag=SWE|kind=13|detail=POL
+LLMB|v4|war|tag=SWE|enemy=GER|divs=84|border=1|surr=3
+LLMB|v4|div|tag=SWE|state=64|ctl=GER|own=3|own_weak=1|foe=5|foe_weak=0
+LLMB|v4|divend|tag=SWE|n=7
 ```
+
+The `div` and `divend` lines are the front picture (divisions per state, at war only; one
+closing `divend` a day whatever happens). They come from their own effect and on_actions
+file, and the reader keeps a picture only when `n` of them arrived: see
+[unit-orders.md](unit-orders.md).
 
 Rules the parser holds to, all of them tested in
 [`tests/test_logtail.py`](../tests/test_logtail.py):

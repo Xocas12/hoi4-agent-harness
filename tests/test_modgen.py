@@ -85,7 +85,7 @@ def test_the_log_reader_rebuilds_standing_directives_from_the_generated_lines(tm
                               flags=re.S).group(1)
     line = re.search(r'log = "(.*?)"', raise_protect).group(1).replace("[ROOT.GetTag]", "SWE")
     log = tmp_path / "game.log"
-    log.write_text("[x]: LLMB|v3|state|date=1936.1.1|tag=SWE|pp=1|stab=50|ws=10\n")
+    log.write_text("[x]: LLMB|v4|state|date=1936.1.1|tag=SWE|pp=1|stab=50|ws=10\n")
     reader = LogTailAdapter(log)
     assert not reader.read_state().known("ai_directives")
     with log.open("a") as handle:
@@ -93,5 +93,5 @@ def test_the_log_reader_rebuilds_standing_directives_from_the_generated_lines(tm
     state = reader.read_state()
     assert state.known("ai_directives") and state.ai_directives == ["protect FIN"]
     with log.open("a") as handle:
-        handle.write("[x]: LLMB|v3|evt|tag=SWE|kind=12\n")
+        handle.write("[x]: LLMB|v4|evt|tag=SWE|kind=12\n")
     assert reader.read_state().ai_directives == []

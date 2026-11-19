@@ -71,11 +71,36 @@ class Front:
 
 
 @dataclass
+class StateForces:
+    """Divisions in one state, from the mod's front picture (``div`` lines).
+
+    The game has no per-division location a script can read (docs/unit-orders.md),
+    so the finest grain is a state: how many of the player's divisions and how
+    many of an enemy's stand in it, and how many of each are below half strength.
+    """
+
+    state: int
+    controller: str | None = None
+    own: int = 0
+    own_weak: int = 0
+    foe: int = 0
+    foe_weak: int = 0
+    #: Display name, filled in by a reader that has the playset's localisation.
+    name: str | None = None
+
+
+@dataclass
 class War:
     against: str
     since: str | None = None
     war_score: float = 0.0
     allies: list[str] = field(default_factory=list)
+    #: What a reader that sees the enemy can add; None is "not observed".
+    enemy_divisions: int | None = None
+    #: Whether the enemy's controlled territory touches the player's.
+    borders: bool | None = None
+    #: How close the enemy is to surrendering, 0-1.
+    surrender_progress: float | None = None
 
 
 @dataclass
@@ -220,6 +245,13 @@ class GameState:
     #: ``front_unit_request`` strategy scopes on (``tag = KHM``), so the mod can
     #: express it and the brief already names each front's enemy.
     theater_postures: dict[str, str] = field(default_factory=dict)
+    #: Divisions per state along the front, as of ``state_forces_date``. None is
+    #: "not observed" (a reader without the mod's front lines); [] is "observed,
+    #: and no division of either side stands in a contested state".
+    state_forces: list[StateForces] | None = None
+    state_forces_date: str | None = None
+    #: Where the division orders given earlier stand (adapters/unit_orders.py).
+    order_status: list[str] = field(default_factory=list)
     events: list[GameEvent] = field(default_factory=list)
     unknown_fields: list[str] = field(default_factory=list)
     raw: dict[str, Any] = field(default_factory=dict, repr=False)

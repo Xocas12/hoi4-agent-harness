@@ -63,18 +63,24 @@ class Mod:
     name: str
     version: str = ""
     replace_paths: list[str] = field(default_factory=list)
+    #: The Steam Workshop file id (``remote_file_id`` in the descriptor, or the
+    #: numeric folder name under ``workshop/content``); None for a local mod.
+    remote_file_id: str | None = None
 
     @classmethod
     def load(cls, path: Path) -> Mod:
         path = Path(path)
         descriptor = path / "descriptor.mod"
-        name, version, replace = path.name, "", []
+        name, version, replace, remote = path.name, "", [], None
         if descriptor.is_file():
             text = descriptor.read_text(encoding="utf-8-sig", errors="replace")
             name = _descriptor_value(text, "name") or name
             version = _descriptor_value(text, "version") or ""
             replace = re.findall(r'^\s*replace_path\s*=\s*"([^"]+)"', text, flags=re.M)
-        return cls(path=path, name=name, version=version,
+            remote = _descriptor_value(text, "remote_file_id")
+        if not remote and path.name.isdigit() and path.parent.name == "394360":
+            remote = path.name
+        return cls(path=path, name=name, version=version, remote_file_id=remote or None,
                    replace_paths=[p.replace("\\", "/").strip("/") for p in replace])
 
 
@@ -259,9 +265,11 @@ class IdentifierIndex:
     #: technology -> the technologies its ``path = { leads_to_tech }`` blocks name.
     tech_leads: dict[str, list[str]] = field(default_factory=dict)
     _focus_names: dict[str, str] | None = field(default=None, repr=False)
+    _research_layout: object = field(default=None, repr=False)
     _advisors: dict[str, list[AdvisorRole]] | None = field(default=None, repr=False)
     _equipment: set[str] | None = field(default=None, repr=False)
     _advisor_tokens: dict[str, str] = field(default_factory=dict, repr=False)
+    _mod_context: object | None = field(default=None, repr=False)
 
     # --- building -------------------------------------------------------------
 
@@ -306,6 +314,15 @@ class IdentifierIndex:
                     owner=str(owner) if isinstance(owner, str) else None,
                 )
         return index
+
+    def research_layout(self):
+        """The research panel and tab layout of the playset's interface files
+        (uilayout.py), read on first use. Raises uilayout.LayoutRefused."""
+        if self._research_layout is None:
+            from .uilayout import ResearchLayout
+
+            self._research_layout = ResearchLayout.from_playset(self.playset)
+        return self._research_layout
 
     def _read_focus_file(self, parsed: dict) -> None:
         for block in _as_list(parsed.get("shared_focus")):
@@ -421,6 +438,14 @@ class IdentifierIndex:
             self._equipment = found
         return self._equipment
 
+    def mod_context(self):
+        """The action surface of this playset (``modcontext``), read on demand."""
+        if self._mod_context is None:
+            from .modcontext import ModContext
+
+            self._mod_context = ModContext(self)
+        return self._mod_context
+
     # --- lookups --------------------------------------------------------------
 
     def trees_for(self, tag: str) -> list[FocusTree]:
@@ -493,6 +518,8 @@ class IdentifierIndex:
             if state.lower() not in STATE_ALIASES and self.resolve_state(state) is None:
                 names = [s.name for s in self.states.values()] + list(self.states)
                 return self._reject(call, f"There is no state '{state}' in this playset", state, names)
+        if call.name == "take_decision":
+            return self.mod_context().check_take(call, country)
         argument = TAG_ARGUMENTS.get(call.name)
         if argument and self.tags:
             tag = str(args.get(argument, ""))

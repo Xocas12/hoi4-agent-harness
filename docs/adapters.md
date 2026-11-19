@@ -80,12 +80,18 @@ save (it starts `HOI4bin`) is refused with that instruction. This is separate
 from ironman, which also forbids reading.
 
 A save is 60-100 MB, so nothing parses all of it. `read_save()` cuts out four
-blocks by **brace matching** and parses each alone: the player's country inside
-`countries`, `states`, `division_templates` and `equipments`. (Brace matching,
-not indentation: the real save writes some nested blocks at column 0, such as
-`CAN={` inside ENG's block, so "the next line at the same indent" cuts a country
-short.) On the 63 MB checked save the whole read is about 4 s, nearly all of it
-reading the file.
+blocks and parses each alone: the player's country inside `countries`, `states`,
+`division_templates` and `equipments`. A block's end is found by **brace
+matching**, not indentation (the real save writes some nested blocks at column 0,
+such as `CAN={` inside ENG's block, so "the next line at the same indent" cuts a
+country short), but a block's *start* is found by searching, not by matching the
+braces of everything before it: brace-matching all of `countries` (3 million lines
+in a 1.20.0 save) was 1.8 s of a 4 s read, and the 72,000-line `equipments` block is
+scanned for `name={ id={ id=N` instead of parsed. On the 66 MB checked save
+(`SWE_1938_02_04_22.hoi4`, written by the console's `savegame` command) the whole
+read is **0.85-1.0 s**, of which about half is reading and decoding the file.
+`scripts/trim_save.py` cuts such a save down to the committed fixture
+(`tests/fixtures/swe_1938_02_04.hoi4`, 57 kB: account name scrubbed, seeds gone).
 
 ### What the 1.19.5 save contains, and where each field comes from
 
@@ -126,11 +132,30 @@ Things that are not what they look like:
 * `days_remaining` for research and focus is not stored (only points so far), so
   it stays unset.
 
+### What the 1.20.0 save added (`SWE_1938_02_04_22.hoi4`)
+
+The construction queue **is** in the country block; the earlier claim that it was
+absent came from a save whose queue was empty (a save writes an empty queue as no
+key at all: of 439 `production` blocks in the checked save, 102 have
+`general_lines` and none has it empty). The tests are
+`tests/test_savegame_queue.py`.
+
+| GameState field | Where | Checked against |
+| --- | --- | --- |
+| `construction` | `production.general_lines.building`: `{ produced cost speed amount building={ template location } }`. `template` is the game's building id (`industrial_complex`), `location` the state id, `cost` one level's points, `amount` the levels still queued (one item each, the first carrying `produced / cost`), `speed` points a day | a civilian factory in state 38: 4076.4 of 10800, 120.75 a day, amount 2 |
+| `production` (a line just opened) | a `military_lines` entry with `queued_factories` and **no** `active_factories`, `speed` or `produced`: it has asked for factories and been given none yet. `factories` is `requested_factories`; efficiency and output stay 0 | the second infantry line a `set_production` left behind |
+| `completed_focuses` | `focus.completed`, one entry per finished focus (a bare string when there is one) | `SWE_defense_act`, `SWE_urbanization` |
+| `fuel` | `fuel_status.fuel` | 55,912 |
+
+`general_lines` also holds `rail_way` entries, which are not buildings and are
+skipped. The mod's own variables (`llmb_pp`, `llmb_civ` ... and the schema-v3
+`llmb_schema_version`) are in `variables` too, written at the last telemetry
+tick.
+
 ### Still unknown (reported in `unknown_fields`, never defaulted)
 
-`construction` (the country block holds no queue; `country_reports.construction`
-is a daily count of factories on construction, not the items), `completed_focuses`
-(not in the country block), `wars`, `fronts`, the hybrid-control fields
+`wars`, `fronts` (the log reader has wars; neither is in the country block),
+`convoys`, the hybrid-control fields
 (`delegated_armies`, `ai_directives`, `posture`, `theater_postures`), and now
 `fuel` and `convoys`, which the brief used to print as `0`. Division `location`
 and `strength` are not read either: the save gives a province id and raw
@@ -382,6 +407,60 @@ install.
   places, and points off the screen (this driver does not scroll the tree; at
   1920x1080 that is most of every tab's lower years). Only the infantry tab has been
   measured live.
+
+  **Resolution, UI scale and window mode (`uilayout.py`).** The research slot and the
+  folder tabs are derived too, so `research.free_slot` and `research.tab.<folder>` are
+  no longer calibrated (name them to `calibrate` to record an override, which wins).
+  The screen is `height / 864 * gui_scale` pixels per GUI unit: 1.25 at 1080p with
+  `gui_scale=1.0`, measured. 864 is in no define or `.gui` file (the engine owns it;
+  `settings.txt` names 1536x864 as the default window size and `min_gui` 1280x720);
+  only the height enters, which the left-anchored windows measured so far agree with.
+  Windows are placed by `Orientation`: the child's top-left is the parent's anchor
+  point (`UPPER_LEFT`, `UPPER_RIGHT`, `LOWER_*`, `CENTER`, `CENTER_UP/DOWN`) plus its
+  `position`; `size` is units, a percent of the parent, or (negative) the parent less
+  that. The slot is `countrytechnologyview` (`show_position`, the open panel) >
+  `research_slots` > `slots_window` > `research_slots_grid`, cell 500x100; a tab is
+  `countrytechtreeview` > `folder_tabs` > `<folder>_tab`, centred on its sprite's frame
+  (the `.dds` header, halved for its two frames). At 1920x1080 this gives slot 0
+  (324, 435) against (322, 428) measured, and the infantry and support tabs
+  (81, 144) / (192, 144) against (78, 140) / (190, 140): within 4-7 px. Slots 1 and 2
+  come out 35 px lower than the (525, 650) measured; they are still inside the
+  125 px-high slot, but the cause of the gap is not known. The tech tree's content
+  origin is still the measured (9, 103): the `.gui` files give (10, 138), 35 GUI units
+  lower, and that is not explained either.
+  Display settings come from `settings.txt` and `pdx_settings.txt`. In a *borderless*
+  window the resolution they record is not what is drawn (this install records
+  1536x864 and runs at 1920x1080), so the live client rect is the truth; in
+  windowed or exclusive-fullscreen mode the recorded size must equal the window's or
+  the action is refused. The action is refused, before any input, when the settings
+  or the window size cannot be read, or the research windows are not in the playset's
+  interface files. A dry run falls back to the settings' size or 1920x1080.
+
+  Predicted points (centres, pixels; the slot is slot 0 with the panel open and the
+  list unscrolled; `infantry_at` is the infantry tab's anti-tank cell). Only the first
+  row is measured; every other row is **UNVERIFIED**, and the rows that change the
+  aspect ratio or the UI scale carry extra doubts, below the table.
+
+  | Window, UI scale | Scale | Slot 0 | Infantry tab | Support tab | `infantry_at` | Status |
+  |---|---|---|---|---|---|---|
+  | 1920x1080, 1.0 | 1.2500 | (324, 435) | (81, 144) | (192, 144) | (1280, 754) | measured (see above) |
+  | 1280x720, 1.0 | 0.8333 | (216, 290) | (54, 96) | (128, 96) | (853, 502) | UNVERIFIED |
+  | 1366x768, 1.0 | 0.8889 | (230, 309) | (57, 103) | (136, 103) | (910, 536) | UNVERIFIED |
+  | 2560x1440, 1.0 | 1.6667 | (432, 580) | (108, 192) | (256, 192) | (1707, 1005) | UNVERIFIED |
+  | 3440x1440, 1.0 | 1.6667 | (432, 580) | (108, 192) | (256, 192) | (1707, 1005) | UNVERIFIED |
+  | 1920x1200, 1.0 | 1.3889 | (360, 483) | (90, 160) | (213, 160) | (1422, 838) | UNVERIFIED |
+  | 1920x1080, 1.25 | 1.5625 | (405, 544) | (101, 180) | (240, 180) | (1600, 942) | UNVERIFIED |
+  | 1920x1080, 0.8 | 1.0000 | (259, 348) | (64, 116) | (154, 116) | (1024, 603) | UNVERIFIED |
+
+  What could be wrong: (1) 21:9 and 16:10 assume the scale follows the height alone;
+  an engine that follows the width on a narrower screen (16:10) would put 1920x1200 at
+  the 1.25 of 1080p, and `min_gui` (1280x720) may clamp the scale, which would cap
+  1920x1080 at UI scale 1.25 to 1.5 instead of 1.5625. (2) The left-anchored slot and
+  tabs do not depend on the width, so 3440x1440 equals 2560x1440 for them; the tree
+  content's percent-sized boxes and any right- or centre-anchored window do move.
+  (3) Slots 1 and 2 carry the unexplained 35 px. (4) `settings.txt`'s `size` is read
+  for windowed mode only; the client-rect reader (`window.client_rect`) is Windows-only
+  and has not been run against the live game.
   picked with `enter` on its detail window (the Research button's shortcut).
 - **hire_advisor**: `q` opens Political; advisor slots and candidates are icons
   (`politics.slot.<slot>`, `politics.candidate.<advisor_id>`), calibrated per name.
@@ -494,6 +573,83 @@ value), it writes no telemetry line (verification would need a hand-written
 `clear_ai_directives` has to undo. A tag outside the generated list is refused
 with the `mod-directives --tags` command that adds it.
 
+### The tilted camera: a homography (measured, 4 points)
+
+Zoomed in, the flat model is wrong. Measured live (1.19.5, 1920x1080, after a map
+search for Sodermanland, zoomed in) the markers of four victory-point cities sat at
+
+| city (province) | map pixel (`unitstacks.txt` type 38) | screen |
+|---|---|---|
+| Stockholm (6050) | (3085.48, 324.16) | (1488, 579) |
+| Uppsala (9149) | (3085.52, 316.00) | (1441.5, 418.5) |
+| Gavle (11091) | (3069.84, 300.00) | (1047, 171) |
+| Falun (156) | (3041.84, 296.00) | (483, 108) |
+
+The y scale held at 15.5-17 screen px per map px but the x scale grew from about 20
+at the top of the screen to about 28 lower down: the camera is tilted. A flat
+`Camera` fitted to these four misses by 85, 49, 64 and 68 px. The map is a plane,
+so the right model is a 3x3 homography (8 degrees of freedom):
+
+```
+sx = (h1 x + h2 y + h3) / (h7 x + h8 y + 1)        sy = (h4 x + h5 y + h6) / (h7 x + h8 y + 1)
+```
+
+`fit_homography(pairs, viewport)` (in `mapcamera.py`) solves it by least squares
+over >= 4 `(map pixel, screen point)` pairs, normalising both coordinate sets
+first (centroid to origin, mean radius sqrt 2) so the 8x8 normal equations are
+well conditioned. It refuses collinear or repeated points, fewer than four pairs,
+a fit with a point behind the camera, and a worst residual over `tolerance`
+(default 8 px). `PerspectiveCamera` has `to_screen`, `to_map` (the inverse) and
+works with `screen_point`, which refuses off-screen targets as before.
+`fit_camera(pairs, viewport)` chooses per fit: a flat camera that explains three
+or more pairs within 4 px wins (fewer parameters extrapolate better, and it is
+right when the camera is not tilted); otherwise the homography. The result says
+which (`fit.model`), the residuals, and the flat model's residuals.
+
+**What the four live points prove: nothing yet.** Four pairs fix a homography
+exactly, so the residual is zero by construction. Fitted:
+
+```
+ 6.60813      -3.12444     -19019.1
+ 0.181391      3.41019      -1526.09
+ 8.34897e-05  -0.00313882       1          conditioning 1.67 (normalised), residuals 0 px
+```
+
+Only the flat model's failure is evidence (it misses by 49-85 px). That a
+homography describes the camera is untested until a held-out city lands where it
+is predicted (below, and `docs/live-session.md` step 11). The markers' visual
+anchor may sit a few px off the stack point, and the screen readings are +-3 px;
+perturbing the four readings by that much moves a prediction by about 100 px for
+a city near the cluster and by thousands for one far away, because four
+neighbouring points extrapolate badly. Treat a miss of tens of px for a nearby
+city as the expected noise, not as a refutation.
+
+The map-side anchor is `map/unitstacks.txt` (`MapLayer.anchor(province)`, type 38,
+the victory-point marker), which is better than a centroid for a city. Rows are
+`province;type;x;height;z;rotation;scale`; image y = 2048 - z. Type 38 is the VP
+marker anchor (every province has one); 0 is the centre unit-stack slot, 1-8 and
+11-18 further slots, 9/10 the flank slots, 21-37 copies of those. Apart from 38
+these readings come from the file's shape, not from the game; see `STACK_TYPES`.
+
+Predicted screen positions at that same camera (`scripts/predict_markers.py`;
+the viewport is 1920x1080 minus 40 px top and 120 px bottom). The window shows
+map x about 3016-3119, y about 286-339, so almost nothing else is on screen:
+
+| city (province) | map pixel | predicted screen | on screen? |
+|---|---|---|---|
+| Mariehamn (9228) | (3118.4, 307.0) | (2118, 291) | no, right of the screen |
+| Sundsvall (130) | (3077.12, 245.0) | (1126, -271) | no, above |
+| Ostersund (11148) | (3048.84, 215.0) | (787, -414) | no, above |
+| Karlstad (11114) | (3009.84, 321.0) | (-544, 470) | no, left |
+| Linkoping (9393) | (3048.64, 352.0) | (180, 1519) | no, below |
+| Norrkoping (11380) | (3064.52, 351.0) | (876, 1471) | no, below |
+| Goteborg (383) | (2993.84, 367.0) | (-3899, 2740) | no, far left and below |
+
+Vasteras and Orebro have no `VICTORY_POINTS_<id>` entry in 1.19.5 localisation, so
+they have no VP marker to predict. Everything above is outside the view, so it
+cannot be checked from this one screenshot. Pan or zoom out one step, take the
+points from the new view, and use the procedure below, which holds cities out.
+
 ### UNVERIFIED: settle these in a live game
 
 Nothing below has been run against the real game; each is a configuration value,
@@ -590,19 +746,9 @@ province. `Viewport` takes the margins for the top bar and the bottom panel.
 None of this was run against the game. What the model assumes, and could be
 wrong about:
 
-1. **The map is flat: FALSE at the zoom the map search uses** (measured live on
-   1.19.5, 1920x1080). After searching Södermanland, four victory-point markers
-   (Stockholm, Uppsala, Gävle, Falun; positions from `map/unitstacks.txt`, type 38,
-   image y = 2048 - z) gave a steady y scale of 15.5-17 screen px per map pixel but
-   an x scale of 20 between the two northern cities and up to 28 lower down: a
-   perspective camera. `Camera.from_references` refuses such a fit, correctly. A
-   perspective model (or a fully zoomed-out view, unmeasured) is needed before unit
-   orders can be aimed, and province centroids are poor anchors at this zoom; use
-   the `unitstacks.txt` positions. The map search also did not put the state's
-   click point at the screen centre. Original note:
-   HOI4 tilts the map at some zoom levels, which makes
-   scale differ between the top and bottom of the screen. The fit refuses that
-   case instead of averaging over it.
+1. **The map is flat.** It is not, zoomed in (measured, above): HOI4 tilts the
+   camera. The flat `Camera.from_references` fit refuses that case instead of
+   averaging over it; use `fit_camera`, which falls back to the homography.
 2. **One scale per zoom step**, and the zoom steps are discrete. Measure each
    step you intend to use; do not interpolate.
 3. **The map wraps horizontally** in the game. The layer does not: a target near

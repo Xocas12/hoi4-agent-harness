@@ -90,7 +90,10 @@ Point it at an install and a playset (`--game-dir`, `--mod`, or
 `HOI4_GAME_DIR` / `HOI4_MOD_DIRS`) and invented focus, technology, state and
 country ids are refused with the nearest real ones, the brief lists the focuses
 available now, and a total conversion is recorded as such — see
-[docs/playsets.md](docs/playsets.md).
+[docs/playsets.md](docs/playsets.md). `hoi4-harness mod-actions --country GER` goes further:
+the decisions, focus tree and new techs a country has in that playset, a short world brief
+per mod, and `--mod-context` puts them in the prompt with a guarded `take_decision` —
+see [docs/mods.md](docs/mods.md).
 
 Playing alongside the model rather than watching it: `--advisor` (it recommends,
 you act), `--player-clock` (it never touches the clock) and `--handover` (its
@@ -152,7 +155,7 @@ intent through.
 
 It has been run in a live HOI4 1.19.5.0 game (Sweden, 1936–37; the mod declares
 `supported_version 1.19.*`). It loads with nothing in `error.log`, including the
-2.4 MB generated probe. Telemetry schema v3 reports real values for political
+2.4 MB generated probe. Telemetry schema v4 (v3 plus a `war` line per enemy per day, not yet seen live) reports real values for political
 power, stability, war support, factories, manpower, techs and construction
 counters, the running focus and the technologies being researched, and war and
 capitulation lines for the player's own wars only. A completed focus was reported
@@ -198,12 +201,12 @@ verification checklist: [docs/mod-bridge.md](docs/mod-bridge.md).
 | Piece | State |
 |---|---|
 | Agent loop, budget, memory, policy | Working, tested |
-| Action catalog + validation | Working, tested (20 actions) |
+| Action catalog + validation | Working, tested (24 actions) |
 | Observation briefs + deltas | Working, tested |
 | Mock adapter | Working, tested, deterministic |
 | Log-tail adapter (reads the mod's telemetry) | Working, tested, run against a live 1.19.5 log; `verify-bridge` checks tag consistency and date shapes, and the brief shows focus, research and theater postures |
 | Hybrid control vocabulary + mode switch | Working, tested; directives and theater posture raised and read back live; the AI's response to them not verified; mock-only experiment (#10) |
-| LLM Bridge mod | Verified live on 1.19.5.0: loads clean, schema v3 telemetry (daily, player's tick), focus completion seen; research completion and the `owned` field not yet seen live |
+| LLM Bridge mod | Verified live on 1.19.5.0: loads clean, schema v3 telemetry (daily, player's tick), focus completion seen; schema v4 (`war` lines), research completion and the `owned` field not yet seen live |
 | Eval runner + scenarios | Working, tested (7 scenarios, multi-seed, cross-model) |
 | Cost measurement (`measure`) | Working, tested; measured against the mock with `claude-opus-5-5` (#14): the scripted estimate was 2.2x low on input in peace, 3.2x in war |
 | Wartime brief + wake rules | Working, tested against synthetic and scripted wars; measured on the mock with a real model; unmeasured in a real game war |
@@ -217,6 +220,7 @@ verification checklist: [docs/mod-bridge.md](docs/mod-bridge.md).
 | Save-file adapter (#6) | Reads a 1.19.5 **text** save (needs `save_as_binary=no`): political power, stability and war support (via the mod's variables), manpower, owned factories, focus, research slots, production lines (factory counts) and divisions by template. The construction queue is not in the save. Verified against a real save |
 | Headless mode and fake game | Built and tested end to end against the fake; live plan in [docs/headless.md](docs/headless.md) |
 | Console channel (#83) | Built and unit-tested, opt-in; not yet run live; open questions in [docs/adapters.md](docs/adapters.md) |
+| Division orders (#85) | Front picture (divisions per state) from the mod, `move_division` / `attack_province` by click with a recorded camera fit, an order ledger in the brief, a fake army and a simulator-controller bridge: built and tested on the fake game only, never run live; no script path for a division order exists (candidates and verdicts in [docs/unit-orders.md](docs/unit-orders.md)) |
 | Screen adapter | Capture works; vision→state is TODO |
 | Input driver (#3) | Keys go out as hardware scan codes (pyautogui keys do not reach HOI4, verified live), with the real 1.19.5 hotkeys and no Escape in scripts. `set_national_focus` via focus search is verified live end to end through the harness. Tech-tree click points are computed from `countrytechtreeview.gui` (within 4 px of 18 measured infantry-tab points), but `start_research`, `queue_construction`, `set_production` and `hire_advisor` have **not** yet been run live through the harness; rotated tabs (armour, air, industry, electronics) are refused. A verification that cannot be settled returns `unverified`, not `rejected`, until a fresh day of telemetry. Tests cannot send real input |
 
@@ -259,9 +263,11 @@ calls, but not compared with a Console invoice (#23).
 
 ## Headless: no mouse, no screen
 
-`hoi4-harness play --headless` reads the game from the mod's log and acts through
-the console and the keyboard, with the clock driven the same way. No clicks, no
-screenshots, no calibration. Two actions that need clicks (`start_research`,
+`hoi4-harness play --headless` reads the game from the mod's log (and, for
+production, the construction queue and divisions, a text save it asks the console
+to write) and acts through the console and the keyboard, with the clock driven the
+same way. No clicks, no screenshots, no calibration. Wars are read from the mod's
+`war` lines. Two actions that need clicks (`start_research`,
 `delegate_army_to_ai`) are not offered, and the prompt says why. A fake game that
 speaks the same files (`--fake-game`) runs the whole stack with no HOI4 at all.
 What was checked in the game's documentation, what is verified and what is still

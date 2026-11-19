@@ -22,7 +22,15 @@ import re
 from pathlib import Path
 
 from ..paths import find_in_game_dir
-from ..types import ActionCall, ActionResult, DivisionGroup, GameState, ProductionLine, ResearchSlot
+from ..types import (
+    ActionCall,
+    ActionResult,
+    ConstructionItem,
+    DivisionGroup,
+    GameState,
+    ProductionLine,
+    ResearchSlot,
+)
 from .base import AdapterInfo, GameAdapter
 
 TOKEN = re.compile(r'"[^"]*"|[{}=]|[^\s{}=]+')
@@ -100,18 +108,21 @@ def country_block(text: str, tag: str) -> dict | None:
     if not match:
         return None
     start = match.end() - 1
-    body = text[start:matching_brace(text, start)]
     # Countries sit at the indentation of the first key inside the container.
     # Anything deeper is nested in another country (GER={ SWE={opinion=...} }),
     # and [ \t] rather than \s keeps the match from running across a newline.
-    first = re.compile(r"^([ \t]*)[A-Za-z0-9_\-]+[ \t]*=", re.M).search(body, 1)
+    first = re.compile(r"^([ \t]*)[A-Za-z0-9_\-]+[ \t]*=", re.M).search(text, start + 1)
     if not first:
         return None
     indent = first.group(1)
-    found = re.search(rf"^{re.escape(indent)}{re.escape(tag)}[ \t]*=[ \t]*\{{", body, flags=re.M)
+    # Search on from the container's start instead of brace-matching the whole
+    # container first: on a 66 MB save `countries` is 3 million lines, and walking
+    # its braces was 1.8 s of the 4 s a read took. One country's block is 0.3 MB.
+    found = re.compile(rf"^{re.escape(indent)}{re.escape(tag)}[ \t]*=[ \t]*\{{",
+                       re.M).search(text, start)
     if not found:
         return None
-    chunk = body[found.start(): matching_brace(body, found.end() - 1)]
+    chunk = text[found.start(): matching_brace(text, found.end() - 1)]
     return parse_clausewitz(chunk).get(tag)
 
 
@@ -234,7 +245,7 @@ def read_save(path: Path) -> dict:
             "settings.txt and save again: this adapter reads text saves only."
         )
     text = path.read_text(encoding="utf-8", errors="replace")
-    raw = extract(text, {"date", "player"})
+    raw = _head(text)
     player = raw.get("player")
     if not isinstance(player, str):
         return raw
@@ -249,8 +260,21 @@ def read_save(path: Path) -> dict:
         _ident(t.get("id")): t.get("name", "") for t in _as_list(templates.get("division_template"))
         if isinstance(t, dict) and t.get("country") == player
     }
-    raw["equipment_names"] = _equipment_names(top_block(text, "equipments") or {})
+    raw["equipment_names"] = _equipment_names_fast(text) or _equipment_names(
+        top_block(text, "equipments") or {})
     return raw
+
+
+def _head(text: str) -> dict:
+    """``date`` and ``player``, which a save writes in its first few lines.
+
+    ``extract`` finds them too, but only after indexing every top-level key of
+    the file (a second of regex over 66 MB). They are at the top, so the first
+    4 kB is enough; a save laid out differently falls back to ``extract``.
+    """
+    head = text[:4096]
+    found = {m.group(1): m.group(2) for m in re.finditer(r'^(date|player)="([^"]*)"', head, re.M)}
+    return found if {"date", "player"} <= set(found) else extract(text, {"date", "player"})
 
 
 def _as_list(value) -> list:
@@ -273,6 +297,23 @@ def _equipment_names(equipments: dict) -> dict[str, str]:
         for entry in _as_list(entries):
             if isinstance(entry, dict) and "id" in entry:
                 names[_ident(entry["id"])] = name
+    return names
+
+
+_EQUIPMENT_ENTRY = re.compile(r"^\t([A-Za-z0-9_]+)=\{[ \t\r]*\n\t\tid=\{ id=(\d+) ", re.M)
+_COLUMN_ZERO_KEY = re.compile(r"^[A-Za-z_]", re.M)
+
+
+def _equipment_names_fast(text: str) -> dict[str, str]:
+    """``_equipment_names`` without parsing the block: 72,000 lines in the checked
+    save, of which only the name and id of each entry matter. Empty when the
+    layout is not the one a real save has, so the caller parses instead."""
+    start = re.search(r"^equipments=\{", text, re.M)
+    if not start:
+        return {}
+    end = _COLUMN_ZERO_KEY.search(text, start.end())
+    names = {m.group(2): m.group(1)
+             for m in _EQUIPMENT_ENTRY.finditer(text, start.end(), end.start() if end else len(text))}
     return names
 
 
@@ -311,6 +352,7 @@ def _read_country(state: GameState, country: dict, raw: dict, unknown: set[str])
 
     _read_states(state, raw.get("owned_states"), unknown)
     _read_focus(state, country.get("focus"), unknown)
+    _read_fuel(state, country.get("fuel_status"), unknown)
     _read_research(state, country.get("technology"), unknown)
     _read_production(state, country.get("production"), raw.get("equipment_names") or {}, unknown)
     _read_divisions(state, country.get("units"), raw.get("division_templates") or {}, unknown)
@@ -342,13 +384,32 @@ def _read_states(state: GameState, owned, unknown: set[str]) -> None:
 
 
 def _read_focus(state: GameState, focus, unknown: set[str]) -> None:
-    # Only a running focus is read. A country block with no focus entry could
-    # mean "none running" or "this save does not say", so that stays unknown;
-    # progress is not read either (its unit is not established).
-    current = focus.get("current") if isinstance(focus, dict) else None
+    """The running focus (``current``) and the finished ones (``completed``, one
+    entry per focus, or a single string when there is one). Progress is not read:
+    its unit is not established.
+
+    A country block with no ``focus`` entry could mean "none running" or "this
+    save does not say", so the running focus stays unknown then. ``completed``
+    only exists once a focus has finished, and a country that has finished none
+    has no ``focus`` block, so no block is not "none completed" either.
+    """
+    if not isinstance(focus, dict):
+        return
+    current = focus.get("current")
     if isinstance(current, str) and current:
         state.national_focus = current
         unknown.discard("national_focus")
+    if "completed" in focus:
+        state.completed_focuses = [str(f) for f in _as_list(focus["completed"])]
+        unknown.discard("completed_focuses")
+
+
+def _read_fuel(state: GameState, fuel_status, unknown: set[str]) -> None:
+    """``fuel_status.fuel``: the stockpile the top bar shows."""
+    fuel = _number(fuel_status.get("fuel")) if isinstance(fuel_status, dict) else None
+    if fuel is not None:
+        state.fuel = fuel
+        unknown.discard("fuel")
 
 
 def _read_research(state: GameState, technology, unknown: set[str]) -> None:
@@ -366,10 +427,19 @@ def _read_research(state: GameState, technology, unknown: set[str]) -> None:
 
 
 def _read_production(state: GameState, production, names: dict[str, str], unknown: set[str]) -> None:
-    """One line per ``military_lines`` entry. Efficiency is the mean of the
-    first ``active_factories`` of the line's per-factory ``factory_efficiencies``
-    (percent); output per day is ``speed / cost``, the line's daily IC divided
-    by one unit's IC cost."""
+    """One line per ``military_lines`` entry, and the construction queue.
+
+    Efficiency is the mean of the first ``active_factories`` of the line's
+    per-factory ``factory_efficiencies`` (percent); output per day is
+    ``speed / cost``, the line's daily IC divided by one unit's IC cost.
+
+    A line the player (or ``add_equipment_production``) has just opened carries
+    ``queued_factories`` and no ``active_factories``, no ``produced``, no
+    ``speed``: it has asked for factories and not been given any yet. It is a
+    line all the same -- skipping it hid the very line a ``set_production`` had
+    made -- so ``factories`` is what the line *requested*, which is also what the
+    UI's counter shows.
+    """
     if not isinstance(production, dict):
         return
     lines: list[ProductionLine] = []
@@ -377,22 +447,71 @@ def _read_production(state: GameState, production, names: dict[str, str], unknow
         if not isinstance(line, dict):
             continue
         equipment = names.get(_ident(line.get("equipment_variant_index")))
-        factories = _number(line.get("active_factories"))
+        active = _number(line.get("active_factories"))
+        factories = _number(line.get("requested_factories"))
+        if factories is None:
+            factories = active if active is not None else _number(line.get("queued_factories"))
         if equipment is None or factories is None:
             continue
         speed, cost = _number(line.get("speed")), _number(line.get("cost"))
         per_factory = line.get("factory_efficiencies")
         items = per_factory.get("_items") if isinstance(per_factory, dict) else None
         values = [_number(v) for v in _as_list(items)]
-        active = [v for v in values[: int(factories)] if v is not None]
+        running = [v for v in values[: int(active or 0)] if v is not None]
         lines.append(ProductionLine(
             equipment=equipment,
             factories=int(factories),
-            efficiency=round(sum(active) / len(active) / 100.0, 4) if active else 0.0,
+            efficiency=round(sum(running) / len(running) / 100.0, 4) if running else 0.0,
             output_per_day=round(speed / cost, 3) if speed is not None and cost else 0.0,
         ))
     state.production = lines
     unknown.discard("production")
+    _read_construction(state, production.get("general_lines"), unknown)
+
+
+#: The game's building ids -> the harness's names (``console.BUILDING_IDS``, inverted).
+BUILDING_NAMES = {
+    "industrial_complex": "civilian_factory", "arms_factory": "military_factory",
+    "dockyard": "dockyard", "infrastructure": "infrastructure", "air_base": "air_base",
+    "anti_air_building": "anti_air", "radar_station": "radar",
+    "synthetic_refinery": "synthetic_refinery",
+}
+
+
+def _read_construction(state: GameState, general_lines, unknown: set[str]) -> None:
+    """The construction queue: ``production.general_lines`` holds one ``building``
+    entry per queued line (and ``rail_way`` ones, which are not buildings).
+
+    Found in a 1.20.0 save by queueing a civilian factory in state 38 and
+    looking for it: ``building={ produced=4076.4 cost=10800 speed=120.75
+    amount=2 building={ template=industrial_complex location=38 } }``.
+    ``cost`` is one level's, ``amount`` the levels still to build, ``produced``
+    the progress on the level being built and ``speed`` the points added a day,
+    so each level becomes one item, the first carrying the progress. ``state`` is
+    the id; whoever has the game's files can turn it into a name.
+    """
+    if not isinstance(general_lines, dict):
+        # No general_lines at all: an empty queue is written as nothing, so a
+        # production block that has military lines but no queue means empty.
+        general_lines = {}
+    items: list[ConstructionItem] = []
+    for entry in _as_list(general_lines.get("building")):
+        what = entry.get("building") if isinstance(entry, dict) else None
+        if not isinstance(what, dict):
+            continue
+        template = str(what.get("template", ""))
+        building = BUILDING_NAMES.get(template, template)
+        cost, produced = _number(entry.get("cost")), _number(entry.get("produced")) or 0.0
+        speed = _number(entry.get("speed"))
+        levels = max(int(_number(entry.get("amount")) or 1), 1)
+        for level in range(levels):
+            done = produced if level == 0 else 0.0
+            items.append(ConstructionItem(
+                building=building, state=str(what.get("location", "")),
+                progress=round(min(done / cost, 1.0), 4) if cost else 0.0,
+                days_remaining=(round((cost - done) / speed) if cost and speed else None)))
+    state.construction = items
+    unknown.discard("construction")
 
 
 def _read_divisions(state: GameState, units, templates: dict[str, str], unknown: set[str]) -> None:
@@ -448,9 +567,11 @@ class SaveGameAdapter(GameAdapter):
 
         Every field read below was checked against a live game (docs/adapters.md,
         tests/test_savegame_mapping.py). What a save does not hold stays in
-        ``unknown_fields`` rather than defaulting to a confident zero: the
-        construction queue, completed focuses, wars and fronts, and the native
-        AI's standing orders are not in the 1.19.5 country block.
+        ``unknown_fields`` rather than defaulting to a confident zero: wars and
+        fronts, convoys and the native AI's standing orders are not in the
+        country block. The construction queue is: ``production.general_lines``,
+        and an empty queue is the absence of that key (439 production blocks in
+        the checked 1.20.0 save, 102 with the key, none with it empty).
         """
         state = GameState(raw=raw)
         # This used to keep only the year: '1936.1.1.12'.split('.')[0].

@@ -41,21 +41,28 @@ from .ui_scripts import DEFAULT_FILENAME, Step, load_scripts, parse_steps
 from .window import FocusCheck
 
 #: Actions with no path that avoids the mouse. Removed from the tool list.
-MOUSE_ACTIONS = frozenset({"start_research", "delegate_army_to_ai"})
+MOUSE_ACTIONS = frozenset({
+    "start_research", "delegate_army_to_ai",
+    # Division orders are a selection and a right-click (adapters/unit_orders.py).
+    "move_division", "attack_province",
+})
 #: Actions the log cannot make safe. add_equipment_production adds a second line
 #: for equipment that already has one (seen live on 1.19.5), and only a reader
 #: that sees production -- a text save -- can check that first.
 NEEDS_PRODUCTION_READER = frozenset({"set_production"})
+#: The readers that see production.
+PRODUCTION_READERS = ("log+save", "savegame")
 
 
-def excluded_actions(reader: str = "logtail") -> frozenset[str]:
+def excluded_actions(reader: str = "log+save") -> frozenset[str]:
     """What a headless run with this reader does not offer."""
-    return MOUSE_ACTIONS | (NEEDS_PRODUCTION_READER if reader != "savegame" else frozenset())
+    return MOUSE_ACTIONS | (NEEDS_PRODUCTION_READER if reader not in PRODUCTION_READERS
+                            else frozenset())
 CLOCK_MODES = ("auto", "console", "keys", "exact")
 #: ``pause_in_hours`` is told this many hours past the days asked for, so the game
 #: cannot stop before the last day's state line whatever hour the daily tick runs at.
 EXACT_MARGIN_HOURS = 12
-READERS = ("logtail", "savegame")
+READERS = ("log+save", "logtail", "savegame")
 
 #: The one keyboard script headless ships: verified live on 1.19.5.
 FOCUS_SCRIPT = [
@@ -71,7 +78,7 @@ def keyboard_only(scripts: dict[str, list[Step]]) -> tuple[dict[str, list[Step]]
     return kept, sorted(set(scripts) - set(kept))
 
 
-def unavailable_actions(reader: str = "logtail") -> list[str]:
+def unavailable_actions(reader: str = "log+save") -> list[str]:
     """What a headless run cannot offer, for the prompt and the docs."""
     return sorted(excluded_actions(reader))
 
@@ -172,7 +179,17 @@ class HeadlessClock:
 
 
 class HeadlessComposite(CompositeAdapter):
-    """The composite, telling the clock how long the turn is (for ``exact``)."""
+    """The composite, telling the clock how long the turn is (for ``exact``), and
+    taking the start-of-run and periodic save when the reader keeps saves."""
+
+    def read_state(self) -> GameState:
+        # Here and not in the reader: this is the once-a-turn read, outside any
+        # clock wait or verification poll, so typing the savegame command cannot
+        # collide with either. Each failure leaves the save's fields unknown.
+        maybe_save = getattr(self.reader, "maybe_save", None)
+        if maybe_save is not None:
+            maybe_save()
+        return super().read_state()
 
     def advance(self, days: int) -> GameState:
         self.writer.clock.hint_days = days
@@ -270,6 +287,7 @@ def build_fake(config: HarnessConfig):
     fake = FakeGame(base / "user", country=config.country, seed=config.seed,
                     start=config.start_date, index=index)
     config.log_path, config.console_dir = fake.log_path, fake.user_dir
+    config.save_dir = config.save_dir or fake.save_dir
     return fake
 
 
@@ -304,6 +322,7 @@ def build_headless(config: HarnessConfig, fake=None) -> CompositeAdapter:
         base = Path(config.fake_game_files)
         send, focus_check = FileKeys(base / "keys.log"), _always_focused
         config.log_path, config.console_dir = base / "logs" / "game.log", base
+        config.save_dir = config.save_dir or base / "save games"
     if sleep is None:
         sleep = _scaled_sleep(config.headless_time_scale)
 
@@ -315,6 +334,14 @@ def build_headless(config: HarnessConfig, fake=None) -> CompositeAdapter:
         from .savegame import SaveGameAdapter
 
         reader: GameAdapter = SaveGameAdapter(config.save_dir)
+    elif config.headless_reader == "log+save":
+        from .combined import CombinedReader
+        from .logtail import LogTailAdapter
+
+        reader = CombinedReader(
+            LogTailAdapter(config.log_path, country=config.country), config.save_dir, index=index,
+            sleep=sleep, every_days=config.headless_save_days,
+            timeout=config.headless_save_timeout)
     else:
         from .logtail import LogTailAdapter
 
@@ -340,8 +367,13 @@ def build_headless(config: HarnessConfig, fake=None) -> CompositeAdapter:
             open_key=config.console_key, close_key=config.console_key,
             effect_command=config.console_effect_command, hybrid_via=config.console_hybrid_via,
             guards=config.console_guards, archive_dir=Path(config.run_dir),
-            country=config.country, refresh=refresh and config.headless_reader == "logtail"),
+            country=config.country, refresh=refresh and config.headless_reader != "savegame",
+            refresh_front=refresh and config.headless_reader != "savegame"),
         index=index, sleep=sleep)
+    if config.headless_reader == "log+save":
+        reader.take = lambda: console.send_lines(["savegame"])
+        reader.enabled = not config.dry_run
+        console.saves = reader
     router = ChannelRouter(driver, console, channels)
     clock = HeadlessClock(driver, console, config.headless_clock, config.headless_game_speed)
     adapter = HeadlessComposite(reader, HeadlessWriter(router, clock, config.headless_reader),

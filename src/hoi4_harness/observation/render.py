@@ -13,6 +13,7 @@ delta. Rules applied here:
 from __future__ import annotations
 
 from ..types import GameState
+from .forces import forces_lines, order_lines
 from .fronts import summarise_fronts
 
 _SEV = {"critical": "!!", "notable": "!", "info": "-"}
@@ -36,6 +37,22 @@ def _country_label(state: GameState) -> str:
     if not name or name == "Unknown" or name == state.country:
         return state.country
     return f"{name} ({state.country})"
+
+
+def _war_line(war) -> str:
+    """One war. What a reader could not see is left out, never filled in."""
+    since = f" since {war.since}" if war.since else " (already on when telemetry began)"
+    seen = [
+        f"enemy {war.enemy_divisions} divisions" if war.enemy_divisions is not None else None,
+        None if war.borders is None else ("borders us" if war.borders else "no shared border"),
+        None if war.surrender_progress is None
+        else f"surrender progress {war.surrender_progress * 100:.0f}%",
+    ]
+    seen = [bit for bit in seen if bit]
+    if not seen:
+        return f"AT WAR with {war.against}{since} (war score {war.war_score:+.0f})"
+    score = [f"war score {war.war_score:+.0f}"] if war.war_score else []
+    return f"AT WAR with {war.against}{since} ({', '.join(score + seen)})"
 
 
 def render_full(state: GameState, max_events: int = 6, max_fronts: int = 3) -> str:
@@ -114,14 +131,22 @@ def render_full(state: GameState, max_events: int = 6, max_fronts: int = 3) -> s
         by_template = "; ".join(f"{g.count}x {g.template} @ {g.location}" for g in state.divisions[:5])
         lines.append(f"Army: {total} divisions -- {by_template}")
 
+    saved = state.raw.get("save_date") if isinstance(state.raw, dict) else None
+    if saved and saved != state.date:
+        # Production, the queue and the army come from a save, which is as old as
+        # the day it was taken; the numbers above are today's from the log.
+        lines.append(f"(production, construction queue and army as of the save of {saved})")
+
     if state.stockpiles:
         top = sorted(state.stockpiles.items(), key=lambda kv: -kv[1])[:4]
         lines.append("Stockpile: " + ", ".join(f"{k} {v:,}" for k, v in top))
 
     if state.wars:
         for war in state.wars:
-            lines.append(f"AT WAR with {war.against} since {war.since} (war score {war.war_score:+.0f})")
+            lines.append(_war_line(war))
     lines.extend(summarise_fronts(state.fronts, limit=max_fronts))
+    lines.extend(forces_lines(state))
+    lines.extend(order_lines(state))
 
     if state.delegated_armies or state.ai_directives or state.posture or state.theater_postures:
         bits = []

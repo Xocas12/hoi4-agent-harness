@@ -1,0 +1,9 @@
+characters = {
+	SWE_minister = {
+		name = SWE_minister_name
+		advisor = { slot = political_advisor idea_token = SWE_minister_adv cost = 50 allowed = { original_tag = SWE } }
+	}
+	GER_minister = {
+		advisor = { slot = political_advisor idea_token = GER_minister_adv cost = 50 allowed = { original_tag = GER } }
+	}
+}

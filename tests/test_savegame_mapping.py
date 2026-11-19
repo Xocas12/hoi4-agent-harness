@@ -111,9 +111,15 @@ def test_twelve_divisions_counted_by_template(state):
 
 
 def test_what_the_save_does_not_hold_is_still_unknown(state):
-    for name in ("construction", "fronts", "wars", "completed_focuses", "delegated_armies",
-                 "ai_directives", "posture", "theater_postures", "fuel", "convoys"):
+    for name in ("fronts", "wars", "delegated_armies", "ai_directives", "posture",
+                 "theater_postures", "convoys"):
         assert not state.known(name), name
+
+
+def test_an_absent_queue_is_an_empty_one(state):
+    # 439 production blocks in a real 1.20.0 save: 102 have general_lines, none has
+    # it empty, so a block without it is a queue with nothing in it.
+    assert state.known("construction") and state.construction == []
 
 
 def test_the_brief_carries_the_real_numbers(state):

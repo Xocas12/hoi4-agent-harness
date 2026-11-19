@@ -35,7 +35,9 @@ TELEMETRY_TRIGGERS = ("political_power", "stability", "war_support", "num_of_civ
                       "num_of_military_factories", "num_of_naval_factories", "manpower",
                       "num_divisions", "num_researched_technologies",
                       "total_constructed_civilian_factory", "total_constructed_military_factory",
-                      "total_constructed_dockyard", "total_constructed_infrastructure")
+                      "total_constructed_dockyard", "total_constructed_infrastructure",
+                      # schema v4's war lines
+                      "has_war", "every_enemy_country", "is_neighbor_of", "surrender_progress")
 
 #: Words that make an on_action a candidate for #2's completion events.
 COMPLETION_HINTS = ("focus", "research", "tech", "construct", "building")
@@ -156,6 +158,9 @@ class LogReport:
     tags: list[str] = field(default_factory=list)
     blank_tags: int = 0
     player: str | None = None
+    #: Schema v4 ``war`` lines: how many, and the enemies named.
+    war_lines: int = 0
+    war_enemies: list[str] = field(default_factory=list)
 
     @property
     def tag_problems(self) -> list[str]:
@@ -204,6 +209,8 @@ class LogReport:
             lines.append("  tag on state/army lines: " + ", ".join(self.tags))
         for problem in self.tag_problems:
             lines.append(f"  TAG:       {problem}")
+        if self.war_lines:
+            lines.append(f"  war lines: {self.war_lines}, enemies {', '.join(self.war_enemies)}")
         if self.mod_date_shapes:
             lines.append("  mod date field shapes: " + ", ".join(sorted(self.mod_date_shapes)))
         if self.events:
@@ -229,7 +236,20 @@ def check_log(log_path: Path, player: str | None = None) -> LogReport:
         report.lines += 1
         if engine_date(raw):
             report.engine_dated += 1
-        if kind in {"state", "army"}:
+        if kind == "war":
+            # PREV.GetTag inside every_enemy_country is the player; a blank or
+            # literal one is the thing a live run has to catch.
+            report.war_lines += 1
+            enemy = fields.get("enemy", "").strip().upper()
+            if enemy and enemy not in report.war_enemies:
+                report.war_enemies.append(enemy)
+            for key, convert in (("divs", int), ("border", int), ("surr", float)):
+                if key in fields:
+                    try:
+                        convert(fields[key])
+                    except ValueError:
+                        report.literal[f"war.{key}"] = fields[key]
+        if kind in {"state", "army", "war"}:
             tag = fields.get("tag", "").strip().upper()
             if not tag:
                 report.blank_tags += 1

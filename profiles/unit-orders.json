@@ -1,0 +1,9 @@
+{
+  "adapter": "logtail+input",
+  "operational_control": "llm",
+  "unit_orders": true,
+  "camera_path": "runs/camera.json",
+  "console_refresh": true,
+  "dry_run": true,
+  "planner": {"provider": "scripted"}
+}

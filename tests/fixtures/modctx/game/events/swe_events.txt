@@ -1,0 +1,11 @@
+add_namespace = swe
+add_namespace = world
+country_event = {
+	id = swe.1
+}
+country_event = {
+	id = swe.2
+}
+news_event = {
+	id = world.1
+}

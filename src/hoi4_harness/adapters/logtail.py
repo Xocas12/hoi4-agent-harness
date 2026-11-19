@@ -16,12 +16,12 @@ from datetime import date
 from pathlib import Path
 
 from ..paths import find_in_game_dir
-from ..types import ActionCall, ActionResult, GameEvent, GameState, ResearchSlot
+from ..types import ActionCall, ActionResult, GameEvent, GameState, ResearchSlot, StateForces, War
 from .base import AdapterInfo, GameAdapter
 from .clock import wait_for_days
 
 #: Must match LLMB_SCHEMA_VERSION in the mod's telemetry effect.
-SCHEMA_VERSION = 3
+SCHEMA_VERSION = 4
 
 PREFIX = "LLMB|"
 LINE = re.compile(r"LLMB\|v(?P<version>\d+)\|(?P<kind>\w+)\|(?P<fields>.*)$")
@@ -88,6 +88,20 @@ NOT_EMITTED = [
 
 #: Events that say what the AI's posture now is.
 POSTURE_EVENTS = {"posture_defensive": "defensive", "posture_offensive": "offensive"}
+
+
+def _int(raw: str | None) -> int | None:
+    try:
+        return int(float(raw)) if raw is not None else None
+    except ValueError:
+        return None      # a token the game did not expand prints literally
+
+
+def _percent(raw: str | None) -> float | None:
+    try:
+        return float(raw) / 100.0 if raw is not None else None
+    except ValueError:
+        return None
 
 
 def find_log(explicit: Path | None = None) -> Path | None:
@@ -201,6 +215,15 @@ class LogTailAdapter(GameAdapter):
         self._ticks: dict[str, dict] = {}
         self._closed: dict[str, dict] = {}
         self._research_event: dict[str, GameEvent] = {}
+        #: War declarations an ``evt`` line has announced that no ``war`` line has
+        #: confirmed yet, and the first date each enemy was seen at war.
+        self._declared = 0
+        self._war_since: dict[str, str | None] = {}
+        self._seen_baseline = False
+        #: enemy -> the date the mod announced a war the lines have not shown yet.
+        self._announced: dict[str, str] = {}
+        #: tag -> the ``div`` lines of the front picture being read (see _front).
+        self._front_lines: dict[str, list[StateForces]] = {}
 
     def info(self) -> AdapterInfo:
         return AdapterInfo(
@@ -245,6 +268,9 @@ class LogTailAdapter(GameAdapter):
             self._pending = []
             self._counters = {}
             self._ticks, self._closed, self._research_event = {}, {}, {}
+            self._declared, self._war_since, self._seen_baseline = 0, {}, False
+            self._announced = {}
+            self._front_lines = {}
         self._identity = identity
         self._head = head
         applied = 0
@@ -317,9 +343,15 @@ class LogTailAdapter(GameAdapter):
                 self._open_tick(fields)
         elif kind in {"focus", "research"}:
             self._probe(kind, fields)
+        elif kind == "war":
+            self._war_line(fields)
+        elif kind in {"div", "divend"}:
+            self._front(kind, fields)
         elif kind == "evt":
             code = fields.get("kind", "")
             event_kind, severity = EVENT_CODES.get(code, (code or "unknown", "info"))
+            if event_kind == "war_declared":
+                self._announce_war(fields)
             if event_kind in POSTURE_EVENTS or event_kind == "directives_cleared":
                 state.posture = POSTURE_EVENTS.get(event_kind)
                 if "posture" in state.unknown_fields:
@@ -358,6 +390,39 @@ class LogTailAdapter(GameAdapter):
                 )
             )
 
+    def _front(self, kind: str, fields: dict[str, str]) -> None:
+        """The front picture: ``div`` lines (one per state holding a division),
+        then a ``divend`` that says how many there were.
+
+        The picture replaces the last one only when its closing line arrives
+        and the count matches, so a poll that lands mid-run, or a run the game
+        was killed in the middle of, never shows half a front. A ``divend``
+        with n=0 is a real answer: nothing is in contact (or no war).
+        """
+        tag = fields.get("tag", "").strip().upper()
+        lines = self._front_lines.setdefault(tag, [])
+        if kind == "div":
+            try:
+                lines.append(StateForces(
+                    state=int(fields["state"]), controller=fields.get("ctl", "").strip().upper() or None,
+                    own=int(fields["own"]), own_weak=int(fields.get("own_weak", 0)),
+                    foe=int(fields["foe"]), foe_weak=int(fields.get("foe_weak", 0))))
+            except (KeyError, ValueError):
+                pass          # a token that did not expand: leave the line out, the count will not match
+            return
+        try:
+            expected = int(fields["n"])
+        except (KeyError, ValueError):
+            lines.clear()
+            return
+        picture = lines[-expected:] if expected else []
+        complete = len(lines) >= expected
+        lines.clear()
+        if not complete:
+            return
+        self._state.state_forces = sorted(picture, key=lambda f: f.state)
+        self._state.state_forces_date = fields.get("_engine_date") or self._state.date
+
     def _open_tick(self, fields: dict[str, str]) -> None:
         """A state line starts a tick: the probe lines after it say what is running.
 
@@ -373,7 +438,8 @@ class LogTailAdapter(GameAdapter):
         # The brief keeps showing the last complete day until this one closes.
         # Clearing here would report "no focus" between a state line and the
         # probe lines behind it -- and that wakes the planner for nothing.
-        self._ticks[tag] = {"date": fields.get("_engine_date"), "focus": set(), "research": set()}
+        self._ticks[tag] = {"date": fields.get("_engine_date"), "focus": set(), "research": set(),
+                            "war": {}}
 
     def _probe(self, kind: str, fields: dict[str, str]) -> None:
         tag = fields.get("tag", "").strip().upper()
@@ -395,14 +461,71 @@ class LogTailAdapter(GameAdapter):
         if ("national_focus" if kind == "focus" else "research") in state.unknown_fields:
             state.unknown_fields.remove("national_focus" if kind == "focus" else "research")
 
+    def _war_line(self, fields: dict[str, str]) -> None:
+        """One enemy of the player on one day: ``war|tag|enemy|divs|border|surr``.
+
+        Like a probe line it belongs to the tick open for that country, and only
+        a complete tick says who is *not* an enemy any more.
+        """
+        tag = fields.get("tag", "").strip().upper()
+        enemy = fields.get("enemy", "").strip().upper()
+        tick = self._ticks.get(tag)
+        if tick is None or not enemy:
+            return
+        stamp = fields.get("_engine_date")
+        if stamp and tick["date"] and stamp != tick["date"]:
+            return
+        tick["war"][enemy] = fields
+        if enemy not in self._war_since:
+            # First sight of this enemy. Before any complete day it is part of the
+            # baseline, not news; after one, the mod's own declaration (if it came)
+            # has already said so and a war line alone is the report.
+            self._war_since[enemy] = tick["date"] if self._seen_baseline else None
+            if self._seen_baseline:
+                if self._declared > 0:
+                    self._declared -= 1
+                else:
+                    self._pending.append(GameEvent(
+                        kind="war_declared", text=f"at war with {enemy}", severity="critical",
+                        date=self._state.date))
+        # Positive evidence shows at once, like a probe line; only a complete day
+        # without the enemy takes it off the list.
+        if not any(w.against == enemy for w in self._state.wars):
+            self._state.wars = [*self._state.wars, self._war(enemy, fields)]
+
+    def _announce_war(self, fields: dict[str, str]) -> None:
+        """The mod's ``war_declared`` event: the player's war, said at the moment it
+        starts, a day before the ``war`` lines can. It puts the enemy on the list
+        now (with nothing known about it yet) so the brief the planner is woken
+        with already says who the war is against."""
+        player = (self.country or "").upper()
+        tag, other = fields.get("tag", "").strip().upper(), fields.get("other", "").strip().upper()
+        enemy = other if tag == player else tag
+        if not enemy or not player or enemy == player or enemy in self._war_since:
+            if not enemy or not player:
+                self._declared += 1
+            return
+        since = fields.get("_engine_date") or self._state.date
+        self._war_since[enemy] = self._announced[enemy] = since
+        self._state.wars = [*self._state.wars, War(against=enemy, since=since)]
+
+    @staticmethod
+    def _war(enemy: str, fields: dict[str, str], since: str | None = None) -> War:
+        return War(
+            against=enemy, since=since,
+            enemy_divisions=_int(fields.get("divs")),
+            borders={"1": True, "0": False}.get(fields.get("border", "").strip()),
+            surrender_progress=_percent(fields.get("surr")))
+
     def _close_tick(self, tag: str, tick: dict) -> None:
         last = self._closed.get(tag)
         self._closed[tag] = tick
         self._state.telemetry_ticks = (self._state.telemetry_ticks or 0) + 1
         self._show_tick(tick)
+        date_ = self._state.date
+        self._war_events(last, tick, date_)
         if last is None:
             return
-        date_ = self._state.date
         for focus in sorted(last["focus"] - tick["focus"]):
             self._pending.append(GameEvent(
                 kind="focus_complete", text=f"focus complete: {focus}",
@@ -426,9 +549,38 @@ class LogTailAdapter(GameAdapter):
         state = self._state
         state.national_focus = min(tick["focus"]) if tick["focus"] else None
         state.research = [ResearchSlot(index=i, technology=t) for i, t in enumerate(sorted(tick["research"]))]
-        for name in ("national_focus", "research"):
+        wars = [self._war(enemy, fields, self._war_since.get(enemy))
+                for enemy, fields in sorted(tick["war"].items())]
+        # A war the mod announced is on the list from the announcement; the day
+        # that closes now may be from before it, so it only comes off once a day
+        # from the announcement on has closed without a line for it.
+        for w in state.wars:
+            if w.against in tick["war"]:
+                self._announced.pop(w.against, None)
+            elif tick["date"] is None or tick["date"] <= self._announced.get(w.against, ""):
+                wars.append(w)
+            else:
+                self._announced.pop(w.against, None)
+        for gone in set(self._war_since) - {w.against for w in wars}:
+            del self._war_since[gone]
+        self._seen_baseline = True
+        state.wars = wars
+        for name in ("national_focus", "research", "wars"):
             if name in state.unknown_fields:
                 state.unknown_fields.remove(name)
+
+    def _war_events(self, last: dict | None, tick: dict, date_: str) -> None:
+        """A war that went away between two complete days (a new one is reported
+        the moment its first line, or the mod's event, arrives).
+
+        The first day read is a baseline: a war that was already on when the
+        harness started is not news, and neither is one that ended before it did.
+        """
+        if last is None:
+            return
+        for enemy in sorted(set(last["war"]) - set(tick["war"])):
+            self._pending.append(GameEvent(
+                kind="war_ended", text=f"war with {enemy} is over", severity="notable", date=date_))
 
     def _split_trade(self, fields: dict[str, str]) -> None:
         """Separate owned civilian factories from ones on loan through trade.

@@ -1,6 +1,6 @@
 # The action catalog
 
-The catalog is the agent's entire vocabulary. It is small on purpose: 20 verbs,
+The catalog is the agent's entire vocabulary. It is small on purpose: 24 verbs,
 listed by `hoi4-harness actions` (add `--json` for schemas).
 
 | Action | Category | Notes |
@@ -15,7 +15,9 @@ listed by `hoi4-harness actions` (add `--json` for schemas).
 | `set_air_mission` | air | |
 | `set_naval_mission` | navy | |
 | `hire_advisor` | politics | Costs political power |
-| `enact_decision` | politics | |
+| `take_decision` | politics | Console path guarded by the decision's own conditions and cost (`docs/mods.md`) |
+| `list_decisions` | query | Read-only; answered from the playset's files, never reaches the game. Needs `--mod-context` |
+| `describe_action` | query | Read-only; a decision, focus, new tech or idea in full. Needs `--mod-context` |
 | `diplomacy` | diplomacy | Confirmation-gated; includes `declare_war` |
 | `set_trade` | economy | |
 | `set_game_speed` | clock | The harness normally owns this |
@@ -25,6 +27,8 @@ listed by `hoi4-harness actions` (add `--json` for schemas).
 | `set_ai_posture` | strategy | Global, or one theater (the country a front faces, e.g. `SOV`) |
 | `set_ai_directive` | strategy | Confirmation-gated; targets a country |
 | `clear_ai_directives` | strategy | |
+| `move_division` | army | By click, only with a camera fit and a mouse (`docs/unit-orders.md`); states are the coordinates |
+| `attack_province` | army | As `move_division`; the target must border the attacker and hold the enemy |
 
 The four `strategy` verbs are the hybrid vocabulary (`docs/hybrid-control.md`).
 

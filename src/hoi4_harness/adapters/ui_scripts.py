@@ -175,22 +175,23 @@ def missing_targets(scripts: dict[str, list[Step]], coordinates: dict) -> list[s
 
 def computed_targets(steps: list[Step]) -> set[str]:
     """Click targets a script names that the resolver computes per call."""
-    from .ui_resolve import COMPUTED_TARGETS
+    from .ui_resolve import is_computed
 
-    return {s.value for s in steps if s.kind == "click" and s.value in COMPUTED_TARGETS}
+    return {s.value for s in steps if s.kind == "click" and is_computed(s.value)}
 
 
 def targets_in(scripts: dict[str, list[Step]]) -> list[str]:
     """Every click target the scripts need, for ``hoi4-harness calibrate``.
     Targets with placeholders are listed as written; a computed target is
     replaced by the recorded points it is computed from."""
-    from .ui_resolve import COMPUTED_TARGETS
+    from .ui_resolve import COMPUTED_TARGETS, is_computed
 
     seen: dict[str, None] = {}
     for steps in scripts.values():
         for step in steps:
             if step.kind == "click":
-                for target in COMPUTED_TARGETS.get(step.value, (step.value,)):
+                for target in (COMPUTED_TARGETS.get(step.value, ()) if is_computed(step.value)
+                               else (step.value,)):
                     seen[target] = None
     return list(seen)
 

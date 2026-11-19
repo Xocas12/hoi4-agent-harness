@@ -1,0 +1,10 @@
+"Graphics"={
+	"display_mode"={
+		value="borderless_fullscreen"
+		version=0
+	}
+	"fullscreen_resolution"={
+		value="1536x864"
+		version=0
+	}
+}

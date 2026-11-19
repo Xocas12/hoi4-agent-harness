@@ -230,14 +230,29 @@ class HarnessConfig:
     #: How hybrid actions reach the mod: scripted | decision.
     console_hybrid_via: str = "scripted"
     console_guards: bool = True
+    # --- division orders by click (adapters/unit_orders.py, docs/unit-orders.md) -----
+    #: Offer move_division / attack_province. Needs the mouse, a playset (game_dir)
+    #: for the map, and a camera fit recorded in the live game.
+    unit_orders: bool = False
+    #: The recorded camera fit. Default: camera.json in run_dir. HOI4_CAMERA.
+    camera_path: Path | None = None
     # --- headless play (adapters/headless.py) -----------------------------------
     # adapter = "headless": the log for eyes, the console and the keyboard for
     # hands, no mouse and no screen. The fields below only matter there.
     #: How the clock is driven: console (gamespeed N), keys (space), auto (console,
     #: then keys when the console did not take).
     headless_clock: str = "auto"
-    #: What reads the game: logtail (the mod's telemetry) or savegame (a text save).
-    headless_reader: str = "logtail"
+    #: What reads the game: ``log+save`` (the mod's telemetry every tick, a text
+    #: save the console writes on demand for production, construction, divisions
+    #: and completed focuses), ``logtail`` (the log alone: production and the queue
+    #: stay unseen, so set_production is not offered) or ``savegame`` (a save only).
+    headless_reader: str = "log+save"
+    #: With ``log+save``: take a save every this many in-game days at most (0: only
+    #: at the start and around verified actions). A save is ~66 MB and takes a few
+    #: seconds to write and ~1.4 s to read, so this is a cost, not a free refresh.
+    headless_save_days: int = 7
+    #: Seconds to wait for a save to appear after the console's ``savegame``.
+    headless_save_timeout: float = 30.0
     #: The speed the harness runs the game at when it advances (1-5).
     headless_game_speed: int = 3
     headless_poll_seconds: float = 0.5
@@ -267,6 +282,15 @@ class HarnessConfig:
     # checked against what the game actually loads -- see identifiers.py.
     game_dir: Path | None = None
     mod_dirs: list[Path] = field(default_factory=list)
+    # --- mod context (docs/mods.md): a "This playset" section in the system prompt
+    # (a world brief per mod, the country's decisions and focus tree, what the
+    # mods add) and the read-only list_decisions / describe_action tools. Off by
+    # default: it changes the prompt. The Workshop pages it summarises are read from
+    # the cache unless ``mod_context_fetch`` lets the run fetch a missing one.
+    mod_context: bool = False
+    mod_context_fetch: bool = False
+    mod_context_tokens: int = 900
+    mod_context_cache_dir: Path | None = None
 
     @classmethod
     def from_env(cls) -> HarnessConfig:
@@ -357,8 +381,8 @@ class HarnessConfig:
                         raise KeyError(f"Unknown configuration key budget.{sub_key!r}")
                     setattr(self.budget, sub_key, sub_value)
             elif key in {"run_dir", "save_dir", "log_path", "system_prompt_path", "game_dir",
-                         "ui_scripts_path", "calibration_path", "console_dir",
-                         "fake_game_dir", "fake_game_files"} and value is not None:
+                         "ui_scripts_path", "calibration_path", "console_dir", "camera_path",
+                         "fake_game_dir", "fake_game_files", "mod_context_cache_dir"} and value is not None:
                 setattr(self, key, Path(value))
             elif key == "mod_dirs":
                 self.mod_dirs = [Path(v) for v in value]

@@ -1,0 +1,6 @@
+graphics={
+	size={ x=1280 y=720 }
+	gui_scale=0.800000
+	fullScreen=no
+	borderless=no
+}

@@ -37,6 +37,7 @@ one.
 
 from __future__ import annotations
 
+import dataclasses
 import re
 import time
 from collections.abc import Callable
@@ -58,7 +59,7 @@ from .ui_scripts import verify
 #: skip the time and cost a player pays, which is a different game.
 CONSOLE_ACTIONS = frozenset({
     "queue_construction", "set_production", "hire_advisor",
-    "set_ai_directive", "set_ai_posture", "clear_ai_directives",
+    "set_ai_directive", "set_ai_posture", "clear_ai_directives", "take_decision",
 })
 #: The console for every action it has a faithful effect for: settled live on
 #: 1.19.5 (run reads the user directory, needs no -debug, and eval_effect takes
@@ -72,6 +73,11 @@ DEFAULT_CHANNELS: dict[str, str] = {
     **{name: "console" for name in sorted(CONSOLE_ACTIONS)},
 }
 CHANNELS = ("ui", "console")
+
+#: Actions whose result only a text save can show (the queue and the production
+#: lines are in no trigger or variable). With a save reader attached, the console
+#: takes one before planning them (so the "before" is today's) and one after.
+SAVE_VERIFIED = frozenset({"queue_construction", "set_production"})
 
 #: Harness building name -> the game's building id (``common/buildings``).
 #: ``fortification`` is absent on purpose: the game's land fortification
@@ -129,6 +135,11 @@ class ConsoleConfig:
     refresh: bool = False
     refresh_effect: str = "llm_bridge_emit_state"
     refresh_repeats: int = 2
+    #: Also ask for the front picture (divisions per state, #85) with the refresh.
+    #: The effect lives in llm_bridge_divisions.txt; an older mod prints an
+    #: unknown-effect line in the game's error log and nothing else.
+    refresh_front: bool = False
+    front_effect: str = "llm_bridge_emit_front"
 
 
 class UnsafeConsoleLine(ValueError):
@@ -154,6 +165,9 @@ class Planned:
     call: ActionCall
     lines: list[str]
     unchecked: list[str] = field(default_factory=list)
+    #: What verification checks, when that is not the call as the model wrote it
+    #: (a state named by id or "capital" becomes the name the reader reports).
+    verify_call: ActionCall | None = None
 
 
 def _result(call: ActionCall, ok: bool, kind: str | None, message: str,
@@ -183,8 +197,13 @@ class ConsoleChannel:
         self._sleep = sleep or driver._sleep
         self.verify_timeout = verify_timeout
         self.runs = 0
+        #: fire_only_once decisions this run has taken: no trigger can say so.
+        self.taken_once: set[str] = set()
         #: The last file written and the keys of the last run, for the transcript.
         self.last_lines: list[str] = []
+        #: A reader that can take and read text saves (``combined.CombinedReader``).
+        #: Without one, construction and production stay "unverified".
+        self.saves = None
 
     def attach_reader(self, read_state: Callable[[], GameState]) -> None:
         self._read_state = read_state
@@ -201,6 +220,8 @@ class ConsoleChannel:
             return self._plan_production(call, args, country, state)
         if call.name == "hire_advisor":
             return self._plan_advisor(call, args, country, state)
+        if call.name == "take_decision":
+            return self._plan_decision(call, args, country, state)
         return self._plan_hybrid(call, args, country)
 
     def _country(self, state: GameState) -> str:
@@ -252,7 +273,19 @@ class ConsoleChannel:
         # The reader does not report who owns a state or its free slots, so the
         # harness cannot check either; with guards on the effect's own limit does.
         unchecked = ["state ownership", "free building slot"]
-        return Planned(call, [line], unchecked)
+        # The save reader names a state the way the game's files do, so verification
+        # looks for that name: what the model typed may be an id, a key or "capital".
+        if self.saves is None:
+            return Planned(call, [line], unchecked)
+        name = None
+        if where.lower() == "capital":
+            name = self.saves.capital_state_name() if self.saves is not None else None
+        else:
+            name = info.name
+        arguments = {k: v for k, v in args.items() if k != "state"}
+        if name:
+            arguments["state"] = name
+        return Planned(call, [line], unchecked, dataclasses.replace(call, arguments=arguments))
 
     def _plan_production(self, call, args, country, state) -> Planned:
         equipment, factories = str(args["equipment"]), int(args["factories"])
@@ -274,11 +307,14 @@ class ConsoleChannel:
         if any(line.equipment == equipment for line in state.production):
             raise Refused(f"a {equipment} line already exists; the effect would add a second "
                           "line instead of changing it. Change an existing line on the ui channel")
-        free = state.military_factories - sum(line.factories for line in state.production)
+        used = sum(line.factories for line in state.production)
+        free = max(state.military_factories - used, 0)
         if factories > free:
+            # A line just opened counts its requested factories though it may have
+            # none yet, so "on other lines" can exceed the factories there are.
             raise Refused(f"{factories} factories asked for, {free} free "
-                          f"({state.military_factories} military, "
-                          f"{state.military_factories - free} on other lines)")
+                          f"({state.military_factories} military, {used} asked for by the "
+                          f"{len(state.production)} existing line(s))")
         body = (f"add_equipment_production = {{ equipment = {{ type = {equipment} }} "
                 f"requested_factories = {factories} }}")
         return Planned(call, [self._inline(country, body)], unchecked)
@@ -312,6 +348,58 @@ class ConsoleChannel:
             body = f"if = {{ limit = {{ has_political_power > {cost - 0.01:g} }} {body} }}"
         return Planned(call, [self._inline(country, body)], ["the advisor's allowed/available "
                        "conditions", "cost modifiers (the base cost is charged)"])
+
+    def _plan_decision(self, call, args, country, state) -> Planned:
+        decision_id = str(args["decision_id"])
+        index = self._need_index("reading the decision's conditions")
+        ctx = index.mod_context()
+        if ctx.find_decision(decision_id) is None:
+            raise Refused(f"there is no decision {decision_id!r} in this playset")
+        if decision_id not in {d.id for d in ctx.decision_for(country)}:
+            raise Refused(f"{decision_id!r} is not a decision {country} can have (its allowed/"
+                          "visible tests name another country)")
+        plan = ctx.plan_take(decision_id, country, args.get("target"), self.config.effect_command)
+        if not plan.executable:
+            raise Refused(f"{decision_id} cannot be taken faithfully from the console: {plan.reason}")
+        decision = plan.decision
+        if decision.fire_only_once and decision_id in self.taken_once:
+            raise Refused(f"{decision_id} is fire-only-once and this run already took it")
+        if plan.cost:
+            if not state.known("political_power"):
+                raise Refused("the reader cannot see political power, so affordability is unknown")
+            if state.political_power < plan.cost:
+                raise Refused(f"{decision_id} costs {plan.cost:g} political power, "
+                              f"{state.political_power:g} held")
+        if decision.fire_only_once and not self.driver.dry_run:
+            self.taken_once.add(decision_id)
+        return Planned(call, [plan.line], plan.unchecked)
+
+    def _verify_decision(self, call: ActionCall, before: GameState, planned: Planned):
+        """Decisions are not in the telemetry, so the only trace is political power.
+        A drop of at least half the cost proves the take; anything else is reported
+        as unverified, never as done."""
+        cost = 0.0
+        ctx = self.index.mod_context() if self.index else None
+        decision = ctx.find_decision(str(call.arguments["decision_id"])) if ctx else None
+        if decision and decision.cost:
+            cost = decision.cost
+        if cost and before.known("political_power"):
+            deadline, waited = self.verify_timeout, 0.0
+            while True:
+                after = self._read_state()
+                dropped = before.political_power - after.political_power
+                if after.known("political_power") and dropped >= cost / 2:
+                    return True, None, (f"taken: political power fell from {before.political_power:g} "
+                                        f"to {after.political_power:g}")
+                if waited >= deadline:
+                    break
+                self._sleep(0.25)
+                waited += 0.25
+        return False, "unverified", (
+            "input sent, but decisions are not in the telemetry"
+            + (", and political power did not fall by the cost yet" if cost else
+               " and this one costs nothing to compare")
+            + ". Treat it as not done until a later brief shows its effect.")
 
     def _plan_hybrid(self, call, args, country) -> Planned:
         via = self.config.hybrid_via
@@ -367,7 +455,11 @@ class ConsoleChannel:
 
     def refresh_lines(self, country: str) -> list[str]:
         """The lines that make the mod log its state again, now."""
-        return [f"effect {country} {self.config.refresh_effect}"] * self.config.refresh_repeats
+        lines = [f"effect {country} {self.config.refresh_effect}"] * self.config.refresh_repeats
+        if self.config.refresh_front:
+            # First, so the two state lines still end the run: they close the tick.
+            lines.insert(0, f"effect {country} {self.config.front_effect}")
+        return lines
 
     def send_lines(self, lines: list[str]) -> Path:
         """Write ``lines`` as the run file and send the keys that run it.
@@ -416,25 +508,43 @@ class ConsoleChannel:
             return [_result(c, False, "unverified",
                             "no reader to verify with; nothing was sent") for c in calls]
         state = self._read_state()
+        if self._wants_save(calls) and not self.saves.fresh_for(state.date):
+            # A queue or a production line seen as of an earlier day is not the
+            # "before" an action can be judged against (or planned from).
+            self.saves.refresh()
+            state = self._read_state()
         results: dict[int, ActionResult] = {}
         planned: list[tuple[int, Planned]] = []
         for position, call in enumerate(calls):
             try:
                 planned.append((position, self.plan(call, state)))
             except Refused as exc:
+                why = f" [the save: {self.saves.last_error}]" if (
+                    self.saves is not None and self.saves.last_error
+                    and call.name in SAVE_VERIFIED) else ""
                 results[position] = _result(call, False, "rejected",
-                                            f"refused before writing: {exc}; nothing was sent")
+                                            f"refused before writing: {exc}{why}; "
+                                            "nothing was sent")
         if planned:
             sent = self._send(snapshot(state), [p for _, p in planned])
             for position, outcome in sent.items():
                 results[planned[position][0]] = outcome
         return [results[i] for i in range(len(calls))]
 
+    def _wants_save(self, calls: list[ActionCall]) -> bool:
+        return (self.saves is not None and not self.driver.dry_run
+                and any(c.name in SAVE_VERIFIED for c in calls))
+
     def _send(self, before: GameState, planned: list[Planned]) -> dict[int, ActionResult]:
         driver, config = self.driver, self.config
         lines = [line for p in planned for line in p.lines]
         if config.refresh:
             lines += self.refresh_lines(self._country(before))
+        needs_save = self._wants_save([p.call for p in planned])
+        if needs_save:
+            # Last, so the save holds what the lines above did. The save is
+            # written a few seconds later, from the state at this command.
+            lines.append("savegame")
         self.last_lines = lines
         try:
             text_chords(f"run {config.filename}")        # typable, before anything is written
@@ -453,6 +563,8 @@ class ConsoleChannel:
                 f"dry run: would write {len(p.lines)} line(s) to {path.name} "
                 f"and send {'; '.join(self.keys())}: " + " | ".join(p.lines)),
                 lines=p.lines, unchecked=p.unchecked) for i, p in enumerate(planned)}
+        if needs_save:
+            self.saves.mark()
         try:
             self._keys_sequence()
         except Exception as exc:   # noqa: BLE001 - report it; _keys_sequence tried to close
@@ -460,11 +572,24 @@ class ConsoleChannel:
                                f"{type(exc).__name__}: {exc}; the console may be open",
                                lines=p.lines) for i, p in enumerate(planned)}
         self._sleep(driver.config.settle_seconds)
+        save_error = self.saves.collect() if needs_save else None
         out = {}
         for i, p in enumerate(planned):
-            outcome = verify(p.call, before, self._read_state, timeout=self.verify_timeout,
-                             sleep=self._sleep)
-            out[i] = _result(p.call, outcome.ok, outcome.kind, outcome.message,
+            if p.call.name == "take_decision":
+                ok, kind, message = self._verify_decision(p.call, before, p)
+                out[i] = _result(p.call, ok, kind, message, lines=p.lines, unchecked=p.unchecked)
+                continue
+            via_save = needs_save and p.call.name in SAVE_VERIFIED
+            baseline = before
+            if via_save and save_error is None:
+                # The save is the evidence here, whatever days the log has ticked.
+                baseline = dataclasses.replace(before, telemetry_ticks=None)
+            outcome = verify(p.verify_call or p.call, baseline, self._read_state,
+                             timeout=self.verify_timeout, sleep=self._sleep)
+            message = outcome.message
+            if via_save and save_error is not None and not outcome.ok:
+                message += f" The save could not be used: {save_error}."
+            out[i] = _result(p.call, outcome.ok, outcome.kind, message,
                              lines=p.lines, unchecked=p.unchecked)
         return out
 
