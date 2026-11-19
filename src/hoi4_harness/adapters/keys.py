@@ -19,7 +19,8 @@ from __future__ import annotations
 
 import sys
 import time
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager
 
 KEYEVENTF_SCANCODE = 0x0008
 KEYEVENTF_KEYUP = 0x0002
@@ -157,6 +158,20 @@ class ScanCodeKeys:
             self._send(code, True)
             self._sleep(self.key_gap)
 
+    @contextmanager
+    def held(self, spec: str) -> Iterator[None]:
+        """Keep a key (or chord) down while the body runs: shift for a queued order."""
+        codes = parse_chord(spec)
+        for code in codes:
+            self._send(code, False)
+            self._sleep(self.key_gap)
+        try:
+            yield
+        finally:
+            for code in reversed(codes):
+                self._send(code, True)
+                self._sleep(self.key_gap)
+
     def type_text(self, text: str) -> None:
         chords = text_chords(text)       # every character checked before any is sent
         for codes in chords:
@@ -177,6 +192,17 @@ class GuiKeys:
             self._gui.hotkey(*parts)
         else:
             self._gui.press(spec)
+
+    @contextmanager
+    def held(self, spec: str) -> Iterator[None]:
+        parts = spec.split("+") if spec != "+" else ["+"]
+        for part in parts:
+            self._gui.keyDown(part)
+        try:
+            yield
+        finally:
+            for part in reversed(parts):
+                self._gui.keyUp(part)
 
     def type_text(self, text: str) -> None:
         self._gui.write(text, interval=0.02)

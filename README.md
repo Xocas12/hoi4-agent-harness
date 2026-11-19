@@ -198,7 +198,7 @@ verification checklist: [docs/mod-bridge.md](docs/mod-bridge.md).
 | Piece | State |
 |---|---|
 | Agent loop, budget, memory, policy | Working, tested |
-| Action catalog + validation | Working, tested (20 actions) |
+| Action catalog + validation | Working, tested (22 actions) |
 | Observation briefs + deltas | Working, tested |
 | Mock adapter | Working, tested, deterministic |
 | Log-tail adapter (reads the mod's telemetry) | Working, tested, run against a live 1.19.5 log; `verify-bridge` checks tag consistency and date shapes, and the brief shows focus, research and theater postures |
@@ -217,6 +217,7 @@ verification checklist: [docs/mod-bridge.md](docs/mod-bridge.md).
 | Save-file adapter (#6) | Reads a 1.19.5 **text** save (needs `save_as_binary=no`): political power, stability and war support (via the mod's variables), manpower, owned factories, focus, research slots, production lines (factory counts) and divisions by template. The construction queue is not in the save. Verified against a real save |
 | Headless mode and fake game | Built and tested end to end against the fake; live plan in [docs/headless.md](docs/headless.md) |
 | Console channel (#83) | Built and unit-tested, opt-in; not yet run live; open questions in [docs/adapters.md](docs/adapters.md) |
+| Division orders (#85) | Front picture (divisions per state) from the mod, `move_division` / `attack_province` by click with a recorded camera fit, an order ledger in the brief, a fake army and a simulator-controller bridge: built and tested on the fake game only, never run live; no script path for a division order exists (candidates and verdicts in [docs/unit-orders.md](docs/unit-orders.md)) |
 | Screen adapter | Capture works; vision→state is TODO |
 | Input driver (#3) | Keys go out as hardware scan codes (pyautogui keys do not reach HOI4, verified live), with the real 1.19.5 hotkeys and no Escape in scripts. `set_national_focus` via focus search is verified live end to end through the harness. Tech-tree click points are computed from `countrytechtreeview.gui` (within 4 px of 18 measured infantry-tab points), but `start_research`, `queue_construction`, `set_production` and `hire_advisor` have **not** yet been run live through the harness; rotated tabs (armour, air, industry, electronics) are refused. A verification that cannot be settled returns `unverified`, not `rejected`, until a fresh day of telemetry. Tests cannot send real input |
 

@@ -174,6 +174,8 @@ class InputDriverAdapter(GameAdapter):
         self._keys_override = keys
         self._keys_cache = None
         self.index = index
+        #: Performs the division orders, once ``enable_unit_orders`` has set it.
+        self.order_executor = None
         #: Click points computed for the action in flight (see ui_resolve.py).
         self._computed: dict[str, tuple[int, int]] = {}
         #: Whether the game was running when the clock was last seen: True,
@@ -258,6 +260,62 @@ class InputDriverAdapter(GameAdapter):
             gui = self._gui()
             gui.moveTo(point[0], point[1], duration=self.config.move_duration)
             gui.click()
+
+    def _checked_point(self, point: tuple[int, int]) -> tuple[int, int]:
+        """A computed click point, refused when it is off the screen it was fitted for."""
+        x, y = int(point[0]), int(point[1])
+        if self.config.screen and not (0 <= x < self.config.screen[0] and 0 <= y < self.config.screen[1]):
+            raise ValueError(f"click point ({x}, {y}) is outside the {self.config.screen[0]}x"
+                             f"{self.config.screen[1]} screen")
+        return x, y
+
+    def click_at(self, point: tuple[int, int], button: str = "left", *, shift: bool = False,
+                 label: str = "") -> None:
+        """Click a computed screen point (unit orders). Same guards as ``click``:
+        no mouse refuses, focus is required, a dry run only logs. ``shift`` holds
+        the key (as a scan code) around the click, which queues a waypoint."""
+        if not self.config.mouse:
+            raise MouseDisabled(f"{button}-click at {point}: this driver has no mouse (headless)")
+        x, y = self._checked_point(point)
+        self._require_focus()
+        self.log.append(f"{'shift+' if shift else ''}{button}-click {label or 'point'} at ({x}, {y})")
+        if self.dry_run:
+            return
+        gui = self._gui()
+        gui.moveTo(x, y, duration=self.config.move_duration)
+        if shift:
+            with self._keys().held("shift"):
+                gui.click(button=button)
+        else:
+            gui.click(button=button)
+
+    def drag(self, start: tuple[int, int], end: tuple[int, int], *, label: str = "") -> None:
+        """Press at ``start``, move to ``end``, release: a selection box."""
+        if not self.config.mouse:
+            raise MouseDisabled(f"drag {start} -> {end}: this driver has no mouse (headless)")
+        x0, y0 = self._checked_point(start)
+        x1, y1 = self._checked_point(end)
+        self._require_focus()
+        self.log.append(f"drag {label or 'box'} {(x0, y0)} -> {(x1, y1)}")
+        if self.dry_run:
+            return
+        gui = self._gui()
+        gui.moveTo(x0, y0, duration=self.config.move_duration)
+        gui.mouseDown(button="left")
+        try:
+            gui.moveTo(x1, y1, duration=self.config.move_duration * 3)
+        finally:
+            gui.mouseUp(button="left")
+
+    def enable_unit_orders(self, executor) -> None:
+        """Offer ``move_division`` and ``attack_province``, performed by ``executor``
+        (adapters/unit_orders.py). Needs a mouse: a headless driver refuses."""
+        from .unit_orders import ORDER_ACTIONS
+
+        if not self.config.mouse:
+            raise MouseDisabled("division orders are clicks and this driver has no mouse")
+        self.order_executor = executor
+        self.supported_actions = self.supported_actions | frozenset(ORDER_ACTIONS)
 
     def type_text(self, text: str) -> None:
         self._require_focus()
@@ -391,6 +449,8 @@ class InputDriverAdapter(GameAdapter):
                                 message="Clock handed back to the harness.")
         if call.name in self.scripts:
             return self._scripted(call)
+        if self.order_executor is not None and call.name in self.supported_actions:
+            return self.order_executor(call)
         return self.unsupported(call)
 
     # --- the clock -----------------------------------------------------------

@@ -41,7 +41,11 @@ from .ui_scripts import DEFAULT_FILENAME, Step, load_scripts, parse_steps
 from .window import FocusCheck
 
 #: Actions with no path that avoids the mouse. Removed from the tool list.
-MOUSE_ACTIONS = frozenset({"start_research", "delegate_army_to_ai"})
+MOUSE_ACTIONS = frozenset({
+    "start_research", "delegate_army_to_ai",
+    # Division orders are a selection and a right-click (adapters/unit_orders.py).
+    "move_division", "attack_province",
+})
 #: Actions the log cannot make safe. add_equipment_production adds a second line
 #: for equipment that already has one (seen live on 1.19.5), and only a reader
 #: that sees production -- a text save -- can check that first.

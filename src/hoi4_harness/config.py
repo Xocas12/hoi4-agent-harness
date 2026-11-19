@@ -230,6 +230,12 @@ class HarnessConfig:
     #: How hybrid actions reach the mod: scripted | decision.
     console_hybrid_via: str = "scripted"
     console_guards: bool = True
+    # --- division orders by click (adapters/unit_orders.py, docs/unit-orders.md) -----
+    #: Offer move_division / attack_province. Needs the mouse, a playset (game_dir)
+    #: for the map, and a camera fit recorded in the live game.
+    unit_orders: bool = False
+    #: The recorded camera fit. Default: camera.json in run_dir. HOI4_CAMERA.
+    camera_path: Path | None = None
     # --- headless play (adapters/headless.py) -----------------------------------
     # adapter = "headless": the log for eyes, the console and the keyboard for
     # hands, no mouse and no screen. The fields below only matter there.
@@ -357,7 +363,7 @@ class HarnessConfig:
                         raise KeyError(f"Unknown configuration key budget.{sub_key!r}")
                     setattr(self.budget, sub_key, sub_value)
             elif key in {"run_dir", "save_dir", "log_path", "system_prompt_path", "game_dir",
-                         "ui_scripts_path", "calibration_path", "console_dir",
+                         "ui_scripts_path", "calibration_path", "console_dir", "camera_path",
                          "fake_game_dir", "fake_game_files"} and value is not None:
                 setattr(self, key, Path(value))
             elif key == "mod_dirs":
