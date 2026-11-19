@@ -590,7 +590,17 @@ province. `Viewport` takes the margins for the top bar and the bottom panel.
 None of this was run against the game. What the model assumes, and could be
 wrong about:
 
-1. **The map is flat.** HOI4 tilts the map at some zoom levels, which makes
+1. **The map is flat: FALSE at the zoom the map search uses** (measured live on
+   1.19.5, 1920x1080). After searching Södermanland, four victory-point markers
+   (Stockholm, Uppsala, Gävle, Falun; positions from `map/unitstacks.txt`, type 38,
+   image y = 2048 - z) gave a steady y scale of 15.5-17 screen px per map pixel but
+   an x scale of 20 between the two northern cities and up to 28 lower down: a
+   perspective camera. `Camera.from_references` refuses such a fit, correctly. A
+   perspective model (or a fully zoomed-out view, unmeasured) is needed before unit
+   orders can be aimed, and province centroids are poor anchors at this zoom; use
+   the `unitstacks.txt` positions. The map search also did not put the state's
+   click point at the screen centre. Original note:
+   HOI4 tilts the map at some zoom levels, which makes
    scale differ between the top and bottom of the screen. The fit refuses that
    case instead of averaging over it.
 2. **One scale per zoom step**, and the zoom steps are discrete. Measure each
