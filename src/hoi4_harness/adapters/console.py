@@ -262,22 +262,23 @@ class ConsoleChannel:
         if factories < 1:
             raise Refused("setting 0 factories removes a line, and no effect does that the way "
                           "the UI does: use the ui channel for it")
-        # A player can open a line asking for more factories than are free; the
-        # game assigns what it has. So an unseen production panel is a check left
-        # undone, not a reason to refuse (seen live on 1.19.5: the line opened
-        # and took the one free factory).
+        # Seen live on 1.19.5: with the production panel unseen, an Infantry
+        # Equipment I order added a second, empty line next to the existing one.
+        # No trigger tells the effect a line exists, so an unseen panel refuses.
         unchecked: list[str] = []
-        if state.known("production") and state.known("military_factories"):
-            if any(line.equipment == equipment for line in state.production):
-                raise Refused(f"a {equipment} line already exists; the effect would add a second "
-                              "line instead of changing it. Change an existing line on the ui channel")
-            free = state.military_factories - sum(line.factories for line in state.production)
-            if factories > free:
-                raise Refused(f"{factories} factories asked for, {free} free "
-                              f"({state.military_factories} military, "
-                              f"{state.military_factories - free} on other lines)")
-        else:
-            unchecked = ["an existing line for this equipment", "free military factories"]
+        for name in ("production", "military_factories"):
+            if not state.known(name):
+                raise Refused(f"the reader cannot see {name}; add_equipment_production would "
+                              "add a second line for equipment that already has one (seen "
+                              "live), so this needs a reader that sees production (a text save)")
+        if any(line.equipment == equipment for line in state.production):
+            raise Refused(f"a {equipment} line already exists; the effect would add a second "
+                          "line instead of changing it. Change an existing line on the ui channel")
+        free = state.military_factories - sum(line.factories for line in state.production)
+        if factories > free:
+            raise Refused(f"{factories} factories asked for, {free} free "
+                          f"({state.military_factories} military, "
+                          f"{state.military_factories - free} on other lines)")
         body = (f"add_equipment_production = {{ equipment = {{ type = {equipment} }} "
                 f"requested_factories = {factories} }}")
         return Planned(call, [self._inline(country, body)], unchecked)

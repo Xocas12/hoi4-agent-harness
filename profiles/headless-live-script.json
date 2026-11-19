@@ -1,11 +1,54 @@
 [
-  {"text": "One of each, so the live run shows every channel.", "calls": [
-    {"name": "set_national_focus", "arguments": {"focus_id": "SWE_defense_act"}},
-    {"name": "queue_construction", "arguments": {"building": "civilian_factory", "state": "capital", "count": 1}},
-    {"name": "set_production", "arguments": {"equipment": "infantry_equipment_1", "factories": 1}},
-    {"name": "set_ai_directive", "arguments": {"directive": "protect", "target": "POL"}},
-    {"name": "set_ai_posture", "arguments": {"posture": "defensive", "theater": "GER"}},
-    {"name": "advance_time", "arguments": {"days": 7, "reason": "let the orders land"}}
-  ]},
-  {"text": "Look, change nothing.", "calls": [{"name": "advance_time", "arguments": {"days": 7, "reason": "wait"}}]}
+  {
+    "text": "One of each the log can verify or honestly not: a focus available after Defense Act, a factory where Sweden has free slots, a directive and a theater posture.",
+    "calls": [
+      {
+        "name": "set_national_focus",
+        "arguments": {
+          "focus_id": "SWE_urbanization"
+        }
+      },
+      {
+        "name": "queue_construction",
+        "arguments": {
+          "building": "civilian_factory",
+          "state": "38",
+          "count": 1
+        }
+      },
+      {
+        "name": "set_ai_directive",
+        "arguments": {
+          "directive": "protect",
+          "target": "POL"
+        }
+      },
+      {
+        "name": "set_ai_posture",
+        "arguments": {
+          "posture": "defensive",
+          "theater": "GER"
+        }
+      },
+      {
+        "name": "advance_time",
+        "arguments": {
+          "days": 7,
+          "reason": "let the orders land"
+        }
+      }
+    ]
+  },
+  {
+    "text": "Look, change nothing.",
+    "calls": [
+      {
+        "name": "advance_time",
+        "arguments": {
+          "days": 7,
+          "reason": "wait"
+        }
+      }
+    ]
+  }
 ]

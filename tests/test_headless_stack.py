@@ -100,10 +100,9 @@ def test_a_campaign_acts_on_the_fake_game_and_sees_completions_arrive(tmp_path):
     assert fake.world.state.national_focus is None
     assert fake.world.state.completed_focuses == ["industrial_effort"]     # started, then finished
     assert fake.world.state.construction == []                              # queued, then built
-    # Every factory was already on the infantry line, so the game declined the new one --
-    # and the harness, which cannot see production in the log, could only say unverified.
+    # The log cannot show production, and the effect duplicates an existing line (seen
+    # live on 1.19.5), so a log-only headless run does not offer set_production at all.
     assert [x.equipment for x in fake.world.state.production] == ["infantry_equipment_1"]
-    assert "no free military factory" in fake.log_path.read_text(encoding="utf-8")
     assert fake.advisors == {"political_advisor": ["SWE_demo_minister"]}
     assert fake.directives == ["protect POL"]
     assert fake.theater_postures == {"GER": "defensive"}
@@ -112,8 +111,9 @@ def test_a_campaign_acts_on_the_fake_game_and_sees_completions_arrive(tmp_path):
     assert by_name["hire_advisor"][:2] == (True, None)
     assert by_name["set_ai_directive"][:2] == (True, None)
     assert by_name["set_ai_posture"][:2] == (True, None)
-    for name in ("queue_construction", "set_production"):
-        assert by_name[name][1] == "unverified" and "cannot see" in by_name[name][2]
+    assert by_name["queue_construction"][1] == "unverified"
+    assert "cannot see" in by_name["queue_construction"][2]
+    assert by_name["set_production"][:2] == (False, "unsupported")
     assert by_name["queue_construction"][3]["channel"] == "console"
     assert by_name["set_national_focus"][3]["channel"] == "ui"
 
@@ -133,7 +133,7 @@ def test_every_console_action_is_one_run_through_the_real_key_sequence(tmp_path)
                for line in run)
     # Each run ends by asking the mod for fresh telemetry, twice.
     action_runs = [run for run in fake.runs if not run[0].startswith("gamespeed")]
-    assert len(action_runs) == 5        # construction, production, advisor, directive, posture
+    assert len(action_runs) == 4        # construction, advisor, directive, posture (no production)
     assert all(run[-2:] == ["effect SWE llm_bridge_emit_state"] * 2 for run in action_runs)
     # The keys the game saw: the console key, `run llmb_turn.txt`, enter, the console key.
     keylog = fake.keylog

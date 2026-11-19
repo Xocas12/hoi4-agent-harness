@@ -42,6 +42,15 @@ from .window import FocusCheck
 
 #: Actions with no path that avoids the mouse. Removed from the tool list.
 MOUSE_ACTIONS = frozenset({"start_research", "delegate_army_to_ai"})
+#: Actions the log cannot make safe. add_equipment_production adds a second line
+#: for equipment that already has one (seen live on 1.19.5), and only a reader
+#: that sees production -- a text save -- can check that first.
+NEEDS_PRODUCTION_READER = frozenset({"set_production"})
+
+
+def excluded_actions(reader: str = "logtail") -> frozenset[str]:
+    """What a headless run with this reader does not offer."""
+    return MOUSE_ACTIONS | (NEEDS_PRODUCTION_READER if reader != "savegame" else frozenset())
 CLOCK_MODES = ("auto", "console", "keys", "exact")
 #: ``pause_in_hours`` is told this many hours past the days asked for, so the game
 #: cannot stop before the last day's state line whatever hour the daily tick runs at.
@@ -62,9 +71,9 @@ def keyboard_only(scripts: dict[str, list[Step]]) -> tuple[dict[str, list[Step]]
     return kept, sorted(set(scripts) - set(kept))
 
 
-def unavailable_actions() -> list[str]:
+def unavailable_actions(reader: str = "logtail") -> list[str]:
     """What a headless run cannot offer, for the prompt and the docs."""
-    return sorted(MOUSE_ACTIONS)
+    return sorted(excluded_actions(reader))
 
 
 def _scaled_sleep(scale: float) -> Callable[[float], None]:
@@ -176,10 +185,11 @@ class HeadlessComposite(CompositeAdapter):
 class HeadlessWriter(GameAdapter):
     """The write side: the router's actions, with the clock and speed on top."""
 
-    def __init__(self, router: ChannelRouter, clock: HeadlessClock):
+    def __init__(self, router: ChannelRouter, clock: HeadlessClock, reader: str = "logtail"):
         self.router = router
         self.clock = clock
-        self.supported_actions = frozenset(router.supported_actions - MOUSE_ACTIONS)
+        self.excluded = excluded_actions(reader)
+        self.supported_actions = frozenset(router.supported_actions - self.excluded)
 
     def attach_reader(self, read_state: Callable[[], GameState]) -> None:
         self.router.attach_reader(read_state)
@@ -198,7 +208,7 @@ class HeadlessWriter(GameAdapter):
     def apply(self, call: ActionCall) -> ActionResult:
         if call.name == "set_game_speed":
             return self._set_speed(call)
-        if call.name in MOUSE_ACTIONS:
+        if call.name in self.excluded:
             return self.unsupported(call)
         return self.router.apply(call)
 
@@ -334,7 +344,7 @@ def build_headless(config: HarnessConfig, fake=None) -> CompositeAdapter:
         index=index, sleep=sleep)
     router = ChannelRouter(driver, console, channels)
     clock = HeadlessClock(driver, console, config.headless_clock, config.headless_game_speed)
-    adapter = HeadlessComposite(reader, HeadlessWriter(router, clock),
+    adapter = HeadlessComposite(reader, HeadlessWriter(router, clock, config.headless_reader),
                                clock_owner=config.clock_owner,
                                poll_seconds=config.headless_poll_seconds, sleep=sleep)
     adapter.fake_game = fake

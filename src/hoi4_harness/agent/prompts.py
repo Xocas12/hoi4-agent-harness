@@ -56,7 +56,8 @@ through the console and the keyboard. It has no mouse and no screen. Some action
 need clicks, so they do not exist here:
 {gone}.
 You cannot start research or hand an army to the game's AI; an idle research slot
-stays idle, so do not plan around it. Everything else works as described.
+stays idle, so do not plan around it. Production lines stay as they are unless
+set_production is listed as available. Everything else works as described.
 
 Two things follow from reading a log. The game logs once per in-game day, so a
 result marked "unverified" means the log has not shown the change yet, not that
