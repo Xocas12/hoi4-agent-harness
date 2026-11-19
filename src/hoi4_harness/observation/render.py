@@ -130,6 +130,12 @@ def render_full(state: GameState, max_events: int = 6, max_fronts: int = 3) -> s
         by_template = "; ".join(f"{g.count}x {g.template} @ {g.location}" for g in state.divisions[:5])
         lines.append(f"Army: {total} divisions -- {by_template}")
 
+    saved = state.raw.get("save_date") if isinstance(state.raw, dict) else None
+    if saved and saved != state.date:
+        # Production, the queue and the army come from a save, which is as old as
+        # the day it was taken; the numbers above are today's from the log.
+        lines.append(f"(production, construction queue and army as of the save of {saved})")
+
     if state.stockpiles:
         top = sorted(state.stockpiles.items(), key=lambda kv: -kv[1])[:4]
         lines.append("Stockpile: " + ", ".join(f"{k} {v:,}" for k, v in top))

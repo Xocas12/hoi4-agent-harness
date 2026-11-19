@@ -69,7 +69,8 @@ class CombinedReader(GameAdapter):
         poll: float = 0.5,
     ):
         self.log = log
-        self.save_dir = find_save_dir(save_dir)
+        # An explicit folder is trusted even if the game has not made it yet.
+        self.save_dir = Path(save_dir) if save_dir else find_save_dir(None)
         self.index = index
         self._sleep = sleep
         self.every_days = every_days
