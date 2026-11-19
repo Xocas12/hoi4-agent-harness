@@ -852,6 +852,11 @@ GER's other wars). A GER figure there is a leak: paste the brief in #91.
 a `kind=17` event. Run it again, pause nothing, Ctrl-C: expect `POL is still marked ... To undo
 it type in the console: effect POL llm_bridge_unmark_harness`. Type it.
 
+**11. Several rivals.** `--rival POL,SWE,FIN` (with GER played): `rival.log` should show all three
+marked in one window and, after queued orders, one `Window` line naming each country's part; the
+console file for it holds `effect POL`, `effect SWE` and `effect FIN` lines, and each brief shows
+only its own country.
+
 **What to paste where.** Steps 1, 2 and 5 (the flag works on an AI country, the scope is B's,
 the window is one file): #91. Steps 3, 4, 6 and 7 (the idle clock, the pause signal, the abort,
 the console line): #31 and #33; they decide whether `paused` is safe enough to be the default

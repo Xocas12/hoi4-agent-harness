@@ -193,7 +193,7 @@ def test_each_country_reads_only_its_own_lines_never_another_rivals_or_the_perso
     log = game_log(res.fake)
     # the shared log really holds all of them, with numbers that are each one's alone...
     for tag in TAGS:
-        assert f"|state|" in log and f"tag={tag}|" in log
+        assert "|state|" in log and f"tag={tag}|" in log
     assert f"pp={HUMAN_PP}" in log
     for k in range(3):
         assert f"civ={61 + k}|" in log
