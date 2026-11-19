@@ -106,3 +106,30 @@ def check_focus(expected_title: str) -> FocusCheck:
     if expected_title.strip().lower() in title.lower():
         return FocusCheck(True, title)
     return FocusCheck(False, title, reason=f"focused window is {title!r}")
+
+
+def client_rect() -> tuple[int, int, int, int] | None:
+    """The focused window's client area as ``(x, y, width, height)`` in screen
+    pixels, or None where it cannot be read (not Windows, no window).
+
+    The size the game draws its interface into: a borderless window is the whole
+    display, a windowed one excludes the title bar and frame. Windows only so far;
+    UNVERIFIED live (docs/live-session.md)."""
+    if sys.platform != "win32":
+        return None
+    import ctypes
+    from ctypes import wintypes
+
+    user32 = ctypes.windll.user32
+    try:
+        user32.SetProcessDPIAware()      # pixels, not the scaled values a 125% desktop reports
+    except (AttributeError, OSError):
+        pass
+    handle = user32.GetForegroundWindow()
+    if not handle:
+        return None
+    rect, origin = wintypes.RECT(), wintypes.POINT(0, 0)
+    if not user32.GetClientRect(handle, ctypes.byref(rect)) or \
+            not user32.ClientToScreen(handle, ctypes.byref(origin)):
+        return None
+    return (origin.x, origin.y, rect.right - rect.left, rect.bottom - rect.top)

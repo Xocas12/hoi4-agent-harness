@@ -33,3 +33,11 @@ def _no_real_input(monkeypatch):
 
     monkeypatch.setattr("hoi4_harness.adapters.keys._sendinput", refuse)
     monkeypatch.setitem(sys.modules, "pyautogui", None)   # `import pyautogui` -> ImportError
+
+
+@pytest.fixture(autouse=True)
+def _no_real_display(monkeypatch):
+    """The click geometry is read from the user's settings and the live window; a
+    test pins it (or injects the readers) instead of depending on this machine."""
+    monkeypatch.setattr("hoi4_harness.adapters.input_driver.default_display_settings", lambda: None)
+    monkeypatch.setattr("hoi4_harness.adapters.input_driver.client_rect", lambda: None)
