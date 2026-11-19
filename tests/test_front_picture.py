@@ -125,4 +125,4 @@ def test_the_mod_prints_what_the_reader_parses():
 
 def test_the_daily_hook_is_the_players_and_lives_in_its_own_file():
     hook = (MOD / "common" / "on_actions" / "llm_bridge_front_on_actions.txt").read_text(encoding="utf-8")
-    assert "is_ai = no" in hook and "llm_bridge_emit_front = yes" in hook
+    assert "llm_bridge_is_harness = yes" in hook and "llm_bridge_emit_front = yes" in hook

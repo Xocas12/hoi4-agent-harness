@@ -5,7 +5,7 @@ commands into ``llmb_turn.txt`` and presses a fixed key sequence (the console
 key, ``run llmb_turn.txt``, enter, the console key), plus a keyboard script for
 national focuses. This module is the other end of all three:
 
-* it appends schema-v4 ``LLMB|`` lines to ``<user dir>/logs/game.log`` with the
+* it appends schema-v5 ``LLMB|`` lines to ``<user dir>/logs/game.log`` with the
   engine's date prefix, one ``state`` line (and its ``army``, ``focus`` and
   ``research`` lines) per in-game day, a ``war`` line per enemy while the player
   is at war, ``evt`` lines for what the mod logs;
@@ -51,11 +51,13 @@ from . import fakesave, modgen
 from .actions.catalog import AI_DIRECTIVES
 from .adapters.keys import key_name
 from .adapters.mock import MockAdapter
+from .adapters.window import FocusCheck
 from .fakearmy import FakeArmy, FakeGui
+from .fakecampaign import FakeAI
 from .identifiers import IdentifierIndex, Playset
 from .types import ActionCall, ConstructionItem, ProductionLine, ResearchSlot, ScenarioStart
 
-SCHEMA_VERSION = 4
+SCHEMA_VERSION = 5
 MONTHS = ("January", "February", "March", "April", "May", "June", "July", "August",
           "September", "October", "November", "December")
 #: Wall-clock seconds one in-game day takes at each game speed.
@@ -314,6 +316,16 @@ class FakeGame:
         self.army = army
         # A game loads paused.
         self.paused = True
+        #: The console's ``human_ai`` toggle: the game's AI runs the player's country.
+        self.human_ai = False
+        #: Country flags the console's effects set (``llmb_harness`` is the one that matters).
+        self.flags: set[str] = set()
+        #: A game that is not running writes nothing and ticks no day (``kill``).
+        self.alive = True
+        #: Whether the game is the focused window, and the wall-clock second it comes
+        #: back at if a test took the focus away for a while (``lose_focus``).
+        self.focused = True
+        self._focus_back_at: float | None = None
         self.speed = max(1, min(5, speed))
         #: Game hours left before ``pause_in_hours`` stops the game; None when unset.
         self.pause_in: float | None = None
@@ -351,6 +363,8 @@ class FakeGame:
         #: day comes, for a war a test wants declared (or ended) mid-run.
         self.war_script: dict[str, tuple[str, str, int]] = {}
         self.states = self._build_states(slots, slots_used)
+        #: The world beyond the player and what the game's AI does under ``human_ai``.
+        self.ai = FakeAI(self, seed=seed)
         self._key_offset = 0
         self._started = time.strftime("%H:%M:%S")
         self._write(self._stamp() + ": Fake HOI4 starting (hoi4-harness fakegame)")
@@ -381,6 +395,31 @@ class FakeGame:
         body = "|".join(f"{k}={v}" for k, v in fields.items())
         return f"{self._stamp()}: LLMB|v{SCHEMA_VERSION}|{record}|{body}"
 
+    @property
+    def visible(self) -> bool:
+        """Whether the mod's on_actions report this country: ``is_ai = no`` or the
+        ``llmb_harness`` flag (``llm_bridge_is_harness``). Under ``human_ai`` with no flag
+        the player counts as AI and the daily log goes silent, as it would in the game."""
+        return not self.human_ai or "llmb_harness" in self.flags
+
+    def emit_campaign(self) -> None:
+        """The mod's ``llm_bridge_emit_campaign``: the weekly conquest numbers."""
+        self._write(self._llmb("camp", **self.ai.campaign_fields()))
+
+    def kill(self) -> None:
+        """The game process dies: no more days, no more lines."""
+        self.alive = False
+
+    def lose_focus(self, seconds: float | None = None) -> None:
+        """Another window takes the focus, for ``seconds`` of wall clock (None: for good)."""
+        self.focused = False
+        self._focus_back_at = None if seconds is None else self._wall + seconds
+
+    def focus_check(self, title: str) -> FocusCheck:
+        if self.focused:
+            return FocusCheck(True, title)
+        return FocusCheck(False, "Some Other Window", reason="focused window is 'Some Other Window'")
+
     def emit_state(self) -> None:
         """The mod's ``llm_bridge_emit_state``: the state line, the army line and
         the probe lines for the focus and the research that are running."""
@@ -392,7 +431,7 @@ class FakeGame:
             pp=f"{s.political_power:.4f}", stab=f"{s.stability * 100:.3f}",
             ws=f"{s.war_support * 100:.0f}", civ=s.civilian_factories, mil=s.military_factories,
             doc=s.dockyards, owned=s.civilian_factories + s.military_factories + s.dockyards,
-            mp=s.manpower, techs=w.techs, **w.built)]
+            mp=s.manpower, ai=int(self.human_ai), techs=w.techs, **w.built)]
         lines.append(self._llmb("army", tag=tag, divisions=sum(g.count for g in s.divisions),
                                 delegated=0))
         # focus_progress > 0: a focus started today has none yet, as in the game.
@@ -412,16 +451,24 @@ class FakeGame:
             return war.enemy_divisions
         return sum(f.divisions_enemy for f in self.world.state.fronts if f.enemy == war.against)
 
-    def start_war(self, enemy: str, divisions: int = 30) -> None:
+    def start_war(self, enemy: str, divisions: int = 30, declared_by_player: bool = False) -> None:
         """The player is at war with ``enemy`` from now: the mod's ``war_declared``
-        event, and a ``war`` line in every state tick from here on."""
+        event (logged in the declarer's scope), and a ``war`` line in every state tick
+        from here on."""
         from .types import War
 
         state = self.world.state
         if not any(w.against == enemy for w in state.wars):
             state.wars.append(War(against=enemy, since=self.date, enemy_divisions=divisions,
                                   borders=True, surrender_progress=0.0))
-        self._write(self._llmb("evt", tag=enemy, other=self.country, kind=1, detail=0))
+        if self.visible:
+            declarer, target = (self.country, enemy) if declared_by_player else (enemy, self.country)
+            self._write(self._llmb("evt", tag=declarer, other=target, kind=1, detail=0))
+
+    def capitulation(self, enemy: str) -> None:
+        """``enemy`` capitulates: the mod's ``on_capitulation`` line (kind 2)."""
+        if self.visible:
+            self._write(self._llmb("evt", tag=enemy, other=self.country, kind=2, detail=0))
 
     def end_war(self, enemy: str) -> None:
         state = self.world.state
@@ -462,6 +509,10 @@ class FakeGame:
     def date(self) -> str:
         return self.world.date.isoformat()
 
+    @property
+    def date_ordinal(self) -> int:
+        return self.world.date.toordinal()
+
     def tick_day(self) -> None:
         """One in-game day: the model moves, and the mod logs it."""
         self.world.date += dt.timedelta(days=1)
@@ -475,8 +526,13 @@ class FakeGame:
                 self.end_war(enemy)
         if self.army is not None:
             self.army.tick_day()
-        self.emit_state()
-        self.emit_front()
+        if self.human_ai:
+            self.ai.tick_day()
+        if self.visible:
+            self.emit_state()
+            self.emit_front()
+            if self.date_ordinal % 7 == 0:
+                self.emit_campaign()
 
     def _built(self, item: ConstructionItem) -> None:
         """A finished building leaves the queue and takes its slot for good."""
@@ -503,8 +559,11 @@ class FakeGame:
         runs, none while it is paused. Never really waits."""
         if seconds > 0:
             self._wall += seconds
-            self._write_due_saves()
-        if self.paused or seconds <= 0:
+            if self._focus_back_at is not None and self._wall >= self._focus_back_at:
+                self.focused, self._focus_back_at = True, None
+            if self.alive:
+                self._write_due_saves()
+        if self.paused or seconds <= 0 or not self.alive:
             return
         self._acc += seconds
         day = SECONDS_PER_DAY[self.speed]
@@ -694,6 +753,10 @@ class FakeGame:
             return self._gamespeed(rest.strip())
         if command == "pause_in_hours":
             return self._pause_in_hours(rest.strip())
+        if command == "human_ai":
+            # A toggle, as the game's: "Toggles AI for Human countries".
+            self.human_ai = not self.human_ai
+            return None
         if command in ("goto_province", "goto_state"):
             return self._goto(command, rest.strip())
         if command == "effect":
@@ -797,6 +860,10 @@ class FakeGame:
                 self.world.state.political_power += _number(str(entry.value))
             elif key == "activate_decision":
                 self._scripted(self._decision_effect(str(entry.value)))
+            elif key == "set_country_flag":
+                self.flags.add(str(entry.value))
+            elif key == "clr_country_flag":
+                self.flags.discard(str(entry.value))
             elif key == "log":
                 self._log(str(entry.value))
             else:
@@ -857,7 +924,7 @@ class FakeGame:
     def _flag(self, flag: str) -> bool:
         if flag.startswith("llmb_target_"):
             return self.target == flag.removeprefix("llmb_target_")
-        return False
+        return flag in self.flags
 
     def _free(self, state: FakeState, building: str) -> int:
         if building in SLOT_BUILDINGS:
@@ -934,6 +1001,14 @@ class FakeGame:
             return self.emit_state()
         if name == "llm_bridge_emit_front":
             return self.emit_front()
+        if name == "llm_bridge_emit_campaign":
+            return self.emit_campaign()
+        if name == "llm_bridge_mark_harness":
+            self.flags.add("llmb_harness")
+            return self._event(16)
+        if name == "llm_bridge_unmark_harness":
+            self.flags.discard("llmb_harness")
+            return self._event(17)
         if name == "llm_bridge_clear_directives":
             self.directives, self.global_posture, self.theater_postures = [], None, {}
             self.target = None

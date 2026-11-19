@@ -34,6 +34,12 @@ class CompositeAdapter(GameAdapter):
         self.poll_seconds = poll_seconds
         #: None: the real clock (wait_for_days' own default).
         self._wait = {} if sleep is None else {"sleep": sleep}
+        #: Called before every read of a clock wait: a watchdog's check, which raises
+        #: ``GameLost`` when the game has died or gone silent (campaign mode).
+        self.on_poll: Callable[[], None] | None = None
+        #: Called as a clock wait starts, so a watchdog times silence from the moment the
+        #: game is running, not from the last time it was.
+        self.on_advance: Callable[[], None] | None = None
         self.supported_actions = writer.supported_actions
         # A writer that verifies what it did needs to see the game; the reader
         # is the only thing here that can.
@@ -41,6 +47,16 @@ class CompositeAdapter(GameAdapter):
         # a read that drains events would hide them from the loop's wake rule.
         if hasattr(writer, "attach_reader"):
             writer.attach_reader(getattr(reader, "peek_state", reader.read_state))
+
+    def _watched(self, read: Callable[[], GameState]) -> Callable[[], GameState]:
+        hook = self.on_poll
+        if hook is None:
+            return read
+
+        def watched() -> GameState:
+            hook()
+            return read()
+        return watched
 
     @property
     def owns_clock(self) -> bool:
@@ -89,15 +105,18 @@ class CompositeAdapter(GameAdapter):
         When the player owns it, this only watches: no pause, no resume, no
         speed change.
         """
+        if self.on_advance is not None:
+            self.on_advance()
         if not self.owns_clock:
-            return wait_for_days(self.reader.read_state, days, self.poll_seconds, **self._wait)
+            return wait_for_days(self._watched(self.reader.read_state), days, self.poll_seconds,
+                                 **self._wait)
 
         try:
             # Peeked, not read: a read can drain events the loop's wake rule needs.
             start = getattr(self.reader, "peek_state", self.reader.read_state)().date
             self.writer.resume()
-            return wait_for_days(self.reader.read_state, days, self.poll_seconds, start=start,
-                                 **self._wait)
+            return wait_for_days(self._watched(self.reader.read_state), days, self.poll_seconds,
+                                 start=start, **self._wait)
         finally:
             self.writer.pause()
 

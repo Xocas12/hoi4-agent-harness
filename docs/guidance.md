@@ -28,6 +28,7 @@ hoi4-harness play   --system-prompt ./whole-thing.txt   # replace everything
 | `doctrine` | Opinionated general advice. The default. |
 | `historical` | Stay close to what the country actually did. |
 | `coach` | A prescriptive numbered checklist, for smaller or weaker models. |
+| `world-conquest` | The unattended campaign ([campaign.md](campaign.md)): the game's AI executes, the model is the grand strategist. Says who does what, how to sequence wars, how to pace the wakes. |
 
 They live in [`src/hoi4_harness/guidance/`](../src/hoi4_harness/guidance/) as plain
 markdown. Copy one, edit it, point `--guidance` at it.

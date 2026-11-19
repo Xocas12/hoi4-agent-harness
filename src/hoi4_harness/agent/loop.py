@@ -25,6 +25,7 @@ from pathlib import Path
 from typing import Any
 
 from ..actions import catalog, registry
+from ..adapters.base import GameLost
 from ..adapters.clock import days_between
 from ..config import HarnessConfig
 from ..env import UNCAPPED_ACTIONS, HOI4Env
@@ -36,7 +37,7 @@ from .budget import BudgetGuard
 from .errors import classify, describe
 from .llm.base import LLMClient, Msg, ToolResult
 from .memory import Memory
-from .policy import Policy
+from .policy import CampaignPacing, Policy
 from .prompts import system_for, turn_prompt
 from .resume import rebuild
 
@@ -85,6 +86,22 @@ class Transcript:
             handle.write(json.dumps(record, default=str) + "\n")
 
 
+class Supervisor:
+    """What an unattended run hangs off the loop (campaign/runner.py implements it).
+
+    ``before_turn`` sees each turn's state first and may return a reason to stop the run
+    (the game is gone, the end date is reached, a wall-clock limit passed); ``after_turn``
+    runs once the turn's clock has moved. Both may raise ``GameLost``, which ends the run
+    with that message as the reason and nothing else touched."""
+
+    def before_turn(self, state: GameState) -> str | None:
+        return None
+
+    def after_turn(self, state: GameState, *, woke: bool, reason: str, actions: list[str],
+                   tokens: int) -> None:
+        return None
+
+
 class AgentLoop:
     def __init__(
         self,
@@ -95,6 +112,7 @@ class AgentLoop:
         transcript_path: Path | None = None,
         progress: Callable[[str], None] | None = None,
         resume: bool = False,
+        supervisor: Supervisor | None = None,
     ):
         self.env = env
         self.config = config or HarnessConfig()
@@ -119,7 +137,17 @@ class AgentLoop:
             wake_on_front_quiet=self.config.wake_on_front_quiet,
             wake_on_losing_ground=self.config.wake_on_losing_ground,
             reflex_delegate=self.config.reflex_delegate,
+            campaign=(CampaignPacing(
+                peace_days=self.config.campaign_review_peace_days,
+                war_days=self.config.campaign_review_war_days,
+                min_days=self.config.campaign_review_min_days,
+                max_days=self.config.campaign_review_max_days,
+                wake_gap_days=self.config.campaign_wake_gap_days)
+                if self.config.campaign else None),
         )
+        self.supervisor = supervisor
+        #: The days the model's last advance_time asked for (campaign: its next review).
+        self._advance_request: int | None = None
         self.system = system_for(self.config, env.index)
         self.budget = BudgetGuard(self.config.budget)
         self.transcript = Transcript(transcript_path, append=resume)
@@ -183,17 +211,49 @@ class AgentLoop:
         With a date, ``turns`` is a backstop: a model that never advances the
         clock still has to stop somewhere, and the report says which bound was
         hit so a run that never finished is not read as one that did.
+
+        ``GameLost`` (the game died, went silent or never came back to the front) ends
+        the run with its message as ``stopped_reason``; an unattended run reports that
+        rather than a traceback, and the game is left as it is.
         """
         turns = turns if turns is not None else self.config.turns
         if until is not None:
             self.report.reached_end_date = False
+        try:
+            self._run_turns(turns, until)
+        except GameLost as exc:
+            self.report.stopped_reason = str(exc)
+            self.transcript.write("game_lost", reason=str(exc), date=self.report.end_date)
+        self.report.spend = self.budget.summary()
+        self.transcript.write("run_end", **self.report.to_dict())
+        return self.report
+
+    def _turn_days(self, state: GameState, days_since_planner: int) -> int:
+        """Days the clock runs this turn: ``days_per_turn``, or in a campaign what is left
+        until the next scheduled review (a critical event still cuts the wait short)."""
+        if self.policy.campaign is None:
+            return self.config.days_per_turn
+        return max(1, self.policy.review_days(state) - days_since_planner)
+
+    def _run_turns(self, turns: int, until: str | None) -> None:
         state = self.env.read_state()
         if not self.report.start_date:
             self.report.start_date = state.date
-        days_since_planner = self.config.days_per_turn  # wake on the first iteration
+        # Wake on the first iteration.
+        days_since_planner = (self.config.campaign_review_peace_days if self.policy.campaign
+                              else self.config.days_per_turn)
 
         for _ in range(turns):
             state = self.env.read_state()
+            if until is not None and state.date >= until:
+                # Already there (a resumed run that had finished): nothing left to play.
+                self.report.reached_end_date = True
+                break
+            if self.supervisor is not None:
+                stop = self.supervisor.before_turn(state)
+                if stop:
+                    self.report.stopped_reason = stop
+                    break
             self._answered = list(state.events)
             turn_date = state.date
             at_war = bool(state.wars)
@@ -202,6 +262,13 @@ class AgentLoop:
             decision = self.policy.should_wake(state, days_since_planner, previous)
             blocked = self.budget.why_blocked()
             downgraded = bool(decision.wake and blocked)
+
+            if blocked and self.config.campaign and self.config.campaign_on_budget == "stop":
+                # A campaign out of money stops where it is, the game paused and the run
+                # resumable with a bigger budget; "coast" is the other choice.
+                self.transcript.write("budget_stop", reason=blocked, date=state.date)
+                self.report.stopped_reason = f"budget: {blocked}"
+                break
 
             if downgraded:
                 self.transcript.write("budget_downgrade", reason=blocked, date=state.date)
@@ -221,7 +288,7 @@ class AgentLoop:
             self._acknowledge()
             # The last turn stops on the end date rather than running past it:
             # a scenario is scored on the state at ``until``, not a week later.
-            days = self.config.days_per_turn
+            days = self._turn_days(state, days_since_planner)
             if until is not None:
                 left = days_between(turn_date, until)
                 if 0 < left < days:
@@ -246,16 +313,15 @@ class AgentLoop:
                 from_date=turn_date, at_war=at_war, woke=decision.wake,
             )
             self._checkpoint()
+            if self.supervisor is not None:
+                self.supervisor.after_turn(state, woke=decision.wake, reason=decision.reason,
+                                           actions=actions, tokens=turn_tokens)
 
             if self.report.stopped_reason:
                 break
             if until is not None and state.date >= until:
                 self.report.reached_end_date = True
                 break
-
-        self.report.spend = self.budget.summary()
-        self.transcript.write("run_end", **self.report.to_dict())
-        return self.report
 
     # --- one turn ------------------------------------------------------------
 
@@ -366,6 +432,7 @@ class AgentLoop:
         taken: list[str] = []
         turn_tokens = 0
         heard_back = False
+        self._advance_request = None
         # The per-turn action cap, counted across every round of this wake. It
         # has to be enforced here: each call goes to env.act on its own, so
         # act_many's cap never sees the planner's calls (#66).
@@ -471,6 +538,7 @@ class AgentLoop:
                 )
                 if action.name == "advance_time":
                     end_turn = True
+                    self._advance_request = _days_asked(action.arguments)
 
             if self.advisor:
                 # Nothing executed, so there is no actions record; this is what
@@ -483,6 +551,11 @@ class AgentLoop:
             messages.append(Msg(role="user", tool_results=results))
 
         self.memory.record_turn(turn_date, taken)
+        if self.policy.campaign is not None:
+            # The model's advance_time is its own next review, within the campaign's bounds;
+            # a turn that did not call it falls back to the peace or war interval.
+            asked = self._advance_request
+            self.policy.review_override = None if asked is None else self.policy.campaign.clamp(asked)
         return taken, turn_tokens
 
     def _progress_line(self, date: str, marker: str, actions: list[str], tokens: int) -> str:
@@ -569,3 +642,10 @@ class AgentLoop:
                 self.report.actions_ok += 1
             else:
                 self.report.actions_failed += 1
+
+
+def _days_asked(arguments: dict) -> int | None:
+    try:
+        return int(arguments["days"])
+    except (KeyError, TypeError, ValueError):
+        return None

@@ -16,6 +16,15 @@ from dataclasses import dataclass
 from ..types import ActionCall, ActionResult, GameEvent, GameState
 
 
+class GameLost(RuntimeError):
+    """The game is not there to play any more: its process is gone, its log has gone
+    silent while it should be running, or its window never came back to the front.
+
+    Not an error to retry. An unattended run catches it, writes down the reason and
+    stops cleanly, with the game left as it is, so the run can be resumed.
+    """
+
+
 @dataclass
 class AdapterInfo:
     name: str

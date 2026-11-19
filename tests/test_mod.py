@@ -161,4 +161,27 @@ def test_war_and_capitulation_lines_are_only_the_players_own():
     for hook in ("on_declare_war", "on_capitulation"):
         block = hooks[hooks.index(hook):]
         block = block[: block.index("\n\t}") + 3]
-        assert "is_ai = no" in block and "FROM = { is_ai = no }" in block, hook
+        assert "llm_bridge_is_harness = yes" in block, hook
+        assert "FROM = { llm_bridge_is_harness = yes }" in block, hook
+
+
+def test_the_player_trigger_is_the_human_or_the_flag_the_harness_sets():
+    """Under the console's human_ai the player counts as AI, so every limit asks
+    ``llm_bridge_is_harness``: is_ai = no OR the llmb_harness flag (schema v5)."""
+    trigger = (MOD / "common" / "scripted_triggers" / "llm_bridge_triggers.txt").read_text(
+        encoding="utf-8-sig")
+    assert "llm_bridge_is_harness = {" in trigger
+    assert "is_ai = no" in trigger and "has_country_flag = llmb_harness" in trigger
+    for path in (MOD / "common" / "on_actions").glob("*.txt"):
+        assert "limit = { is_ai = no }" not in path.read_text(encoding="utf-8-sig"), path.name
+
+
+def test_the_mod_can_mark_the_player_and_prints_the_campaign_line():
+    effects = (MOD / "common" / "scripted_effects" / "llm_bridge_telemetry.txt").read_text(
+        encoding="utf-8-sig")
+    assert "llm_bridge_unmark_harness = {" in effects
+    assert "llm_bridge_mark_harness = {" in effects and "set_country_flag = llmb_harness" in effects
+    assert "llm_bridge_emit_campaign = {" in effects and "LLMB|v5|camp|" in effects
+    hooks = (MOD / "common" / "on_actions" / "llm_bridge_on_actions.txt").read_text(
+        encoding="utf-8-sig")
+    assert "on_weekly" in hooks and "llm_bridge_emit_campaign = yes" in hooks

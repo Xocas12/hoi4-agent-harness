@@ -37,13 +37,13 @@ One pipe-delimited line per tick, prefixed so it can be found in a log full of
 engine chatter:
 
 ```
-LLMB|v4|state|date= 12:00, 1 January, 1936|tag=SWE|pp=1.933|stab=83.248|ws=0|civ=9|mil=3|doc=3|owned=15|mp=31153|techs=12|built_civ=0|built_mil=0|built_dock=0|built_infra=2
-LLMB|v4|focus|tag=SWE|id=SWE_rearm
-LLMB|v4|research|tag=SWE|id=gwtank
-LLMB|v4|evt|tag=SWE|kind=13|detail=POL
-LLMB|v4|war|tag=SWE|enemy=GER|divs=84|border=1|surr=3
-LLMB|v4|div|tag=SWE|state=64|ctl=GER|own=3|own_weak=1|foe=5|foe_weak=0
-LLMB|v4|divend|tag=SWE|n=7
+LLMB|v5|state|date= 12:00, 1 January, 1936|tag=SWE|pp=1.933|stab=83.248|ws=0|civ=9|mil=3|doc=3|owned=15|mp=31153|techs=12|built_civ=0|built_mil=0|built_dock=0|built_infra=2
+LLMB|v5|focus|tag=SWE|id=SWE_rearm
+LLMB|v5|research|tag=SWE|id=gwtank
+LLMB|v5|evt|tag=SWE|kind=13|detail=POL
+LLMB|v5|war|tag=SWE|enemy=GER|divs=84|border=1|surr=3
+LLMB|v5|div|tag=SWE|state=64|ctl=GER|own=3|own_weak=1|foe=5|foe_weak=0
+LLMB|v5|divend|tag=SWE|n=7
 ```
 
 The `div` and `divend` lines are the front picture (divisions per state, at war only; one
@@ -170,6 +170,13 @@ What that established:
   `verify-bridge` flags a blank tag, or a tag that varies across state lines
   ("tag varies across state lines: LIT, BRA, POL -- on_daily scope bug?"); with
   `--country` it also flags any tag that is not the player's.
+- **Schema v5 (campaign mode): who is "the player".** Every on_action used to limit on
+  `is_ai = no`. The console's `human_ai` hands the player's country to the game's AI, so
+  every one of those limits went false and the log fell silent. Every limit now asks the
+  scripted trigger `llm_bridge_is_harness` (`is_ai = no` OR the country flag `llmb_harness`),
+  and the harness sets the flag with `effect <TAG> llm_bridge_mark_harness` before it toggles
+  `human_ai` ([campaign.md](campaign.md)). The state line also carries `ai=` (the read-back
+  of `is_ai`), and a weekly `camp` line (`on_weekly`) carries the conquest numbers.
 - **`front_unit_request` takes a literal country tag or none**, not a variable, so
   the per-target `ai_strategy` blocks stay generated rather than variable-driven.
 - **Completion events have no on_action.** The only completion hooks in 1.19.5 are

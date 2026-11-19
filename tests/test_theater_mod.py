@@ -54,15 +54,15 @@ def test_the_theater_posture_decisions_are_localised():
 def test_the_log_reader_learns_theater_postures_from_the_mods_events(tmp_path):
     log = tmp_path / "game.log"
     log.write_text(
-        "[x]: LLMB|v4|state|date=1939.9.1|tag=GER|pp=1|stab=50|ws=10\n"
-        "[x]: LLMB|v4|evt|tag=GER|kind=15|detail=offensive POL\n"
-        "[x]: LLMB|v4|evt|tag=GER|kind=15|detail=defensive FRA\n"
-        "[x]: LLMB|v4|evt|tag=GER|kind=15|detail=balanced POL\n"
+        "[x]: LLMB|v5|state|date=1939.9.1|tag=GER|pp=1|stab=50|ws=10\n"
+        "[x]: LLMB|v5|evt|tag=GER|kind=15|detail=offensive POL\n"
+        "[x]: LLMB|v5|evt|tag=GER|kind=15|detail=defensive FRA\n"
+        "[x]: LLMB|v5|evt|tag=GER|kind=15|detail=balanced POL\n"
     )
     state = LogTailAdapter(log).read_state()
     assert state.theater_postures == {"POL": "balanced", "FRA": "defensive"}
     assert state.known("theater_postures")
-    log.write_text(log.read_text() + "[x]: LLMB|v4|evt|tag=GER|kind=12\n")
+    log.write_text(log.read_text() + "[x]: LLMB|v5|evt|tag=GER|kind=12\n")
     assert LogTailAdapter(log).read_state().theater_postures == {}
 
 

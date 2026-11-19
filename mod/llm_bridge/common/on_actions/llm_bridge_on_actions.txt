@@ -9,9 +9,9 @@ on_actions = {
 	on_startup = {
 		effect = {
 			every_country = {
-				limit = { is_ai = no }
+				limit = { llm_bridge_is_harness = yes }
 				set_variable = { llmb_ai_delegated_armies = 0 }
-				log = "LLMB|v4|boot|tag=[THIS.GetTag]|start=[GetDateText]"
+				log = "LLMB|v5|boot|tag=[THIS.GetTag]|start=[GetDateText]"
 				llm_bridge_emit_state = yes
 			}
 		}
@@ -24,8 +24,20 @@ on_actions = {
 	on_daily = {
 		effect = {
 			if = {
-				limit = { is_ai = no }
+				limit = { llm_bridge_is_harness = yes }
 				llm_bridge_emit_state = yes
+			}
+		}
+	}
+
+	# The campaign report's conquest numbers, once a week for the player (schema v5).
+	# Free outside a campaign: it is a few counters and one pass over the countries
+	# and states, once in seven days.
+	on_weekly = {
+		effect = {
+			if = {
+				limit = { llm_bridge_is_harness = yes }
+				llm_bridge_emit_campaign = yes
 			}
 		}
 	}
@@ -38,7 +50,7 @@ on_actions = {
 	on_declare_war = {
 		effect = {
 			if = {
-				limit = { OR = { is_ai = no FROM = { is_ai = no } } }
+				limit = { OR = { llm_bridge_is_harness = yes FROM = { llm_bridge_is_harness = yes } } }
 				set_variable = { llmb_event_kind = 1 }   # war_declared
 				llm_bridge_emit_war = yes
 			}
@@ -48,7 +60,7 @@ on_actions = {
 	on_capitulation = {
 		effect = {
 			if = {
-				limit = { OR = { is_ai = no FROM = { is_ai = no } } }
+				limit = { OR = { llm_bridge_is_harness = yes FROM = { llm_bridge_is_harness = yes } } }
 				set_variable = { llmb_event_kind = 2 }   # capitulation
 				llm_bridge_emit_event = yes
 			}

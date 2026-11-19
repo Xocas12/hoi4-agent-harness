@@ -34,7 +34,8 @@ class ScriptedClient(LLMClient):
     @classmethod
     def from_file(cls, path, model: str = "scripted") -> ScriptedClient:
         """A script from JSON: a list of responses, each ``{"text": "...", "calls":
-        [{"name": "queue_construction", "arguments": {...}}]}``. Once it is
+        [{"name": "queue_construction", "arguments": {...}}], "usage": {"input_tokens":
+        ...}}`` (usage optional: it is what the budget prices). Once it is
         used up the keyword policy takes over, which advances time."""
         import json
         from pathlib import Path
@@ -46,7 +47,8 @@ class ScriptedClient(LLMClient):
             client.script.append(LLMResponse(
                 text=entry.get("text", ""), tool_calls=calls,
                 stop_reason="tool_use" if calls else "end_turn",
-                usage=Usage(input_tokens=0, output_tokens=24), model=model))
+                usage=Usage(**{"input_tokens": 0, "output_tokens": 24, **entry.get("usage", {})}),
+                model=model))
         return client
 
     def _call(self, name: str, **arguments) -> ToolCall:

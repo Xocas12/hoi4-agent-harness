@@ -1,0 +1,11 @@
+{
+  "campaign": true,
+  "fake_game": true,
+  "country": "GER",
+  "start_date": "1936-01-01",
+  "campaign_until": "1938-12-31",
+  "headless_reader": "logtail",
+  "campaign_save_months": 6,
+  "planner": {"provider": "scripted", "extra": {"script": "profiles/campaign-fake-script.json"}},
+  "budget": {"max_usd": 5.0, "usd_per_m_input": 4.0, "usd_per_m_output": 20.0}
+}

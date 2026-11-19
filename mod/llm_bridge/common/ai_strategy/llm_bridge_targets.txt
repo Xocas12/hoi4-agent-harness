@@ -298,6 +298,264 @@ llmb_posture_defensive_ETH = {
 	ai_strategy = { type = front_unit_request tag = ETH value = 50 }
 }
 
+llmb_posture_defensive_AFA = {
+	enable = { has_country_flag = llmb_posture_defensive_AFA }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_AFA } }
+	ai_strategy = { type = front_unit_request tag = AFA value = 50 }
+}
+
+llmb_posture_defensive_AFG = {
+	enable = { has_country_flag = llmb_posture_defensive_AFG }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_AFG } }
+	ai_strategy = { type = front_unit_request tag = AFG value = 50 }
+}
+
+llmb_posture_defensive_BHU = {
+	enable = { has_country_flag = llmb_posture_defensive_BHU }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_BHU } }
+	ai_strategy = { type = front_unit_request tag = BHU value = 50 }
+}
+
+llmb_posture_defensive_BOL = {
+	enable = { has_country_flag = llmb_posture_defensive_BOL }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_BOL } }
+	ai_strategy = { type = front_unit_request tag = BOL value = 50 }
+}
+
+llmb_posture_defensive_BRM = {
+	enable = { has_country_flag = llmb_posture_defensive_BRM }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_BRM } }
+	ai_strategy = { type = front_unit_request tag = BRM value = 50 }
+}
+
+llmb_posture_defensive_CHL = {
+	enable = { has_country_flag = llmb_posture_defensive_CHL }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_CHL } }
+	ai_strategy = { type = front_unit_request tag = CHL value = 50 }
+}
+
+llmb_posture_defensive_COL = {
+	enable = { has_country_flag = llmb_posture_defensive_COL }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_COL } }
+	ai_strategy = { type = front_unit_request tag = COL value = 50 }
+}
+
+llmb_posture_defensive_COS = {
+	enable = { has_country_flag = llmb_posture_defensive_COS }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_COS } }
+	ai_strategy = { type = front_unit_request tag = COS value = 50 }
+}
+
+llmb_posture_defensive_CUB = {
+	enable = { has_country_flag = llmb_posture_defensive_CUB }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_CUB } }
+	ai_strategy = { type = front_unit_request tag = CUB value = 50 }
+}
+
+llmb_posture_defensive_DOM = {
+	enable = { has_country_flag = llmb_posture_defensive_DOM }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_DOM } }
+	ai_strategy = { type = front_unit_request tag = DOM value = 50 }
+}
+
+llmb_posture_defensive_ECU = {
+	enable = { has_country_flag = llmb_posture_defensive_ECU }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_ECU } }
+	ai_strategy = { type = front_unit_request tag = ECU value = 50 }
+}
+
+llmb_posture_defensive_ELS = {
+	enable = { has_country_flag = llmb_posture_defensive_ELS }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_ELS } }
+	ai_strategy = { type = front_unit_request tag = ELS value = 50 }
+}
+
+llmb_posture_defensive_GUA = {
+	enable = { has_country_flag = llmb_posture_defensive_GUA }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_GUA } }
+	ai_strategy = { type = front_unit_request tag = GUA value = 50 }
+}
+
+llmb_posture_defensive_GXC = {
+	enable = { has_country_flag = llmb_posture_defensive_GXC }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_GXC } }
+	ai_strategy = { type = front_unit_request tag = GXC value = 50 }
+}
+
+llmb_posture_defensive_HAI = {
+	enable = { has_country_flag = llmb_posture_defensive_HAI }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_HAI } }
+	ai_strategy = { type = front_unit_request tag = HAI value = 50 }
+}
+
+llmb_posture_defensive_HON = {
+	enable = { has_country_flag = llmb_posture_defensive_HON }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_HON } }
+	ai_strategy = { type = front_unit_request tag = HON value = 50 }
+}
+
+llmb_posture_defensive_ICE = {
+	enable = { has_country_flag = llmb_posture_defensive_ICE }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_ICE } }
+	ai_strategy = { type = front_unit_request tag = ICE value = 50 }
+}
+
+llmb_posture_defensive_INS = {
+	enable = { has_country_flag = llmb_posture_defensive_INS }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_INS } }
+	ai_strategy = { type = front_unit_request tag = INS value = 50 }
+}
+
+llmb_posture_defensive_JOR = {
+	enable = { has_country_flag = llmb_posture_defensive_JOR }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_JOR } }
+	ai_strategy = { type = front_unit_request tag = JOR value = 50 }
+}
+
+llmb_posture_defensive_KUW = {
+	enable = { has_country_flag = llmb_posture_defensive_KUW }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_KUW } }
+	ai_strategy = { type = front_unit_request tag = KUW value = 50 }
+}
+
+llmb_posture_defensive_LEB = {
+	enable = { has_country_flag = llmb_posture_defensive_LEB }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_LEB } }
+	ai_strategy = { type = front_unit_request tag = LEB value = 50 }
+}
+
+llmb_posture_defensive_LIB = {
+	enable = { has_country_flag = llmb_posture_defensive_LIB }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_LIB } }
+	ai_strategy = { type = front_unit_request tag = LIB value = 50 }
+}
+
+llmb_posture_defensive_MAL = {
+	enable = { has_country_flag = llmb_posture_defensive_MAL }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_MAL } }
+	ai_strategy = { type = front_unit_request tag = MAL value = 50 }
+}
+
+llmb_posture_defensive_MEN = {
+	enable = { has_country_flag = llmb_posture_defensive_MEN }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_MEN } }
+	ai_strategy = { type = front_unit_request tag = MEN value = 50 }
+}
+
+llmb_posture_defensive_MON = {
+	enable = { has_country_flag = llmb_posture_defensive_MON }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_MON } }
+	ai_strategy = { type = front_unit_request tag = MON value = 50 }
+}
+
+llmb_posture_defensive_NEP = {
+	enable = { has_country_flag = llmb_posture_defensive_NEP }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_NEP } }
+	ai_strategy = { type = front_unit_request tag = NEP value = 50 }
+}
+
+llmb_posture_defensive_NIC = {
+	enable = { has_country_flag = llmb_posture_defensive_NIC }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_NIC } }
+	ai_strategy = { type = front_unit_request tag = NIC value = 50 }
+}
+
+llmb_posture_defensive_OMA = {
+	enable = { has_country_flag = llmb_posture_defensive_OMA }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_OMA } }
+	ai_strategy = { type = front_unit_request tag = OMA value = 50 }
+}
+
+llmb_posture_defensive_PAL = {
+	enable = { has_country_flag = llmb_posture_defensive_PAL }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_PAL } }
+	ai_strategy = { type = front_unit_request tag = PAL value = 50 }
+}
+
+llmb_posture_defensive_PAN = {
+	enable = { has_country_flag = llmb_posture_defensive_PAN }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_PAN } }
+	ai_strategy = { type = front_unit_request tag = PAN value = 50 }
+}
+
+llmb_posture_defensive_PAR = {
+	enable = { has_country_flag = llmb_posture_defensive_PAR }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_PAR } }
+	ai_strategy = { type = front_unit_request tag = PAR value = 50 }
+}
+
+llmb_posture_defensive_PRU = {
+	enable = { has_country_flag = llmb_posture_defensive_PRU }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_PRU } }
+	ai_strategy = { type = front_unit_request tag = PRU value = 50 }
+}
+
+llmb_posture_defensive_SHX = {
+	enable = { has_country_flag = llmb_posture_defensive_SHX }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_SHX } }
+	ai_strategy = { type = front_unit_request tag = SHX value = 50 }
+}
+
+llmb_posture_defensive_SIK = {
+	enable = { has_country_flag = llmb_posture_defensive_SIK }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_SIK } }
+	ai_strategy = { type = front_unit_request tag = SIK value = 50 }
+}
+
+llmb_posture_defensive_SLO = {
+	enable = { has_country_flag = llmb_posture_defensive_SLO }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_SLO } }
+	ai_strategy = { type = front_unit_request tag = SLO value = 50 }
+}
+
+llmb_posture_defensive_SYR = {
+	enable = { has_country_flag = llmb_posture_defensive_SYR }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_SYR } }
+	ai_strategy = { type = front_unit_request tag = SYR value = 50 }
+}
+
+llmb_posture_defensive_TAN = {
+	enable = { has_country_flag = llmb_posture_defensive_TAN }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_TAN } }
+	ai_strategy = { type = front_unit_request tag = TAN value = 50 }
+}
+
+llmb_posture_defensive_TIB = {
+	enable = { has_country_flag = llmb_posture_defensive_TIB }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_TIB } }
+	ai_strategy = { type = front_unit_request tag = TIB value = 50 }
+}
+
+llmb_posture_defensive_URG = {
+	enable = { has_country_flag = llmb_posture_defensive_URG }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_URG } }
+	ai_strategy = { type = front_unit_request tag = URG value = 50 }
+}
+
+llmb_posture_defensive_VEN = {
+	enable = { has_country_flag = llmb_posture_defensive_VEN }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_VEN } }
+	ai_strategy = { type = front_unit_request tag = VEN value = 50 }
+}
+
+llmb_posture_defensive_XSM = {
+	enable = { has_country_flag = llmb_posture_defensive_XSM }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_XSM } }
+	ai_strategy = { type = front_unit_request tag = XSM value = 50 }
+}
+
+llmb_posture_defensive_YEM = {
+	enable = { has_country_flag = llmb_posture_defensive_YEM }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_YEM } }
+	ai_strategy = { type = front_unit_request tag = YEM value = 50 }
+}
+
+llmb_posture_defensive_YUN = {
+	enable = { has_country_flag = llmb_posture_defensive_YUN }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_YUN } }
+	ai_strategy = { type = front_unit_request tag = YUN value = 50 }
+}
+
 llmb_posture_offensive_GER = {
 	enable = { has_country_flag = llmb_posture_offensive_GER }
 	abort = { NOT = { has_country_flag = llmb_posture_offensive_GER } }
@@ -590,6 +848,264 @@ llmb_posture_offensive_ETH = {
 	enable = { has_country_flag = llmb_posture_offensive_ETH }
 	abort = { NOT = { has_country_flag = llmb_posture_offensive_ETH } }
 	ai_strategy = { type = front_unit_request tag = ETH value = 100 }
+}
+
+llmb_posture_offensive_AFA = {
+	enable = { has_country_flag = llmb_posture_offensive_AFA }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_AFA } }
+	ai_strategy = { type = front_unit_request tag = AFA value = 100 }
+}
+
+llmb_posture_offensive_AFG = {
+	enable = { has_country_flag = llmb_posture_offensive_AFG }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_AFG } }
+	ai_strategy = { type = front_unit_request tag = AFG value = 100 }
+}
+
+llmb_posture_offensive_BHU = {
+	enable = { has_country_flag = llmb_posture_offensive_BHU }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_BHU } }
+	ai_strategy = { type = front_unit_request tag = BHU value = 100 }
+}
+
+llmb_posture_offensive_BOL = {
+	enable = { has_country_flag = llmb_posture_offensive_BOL }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_BOL } }
+	ai_strategy = { type = front_unit_request tag = BOL value = 100 }
+}
+
+llmb_posture_offensive_BRM = {
+	enable = { has_country_flag = llmb_posture_offensive_BRM }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_BRM } }
+	ai_strategy = { type = front_unit_request tag = BRM value = 100 }
+}
+
+llmb_posture_offensive_CHL = {
+	enable = { has_country_flag = llmb_posture_offensive_CHL }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_CHL } }
+	ai_strategy = { type = front_unit_request tag = CHL value = 100 }
+}
+
+llmb_posture_offensive_COL = {
+	enable = { has_country_flag = llmb_posture_offensive_COL }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_COL } }
+	ai_strategy = { type = front_unit_request tag = COL value = 100 }
+}
+
+llmb_posture_offensive_COS = {
+	enable = { has_country_flag = llmb_posture_offensive_COS }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_COS } }
+	ai_strategy = { type = front_unit_request tag = COS value = 100 }
+}
+
+llmb_posture_offensive_CUB = {
+	enable = { has_country_flag = llmb_posture_offensive_CUB }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_CUB } }
+	ai_strategy = { type = front_unit_request tag = CUB value = 100 }
+}
+
+llmb_posture_offensive_DOM = {
+	enable = { has_country_flag = llmb_posture_offensive_DOM }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_DOM } }
+	ai_strategy = { type = front_unit_request tag = DOM value = 100 }
+}
+
+llmb_posture_offensive_ECU = {
+	enable = { has_country_flag = llmb_posture_offensive_ECU }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_ECU } }
+	ai_strategy = { type = front_unit_request tag = ECU value = 100 }
+}
+
+llmb_posture_offensive_ELS = {
+	enable = { has_country_flag = llmb_posture_offensive_ELS }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_ELS } }
+	ai_strategy = { type = front_unit_request tag = ELS value = 100 }
+}
+
+llmb_posture_offensive_GUA = {
+	enable = { has_country_flag = llmb_posture_offensive_GUA }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_GUA } }
+	ai_strategy = { type = front_unit_request tag = GUA value = 100 }
+}
+
+llmb_posture_offensive_GXC = {
+	enable = { has_country_flag = llmb_posture_offensive_GXC }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_GXC } }
+	ai_strategy = { type = front_unit_request tag = GXC value = 100 }
+}
+
+llmb_posture_offensive_HAI = {
+	enable = { has_country_flag = llmb_posture_offensive_HAI }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_HAI } }
+	ai_strategy = { type = front_unit_request tag = HAI value = 100 }
+}
+
+llmb_posture_offensive_HON = {
+	enable = { has_country_flag = llmb_posture_offensive_HON }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_HON } }
+	ai_strategy = { type = front_unit_request tag = HON value = 100 }
+}
+
+llmb_posture_offensive_ICE = {
+	enable = { has_country_flag = llmb_posture_offensive_ICE }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_ICE } }
+	ai_strategy = { type = front_unit_request tag = ICE value = 100 }
+}
+
+llmb_posture_offensive_INS = {
+	enable = { has_country_flag = llmb_posture_offensive_INS }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_INS } }
+	ai_strategy = { type = front_unit_request tag = INS value = 100 }
+}
+
+llmb_posture_offensive_JOR = {
+	enable = { has_country_flag = llmb_posture_offensive_JOR }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_JOR } }
+	ai_strategy = { type = front_unit_request tag = JOR value = 100 }
+}
+
+llmb_posture_offensive_KUW = {
+	enable = { has_country_flag = llmb_posture_offensive_KUW }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_KUW } }
+	ai_strategy = { type = front_unit_request tag = KUW value = 100 }
+}
+
+llmb_posture_offensive_LEB = {
+	enable = { has_country_flag = llmb_posture_offensive_LEB }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_LEB } }
+	ai_strategy = { type = front_unit_request tag = LEB value = 100 }
+}
+
+llmb_posture_offensive_LIB = {
+	enable = { has_country_flag = llmb_posture_offensive_LIB }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_LIB } }
+	ai_strategy = { type = front_unit_request tag = LIB value = 100 }
+}
+
+llmb_posture_offensive_MAL = {
+	enable = { has_country_flag = llmb_posture_offensive_MAL }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_MAL } }
+	ai_strategy = { type = front_unit_request tag = MAL value = 100 }
+}
+
+llmb_posture_offensive_MEN = {
+	enable = { has_country_flag = llmb_posture_offensive_MEN }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_MEN } }
+	ai_strategy = { type = front_unit_request tag = MEN value = 100 }
+}
+
+llmb_posture_offensive_MON = {
+	enable = { has_country_flag = llmb_posture_offensive_MON }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_MON } }
+	ai_strategy = { type = front_unit_request tag = MON value = 100 }
+}
+
+llmb_posture_offensive_NEP = {
+	enable = { has_country_flag = llmb_posture_offensive_NEP }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_NEP } }
+	ai_strategy = { type = front_unit_request tag = NEP value = 100 }
+}
+
+llmb_posture_offensive_NIC = {
+	enable = { has_country_flag = llmb_posture_offensive_NIC }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_NIC } }
+	ai_strategy = { type = front_unit_request tag = NIC value = 100 }
+}
+
+llmb_posture_offensive_OMA = {
+	enable = { has_country_flag = llmb_posture_offensive_OMA }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_OMA } }
+	ai_strategy = { type = front_unit_request tag = OMA value = 100 }
+}
+
+llmb_posture_offensive_PAL = {
+	enable = { has_country_flag = llmb_posture_offensive_PAL }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_PAL } }
+	ai_strategy = { type = front_unit_request tag = PAL value = 100 }
+}
+
+llmb_posture_offensive_PAN = {
+	enable = { has_country_flag = llmb_posture_offensive_PAN }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_PAN } }
+	ai_strategy = { type = front_unit_request tag = PAN value = 100 }
+}
+
+llmb_posture_offensive_PAR = {
+	enable = { has_country_flag = llmb_posture_offensive_PAR }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_PAR } }
+	ai_strategy = { type = front_unit_request tag = PAR value = 100 }
+}
+
+llmb_posture_offensive_PRU = {
+	enable = { has_country_flag = llmb_posture_offensive_PRU }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_PRU } }
+	ai_strategy = { type = front_unit_request tag = PRU value = 100 }
+}
+
+llmb_posture_offensive_SHX = {
+	enable = { has_country_flag = llmb_posture_offensive_SHX }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_SHX } }
+	ai_strategy = { type = front_unit_request tag = SHX value = 100 }
+}
+
+llmb_posture_offensive_SIK = {
+	enable = { has_country_flag = llmb_posture_offensive_SIK }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_SIK } }
+	ai_strategy = { type = front_unit_request tag = SIK value = 100 }
+}
+
+llmb_posture_offensive_SLO = {
+	enable = { has_country_flag = llmb_posture_offensive_SLO }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_SLO } }
+	ai_strategy = { type = front_unit_request tag = SLO value = 100 }
+}
+
+llmb_posture_offensive_SYR = {
+	enable = { has_country_flag = llmb_posture_offensive_SYR }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_SYR } }
+	ai_strategy = { type = front_unit_request tag = SYR value = 100 }
+}
+
+llmb_posture_offensive_TAN = {
+	enable = { has_country_flag = llmb_posture_offensive_TAN }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_TAN } }
+	ai_strategy = { type = front_unit_request tag = TAN value = 100 }
+}
+
+llmb_posture_offensive_TIB = {
+	enable = { has_country_flag = llmb_posture_offensive_TIB }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_TIB } }
+	ai_strategy = { type = front_unit_request tag = TIB value = 100 }
+}
+
+llmb_posture_offensive_URG = {
+	enable = { has_country_flag = llmb_posture_offensive_URG }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_URG } }
+	ai_strategy = { type = front_unit_request tag = URG value = 100 }
+}
+
+llmb_posture_offensive_VEN = {
+	enable = { has_country_flag = llmb_posture_offensive_VEN }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_VEN } }
+	ai_strategy = { type = front_unit_request tag = VEN value = 100 }
+}
+
+llmb_posture_offensive_XSM = {
+	enable = { has_country_flag = llmb_posture_offensive_XSM }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_XSM } }
+	ai_strategy = { type = front_unit_request tag = XSM value = 100 }
+}
+
+llmb_posture_offensive_YEM = {
+	enable = { has_country_flag = llmb_posture_offensive_YEM }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_YEM } }
+	ai_strategy = { type = front_unit_request tag = YEM value = 100 }
+}
+
+llmb_posture_offensive_YUN = {
+	enable = { has_country_flag = llmb_posture_offensive_YUN }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_YUN } }
+	ai_strategy = { type = front_unit_request tag = YUN value = 100 }
 }
 
 llmb_invade_GER = {
@@ -935,6 +1451,307 @@ llmb_invade_ETH = {
 	ai_strategy = { type = invade id = "ETH" value = 150 }
 }
 
+llmb_invade_AFA = {
+	enable = { has_country_flag = llmb_invade_AFA }
+	abort = { NOT = { has_country_flag = llmb_invade_AFA } }
+	ai_strategy = { type = conquer id = "AFA" value = 150 }
+	ai_strategy = { type = invade id = "AFA" value = 150 }
+}
+
+llmb_invade_AFG = {
+	enable = { has_country_flag = llmb_invade_AFG }
+	abort = { NOT = { has_country_flag = llmb_invade_AFG } }
+	ai_strategy = { type = conquer id = "AFG" value = 150 }
+	ai_strategy = { type = invade id = "AFG" value = 150 }
+}
+
+llmb_invade_BHU = {
+	enable = { has_country_flag = llmb_invade_BHU }
+	abort = { NOT = { has_country_flag = llmb_invade_BHU } }
+	ai_strategy = { type = conquer id = "BHU" value = 150 }
+	ai_strategy = { type = invade id = "BHU" value = 150 }
+}
+
+llmb_invade_BOL = {
+	enable = { has_country_flag = llmb_invade_BOL }
+	abort = { NOT = { has_country_flag = llmb_invade_BOL } }
+	ai_strategy = { type = conquer id = "BOL" value = 150 }
+	ai_strategy = { type = invade id = "BOL" value = 150 }
+}
+
+llmb_invade_BRM = {
+	enable = { has_country_flag = llmb_invade_BRM }
+	abort = { NOT = { has_country_flag = llmb_invade_BRM } }
+	ai_strategy = { type = conquer id = "BRM" value = 150 }
+	ai_strategy = { type = invade id = "BRM" value = 150 }
+}
+
+llmb_invade_CHL = {
+	enable = { has_country_flag = llmb_invade_CHL }
+	abort = { NOT = { has_country_flag = llmb_invade_CHL } }
+	ai_strategy = { type = conquer id = "CHL" value = 150 }
+	ai_strategy = { type = invade id = "CHL" value = 150 }
+}
+
+llmb_invade_COL = {
+	enable = { has_country_flag = llmb_invade_COL }
+	abort = { NOT = { has_country_flag = llmb_invade_COL } }
+	ai_strategy = { type = conquer id = "COL" value = 150 }
+	ai_strategy = { type = invade id = "COL" value = 150 }
+}
+
+llmb_invade_COS = {
+	enable = { has_country_flag = llmb_invade_COS }
+	abort = { NOT = { has_country_flag = llmb_invade_COS } }
+	ai_strategy = { type = conquer id = "COS" value = 150 }
+	ai_strategy = { type = invade id = "COS" value = 150 }
+}
+
+llmb_invade_CUB = {
+	enable = { has_country_flag = llmb_invade_CUB }
+	abort = { NOT = { has_country_flag = llmb_invade_CUB } }
+	ai_strategy = { type = conquer id = "CUB" value = 150 }
+	ai_strategy = { type = invade id = "CUB" value = 150 }
+}
+
+llmb_invade_DOM = {
+	enable = { has_country_flag = llmb_invade_DOM }
+	abort = { NOT = { has_country_flag = llmb_invade_DOM } }
+	ai_strategy = { type = conquer id = "DOM" value = 150 }
+	ai_strategy = { type = invade id = "DOM" value = 150 }
+}
+
+llmb_invade_ECU = {
+	enable = { has_country_flag = llmb_invade_ECU }
+	abort = { NOT = { has_country_flag = llmb_invade_ECU } }
+	ai_strategy = { type = conquer id = "ECU" value = 150 }
+	ai_strategy = { type = invade id = "ECU" value = 150 }
+}
+
+llmb_invade_ELS = {
+	enable = { has_country_flag = llmb_invade_ELS }
+	abort = { NOT = { has_country_flag = llmb_invade_ELS } }
+	ai_strategy = { type = conquer id = "ELS" value = 150 }
+	ai_strategy = { type = invade id = "ELS" value = 150 }
+}
+
+llmb_invade_GUA = {
+	enable = { has_country_flag = llmb_invade_GUA }
+	abort = { NOT = { has_country_flag = llmb_invade_GUA } }
+	ai_strategy = { type = conquer id = "GUA" value = 150 }
+	ai_strategy = { type = invade id = "GUA" value = 150 }
+}
+
+llmb_invade_GXC = {
+	enable = { has_country_flag = llmb_invade_GXC }
+	abort = { NOT = { has_country_flag = llmb_invade_GXC } }
+	ai_strategy = { type = conquer id = "GXC" value = 150 }
+	ai_strategy = { type = invade id = "GXC" value = 150 }
+}
+
+llmb_invade_HAI = {
+	enable = { has_country_flag = llmb_invade_HAI }
+	abort = { NOT = { has_country_flag = llmb_invade_HAI } }
+	ai_strategy = { type = conquer id = "HAI" value = 150 }
+	ai_strategy = { type = invade id = "HAI" value = 150 }
+}
+
+llmb_invade_HON = {
+	enable = { has_country_flag = llmb_invade_HON }
+	abort = { NOT = { has_country_flag = llmb_invade_HON } }
+	ai_strategy = { type = conquer id = "HON" value = 150 }
+	ai_strategy = { type = invade id = "HON" value = 150 }
+}
+
+llmb_invade_ICE = {
+	enable = { has_country_flag = llmb_invade_ICE }
+	abort = { NOT = { has_country_flag = llmb_invade_ICE } }
+	ai_strategy = { type = conquer id = "ICE" value = 150 }
+	ai_strategy = { type = invade id = "ICE" value = 150 }
+}
+
+llmb_invade_INS = {
+	enable = { has_country_flag = llmb_invade_INS }
+	abort = { NOT = { has_country_flag = llmb_invade_INS } }
+	ai_strategy = { type = conquer id = "INS" value = 150 }
+	ai_strategy = { type = invade id = "INS" value = 150 }
+}
+
+llmb_invade_JOR = {
+	enable = { has_country_flag = llmb_invade_JOR }
+	abort = { NOT = { has_country_flag = llmb_invade_JOR } }
+	ai_strategy = { type = conquer id = "JOR" value = 150 }
+	ai_strategy = { type = invade id = "JOR" value = 150 }
+}
+
+llmb_invade_KUW = {
+	enable = { has_country_flag = llmb_invade_KUW }
+	abort = { NOT = { has_country_flag = llmb_invade_KUW } }
+	ai_strategy = { type = conquer id = "KUW" value = 150 }
+	ai_strategy = { type = invade id = "KUW" value = 150 }
+}
+
+llmb_invade_LEB = {
+	enable = { has_country_flag = llmb_invade_LEB }
+	abort = { NOT = { has_country_flag = llmb_invade_LEB } }
+	ai_strategy = { type = conquer id = "LEB" value = 150 }
+	ai_strategy = { type = invade id = "LEB" value = 150 }
+}
+
+llmb_invade_LIB = {
+	enable = { has_country_flag = llmb_invade_LIB }
+	abort = { NOT = { has_country_flag = llmb_invade_LIB } }
+	ai_strategy = { type = conquer id = "LIB" value = 150 }
+	ai_strategy = { type = invade id = "LIB" value = 150 }
+}
+
+llmb_invade_MAL = {
+	enable = { has_country_flag = llmb_invade_MAL }
+	abort = { NOT = { has_country_flag = llmb_invade_MAL } }
+	ai_strategy = { type = conquer id = "MAL" value = 150 }
+	ai_strategy = { type = invade id = "MAL" value = 150 }
+}
+
+llmb_invade_MEN = {
+	enable = { has_country_flag = llmb_invade_MEN }
+	abort = { NOT = { has_country_flag = llmb_invade_MEN } }
+	ai_strategy = { type = conquer id = "MEN" value = 150 }
+	ai_strategy = { type = invade id = "MEN" value = 150 }
+}
+
+llmb_invade_MON = {
+	enable = { has_country_flag = llmb_invade_MON }
+	abort = { NOT = { has_country_flag = llmb_invade_MON } }
+	ai_strategy = { type = conquer id = "MON" value = 150 }
+	ai_strategy = { type = invade id = "MON" value = 150 }
+}
+
+llmb_invade_NEP = {
+	enable = { has_country_flag = llmb_invade_NEP }
+	abort = { NOT = { has_country_flag = llmb_invade_NEP } }
+	ai_strategy = { type = conquer id = "NEP" value = 150 }
+	ai_strategy = { type = invade id = "NEP" value = 150 }
+}
+
+llmb_invade_NIC = {
+	enable = { has_country_flag = llmb_invade_NIC }
+	abort = { NOT = { has_country_flag = llmb_invade_NIC } }
+	ai_strategy = { type = conquer id = "NIC" value = 150 }
+	ai_strategy = { type = invade id = "NIC" value = 150 }
+}
+
+llmb_invade_OMA = {
+	enable = { has_country_flag = llmb_invade_OMA }
+	abort = { NOT = { has_country_flag = llmb_invade_OMA } }
+	ai_strategy = { type = conquer id = "OMA" value = 150 }
+	ai_strategy = { type = invade id = "OMA" value = 150 }
+}
+
+llmb_invade_PAL = {
+	enable = { has_country_flag = llmb_invade_PAL }
+	abort = { NOT = { has_country_flag = llmb_invade_PAL } }
+	ai_strategy = { type = conquer id = "PAL" value = 150 }
+	ai_strategy = { type = invade id = "PAL" value = 150 }
+}
+
+llmb_invade_PAN = {
+	enable = { has_country_flag = llmb_invade_PAN }
+	abort = { NOT = { has_country_flag = llmb_invade_PAN } }
+	ai_strategy = { type = conquer id = "PAN" value = 150 }
+	ai_strategy = { type = invade id = "PAN" value = 150 }
+}
+
+llmb_invade_PAR = {
+	enable = { has_country_flag = llmb_invade_PAR }
+	abort = { NOT = { has_country_flag = llmb_invade_PAR } }
+	ai_strategy = { type = conquer id = "PAR" value = 150 }
+	ai_strategy = { type = invade id = "PAR" value = 150 }
+}
+
+llmb_invade_PRU = {
+	enable = { has_country_flag = llmb_invade_PRU }
+	abort = { NOT = { has_country_flag = llmb_invade_PRU } }
+	ai_strategy = { type = conquer id = "PRU" value = 150 }
+	ai_strategy = { type = invade id = "PRU" value = 150 }
+}
+
+llmb_invade_SHX = {
+	enable = { has_country_flag = llmb_invade_SHX }
+	abort = { NOT = { has_country_flag = llmb_invade_SHX } }
+	ai_strategy = { type = conquer id = "SHX" value = 150 }
+	ai_strategy = { type = invade id = "SHX" value = 150 }
+}
+
+llmb_invade_SIK = {
+	enable = { has_country_flag = llmb_invade_SIK }
+	abort = { NOT = { has_country_flag = llmb_invade_SIK } }
+	ai_strategy = { type = conquer id = "SIK" value = 150 }
+	ai_strategy = { type = invade id = "SIK" value = 150 }
+}
+
+llmb_invade_SLO = {
+	enable = { has_country_flag = llmb_invade_SLO }
+	abort = { NOT = { has_country_flag = llmb_invade_SLO } }
+	ai_strategy = { type = conquer id = "SLO" value = 150 }
+	ai_strategy = { type = invade id = "SLO" value = 150 }
+}
+
+llmb_invade_SYR = {
+	enable = { has_country_flag = llmb_invade_SYR }
+	abort = { NOT = { has_country_flag = llmb_invade_SYR } }
+	ai_strategy = { type = conquer id = "SYR" value = 150 }
+	ai_strategy = { type = invade id = "SYR" value = 150 }
+}
+
+llmb_invade_TAN = {
+	enable = { has_country_flag = llmb_invade_TAN }
+	abort = { NOT = { has_country_flag = llmb_invade_TAN } }
+	ai_strategy = { type = conquer id = "TAN" value = 150 }
+	ai_strategy = { type = invade id = "TAN" value = 150 }
+}
+
+llmb_invade_TIB = {
+	enable = { has_country_flag = llmb_invade_TIB }
+	abort = { NOT = { has_country_flag = llmb_invade_TIB } }
+	ai_strategy = { type = conquer id = "TIB" value = 150 }
+	ai_strategy = { type = invade id = "TIB" value = 150 }
+}
+
+llmb_invade_URG = {
+	enable = { has_country_flag = llmb_invade_URG }
+	abort = { NOT = { has_country_flag = llmb_invade_URG } }
+	ai_strategy = { type = conquer id = "URG" value = 150 }
+	ai_strategy = { type = invade id = "URG" value = 150 }
+}
+
+llmb_invade_VEN = {
+	enable = { has_country_flag = llmb_invade_VEN }
+	abort = { NOT = { has_country_flag = llmb_invade_VEN } }
+	ai_strategy = { type = conquer id = "VEN" value = 150 }
+	ai_strategy = { type = invade id = "VEN" value = 150 }
+}
+
+llmb_invade_XSM = {
+	enable = { has_country_flag = llmb_invade_XSM }
+	abort = { NOT = { has_country_flag = llmb_invade_XSM } }
+	ai_strategy = { type = conquer id = "XSM" value = 150 }
+	ai_strategy = { type = invade id = "XSM" value = 150 }
+}
+
+llmb_invade_YEM = {
+	enable = { has_country_flag = llmb_invade_YEM }
+	abort = { NOT = { has_country_flag = llmb_invade_YEM } }
+	ai_strategy = { type = conquer id = "YEM" value = 150 }
+	ai_strategy = { type = invade id = "YEM" value = 150 }
+}
+
+llmb_invade_YUN = {
+	enable = { has_country_flag = llmb_invade_YUN }
+	abort = { NOT = { has_country_flag = llmb_invade_YUN } }
+	ai_strategy = { type = conquer id = "YUN" value = 150 }
+	ai_strategy = { type = invade id = "YUN" value = 150 }
+}
+
 llmb_protect_GER = {
 	enable = { has_country_flag = llmb_protect_GER }
 	abort = { NOT = { has_country_flag = llmb_protect_GER } }
@@ -1227,6 +2044,264 @@ llmb_protect_ETH = {
 	enable = { has_country_flag = llmb_protect_ETH }
 	abort = { NOT = { has_country_flag = llmb_protect_ETH } }
 	ai_strategy = { type = protect id = "ETH" value = 150 }
+}
+
+llmb_protect_AFA = {
+	enable = { has_country_flag = llmb_protect_AFA }
+	abort = { NOT = { has_country_flag = llmb_protect_AFA } }
+	ai_strategy = { type = protect id = "AFA" value = 150 }
+}
+
+llmb_protect_AFG = {
+	enable = { has_country_flag = llmb_protect_AFG }
+	abort = { NOT = { has_country_flag = llmb_protect_AFG } }
+	ai_strategy = { type = protect id = "AFG" value = 150 }
+}
+
+llmb_protect_BHU = {
+	enable = { has_country_flag = llmb_protect_BHU }
+	abort = { NOT = { has_country_flag = llmb_protect_BHU } }
+	ai_strategy = { type = protect id = "BHU" value = 150 }
+}
+
+llmb_protect_BOL = {
+	enable = { has_country_flag = llmb_protect_BOL }
+	abort = { NOT = { has_country_flag = llmb_protect_BOL } }
+	ai_strategy = { type = protect id = "BOL" value = 150 }
+}
+
+llmb_protect_BRM = {
+	enable = { has_country_flag = llmb_protect_BRM }
+	abort = { NOT = { has_country_flag = llmb_protect_BRM } }
+	ai_strategy = { type = protect id = "BRM" value = 150 }
+}
+
+llmb_protect_CHL = {
+	enable = { has_country_flag = llmb_protect_CHL }
+	abort = { NOT = { has_country_flag = llmb_protect_CHL } }
+	ai_strategy = { type = protect id = "CHL" value = 150 }
+}
+
+llmb_protect_COL = {
+	enable = { has_country_flag = llmb_protect_COL }
+	abort = { NOT = { has_country_flag = llmb_protect_COL } }
+	ai_strategy = { type = protect id = "COL" value = 150 }
+}
+
+llmb_protect_COS = {
+	enable = { has_country_flag = llmb_protect_COS }
+	abort = { NOT = { has_country_flag = llmb_protect_COS } }
+	ai_strategy = { type = protect id = "COS" value = 150 }
+}
+
+llmb_protect_CUB = {
+	enable = { has_country_flag = llmb_protect_CUB }
+	abort = { NOT = { has_country_flag = llmb_protect_CUB } }
+	ai_strategy = { type = protect id = "CUB" value = 150 }
+}
+
+llmb_protect_DOM = {
+	enable = { has_country_flag = llmb_protect_DOM }
+	abort = { NOT = { has_country_flag = llmb_protect_DOM } }
+	ai_strategy = { type = protect id = "DOM" value = 150 }
+}
+
+llmb_protect_ECU = {
+	enable = { has_country_flag = llmb_protect_ECU }
+	abort = { NOT = { has_country_flag = llmb_protect_ECU } }
+	ai_strategy = { type = protect id = "ECU" value = 150 }
+}
+
+llmb_protect_ELS = {
+	enable = { has_country_flag = llmb_protect_ELS }
+	abort = { NOT = { has_country_flag = llmb_protect_ELS } }
+	ai_strategy = { type = protect id = "ELS" value = 150 }
+}
+
+llmb_protect_GUA = {
+	enable = { has_country_flag = llmb_protect_GUA }
+	abort = { NOT = { has_country_flag = llmb_protect_GUA } }
+	ai_strategy = { type = protect id = "GUA" value = 150 }
+}
+
+llmb_protect_GXC = {
+	enable = { has_country_flag = llmb_protect_GXC }
+	abort = { NOT = { has_country_flag = llmb_protect_GXC } }
+	ai_strategy = { type = protect id = "GXC" value = 150 }
+}
+
+llmb_protect_HAI = {
+	enable = { has_country_flag = llmb_protect_HAI }
+	abort = { NOT = { has_country_flag = llmb_protect_HAI } }
+	ai_strategy = { type = protect id = "HAI" value = 150 }
+}
+
+llmb_protect_HON = {
+	enable = { has_country_flag = llmb_protect_HON }
+	abort = { NOT = { has_country_flag = llmb_protect_HON } }
+	ai_strategy = { type = protect id = "HON" value = 150 }
+}
+
+llmb_protect_ICE = {
+	enable = { has_country_flag = llmb_protect_ICE }
+	abort = { NOT = { has_country_flag = llmb_protect_ICE } }
+	ai_strategy = { type = protect id = "ICE" value = 150 }
+}
+
+llmb_protect_INS = {
+	enable = { has_country_flag = llmb_protect_INS }
+	abort = { NOT = { has_country_flag = llmb_protect_INS } }
+	ai_strategy = { type = protect id = "INS" value = 150 }
+}
+
+llmb_protect_JOR = {
+	enable = { has_country_flag = llmb_protect_JOR }
+	abort = { NOT = { has_country_flag = llmb_protect_JOR } }
+	ai_strategy = { type = protect id = "JOR" value = 150 }
+}
+
+llmb_protect_KUW = {
+	enable = { has_country_flag = llmb_protect_KUW }
+	abort = { NOT = { has_country_flag = llmb_protect_KUW } }
+	ai_strategy = { type = protect id = "KUW" value = 150 }
+}
+
+llmb_protect_LEB = {
+	enable = { has_country_flag = llmb_protect_LEB }
+	abort = { NOT = { has_country_flag = llmb_protect_LEB } }
+	ai_strategy = { type = protect id = "LEB" value = 150 }
+}
+
+llmb_protect_LIB = {
+	enable = { has_country_flag = llmb_protect_LIB }
+	abort = { NOT = { has_country_flag = llmb_protect_LIB } }
+	ai_strategy = { type = protect id = "LIB" value = 150 }
+}
+
+llmb_protect_MAL = {
+	enable = { has_country_flag = llmb_protect_MAL }
+	abort = { NOT = { has_country_flag = llmb_protect_MAL } }
+	ai_strategy = { type = protect id = "MAL" value = 150 }
+}
+
+llmb_protect_MEN = {
+	enable = { has_country_flag = llmb_protect_MEN }
+	abort = { NOT = { has_country_flag = llmb_protect_MEN } }
+	ai_strategy = { type = protect id = "MEN" value = 150 }
+}
+
+llmb_protect_MON = {
+	enable = { has_country_flag = llmb_protect_MON }
+	abort = { NOT = { has_country_flag = llmb_protect_MON } }
+	ai_strategy = { type = protect id = "MON" value = 150 }
+}
+
+llmb_protect_NEP = {
+	enable = { has_country_flag = llmb_protect_NEP }
+	abort = { NOT = { has_country_flag = llmb_protect_NEP } }
+	ai_strategy = { type = protect id = "NEP" value = 150 }
+}
+
+llmb_protect_NIC = {
+	enable = { has_country_flag = llmb_protect_NIC }
+	abort = { NOT = { has_country_flag = llmb_protect_NIC } }
+	ai_strategy = { type = protect id = "NIC" value = 150 }
+}
+
+llmb_protect_OMA = {
+	enable = { has_country_flag = llmb_protect_OMA }
+	abort = { NOT = { has_country_flag = llmb_protect_OMA } }
+	ai_strategy = { type = protect id = "OMA" value = 150 }
+}
+
+llmb_protect_PAL = {
+	enable = { has_country_flag = llmb_protect_PAL }
+	abort = { NOT = { has_country_flag = llmb_protect_PAL } }
+	ai_strategy = { type = protect id = "PAL" value = 150 }
+}
+
+llmb_protect_PAN = {
+	enable = { has_country_flag = llmb_protect_PAN }
+	abort = { NOT = { has_country_flag = llmb_protect_PAN } }
+	ai_strategy = { type = protect id = "PAN" value = 150 }
+}
+
+llmb_protect_PAR = {
+	enable = { has_country_flag = llmb_protect_PAR }
+	abort = { NOT = { has_country_flag = llmb_protect_PAR } }
+	ai_strategy = { type = protect id = "PAR" value = 150 }
+}
+
+llmb_protect_PRU = {
+	enable = { has_country_flag = llmb_protect_PRU }
+	abort = { NOT = { has_country_flag = llmb_protect_PRU } }
+	ai_strategy = { type = protect id = "PRU" value = 150 }
+}
+
+llmb_protect_SHX = {
+	enable = { has_country_flag = llmb_protect_SHX }
+	abort = { NOT = { has_country_flag = llmb_protect_SHX } }
+	ai_strategy = { type = protect id = "SHX" value = 150 }
+}
+
+llmb_protect_SIK = {
+	enable = { has_country_flag = llmb_protect_SIK }
+	abort = { NOT = { has_country_flag = llmb_protect_SIK } }
+	ai_strategy = { type = protect id = "SIK" value = 150 }
+}
+
+llmb_protect_SLO = {
+	enable = { has_country_flag = llmb_protect_SLO }
+	abort = { NOT = { has_country_flag = llmb_protect_SLO } }
+	ai_strategy = { type = protect id = "SLO" value = 150 }
+}
+
+llmb_protect_SYR = {
+	enable = { has_country_flag = llmb_protect_SYR }
+	abort = { NOT = { has_country_flag = llmb_protect_SYR } }
+	ai_strategy = { type = protect id = "SYR" value = 150 }
+}
+
+llmb_protect_TAN = {
+	enable = { has_country_flag = llmb_protect_TAN }
+	abort = { NOT = { has_country_flag = llmb_protect_TAN } }
+	ai_strategy = { type = protect id = "TAN" value = 150 }
+}
+
+llmb_protect_TIB = {
+	enable = { has_country_flag = llmb_protect_TIB }
+	abort = { NOT = { has_country_flag = llmb_protect_TIB } }
+	ai_strategy = { type = protect id = "TIB" value = 150 }
+}
+
+llmb_protect_URG = {
+	enable = { has_country_flag = llmb_protect_URG }
+	abort = { NOT = { has_country_flag = llmb_protect_URG } }
+	ai_strategy = { type = protect id = "URG" value = 150 }
+}
+
+llmb_protect_VEN = {
+	enable = { has_country_flag = llmb_protect_VEN }
+	abort = { NOT = { has_country_flag = llmb_protect_VEN } }
+	ai_strategy = { type = protect id = "VEN" value = 150 }
+}
+
+llmb_protect_XSM = {
+	enable = { has_country_flag = llmb_protect_XSM }
+	abort = { NOT = { has_country_flag = llmb_protect_XSM } }
+	ai_strategy = { type = protect id = "XSM" value = 150 }
+}
+
+llmb_protect_YEM = {
+	enable = { has_country_flag = llmb_protect_YEM }
+	abort = { NOT = { has_country_flag = llmb_protect_YEM } }
+	ai_strategy = { type = protect id = "YEM" value = 150 }
+}
+
+llmb_protect_YUN = {
+	enable = { has_country_flag = llmb_protect_YUN }
+	abort = { NOT = { has_country_flag = llmb_protect_YUN } }
+	ai_strategy = { type = protect id = "YUN" value = 150 }
 }
 
 llmb_contain_GER = {
@@ -1523,6 +2598,264 @@ llmb_contain_ETH = {
 	ai_strategy = { type = contain id = "ETH" value = 150 }
 }
 
+llmb_contain_AFA = {
+	enable = { has_country_flag = llmb_contain_AFA }
+	abort = { NOT = { has_country_flag = llmb_contain_AFA } }
+	ai_strategy = { type = contain id = "AFA" value = 150 }
+}
+
+llmb_contain_AFG = {
+	enable = { has_country_flag = llmb_contain_AFG }
+	abort = { NOT = { has_country_flag = llmb_contain_AFG } }
+	ai_strategy = { type = contain id = "AFG" value = 150 }
+}
+
+llmb_contain_BHU = {
+	enable = { has_country_flag = llmb_contain_BHU }
+	abort = { NOT = { has_country_flag = llmb_contain_BHU } }
+	ai_strategy = { type = contain id = "BHU" value = 150 }
+}
+
+llmb_contain_BOL = {
+	enable = { has_country_flag = llmb_contain_BOL }
+	abort = { NOT = { has_country_flag = llmb_contain_BOL } }
+	ai_strategy = { type = contain id = "BOL" value = 150 }
+}
+
+llmb_contain_BRM = {
+	enable = { has_country_flag = llmb_contain_BRM }
+	abort = { NOT = { has_country_flag = llmb_contain_BRM } }
+	ai_strategy = { type = contain id = "BRM" value = 150 }
+}
+
+llmb_contain_CHL = {
+	enable = { has_country_flag = llmb_contain_CHL }
+	abort = { NOT = { has_country_flag = llmb_contain_CHL } }
+	ai_strategy = { type = contain id = "CHL" value = 150 }
+}
+
+llmb_contain_COL = {
+	enable = { has_country_flag = llmb_contain_COL }
+	abort = { NOT = { has_country_flag = llmb_contain_COL } }
+	ai_strategy = { type = contain id = "COL" value = 150 }
+}
+
+llmb_contain_COS = {
+	enable = { has_country_flag = llmb_contain_COS }
+	abort = { NOT = { has_country_flag = llmb_contain_COS } }
+	ai_strategy = { type = contain id = "COS" value = 150 }
+}
+
+llmb_contain_CUB = {
+	enable = { has_country_flag = llmb_contain_CUB }
+	abort = { NOT = { has_country_flag = llmb_contain_CUB } }
+	ai_strategy = { type = contain id = "CUB" value = 150 }
+}
+
+llmb_contain_DOM = {
+	enable = { has_country_flag = llmb_contain_DOM }
+	abort = { NOT = { has_country_flag = llmb_contain_DOM } }
+	ai_strategy = { type = contain id = "DOM" value = 150 }
+}
+
+llmb_contain_ECU = {
+	enable = { has_country_flag = llmb_contain_ECU }
+	abort = { NOT = { has_country_flag = llmb_contain_ECU } }
+	ai_strategy = { type = contain id = "ECU" value = 150 }
+}
+
+llmb_contain_ELS = {
+	enable = { has_country_flag = llmb_contain_ELS }
+	abort = { NOT = { has_country_flag = llmb_contain_ELS } }
+	ai_strategy = { type = contain id = "ELS" value = 150 }
+}
+
+llmb_contain_GUA = {
+	enable = { has_country_flag = llmb_contain_GUA }
+	abort = { NOT = { has_country_flag = llmb_contain_GUA } }
+	ai_strategy = { type = contain id = "GUA" value = 150 }
+}
+
+llmb_contain_GXC = {
+	enable = { has_country_flag = llmb_contain_GXC }
+	abort = { NOT = { has_country_flag = llmb_contain_GXC } }
+	ai_strategy = { type = contain id = "GXC" value = 150 }
+}
+
+llmb_contain_HAI = {
+	enable = { has_country_flag = llmb_contain_HAI }
+	abort = { NOT = { has_country_flag = llmb_contain_HAI } }
+	ai_strategy = { type = contain id = "HAI" value = 150 }
+}
+
+llmb_contain_HON = {
+	enable = { has_country_flag = llmb_contain_HON }
+	abort = { NOT = { has_country_flag = llmb_contain_HON } }
+	ai_strategy = { type = contain id = "HON" value = 150 }
+}
+
+llmb_contain_ICE = {
+	enable = { has_country_flag = llmb_contain_ICE }
+	abort = { NOT = { has_country_flag = llmb_contain_ICE } }
+	ai_strategy = { type = contain id = "ICE" value = 150 }
+}
+
+llmb_contain_INS = {
+	enable = { has_country_flag = llmb_contain_INS }
+	abort = { NOT = { has_country_flag = llmb_contain_INS } }
+	ai_strategy = { type = contain id = "INS" value = 150 }
+}
+
+llmb_contain_JOR = {
+	enable = { has_country_flag = llmb_contain_JOR }
+	abort = { NOT = { has_country_flag = llmb_contain_JOR } }
+	ai_strategy = { type = contain id = "JOR" value = 150 }
+}
+
+llmb_contain_KUW = {
+	enable = { has_country_flag = llmb_contain_KUW }
+	abort = { NOT = { has_country_flag = llmb_contain_KUW } }
+	ai_strategy = { type = contain id = "KUW" value = 150 }
+}
+
+llmb_contain_LEB = {
+	enable = { has_country_flag = llmb_contain_LEB }
+	abort = { NOT = { has_country_flag = llmb_contain_LEB } }
+	ai_strategy = { type = contain id = "LEB" value = 150 }
+}
+
+llmb_contain_LIB = {
+	enable = { has_country_flag = llmb_contain_LIB }
+	abort = { NOT = { has_country_flag = llmb_contain_LIB } }
+	ai_strategy = { type = contain id = "LIB" value = 150 }
+}
+
+llmb_contain_MAL = {
+	enable = { has_country_flag = llmb_contain_MAL }
+	abort = { NOT = { has_country_flag = llmb_contain_MAL } }
+	ai_strategy = { type = contain id = "MAL" value = 150 }
+}
+
+llmb_contain_MEN = {
+	enable = { has_country_flag = llmb_contain_MEN }
+	abort = { NOT = { has_country_flag = llmb_contain_MEN } }
+	ai_strategy = { type = contain id = "MEN" value = 150 }
+}
+
+llmb_contain_MON = {
+	enable = { has_country_flag = llmb_contain_MON }
+	abort = { NOT = { has_country_flag = llmb_contain_MON } }
+	ai_strategy = { type = contain id = "MON" value = 150 }
+}
+
+llmb_contain_NEP = {
+	enable = { has_country_flag = llmb_contain_NEP }
+	abort = { NOT = { has_country_flag = llmb_contain_NEP } }
+	ai_strategy = { type = contain id = "NEP" value = 150 }
+}
+
+llmb_contain_NIC = {
+	enable = { has_country_flag = llmb_contain_NIC }
+	abort = { NOT = { has_country_flag = llmb_contain_NIC } }
+	ai_strategy = { type = contain id = "NIC" value = 150 }
+}
+
+llmb_contain_OMA = {
+	enable = { has_country_flag = llmb_contain_OMA }
+	abort = { NOT = { has_country_flag = llmb_contain_OMA } }
+	ai_strategy = { type = contain id = "OMA" value = 150 }
+}
+
+llmb_contain_PAL = {
+	enable = { has_country_flag = llmb_contain_PAL }
+	abort = { NOT = { has_country_flag = llmb_contain_PAL } }
+	ai_strategy = { type = contain id = "PAL" value = 150 }
+}
+
+llmb_contain_PAN = {
+	enable = { has_country_flag = llmb_contain_PAN }
+	abort = { NOT = { has_country_flag = llmb_contain_PAN } }
+	ai_strategy = { type = contain id = "PAN" value = 150 }
+}
+
+llmb_contain_PAR = {
+	enable = { has_country_flag = llmb_contain_PAR }
+	abort = { NOT = { has_country_flag = llmb_contain_PAR } }
+	ai_strategy = { type = contain id = "PAR" value = 150 }
+}
+
+llmb_contain_PRU = {
+	enable = { has_country_flag = llmb_contain_PRU }
+	abort = { NOT = { has_country_flag = llmb_contain_PRU } }
+	ai_strategy = { type = contain id = "PRU" value = 150 }
+}
+
+llmb_contain_SHX = {
+	enable = { has_country_flag = llmb_contain_SHX }
+	abort = { NOT = { has_country_flag = llmb_contain_SHX } }
+	ai_strategy = { type = contain id = "SHX" value = 150 }
+}
+
+llmb_contain_SIK = {
+	enable = { has_country_flag = llmb_contain_SIK }
+	abort = { NOT = { has_country_flag = llmb_contain_SIK } }
+	ai_strategy = { type = contain id = "SIK" value = 150 }
+}
+
+llmb_contain_SLO = {
+	enable = { has_country_flag = llmb_contain_SLO }
+	abort = { NOT = { has_country_flag = llmb_contain_SLO } }
+	ai_strategy = { type = contain id = "SLO" value = 150 }
+}
+
+llmb_contain_SYR = {
+	enable = { has_country_flag = llmb_contain_SYR }
+	abort = { NOT = { has_country_flag = llmb_contain_SYR } }
+	ai_strategy = { type = contain id = "SYR" value = 150 }
+}
+
+llmb_contain_TAN = {
+	enable = { has_country_flag = llmb_contain_TAN }
+	abort = { NOT = { has_country_flag = llmb_contain_TAN } }
+	ai_strategy = { type = contain id = "TAN" value = 150 }
+}
+
+llmb_contain_TIB = {
+	enable = { has_country_flag = llmb_contain_TIB }
+	abort = { NOT = { has_country_flag = llmb_contain_TIB } }
+	ai_strategy = { type = contain id = "TIB" value = 150 }
+}
+
+llmb_contain_URG = {
+	enable = { has_country_flag = llmb_contain_URG }
+	abort = { NOT = { has_country_flag = llmb_contain_URG } }
+	ai_strategy = { type = contain id = "URG" value = 150 }
+}
+
+llmb_contain_VEN = {
+	enable = { has_country_flag = llmb_contain_VEN }
+	abort = { NOT = { has_country_flag = llmb_contain_VEN } }
+	ai_strategy = { type = contain id = "VEN" value = 150 }
+}
+
+llmb_contain_XSM = {
+	enable = { has_country_flag = llmb_contain_XSM }
+	abort = { NOT = { has_country_flag = llmb_contain_XSM } }
+	ai_strategy = { type = contain id = "XSM" value = 150 }
+}
+
+llmb_contain_YEM = {
+	enable = { has_country_flag = llmb_contain_YEM }
+	abort = { NOT = { has_country_flag = llmb_contain_YEM } }
+	ai_strategy = { type = contain id = "YEM" value = 150 }
+}
+
+llmb_contain_YUN = {
+	enable = { has_country_flag = llmb_contain_YUN }
+	abort = { NOT = { has_country_flag = llmb_contain_YUN } }
+	ai_strategy = { type = contain id = "YUN" value = 150 }
+}
+
 llmb_befriend_GER = {
 	enable = { has_country_flag = llmb_befriend_GER }
 	abort = { NOT = { has_country_flag = llmb_befriend_GER } }
@@ -1815,6 +3148,264 @@ llmb_befriend_ETH = {
 	enable = { has_country_flag = llmb_befriend_ETH }
 	abort = { NOT = { has_country_flag = llmb_befriend_ETH } }
 	ai_strategy = { type = befriend id = "ETH" value = 150 }
+}
+
+llmb_befriend_AFA = {
+	enable = { has_country_flag = llmb_befriend_AFA }
+	abort = { NOT = { has_country_flag = llmb_befriend_AFA } }
+	ai_strategy = { type = befriend id = "AFA" value = 150 }
+}
+
+llmb_befriend_AFG = {
+	enable = { has_country_flag = llmb_befriend_AFG }
+	abort = { NOT = { has_country_flag = llmb_befriend_AFG } }
+	ai_strategy = { type = befriend id = "AFG" value = 150 }
+}
+
+llmb_befriend_BHU = {
+	enable = { has_country_flag = llmb_befriend_BHU }
+	abort = { NOT = { has_country_flag = llmb_befriend_BHU } }
+	ai_strategy = { type = befriend id = "BHU" value = 150 }
+}
+
+llmb_befriend_BOL = {
+	enable = { has_country_flag = llmb_befriend_BOL }
+	abort = { NOT = { has_country_flag = llmb_befriend_BOL } }
+	ai_strategy = { type = befriend id = "BOL" value = 150 }
+}
+
+llmb_befriend_BRM = {
+	enable = { has_country_flag = llmb_befriend_BRM }
+	abort = { NOT = { has_country_flag = llmb_befriend_BRM } }
+	ai_strategy = { type = befriend id = "BRM" value = 150 }
+}
+
+llmb_befriend_CHL = {
+	enable = { has_country_flag = llmb_befriend_CHL }
+	abort = { NOT = { has_country_flag = llmb_befriend_CHL } }
+	ai_strategy = { type = befriend id = "CHL" value = 150 }
+}
+
+llmb_befriend_COL = {
+	enable = { has_country_flag = llmb_befriend_COL }
+	abort = { NOT = { has_country_flag = llmb_befriend_COL } }
+	ai_strategy = { type = befriend id = "COL" value = 150 }
+}
+
+llmb_befriend_COS = {
+	enable = { has_country_flag = llmb_befriend_COS }
+	abort = { NOT = { has_country_flag = llmb_befriend_COS } }
+	ai_strategy = { type = befriend id = "COS" value = 150 }
+}
+
+llmb_befriend_CUB = {
+	enable = { has_country_flag = llmb_befriend_CUB }
+	abort = { NOT = { has_country_flag = llmb_befriend_CUB } }
+	ai_strategy = { type = befriend id = "CUB" value = 150 }
+}
+
+llmb_befriend_DOM = {
+	enable = { has_country_flag = llmb_befriend_DOM }
+	abort = { NOT = { has_country_flag = llmb_befriend_DOM } }
+	ai_strategy = { type = befriend id = "DOM" value = 150 }
+}
+
+llmb_befriend_ECU = {
+	enable = { has_country_flag = llmb_befriend_ECU }
+	abort = { NOT = { has_country_flag = llmb_befriend_ECU } }
+	ai_strategy = { type = befriend id = "ECU" value = 150 }
+}
+
+llmb_befriend_ELS = {
+	enable = { has_country_flag = llmb_befriend_ELS }
+	abort = { NOT = { has_country_flag = llmb_befriend_ELS } }
+	ai_strategy = { type = befriend id = "ELS" value = 150 }
+}
+
+llmb_befriend_GUA = {
+	enable = { has_country_flag = llmb_befriend_GUA }
+	abort = { NOT = { has_country_flag = llmb_befriend_GUA } }
+	ai_strategy = { type = befriend id = "GUA" value = 150 }
+}
+
+llmb_befriend_GXC = {
+	enable = { has_country_flag = llmb_befriend_GXC }
+	abort = { NOT = { has_country_flag = llmb_befriend_GXC } }
+	ai_strategy = { type = befriend id = "GXC" value = 150 }
+}
+
+llmb_befriend_HAI = {
+	enable = { has_country_flag = llmb_befriend_HAI }
+	abort = { NOT = { has_country_flag = llmb_befriend_HAI } }
+	ai_strategy = { type = befriend id = "HAI" value = 150 }
+}
+
+llmb_befriend_HON = {
+	enable = { has_country_flag = llmb_befriend_HON }
+	abort = { NOT = { has_country_flag = llmb_befriend_HON } }
+	ai_strategy = { type = befriend id = "HON" value = 150 }
+}
+
+llmb_befriend_ICE = {
+	enable = { has_country_flag = llmb_befriend_ICE }
+	abort = { NOT = { has_country_flag = llmb_befriend_ICE } }
+	ai_strategy = { type = befriend id = "ICE" value = 150 }
+}
+
+llmb_befriend_INS = {
+	enable = { has_country_flag = llmb_befriend_INS }
+	abort = { NOT = { has_country_flag = llmb_befriend_INS } }
+	ai_strategy = { type = befriend id = "INS" value = 150 }
+}
+
+llmb_befriend_JOR = {
+	enable = { has_country_flag = llmb_befriend_JOR }
+	abort = { NOT = { has_country_flag = llmb_befriend_JOR } }
+	ai_strategy = { type = befriend id = "JOR" value = 150 }
+}
+
+llmb_befriend_KUW = {
+	enable = { has_country_flag = llmb_befriend_KUW }
+	abort = { NOT = { has_country_flag = llmb_befriend_KUW } }
+	ai_strategy = { type = befriend id = "KUW" value = 150 }
+}
+
+llmb_befriend_LEB = {
+	enable = { has_country_flag = llmb_befriend_LEB }
+	abort = { NOT = { has_country_flag = llmb_befriend_LEB } }
+	ai_strategy = { type = befriend id = "LEB" value = 150 }
+}
+
+llmb_befriend_LIB = {
+	enable = { has_country_flag = llmb_befriend_LIB }
+	abort = { NOT = { has_country_flag = llmb_befriend_LIB } }
+	ai_strategy = { type = befriend id = "LIB" value = 150 }
+}
+
+llmb_befriend_MAL = {
+	enable = { has_country_flag = llmb_befriend_MAL }
+	abort = { NOT = { has_country_flag = llmb_befriend_MAL } }
+	ai_strategy = { type = befriend id = "MAL" value = 150 }
+}
+
+llmb_befriend_MEN = {
+	enable = { has_country_flag = llmb_befriend_MEN }
+	abort = { NOT = { has_country_flag = llmb_befriend_MEN } }
+	ai_strategy = { type = befriend id = "MEN" value = 150 }
+}
+
+llmb_befriend_MON = {
+	enable = { has_country_flag = llmb_befriend_MON }
+	abort = { NOT = { has_country_flag = llmb_befriend_MON } }
+	ai_strategy = { type = befriend id = "MON" value = 150 }
+}
+
+llmb_befriend_NEP = {
+	enable = { has_country_flag = llmb_befriend_NEP }
+	abort = { NOT = { has_country_flag = llmb_befriend_NEP } }
+	ai_strategy = { type = befriend id = "NEP" value = 150 }
+}
+
+llmb_befriend_NIC = {
+	enable = { has_country_flag = llmb_befriend_NIC }
+	abort = { NOT = { has_country_flag = llmb_befriend_NIC } }
+	ai_strategy = { type = befriend id = "NIC" value = 150 }
+}
+
+llmb_befriend_OMA = {
+	enable = { has_country_flag = llmb_befriend_OMA }
+	abort = { NOT = { has_country_flag = llmb_befriend_OMA } }
+	ai_strategy = { type = befriend id = "OMA" value = 150 }
+}
+
+llmb_befriend_PAL = {
+	enable = { has_country_flag = llmb_befriend_PAL }
+	abort = { NOT = { has_country_flag = llmb_befriend_PAL } }
+	ai_strategy = { type = befriend id = "PAL" value = 150 }
+}
+
+llmb_befriend_PAN = {
+	enable = { has_country_flag = llmb_befriend_PAN }
+	abort = { NOT = { has_country_flag = llmb_befriend_PAN } }
+	ai_strategy = { type = befriend id = "PAN" value = 150 }
+}
+
+llmb_befriend_PAR = {
+	enable = { has_country_flag = llmb_befriend_PAR }
+	abort = { NOT = { has_country_flag = llmb_befriend_PAR } }
+	ai_strategy = { type = befriend id = "PAR" value = 150 }
+}
+
+llmb_befriend_PRU = {
+	enable = { has_country_flag = llmb_befriend_PRU }
+	abort = { NOT = { has_country_flag = llmb_befriend_PRU } }
+	ai_strategy = { type = befriend id = "PRU" value = 150 }
+}
+
+llmb_befriend_SHX = {
+	enable = { has_country_flag = llmb_befriend_SHX }
+	abort = { NOT = { has_country_flag = llmb_befriend_SHX } }
+	ai_strategy = { type = befriend id = "SHX" value = 150 }
+}
+
+llmb_befriend_SIK = {
+	enable = { has_country_flag = llmb_befriend_SIK }
+	abort = { NOT = { has_country_flag = llmb_befriend_SIK } }
+	ai_strategy = { type = befriend id = "SIK" value = 150 }
+}
+
+llmb_befriend_SLO = {
+	enable = { has_country_flag = llmb_befriend_SLO }
+	abort = { NOT = { has_country_flag = llmb_befriend_SLO } }
+	ai_strategy = { type = befriend id = "SLO" value = 150 }
+}
+
+llmb_befriend_SYR = {
+	enable = { has_country_flag = llmb_befriend_SYR }
+	abort = { NOT = { has_country_flag = llmb_befriend_SYR } }
+	ai_strategy = { type = befriend id = "SYR" value = 150 }
+}
+
+llmb_befriend_TAN = {
+	enable = { has_country_flag = llmb_befriend_TAN }
+	abort = { NOT = { has_country_flag = llmb_befriend_TAN } }
+	ai_strategy = { type = befriend id = "TAN" value = 150 }
+}
+
+llmb_befriend_TIB = {
+	enable = { has_country_flag = llmb_befriend_TIB }
+	abort = { NOT = { has_country_flag = llmb_befriend_TIB } }
+	ai_strategy = { type = befriend id = "TIB" value = 150 }
+}
+
+llmb_befriend_URG = {
+	enable = { has_country_flag = llmb_befriend_URG }
+	abort = { NOT = { has_country_flag = llmb_befriend_URG } }
+	ai_strategy = { type = befriend id = "URG" value = 150 }
+}
+
+llmb_befriend_VEN = {
+	enable = { has_country_flag = llmb_befriend_VEN }
+	abort = { NOT = { has_country_flag = llmb_befriend_VEN } }
+	ai_strategy = { type = befriend id = "VEN" value = 150 }
+}
+
+llmb_befriend_XSM = {
+	enable = { has_country_flag = llmb_befriend_XSM }
+	abort = { NOT = { has_country_flag = llmb_befriend_XSM } }
+	ai_strategy = { type = befriend id = "XSM" value = 150 }
+}
+
+llmb_befriend_YEM = {
+	enable = { has_country_flag = llmb_befriend_YEM }
+	abort = { NOT = { has_country_flag = llmb_befriend_YEM } }
+	ai_strategy = { type = befriend id = "YEM" value = 150 }
+}
+
+llmb_befriend_YUN = {
+	enable = { has_country_flag = llmb_befriend_YUN }
+	abort = { NOT = { has_country_flag = llmb_befriend_YUN } }
+	ai_strategy = { type = befriend id = "YUN" value = 150 }
 }
 
 llmb_antagonize_GER = {
@@ -2111,6 +3702,264 @@ llmb_antagonize_ETH = {
 	ai_strategy = { type = antagonize id = "ETH" value = 150 }
 }
 
+llmb_antagonize_AFA = {
+	enable = { has_country_flag = llmb_antagonize_AFA }
+	abort = { NOT = { has_country_flag = llmb_antagonize_AFA } }
+	ai_strategy = { type = antagonize id = "AFA" value = 150 }
+}
+
+llmb_antagonize_AFG = {
+	enable = { has_country_flag = llmb_antagonize_AFG }
+	abort = { NOT = { has_country_flag = llmb_antagonize_AFG } }
+	ai_strategy = { type = antagonize id = "AFG" value = 150 }
+}
+
+llmb_antagonize_BHU = {
+	enable = { has_country_flag = llmb_antagonize_BHU }
+	abort = { NOT = { has_country_flag = llmb_antagonize_BHU } }
+	ai_strategy = { type = antagonize id = "BHU" value = 150 }
+}
+
+llmb_antagonize_BOL = {
+	enable = { has_country_flag = llmb_antagonize_BOL }
+	abort = { NOT = { has_country_flag = llmb_antagonize_BOL } }
+	ai_strategy = { type = antagonize id = "BOL" value = 150 }
+}
+
+llmb_antagonize_BRM = {
+	enable = { has_country_flag = llmb_antagonize_BRM }
+	abort = { NOT = { has_country_flag = llmb_antagonize_BRM } }
+	ai_strategy = { type = antagonize id = "BRM" value = 150 }
+}
+
+llmb_antagonize_CHL = {
+	enable = { has_country_flag = llmb_antagonize_CHL }
+	abort = { NOT = { has_country_flag = llmb_antagonize_CHL } }
+	ai_strategy = { type = antagonize id = "CHL" value = 150 }
+}
+
+llmb_antagonize_COL = {
+	enable = { has_country_flag = llmb_antagonize_COL }
+	abort = { NOT = { has_country_flag = llmb_antagonize_COL } }
+	ai_strategy = { type = antagonize id = "COL" value = 150 }
+}
+
+llmb_antagonize_COS = {
+	enable = { has_country_flag = llmb_antagonize_COS }
+	abort = { NOT = { has_country_flag = llmb_antagonize_COS } }
+	ai_strategy = { type = antagonize id = "COS" value = 150 }
+}
+
+llmb_antagonize_CUB = {
+	enable = { has_country_flag = llmb_antagonize_CUB }
+	abort = { NOT = { has_country_flag = llmb_antagonize_CUB } }
+	ai_strategy = { type = antagonize id = "CUB" value = 150 }
+}
+
+llmb_antagonize_DOM = {
+	enable = { has_country_flag = llmb_antagonize_DOM }
+	abort = { NOT = { has_country_flag = llmb_antagonize_DOM } }
+	ai_strategy = { type = antagonize id = "DOM" value = 150 }
+}
+
+llmb_antagonize_ECU = {
+	enable = { has_country_flag = llmb_antagonize_ECU }
+	abort = { NOT = { has_country_flag = llmb_antagonize_ECU } }
+	ai_strategy = { type = antagonize id = "ECU" value = 150 }
+}
+
+llmb_antagonize_ELS = {
+	enable = { has_country_flag = llmb_antagonize_ELS }
+	abort = { NOT = { has_country_flag = llmb_antagonize_ELS } }
+	ai_strategy = { type = antagonize id = "ELS" value = 150 }
+}
+
+llmb_antagonize_GUA = {
+	enable = { has_country_flag = llmb_antagonize_GUA }
+	abort = { NOT = { has_country_flag = llmb_antagonize_GUA } }
+	ai_strategy = { type = antagonize id = "GUA" value = 150 }
+}
+
+llmb_antagonize_GXC = {
+	enable = { has_country_flag = llmb_antagonize_GXC }
+	abort = { NOT = { has_country_flag = llmb_antagonize_GXC } }
+	ai_strategy = { type = antagonize id = "GXC" value = 150 }
+}
+
+llmb_antagonize_HAI = {
+	enable = { has_country_flag = llmb_antagonize_HAI }
+	abort = { NOT = { has_country_flag = llmb_antagonize_HAI } }
+	ai_strategy = { type = antagonize id = "HAI" value = 150 }
+}
+
+llmb_antagonize_HON = {
+	enable = { has_country_flag = llmb_antagonize_HON }
+	abort = { NOT = { has_country_flag = llmb_antagonize_HON } }
+	ai_strategy = { type = antagonize id = "HON" value = 150 }
+}
+
+llmb_antagonize_ICE = {
+	enable = { has_country_flag = llmb_antagonize_ICE }
+	abort = { NOT = { has_country_flag = llmb_antagonize_ICE } }
+	ai_strategy = { type = antagonize id = "ICE" value = 150 }
+}
+
+llmb_antagonize_INS = {
+	enable = { has_country_flag = llmb_antagonize_INS }
+	abort = { NOT = { has_country_flag = llmb_antagonize_INS } }
+	ai_strategy = { type = antagonize id = "INS" value = 150 }
+}
+
+llmb_antagonize_JOR = {
+	enable = { has_country_flag = llmb_antagonize_JOR }
+	abort = { NOT = { has_country_flag = llmb_antagonize_JOR } }
+	ai_strategy = { type = antagonize id = "JOR" value = 150 }
+}
+
+llmb_antagonize_KUW = {
+	enable = { has_country_flag = llmb_antagonize_KUW }
+	abort = { NOT = { has_country_flag = llmb_antagonize_KUW } }
+	ai_strategy = { type = antagonize id = "KUW" value = 150 }
+}
+
+llmb_antagonize_LEB = {
+	enable = { has_country_flag = llmb_antagonize_LEB }
+	abort = { NOT = { has_country_flag = llmb_antagonize_LEB } }
+	ai_strategy = { type = antagonize id = "LEB" value = 150 }
+}
+
+llmb_antagonize_LIB = {
+	enable = { has_country_flag = llmb_antagonize_LIB }
+	abort = { NOT = { has_country_flag = llmb_antagonize_LIB } }
+	ai_strategy = { type = antagonize id = "LIB" value = 150 }
+}
+
+llmb_antagonize_MAL = {
+	enable = { has_country_flag = llmb_antagonize_MAL }
+	abort = { NOT = { has_country_flag = llmb_antagonize_MAL } }
+	ai_strategy = { type = antagonize id = "MAL" value = 150 }
+}
+
+llmb_antagonize_MEN = {
+	enable = { has_country_flag = llmb_antagonize_MEN }
+	abort = { NOT = { has_country_flag = llmb_antagonize_MEN } }
+	ai_strategy = { type = antagonize id = "MEN" value = 150 }
+}
+
+llmb_antagonize_MON = {
+	enable = { has_country_flag = llmb_antagonize_MON }
+	abort = { NOT = { has_country_flag = llmb_antagonize_MON } }
+	ai_strategy = { type = antagonize id = "MON" value = 150 }
+}
+
+llmb_antagonize_NEP = {
+	enable = { has_country_flag = llmb_antagonize_NEP }
+	abort = { NOT = { has_country_flag = llmb_antagonize_NEP } }
+	ai_strategy = { type = antagonize id = "NEP" value = 150 }
+}
+
+llmb_antagonize_NIC = {
+	enable = { has_country_flag = llmb_antagonize_NIC }
+	abort = { NOT = { has_country_flag = llmb_antagonize_NIC } }
+	ai_strategy = { type = antagonize id = "NIC" value = 150 }
+}
+
+llmb_antagonize_OMA = {
+	enable = { has_country_flag = llmb_antagonize_OMA }
+	abort = { NOT = { has_country_flag = llmb_antagonize_OMA } }
+	ai_strategy = { type = antagonize id = "OMA" value = 150 }
+}
+
+llmb_antagonize_PAL = {
+	enable = { has_country_flag = llmb_antagonize_PAL }
+	abort = { NOT = { has_country_flag = llmb_antagonize_PAL } }
+	ai_strategy = { type = antagonize id = "PAL" value = 150 }
+}
+
+llmb_antagonize_PAN = {
+	enable = { has_country_flag = llmb_antagonize_PAN }
+	abort = { NOT = { has_country_flag = llmb_antagonize_PAN } }
+	ai_strategy = { type = antagonize id = "PAN" value = 150 }
+}
+
+llmb_antagonize_PAR = {
+	enable = { has_country_flag = llmb_antagonize_PAR }
+	abort = { NOT = { has_country_flag = llmb_antagonize_PAR } }
+	ai_strategy = { type = antagonize id = "PAR" value = 150 }
+}
+
+llmb_antagonize_PRU = {
+	enable = { has_country_flag = llmb_antagonize_PRU }
+	abort = { NOT = { has_country_flag = llmb_antagonize_PRU } }
+	ai_strategy = { type = antagonize id = "PRU" value = 150 }
+}
+
+llmb_antagonize_SHX = {
+	enable = { has_country_flag = llmb_antagonize_SHX }
+	abort = { NOT = { has_country_flag = llmb_antagonize_SHX } }
+	ai_strategy = { type = antagonize id = "SHX" value = 150 }
+}
+
+llmb_antagonize_SIK = {
+	enable = { has_country_flag = llmb_antagonize_SIK }
+	abort = { NOT = { has_country_flag = llmb_antagonize_SIK } }
+	ai_strategy = { type = antagonize id = "SIK" value = 150 }
+}
+
+llmb_antagonize_SLO = {
+	enable = { has_country_flag = llmb_antagonize_SLO }
+	abort = { NOT = { has_country_flag = llmb_antagonize_SLO } }
+	ai_strategy = { type = antagonize id = "SLO" value = 150 }
+}
+
+llmb_antagonize_SYR = {
+	enable = { has_country_flag = llmb_antagonize_SYR }
+	abort = { NOT = { has_country_flag = llmb_antagonize_SYR } }
+	ai_strategy = { type = antagonize id = "SYR" value = 150 }
+}
+
+llmb_antagonize_TAN = {
+	enable = { has_country_flag = llmb_antagonize_TAN }
+	abort = { NOT = { has_country_flag = llmb_antagonize_TAN } }
+	ai_strategy = { type = antagonize id = "TAN" value = 150 }
+}
+
+llmb_antagonize_TIB = {
+	enable = { has_country_flag = llmb_antagonize_TIB }
+	abort = { NOT = { has_country_flag = llmb_antagonize_TIB } }
+	ai_strategy = { type = antagonize id = "TIB" value = 150 }
+}
+
+llmb_antagonize_URG = {
+	enable = { has_country_flag = llmb_antagonize_URG }
+	abort = { NOT = { has_country_flag = llmb_antagonize_URG } }
+	ai_strategy = { type = antagonize id = "URG" value = 150 }
+}
+
+llmb_antagonize_VEN = {
+	enable = { has_country_flag = llmb_antagonize_VEN }
+	abort = { NOT = { has_country_flag = llmb_antagonize_VEN } }
+	ai_strategy = { type = antagonize id = "VEN" value = 150 }
+}
+
+llmb_antagonize_XSM = {
+	enable = { has_country_flag = llmb_antagonize_XSM }
+	abort = { NOT = { has_country_flag = llmb_antagonize_XSM } }
+	ai_strategy = { type = antagonize id = "XSM" value = 150 }
+}
+
+llmb_antagonize_YEM = {
+	enable = { has_country_flag = llmb_antagonize_YEM }
+	abort = { NOT = { has_country_flag = llmb_antagonize_YEM } }
+	ai_strategy = { type = antagonize id = "YEM" value = 150 }
+}
+
+llmb_antagonize_YUN = {
+	enable = { has_country_flag = llmb_antagonize_YUN }
+	abort = { NOT = { has_country_flag = llmb_antagonize_YUN } }
+	ai_strategy = { type = antagonize id = "YUN" value = 150 }
+}
+
 llmb_ignore_GER = {
 	enable = { has_country_flag = llmb_ignore_GER }
 	abort = { NOT = { has_country_flag = llmb_ignore_GER } }
@@ -2403,4 +4252,262 @@ llmb_ignore_ETH = {
 	enable = { has_country_flag = llmb_ignore_ETH }
 	abort = { NOT = { has_country_flag = llmb_ignore_ETH } }
 	ai_strategy = { type = ignore id = "ETH" value = 150 }
+}
+
+llmb_ignore_AFA = {
+	enable = { has_country_flag = llmb_ignore_AFA }
+	abort = { NOT = { has_country_flag = llmb_ignore_AFA } }
+	ai_strategy = { type = ignore id = "AFA" value = 150 }
+}
+
+llmb_ignore_AFG = {
+	enable = { has_country_flag = llmb_ignore_AFG }
+	abort = { NOT = { has_country_flag = llmb_ignore_AFG } }
+	ai_strategy = { type = ignore id = "AFG" value = 150 }
+}
+
+llmb_ignore_BHU = {
+	enable = { has_country_flag = llmb_ignore_BHU }
+	abort = { NOT = { has_country_flag = llmb_ignore_BHU } }
+	ai_strategy = { type = ignore id = "BHU" value = 150 }
+}
+
+llmb_ignore_BOL = {
+	enable = { has_country_flag = llmb_ignore_BOL }
+	abort = { NOT = { has_country_flag = llmb_ignore_BOL } }
+	ai_strategy = { type = ignore id = "BOL" value = 150 }
+}
+
+llmb_ignore_BRM = {
+	enable = { has_country_flag = llmb_ignore_BRM }
+	abort = { NOT = { has_country_flag = llmb_ignore_BRM } }
+	ai_strategy = { type = ignore id = "BRM" value = 150 }
+}
+
+llmb_ignore_CHL = {
+	enable = { has_country_flag = llmb_ignore_CHL }
+	abort = { NOT = { has_country_flag = llmb_ignore_CHL } }
+	ai_strategy = { type = ignore id = "CHL" value = 150 }
+}
+
+llmb_ignore_COL = {
+	enable = { has_country_flag = llmb_ignore_COL }
+	abort = { NOT = { has_country_flag = llmb_ignore_COL } }
+	ai_strategy = { type = ignore id = "COL" value = 150 }
+}
+
+llmb_ignore_COS = {
+	enable = { has_country_flag = llmb_ignore_COS }
+	abort = { NOT = { has_country_flag = llmb_ignore_COS } }
+	ai_strategy = { type = ignore id = "COS" value = 150 }
+}
+
+llmb_ignore_CUB = {
+	enable = { has_country_flag = llmb_ignore_CUB }
+	abort = { NOT = { has_country_flag = llmb_ignore_CUB } }
+	ai_strategy = { type = ignore id = "CUB" value = 150 }
+}
+
+llmb_ignore_DOM = {
+	enable = { has_country_flag = llmb_ignore_DOM }
+	abort = { NOT = { has_country_flag = llmb_ignore_DOM } }
+	ai_strategy = { type = ignore id = "DOM" value = 150 }
+}
+
+llmb_ignore_ECU = {
+	enable = { has_country_flag = llmb_ignore_ECU }
+	abort = { NOT = { has_country_flag = llmb_ignore_ECU } }
+	ai_strategy = { type = ignore id = "ECU" value = 150 }
+}
+
+llmb_ignore_ELS = {
+	enable = { has_country_flag = llmb_ignore_ELS }
+	abort = { NOT = { has_country_flag = llmb_ignore_ELS } }
+	ai_strategy = { type = ignore id = "ELS" value = 150 }
+}
+
+llmb_ignore_GUA = {
+	enable = { has_country_flag = llmb_ignore_GUA }
+	abort = { NOT = { has_country_flag = llmb_ignore_GUA } }
+	ai_strategy = { type = ignore id = "GUA" value = 150 }
+}
+
+llmb_ignore_GXC = {
+	enable = { has_country_flag = llmb_ignore_GXC }
+	abort = { NOT = { has_country_flag = llmb_ignore_GXC } }
+	ai_strategy = { type = ignore id = "GXC" value = 150 }
+}
+
+llmb_ignore_HAI = {
+	enable = { has_country_flag = llmb_ignore_HAI }
+	abort = { NOT = { has_country_flag = llmb_ignore_HAI } }
+	ai_strategy = { type = ignore id = "HAI" value = 150 }
+}
+
+llmb_ignore_HON = {
+	enable = { has_country_flag = llmb_ignore_HON }
+	abort = { NOT = { has_country_flag = llmb_ignore_HON } }
+	ai_strategy = { type = ignore id = "HON" value = 150 }
+}
+
+llmb_ignore_ICE = {
+	enable = { has_country_flag = llmb_ignore_ICE }
+	abort = { NOT = { has_country_flag = llmb_ignore_ICE } }
+	ai_strategy = { type = ignore id = "ICE" value = 150 }
+}
+
+llmb_ignore_INS = {
+	enable = { has_country_flag = llmb_ignore_INS }
+	abort = { NOT = { has_country_flag = llmb_ignore_INS } }
+	ai_strategy = { type = ignore id = "INS" value = 150 }
+}
+
+llmb_ignore_JOR = {
+	enable = { has_country_flag = llmb_ignore_JOR }
+	abort = { NOT = { has_country_flag = llmb_ignore_JOR } }
+	ai_strategy = { type = ignore id = "JOR" value = 150 }
+}
+
+llmb_ignore_KUW = {
+	enable = { has_country_flag = llmb_ignore_KUW }
+	abort = { NOT = { has_country_flag = llmb_ignore_KUW } }
+	ai_strategy = { type = ignore id = "KUW" value = 150 }
+}
+
+llmb_ignore_LEB = {
+	enable = { has_country_flag = llmb_ignore_LEB }
+	abort = { NOT = { has_country_flag = llmb_ignore_LEB } }
+	ai_strategy = { type = ignore id = "LEB" value = 150 }
+}
+
+llmb_ignore_LIB = {
+	enable = { has_country_flag = llmb_ignore_LIB }
+	abort = { NOT = { has_country_flag = llmb_ignore_LIB } }
+	ai_strategy = { type = ignore id = "LIB" value = 150 }
+}
+
+llmb_ignore_MAL = {
+	enable = { has_country_flag = llmb_ignore_MAL }
+	abort = { NOT = { has_country_flag = llmb_ignore_MAL } }
+	ai_strategy = { type = ignore id = "MAL" value = 150 }
+}
+
+llmb_ignore_MEN = {
+	enable = { has_country_flag = llmb_ignore_MEN }
+	abort = { NOT = { has_country_flag = llmb_ignore_MEN } }
+	ai_strategy = { type = ignore id = "MEN" value = 150 }
+}
+
+llmb_ignore_MON = {
+	enable = { has_country_flag = llmb_ignore_MON }
+	abort = { NOT = { has_country_flag = llmb_ignore_MON } }
+	ai_strategy = { type = ignore id = "MON" value = 150 }
+}
+
+llmb_ignore_NEP = {
+	enable = { has_country_flag = llmb_ignore_NEP }
+	abort = { NOT = { has_country_flag = llmb_ignore_NEP } }
+	ai_strategy = { type = ignore id = "NEP" value = 150 }
+}
+
+llmb_ignore_NIC = {
+	enable = { has_country_flag = llmb_ignore_NIC }
+	abort = { NOT = { has_country_flag = llmb_ignore_NIC } }
+	ai_strategy = { type = ignore id = "NIC" value = 150 }
+}
+
+llmb_ignore_OMA = {
+	enable = { has_country_flag = llmb_ignore_OMA }
+	abort = { NOT = { has_country_flag = llmb_ignore_OMA } }
+	ai_strategy = { type = ignore id = "OMA" value = 150 }
+}
+
+llmb_ignore_PAL = {
+	enable = { has_country_flag = llmb_ignore_PAL }
+	abort = { NOT = { has_country_flag = llmb_ignore_PAL } }
+	ai_strategy = { type = ignore id = "PAL" value = 150 }
+}
+
+llmb_ignore_PAN = {
+	enable = { has_country_flag = llmb_ignore_PAN }
+	abort = { NOT = { has_country_flag = llmb_ignore_PAN } }
+	ai_strategy = { type = ignore id = "PAN" value = 150 }
+}
+
+llmb_ignore_PAR = {
+	enable = { has_country_flag = llmb_ignore_PAR }
+	abort = { NOT = { has_country_flag = llmb_ignore_PAR } }
+	ai_strategy = { type = ignore id = "PAR" value = 150 }
+}
+
+llmb_ignore_PRU = {
+	enable = { has_country_flag = llmb_ignore_PRU }
+	abort = { NOT = { has_country_flag = llmb_ignore_PRU } }
+	ai_strategy = { type = ignore id = "PRU" value = 150 }
+}
+
+llmb_ignore_SHX = {
+	enable = { has_country_flag = llmb_ignore_SHX }
+	abort = { NOT = { has_country_flag = llmb_ignore_SHX } }
+	ai_strategy = { type = ignore id = "SHX" value = 150 }
+}
+
+llmb_ignore_SIK = {
+	enable = { has_country_flag = llmb_ignore_SIK }
+	abort = { NOT = { has_country_flag = llmb_ignore_SIK } }
+	ai_strategy = { type = ignore id = "SIK" value = 150 }
+}
+
+llmb_ignore_SLO = {
+	enable = { has_country_flag = llmb_ignore_SLO }
+	abort = { NOT = { has_country_flag = llmb_ignore_SLO } }
+	ai_strategy = { type = ignore id = "SLO" value = 150 }
+}
+
+llmb_ignore_SYR = {
+	enable = { has_country_flag = llmb_ignore_SYR }
+	abort = { NOT = { has_country_flag = llmb_ignore_SYR } }
+	ai_strategy = { type = ignore id = "SYR" value = 150 }
+}
+
+llmb_ignore_TAN = {
+	enable = { has_country_flag = llmb_ignore_TAN }
+	abort = { NOT = { has_country_flag = llmb_ignore_TAN } }
+	ai_strategy = { type = ignore id = "TAN" value = 150 }
+}
+
+llmb_ignore_TIB = {
+	enable = { has_country_flag = llmb_ignore_TIB }
+	abort = { NOT = { has_country_flag = llmb_ignore_TIB } }
+	ai_strategy = { type = ignore id = "TIB" value = 150 }
+}
+
+llmb_ignore_URG = {
+	enable = { has_country_flag = llmb_ignore_URG }
+	abort = { NOT = { has_country_flag = llmb_ignore_URG } }
+	ai_strategy = { type = ignore id = "URG" value = 150 }
+}
+
+llmb_ignore_VEN = {
+	enable = { has_country_flag = llmb_ignore_VEN }
+	abort = { NOT = { has_country_flag = llmb_ignore_VEN } }
+	ai_strategy = { type = ignore id = "VEN" value = 150 }
+}
+
+llmb_ignore_XSM = {
+	enable = { has_country_flag = llmb_ignore_XSM }
+	abort = { NOT = { has_country_flag = llmb_ignore_XSM } }
+	ai_strategy = { type = ignore id = "XSM" value = 150 }
+}
+
+llmb_ignore_YEM = {
+	enable = { has_country_flag = llmb_ignore_YEM }
+	abort = { NOT = { has_country_flag = llmb_ignore_YEM } }
+	ai_strategy = { type = ignore id = "YEM" value = 150 }
+}
+
+llmb_ignore_YUN = {
+	enable = { has_country_flag = llmb_ignore_YUN }
+	abort = { NOT = { has_country_flag = llmb_ignore_YUN } }
+	ai_strategy = { type = ignore id = "YUN" value = 150 }
 }

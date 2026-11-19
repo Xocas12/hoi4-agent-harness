@@ -67,7 +67,7 @@ class BudgetGuard:
             return f"input-token ceiling reached ({c.max_input_tokens:,})"
         if s.usage.output_tokens >= c.max_output_tokens:
             return f"output-token ceiling reached ({c.max_output_tokens:,})"
-        if c.max_usd is not None and s.usd >= c.max_usd:
+        if c.max_usd is not None and s.usd + c.reserve_usd >= c.max_usd:
             return f"spend ceiling reached (${c.max_usd:.2f})"
         return None
 

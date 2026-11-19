@@ -13,12 +13,16 @@
 # harness reads that prefix in preference to anything printed here, so a date
 # token that fails to expand costs nothing. Verified against a running game.
 #
+# Schema v5 (campaign mode): the state line gains ai=, the `camp` line (llm_bridge_
+# emit_campaign) is new, and every on_action limits on llm_bridge_is_harness (is_ai =
+# no OR the llmb_harness flag) instead of is_ai = no, so the log survives `human_ai`.
+#
 # Bump LLMB_SCHEMA_VERSION whenever the field set changes, and bump
 # SCHEMA_VERSION in hoi4_harness/adapters/logtail.py to match. They are compared
 # at runtime.
 
 llm_bridge_emit_state = {
-	set_variable = { LLMB_SCHEMA_VERSION = 4 }
+	set_variable = { LLMB_SCHEMA_VERSION = 5 }
 
 	# Economy and politics.
 	set_variable = { llmb_pp = political_power }
@@ -35,6 +39,13 @@ llm_bridge_emit_state = {
 	# (11 owned civilian + 3 military + 4 dockyards; 12 more civilian traded).
 	set_variable = { llmb_owned = num_of_controlled_factories }
 	set_variable = { llmb_mp = manpower }
+	# Whether the game's AI is running this country (schema v5): the read-back that
+	# proves the console's human_ai took (is_ai, triggers_documentation.md:5293).
+	set_variable = { llmb_ai = 0 }
+	if = {
+		limit = { is_ai = yes }
+		set_variable = { llmb_ai = 1 }
+	}
 
 	# Completion signals (#2). 1.19.5 has no on_action for a finished focus,
 	# research or building (only MIO ones), so the harness derives them from
@@ -49,7 +60,7 @@ llm_bridge_emit_state = {
 	set_variable = { llmb_built_dock = total_constructed_dockyard }
 	set_variable = { llmb_built_infra = total_constructed_infrastructure }
 
-	log = "LLMB|v4|state|date=[GetDateText]|tag=[THIS.GetTag]|pp=[?llmb_pp]|stab=[?llmb_stab]|ws=[?llmb_ws]|civ=[?llmb_civ]|mil=[?llmb_mil]|doc=[?llmb_doc]|owned=[?llmb_owned]|mp=[?llmb_mp]|techs=[?llmb_techs]|built_civ=[?llmb_built_civ]|built_mil=[?llmb_built_mil]|built_dock=[?llmb_built_dock]|built_infra=[?llmb_built_infra]"
+	log = "LLMB|v5|state|date=[GetDateText]|tag=[THIS.GetTag]|pp=[?llmb_pp]|stab=[?llmb_stab]|ws=[?llmb_ws]|civ=[?llmb_civ]|mil=[?llmb_mil]|doc=[?llmb_doc]|owned=[?llmb_owned]|mp=[?llmb_mp]|ai=[?llmb_ai]|techs=[?llmb_techs]|built_civ=[?llmb_built_civ]|built_mil=[?llmb_built_mil]|built_dock=[?llmb_built_dock]|built_infra=[?llmb_built_infra]"
 
 	llm_bridge_emit_army = yes
 
@@ -62,14 +73,14 @@ llm_bridge_emit_state = {
 # being crammed into the state line.
 llm_bridge_emit_army = {
 	set_variable = { llmb_divisions = num_divisions }
-	log = "LLMB|v4|army|tag=[THIS.GetTag]|divisions=[?llmb_divisions]|delegated=[?llmb_ai_delegated_armies]"
+	log = "LLMB|v5|army|tag=[THIS.GetTag]|divisions=[?llmb_divisions]|delegated=[?llmb_ai_delegated_armies]"
 }
 
 # Called from on_actions when something happens that should wake the planner
 # early. `kind` must match a GameEvent kind the harness knows; unknown kinds are
 # passed through as "info" rather than dropped.
 llm_bridge_emit_event = {
-	log = "LLMB|v4|evt|tag=[ROOT.GetTag]|kind=[?llmb_event_kind]|detail=[?llmb_event_detail]"
+	log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=[?llmb_event_kind]|detail=[?llmb_event_detail]"
 }
 
 # A war is logged in the declarer's scope (ROOT); the side it was declared on is
@@ -77,7 +88,7 @@ llm_bridge_emit_event = {
 # declared on it as well as one it declared. VERIFY: FROM is the target in
 # on_declare_war in your version.
 llm_bridge_emit_war = {
-	log = "LLMB|v4|evt|tag=[ROOT.GetTag]|other=[FROM.GetTag]|kind=[?llmb_event_kind]|detail=[?llmb_event_detail]"
+	log = "LLMB|v5|evt|tag=[ROOT.GetTag]|other=[FROM.GetTag]|kind=[?llmb_event_kind]|detail=[?llmb_event_detail]"
 }
 
 # Wars (schema v4): one `war` line per enemy per day, so a harness that reads the
@@ -110,7 +121,87 @@ llm_bridge_emit_wars = {
 			}
 			set_variable = { llmb_war_surr = surrender_progress }
 			multiply_variable = { llmb_war_surr = 100 }
-			log = "LLMB|v4|war|tag=[PREV.GetTag]|enemy=[THIS.GetTag]|divs=[?llmb_war_divs]|border=[?llmb_war_border]|surr=[?llmb_war_surr]"
+			log = "LLMB|v5|war|tag=[PREV.GetTag]|enemy=[THIS.GetTag]|divs=[?llmb_war_divs]|border=[?llmb_war_border]|surr=[?llmb_war_surr]"
 		}
 	}
+}
+
+# Marks THIS country for the bridge (schema v5): every on_action reports for a country
+# that is is_ai = no OR carries llmb_harness, each line under its own tag, so a log can
+# hold several countries and the reader keeps the one it is told to (--country). The
+# harness runs this before the console's `human_ai` so a campaign's telemetry survives
+# the player becoming AI, and later to steer an AI country while a person plays another.
+# Idempotent. `effect <TAG> llm_bridge_mark_harness` / `..._unmark_harness`.
+llm_bridge_mark_harness = {
+	set_country_flag = llmb_harness
+	set_variable = { llmb_event_kind = 16 }
+	llm_bridge_emit_event = yes
+}
+
+llm_bridge_unmark_harness = {
+	clr_country_flag = llmb_harness
+	set_variable = { llmb_event_kind = 17 }
+	llm_bridge_emit_event = yes
+}
+
+# Conquest numbers for the campaign report (schema v5), once a week (on_weekly,
+# llm_bridge_on_actions.txt) and on demand: `effect <TAG> llm_bridge_emit_campaign`.
+# Every token is in the install's documentation/:
+#   num_owned_states        dynamic_variables_documentation.md:677
+#   num_controlled_states   dynamic_variables_documentation.md:548
+#   num_divisions           dynamic_variables_documentation.md:560
+#   num_faction_members     dynamic_variables_documentation.md:573
+#   is_in_faction           triggers_documentation.md:5764
+#   is_faction_leader       triggers_documentation.md:5589
+#   every_enemy_country     effects_documentation.md:3898
+#   has_capitulated         triggers_documentation.md:3388
+#   every_country           effects_documentation.md:3841
+#   exists                  triggers_documentation.md:2743
+#   is_subject              triggers_documentation.md:6354
+#   every_state             effects_documentation.md:4156
+# The counters are set on the player (ROOT), whatever scope is counting. VERIFY
+# LIVE: that ROOT is the player inside every_enemy_country / every_country, and
+# that `exists = yes` is what separates a living country from a tag nobody holds.
+# w_exist counts every country that exists (puppets included), w_indep those that
+# are not anyone's subject; w_states is every state, so the player's share of the
+# world is owned / w_states.
+llm_bridge_emit_campaign = {
+	set_variable = { llmb_c_owned = num_owned_states }
+	set_variable = { llmb_c_ctl = num_controlled_states }
+	set_variable = { llmb_c_divs = num_divisions }
+	set_variable = { llmb_c_fmem = num_faction_members }
+	set_variable = { llmb_c_infac = 0 }
+	set_variable = { llmb_c_leader = 0 }
+	if = {
+		limit = { is_in_faction = yes }
+		set_variable = { llmb_c_infac = 1 }
+	}
+	if = {
+		limit = { is_faction_leader = yes }
+		set_variable = { llmb_c_leader = 1 }
+	}
+	set_variable = { llmb_c_enemies = 0 }
+	set_variable = { llmb_c_capit = 0 }
+	every_enemy_country = {
+		ROOT = { add_to_variable = { llmb_c_enemies = 1 } }
+		if = {
+			limit = { has_capitulated = yes }
+			ROOT = { add_to_variable = { llmb_c_capit = 1 } }
+		}
+	}
+	set_variable = { llmb_c_exist = 0 }
+	set_variable = { llmb_c_indep = 0 }
+	every_country = {
+		limit = { exists = yes }
+		ROOT = { add_to_variable = { llmb_c_exist = 1 } }
+		if = {
+			limit = { is_subject = no }
+			ROOT = { add_to_variable = { llmb_c_indep = 1 } }
+		}
+	}
+	set_variable = { llmb_c_wstates = 0 }
+	every_state = {
+		ROOT = { add_to_variable = { llmb_c_wstates = 1 } }
+	}
+	log = "LLMB|v5|camp|tag=[THIS.GetTag]|ostates=[?llmb_c_owned]|cstates=[?llmb_c_ctl]|divs=[?llmb_c_divs]|enemies=[?llmb_c_enemies]|capit=[?llmb_c_capit]|infac=[?llmb_c_infac]|leader=[?llmb_c_leader]|fmem=[?llmb_c_fmem]|exist=[?llmb_c_exist]|indep=[?llmb_c_indep]|wstates=[?llmb_c_wstates]"
 }

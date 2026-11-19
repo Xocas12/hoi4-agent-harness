@@ -11,7 +11,7 @@ tool rounds; both refuse with ``error_kind="budget"`` (see over_budget()).
 from __future__ import annotations
 
 import json
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 
 from .actions import registry
 from .actions.catalog import QUERY_ACTIONS
@@ -53,6 +53,9 @@ class HOI4Env:
         #: Co-op: actions wait here until the player hands over the keyboard.
         self.handover = HandoverQueue(self.config.run_dir) if self.config.handover else None
         self._last_handover: HandoverReport | None = None
+        #: Callables ``(state) -> lines`` whose output ends every brief (campaign mode adds
+        #: the conquest numbers this way).
+        self.brief_hooks: list[Callable[[GameState], list[str]]] = []
 
     # --- observation ---------------------------------------------------------
 
@@ -124,6 +127,8 @@ class HOI4Env:
             self._last_handover = None
         if self.handover is not None:
             extra += self.handover.describe()
+        for hook in self.brief_hooks:
+            extra += hook(state)
         if self.index is not None:
             extra += self.index.brief_lines(state)
         if extra:

@@ -112,6 +112,10 @@ class BudgetConfig:
     #: (OpenAI, Gemini); writes 1.25x (Anthropic 5-minute cache), none elsewhere.
     usd_per_m_cached_input: float | None = None
     usd_per_m_cache_write: float | None = None
+    #: Dollars kept back from ``max_usd``: a call is refused once spend + reserve
+    #: would pass the cap, so the last call cannot be the one that overshoots it. A
+    #: single long wake costs a few tenths of a dollar, which is what to set it to.
+    reserve_usd: float = 0.0
 
     @classmethod
     def from_env(cls) -> BudgetConfig:
@@ -124,6 +128,7 @@ class BudgetConfig:
             usd_per_m_output=_env_float("HOI4_USD_PER_M_OUTPUT", 0.0) or 0.0,
             usd_per_m_cached_input=_env_float("HOI4_USD_PER_M_CACHED_INPUT"),
             usd_per_m_cache_write=_env_float("HOI4_USD_PER_M_CACHE_WRITE"),
+            reserve_usd=_env_float("HOI4_RESERVE_USD", 0.0) or 0.0,
         )
 
 
@@ -267,6 +272,42 @@ class HarnessConfig:
     fake_game: bool = False
     fake_game_dir: Path | None = None
     fake_game_files: Path | None = None
+    # --- campaign mode (campaign/, docs/campaign.md) -----------------------------------
+    # An unattended run: the game's AI runs the player's country (the console's
+    # ``human_ai``) and the model is the grand strategist above it. ``campaign`` is set
+    # by ``play --campaign`` or a profile; ``campaign.setup.apply_defaults`` fills in
+    # the rest of what it implies (headless, game_ai, no reflexes, the wake rules).
+    campaign: bool = False
+    #: The date the run ends at; ``play --until`` overrides it.
+    campaign_until: str = "1948-12-31"
+    #: The scheduled review, and so the length of a turn: the clock runs this many
+    #: in-game days between model wakes (a critical event cuts it short). The model's
+    #: own advance_time moves the next one, within [min, max].
+    campaign_review_peace_days: int = 30
+    campaign_review_war_days: int = 14
+    campaign_review_min_days: int = 7
+    campaign_review_max_days: int = 90
+    #: A critical event (a war, a capitulation) wakes the model only when this many
+    #: days have passed since it last woke, so a string of capitulations is one wake.
+    campaign_wake_gap_days: int = 7
+    #: A recovery ``savegame`` every this many in-game months (0: none). 66 MB each.
+    campaign_save_months: int = 6
+    #: Stop, with a reason, when the game log has grown by nothing for this long while
+    #: the game should be running.
+    campaign_silence_minutes: float = 20.0
+    #: How long the focus guard waits for the game to come back to the front, in all,
+    #: before it gives up and stops the run.
+    campaign_focus_wait_minutes: float = 360.0
+    #: The game's process name, for the death check (empty: no check).
+    campaign_game_process: str = "hoi4.exe"
+    #: What an exhausted budget does: ``stop`` (leave the game paused, resumable) or
+    #: ``coast`` (the AI plays on to the end date with no model calls).
+    campaign_on_budget: str = "stop"
+    #: Toggle ``human_ai`` at the start (the one step that needs the game).
+    campaign_human_ai: bool = True
+    #: Stop unless the state line's ``ai=`` reads 1 after the toggle.
+    campaign_verify_ai: bool = True
+
     # Co-op turn-taking: every action is queued and runs only when the player
     # grants a window (handover.py). For playing alongside a person, not for
     # scoring -- the eval runner refuses a handover run.

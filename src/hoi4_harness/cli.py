@@ -17,6 +17,8 @@
     hoi4-harness play --headless --fake-game   the same against a fake game, no HOI4 at all
     hoi4-harness headless-check --live      measure what headless play rests on, in the real game
     hoi4-harness fakegame                   a fake game as its own process (play --fake-game-files)
+    hoi4-harness play --campaign --profile profiles/campaign-ger-world.json   an unattended campaign
+    hoi4-harness campaign-report --run-dir runs/x   the markdown report of a campaign run
     hoi4-harness play --handover            co-op: queue actions until the player hands over
     hoi4-harness handover                   hand the keyboard to a --handover session
     hoi4-harness verify-bridge              check the mod's tokens against an install and a log
@@ -135,6 +137,18 @@ def _config_from_args(args: argparse.Namespace) -> HarnessConfig:
         config.fake_game_dir = Path(args.fake_game_dir)
     if getattr(args, "fake_game_files", None):
         config.fake_game_files = Path(args.fake_game_files)
+    if getattr(args, "campaign_mode", False):
+        config.campaign = True
+    if getattr(args, "until", None):
+        config.campaign_until = args.until
+    if getattr(args, "no_human_ai", False):
+        config.campaign_human_ai = False
+    if getattr(args, "no_verify_ai", False):
+        config.campaign_verify_ai = False
+    if config.campaign:
+        from .campaign.setup import apply_defaults
+
+        apply_defaults(config)
     if config.fake_game or config.fake_game_files:
         # A fake game has no window to focus and nothing a keystroke can hurt, so
         # it is the one target where --live is the point, not a risk.
@@ -230,8 +244,49 @@ def cmd_observe(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_campaign(args: argparse.Namespace, config: HarnessConfig) -> int:
+    """``play --campaign``: the unattended run (docs/campaign.md)."""
+    from .adapters.base import GameLost
+    from .campaign.runner import CampaignStartError, run_campaign
+
+    def echo(line: str) -> None:
+        print(line, file=sys.stderr)
+
+    try:
+        _, summary = run_campaign(config, resume=bool(getattr(args, "resume", False)),
+                                  quiet=args.quiet, echo=echo)
+    except CampaignStartError as exc:
+        print(f"campaign: {exc}", file=sys.stderr)
+        return 2
+    except GameLost as exc:
+        print(f"campaign: {exc}", file=sys.stderr)
+        return 1
+    except (FileNotFoundError, RuntimeError, ValueError) as exc:
+        print(f"campaign: {type(exc).__name__}: {exc}", file=sys.stderr)
+        return 3
+    print(json.dumps(summary, indent=2, default=str))
+    return 0 if summary["reached_end_date"] else 1
+
+
+def cmd_campaign_report(args: argparse.Namespace) -> int:
+    from .campaign.report import write_report
+
+    try:
+        text, path = write_report(Path(args.run_dir), out=Path(args.out) if args.out else None)
+    except FileNotFoundError as exc:
+        print(f"campaign-report: {exc}", file=sys.stderr)
+        return 1
+    if args.print_report:
+        print(text)
+    else:
+        print(f"wrote {path}")
+    return 0
+
+
 def cmd_play(args: argparse.Namespace) -> int:
     config = _config_from_args(args)
+    if config.campaign:
+        return cmd_campaign(args, config)
     if config.handover and config.advisor:
         print("play: --advisor never acts, so there is nothing to hand over; pick one",
               file=sys.stderr)
@@ -916,9 +971,11 @@ def build_parser() -> argparse.ArgumentParser:
                        help="skip the confirmation gate on irreversible actions")
         p.add_argument("--no-reflex", dest="no_reflex", action="store_true",
                        help="disable the deterministic reflex layer; the model decides everything")
-        p.add_argument("--operational-control", dest="operational_control", choices=["llm", "ai"],
+        p.add_argument("--operational-control", dest="operational_control",
+                       choices=["llm", "ai", "game_ai"],
                        help="llm: the model moves units; ai: the game's AI does, and the model "
-                            "sets directives and postures")
+                            "sets directives and postures; game_ai: the AI runs the whole "
+                            "country (campaign mode)")
         p.add_argument("--player-clock", dest="player_clock", action="store_true",
                        help="a person is playing: never pause, resume or set game speed")
         p.add_argument("--no-llm", dest="no_llm", action="store_true",
@@ -989,11 +1046,29 @@ def build_parser() -> argparse.ArgumentParser:
     play.add_argument("--script", metavar="PATH",
                       help="scripted provider: replay these responses (JSON), then fall back "
                            "to the keyword policy; offline, no model call")
+    play.add_argument("--campaign", dest="campaign_mode", action="store_true",
+                      help="the unattended campaign: the game's AI runs the country (human_ai), "
+                           "the model steers it; see docs/campaign.md")
+    play.add_argument("--until", metavar="YYYY-MM-DD",
+                      help="stop when the game reaches this date (campaign default 1948-12-31)")
+    play.add_argument("--no-human-ai", dest="no_human_ai", action="store_true",
+                      help="campaign: do not hand the country to the game's AI")
+    play.add_argument("--no-verify-ai", dest="no_verify_ai", action="store_true",
+                      help="campaign: carry on when the state line still reads ai=0 after human_ai "
+                           "(only if you can see the AI running the country yourself)")
     play.add_argument("--quiet", action="store_true",
                       help="no per-turn progress line on stderr")
     play.add_argument("--confirm", action="store_true",
                       help="ask a person before every irreversible action (needs --live)")
     play.set_defaults(func=cmd_play)
+
+    report = sub.add_parser(
+        "campaign-report", help="write the markdown report of a campaign run directory")
+    report.add_argument("--run-dir", dest="run_dir", required=True, metavar="PATH")
+    report.add_argument("--out", metavar="PATH", help="default: <run-dir>/campaign-report.md")
+    report.add_argument("--print", dest="print_report", action="store_true",
+                        help="print the report instead of only writing it")
+    report.set_defaults(func=cmd_campaign_report)
 
     check = sub.add_parser(
         "headless-check",

@@ -12,19 +12,19 @@ from hoi4_harness.adapters.logtail import LogTailAdapter
 from hoi4_harness.observation import render_full
 
 LIVE_LOG = """\
-[12:23:59][1937.04.12.21]: LLMB|v4|state|date= 21:00, 12 April, 1937|tag=SWE|pp=881.1735|stab=82.639|ws=0|civ=20|mil=3|doc=3|mp=32980|techs=32|built_civ=0|built_mil=0|built_dock=0|built_infra=0
-[12:23:59][1937.04.12.21]: LLMB|v4|army|tag=SWE|divisions=12|delegated=0
-[12:23:59][1937.04.12.21]: LLMB|v4|focus|tag=SWE|id=SWE_defense_act
-[12:23:59][1937.04.12.21]: LLMB|v4|research|tag=SWE|id=infantry_weapons2
-[12:24:55][1937.04.18.03]: LLMB|v4|evt|tag=SWE|kind=13|detail=GER
-[12:25:31][1937.04.18.03]: LLMB|v4|evt|tag=SWE|kind=15|detail=defensive GER
-[12:25:46][1937.04.18.03]: LLMB|v4|evt|tag=SWE|kind=13|detail=ETH
-[12:26:03][1937.04.18.03]: LLMB|v4|evt|tag=SWE|kind=15|detail=offensive ETH
-[12:26:05][1937.04.18.21]: LLMB|v4|state|date= 21:00, 18 April, 1937|tag=SWE|pp=886.7|stab=82.63|ws=0|civ=21|mil=3|doc=3|mp=32980|techs=32|built_civ=0|built_mil=0|built_dock=0|built_infra=0
-[12:26:05][1937.04.18.21]: LLMB|v4|army|tag=SWE|divisions=12|delegated=0
-[12:26:05][1937.04.18.21]: LLMB|v4|focus|tag=SWE|id=SWE_defense_act
-[12:26:05][1937.04.18.21]: LLMB|v4|research|tag=SWE|id=infantry_weapons2
-[12:26:06][1937.04.19.21]: LLMB|v4|state|date= 21:00, 19 April, 1937|tag=SWE|pp=887.6|stab=82.63|ws=0|civ=21|mil=3|doc=3|mp=32980|techs=32|built_civ=0|built_mil=0|built_dock=0|built_infra=0
+[12:23:59][1937.04.12.21]: LLMB|v5|state|date= 21:00, 12 April, 1937|tag=SWE|pp=881.1735|stab=82.639|ws=0|civ=20|mil=3|doc=3|mp=32980|techs=32|built_civ=0|built_mil=0|built_dock=0|built_infra=0
+[12:23:59][1937.04.12.21]: LLMB|v5|army|tag=SWE|divisions=12|delegated=0
+[12:23:59][1937.04.12.21]: LLMB|v5|focus|tag=SWE|id=SWE_defense_act
+[12:23:59][1937.04.12.21]: LLMB|v5|research|tag=SWE|id=infantry_weapons2
+[12:24:55][1937.04.18.03]: LLMB|v5|evt|tag=SWE|kind=13|detail=GER
+[12:25:31][1937.04.18.03]: LLMB|v5|evt|tag=SWE|kind=15|detail=defensive GER
+[12:25:46][1937.04.18.03]: LLMB|v5|evt|tag=SWE|kind=13|detail=ETH
+[12:26:03][1937.04.18.03]: LLMB|v5|evt|tag=SWE|kind=15|detail=offensive ETH
+[12:26:05][1937.04.18.21]: LLMB|v5|state|date= 21:00, 18 April, 1937|tag=SWE|pp=886.7|stab=82.63|ws=0|civ=21|mil=3|doc=3|mp=32980|techs=32|built_civ=0|built_mil=0|built_dock=0|built_infra=0
+[12:26:05][1937.04.18.21]: LLMB|v5|army|tag=SWE|divisions=12|delegated=0
+[12:26:05][1937.04.18.21]: LLMB|v5|focus|tag=SWE|id=SWE_defense_act
+[12:26:05][1937.04.18.21]: LLMB|v5|research|tag=SWE|id=infantry_weapons2
+[12:26:06][1937.04.19.21]: LLMB|v5|state|date= 21:00, 19 April, 1937|tag=SWE|pp=887.6|stab=82.63|ws=0|civ=21|mil=3|doc=3|mp=32980|techs=32|built_civ=0|built_mil=0|built_dock=0|built_infra=0
 """
 
 

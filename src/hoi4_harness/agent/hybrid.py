@@ -43,7 +43,19 @@ DIRECTIVE_ACTIONS = frozenset(
     {"delegate_army_to_ai", "set_ai_posture", "set_ai_directive", "clear_ai_directives"}
 )
 
-MODES = ("llm", "ai")
+#: What the game's AI does for itself once it runs the whole country (the console's
+#: ``human_ai``, campaign mode): it picks the focus and the research, builds and
+#: produces, designs templates, trades and moves its own armies. Offering any
+#: of these to the model gets it undone the next day, or doubled (``set_production``
+#: opens a second line beside the one the AI keeps), and a construction or production
+#: order costs two 66 MB saves to verify. The clock is the harness's.
+GAME_AI_OWNED = frozenset({
+    "set_national_focus", "start_research", "queue_construction", "set_production",
+    "design_division_template", "deploy_divisions", "delegate_army_to_ai", "set_trade",
+    "set_game_speed", "diplomacy",
+})
+
+MODES = ("llm", "ai", "game_ai")
 
 
 def actions_for_mode(allowed: set[str], mode: str) -> set[str]:
@@ -53,6 +65,8 @@ def actions_for_mode(allowed: set[str], mode: str) -> set[str]:
     army a direct order *and* a standing directive, they disagree, and the
     resulting behaviour is attributable to neither.
     """
+    if mode == "game_ai":
+        return allowed - OPERATIONAL_ACTIONS - GAME_AI_OWNED
     if mode == "ai":
         return allowed - OPERATIONAL_ACTIONS
     return allowed - DIRECTIVE_ACTIONS
@@ -60,6 +74,15 @@ def actions_for_mode(allowed: set[str], mode: str) -> set[str]:
 
 def describe(mode: str) -> str:
     """One paragraph for the prompt, so the model knows what it is not doing."""
+    if mode == "game_ai":
+        return (
+            "The game's own AI is running your country: it picks the national focus and "
+            "the research, builds and produces, designs and deploys divisions and runs "
+            "every front. You are the grand strategist above it. You steer it with "
+            "set_ai_directive, set_ai_posture (globally or per theater), take_decision "
+            "and hire_advisor; you do not start research, queue construction or "
+            "production, or order units, because the AI would undo or double it."
+        )
     if mode == "ai":
         return (
             "Operations are delegated. The game's own AI runs fronts, movement, "
