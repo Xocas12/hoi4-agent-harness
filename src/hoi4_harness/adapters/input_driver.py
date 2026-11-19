@@ -30,7 +30,7 @@ from ..paths import find_game_dir
 from ..types import ActionCall, ActionResult, GameState
 from ..uilayout import DisplaySettings, Geometry, LayoutRefused, geometry_for, read_display_settings
 from .base import AdapterInfo, GameAdapter
-from .keys import GuiKeys, ScanCodeKeys
+from .keys import GuiKeys, ScanCodeKeys, text_chords
 from .ui_resolve import Unresolvable, is_computed, resolve
 from .ui_scripts import Step, placeholders, unsafe_escape, verify
 from .window import FocusCheck, check_focus, client_rect
@@ -99,6 +99,12 @@ def _expand_repeats(steps: list[Step]) -> list[Step]:
 
 class NotFocused(RuntimeError):
     """The game was not the focused window, so nothing was sent."""
+
+
+class InputInterrupted(Exception):
+    """A guard stopped the keys between two of them (rival mode: the person started typing,
+    unpaused, or took the keyboard back). Not an error to report as a failed action: the
+    caller re-queues what had not run."""
 
 
 def default_display_settings() -> DisplaySettings | None:
@@ -202,6 +208,9 @@ class InputDriverAdapter(GameAdapter):
         #: False, or None for not known. It decides whether to look or to press
         #: first, never whether to look at all (see _drive_clock).
         self._running: bool | None = None
+        #: Rival mode's guard (``rival.safety.KeyWatch``): asked before every key and every
+        #: typed character, it may raise ``InputInterrupted``. None: no guard.
+        self.key_watch = None
 
     def geometry(self) -> Geometry:
         """The window computed click points are placed in. Raises LayoutRefused.
@@ -282,10 +291,14 @@ class InputDriverAdapter(GameAdapter):
     def press(self, key: str) -> None:
         """Press a key or chord (``alt+q``); a name in HOTKEYS means its binding."""
         key = HOTKEYS.get(key, key)
+        if self.key_watch is not None and not self.dry_run:
+            self.key_watch.before("press", key)
         self._require_focus()
         self.log.append(f"press {key}")
         if not self.dry_run:
             self._keys().chord(key)
+            if self.key_watch is not None:
+                self.key_watch.after("press", key)
 
     def click(self, target: str) -> None:
         if not self.config.mouse:
@@ -360,7 +373,13 @@ class InputDriverAdapter(GameAdapter):
         self._require_focus()
         self.log.append(f"type {text}")
         if not self.dry_run:
-            self._keys().type_text(text)
+            if self.key_watch is None:
+                self._keys().type_text(text)
+                return
+            text_chords(text)             # every character checked before any is sent
+            for char in text:             # one at a time, so a guard can stop between them
+                self.key_watch.before("type", char)
+                self._keys().type_text(char)
 
     def _run_step(self, step: Step) -> None:
         if step.kind == "repeat":      # expanded before the run (_expand_repeats)

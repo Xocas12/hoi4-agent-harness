@@ -19,6 +19,7 @@
     hoi4-harness fakegame                   a fake game as its own process (play --fake-game-files)
     hoi4-harness play --campaign --profile profiles/campaign-ger-world.json   an unattended campaign
     hoi4-harness campaign-report --run-dir runs/x   the markdown report of a campaign run
+    hoi4-harness play --rival TAG --live    steer an AI country in your single-player game
     hoi4-harness play --handover            co-op: queue actions until the player hands over
     hoi4-harness handover                   hand the keyboard to a --handover session
     hoi4-harness verify-bridge              check the mod's tokens against an install and a log
@@ -149,6 +150,28 @@ def _config_from_args(args: argparse.Namespace) -> HarnessConfig:
         from .campaign.setup import apply_defaults
 
         apply_defaults(config)
+    if getattr(args, "rival", None):
+        config.rival = args.rival.upper()
+    if getattr(args, "rival_act_when", None):
+        config.rival_act_when = args.rival_act_when
+    if getattr(args, "rival_paused_seconds", None) is not None:
+        config.rival_paused_seconds = args.rival_paused_seconds
+    if getattr(args, "rival_idle_seconds", None) is not None:
+        config.rival_idle_seconds = args.rival_idle_seconds
+    if getattr(args, "rival_start_wait", None) is not None:
+        config.rival_start_wait_minutes = args.rival_start_wait
+    if getattr(args, "rival_exit_wait", None) is not None:
+        config.rival_exit_wait_seconds = args.rival_exit_wait
+    if getattr(args, "fake_human_script", None):
+        config.fake_human_script = Path(args.fake_human_script)
+    if config.rival:
+        from .rival.setup import RivalConfigError
+        from .rival.setup import apply_defaults as apply_rival
+
+        try:
+            apply_rival(config)
+        except RivalConfigError as exc:
+            raise SystemExit(f"play: {exc}") from exc
     if config.fake_game or config.fake_game_files:
         # A fake game has no window to focus and nothing a keystroke can hurt, so
         # it is the one target where --live is the point, not a risk.
@@ -268,6 +291,30 @@ def cmd_campaign(args: argparse.Namespace, config: HarnessConfig) -> int:
     return 0 if summary["reached_end_date"] else 1
 
 
+def cmd_rival(args: argparse.Namespace, config: HarnessConfig) -> int:
+    """``play --rival TAG``: steer an AI country in the person's single-player game."""
+    from .adapters.base import GameLost
+    from .rival.runner import RivalStartError, run_rival
+
+    def echo(line: str) -> None:
+        print(line, file=sys.stderr)
+
+    try:
+        _, summary = run_rival(config, resume=bool(getattr(args, "resume", False)),
+                               quiet=args.quiet, echo=echo, until=getattr(args, "until", None))
+    except RivalStartError as exc:
+        print(f"rival: {exc}", file=sys.stderr)
+        return 2
+    except GameLost as exc:
+        print(f"rival: {exc}", file=sys.stderr)
+        return 1
+    except (FileNotFoundError, RuntimeError, ValueError) as exc:
+        print(f"rival: {type(exc).__name__}: {exc}", file=sys.stderr)
+        return 3
+    print(json.dumps(summary, indent=2, default=str))
+    return 0 if summary["reached_end_date"] or not summary["stopped_reason"] else 1
+
+
 def cmd_campaign_report(args: argparse.Namespace) -> int:
     from .campaign.report import write_report
 
@@ -287,6 +334,8 @@ def cmd_play(args: argparse.Namespace) -> int:
     config = _config_from_args(args)
     if config.campaign:
         return cmd_campaign(args, config)
+    if config.rival:
+        return cmd_rival(args, config)
     if config.handover and config.advisor:
         print("play: --advisor never acts, so there is nothing to hand over; pick one",
               file=sys.stderr)
@@ -1056,6 +1105,26 @@ def build_parser() -> argparse.ArgumentParser:
     play.add_argument("--no-verify-ai", dest="no_verify_ai", action="store_true",
                       help="campaign: carry on when the state line still reads ai=0 after human_ai "
                            "(only if you can see the AI running the country yourself)")
+    play.add_argument("--rival", metavar="TAG",
+                      help="single player: steer this AI country (the game's AI runs it) while "
+                           "you play another; acts only in your pauses; see docs/rival.md")
+    play.add_argument("--rival-act-when", dest="rival_act_when", choices=["paused", "handover", "never"],
+                      help="rival: when the queue may be typed: paused (you paused and left the "
+                           "keyboard alone), handover (only when you run `hoi4-harness handover`), "
+                           "never (shown, not run)")
+    play.add_argument("--rival-paused-seconds", dest="rival_paused_seconds", type=float,
+                      metavar="N", help="rival, paused: the in-game date must have stood still "
+                                        "this long (default 10)")
+    play.add_argument("--rival-idle-seconds", dest="rival_idle_seconds", type=float, metavar="N",
+                      help="rival, paused: no keyboard or mouse input for this long (default 5)")
+    play.add_argument("--rival-start-wait", dest="rival_start_wait", type=float, metavar="MINUTES",
+                      help="rival: how long the start waits for a window to mark the country "
+                           "(default 30)")
+    play.add_argument("--rival-exit-wait", dest="rival_exit_wait", type=float, metavar="SECONDS",
+                      help="rival: how long the exit waits for a window to unmark it (default 60)")
+    play.add_argument("--fake-human-script", dest="fake_human_script", metavar="PATH",
+                      help="with --fake-game --rival: a JSON script of what the fake person does "
+                           "([[seconds, \"pause\"], ...]; default: play 45 s, pause 90 s)")
     play.add_argument("--quiet", action="store_true",
                       help="no per-turn progress line on stderr")
     play.add_argument("--confirm", action="store_true",

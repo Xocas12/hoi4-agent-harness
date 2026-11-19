@@ -16,6 +16,7 @@ from collections.abc import Callable, Iterable
 from .actions import registry
 from .actions.catalog import QUERY_ACTIONS
 from .adapters.base import GameAdapter
+from .adapters.input_driver import InputInterrupted
 from .config import HarnessConfig
 from .confirm import Confirmation
 from .handover import PASS_THROUGH, HandoverQueue, HandoverReport
@@ -51,7 +52,13 @@ class HOI4Env:
         #: "Directive standing" only proves the harness recorded it.
         self.directives = DirectiveTracker()
         #: Co-op: actions wait here until the player hands over the keyboard.
-        self.handover = HandoverQueue(self.config.run_dir) if self.config.handover else None
+        self.handover: HandoverQueue | None = (
+            HandoverQueue(self.config.run_dir) if self.config.handover else None)
+        if self.config.rival:
+            # Rival mode (rival/): the same queue, run by a window policy and sent as one batch.
+            from .rival.queue import RivalQueue
+
+            self.handover = RivalQueue(self.config.run_dir, self.config.rival_stale_days)
         self._last_handover: HandoverReport | None = None
         #: Callables ``(state) -> lines`` whose output ends every brief (campaign mode adds
         #: the conquest numbers this way).
@@ -253,7 +260,35 @@ class HOI4Env:
                 problem = self.index.check(call, self.adapter.read_state().country)
             return problem if problem is not None else self._apply(call)
 
-        report = self.handover.run(self.adapter.read_state, apply)
+        def apply_batch(calls: list[ActionCall]) -> list[ActionResult]:
+            """One validation pass per call, then every valid one in one send."""
+            out: dict[int, ActionResult] = {}
+            valid: list[ActionCall] = []
+            for call in calls:
+                problem = registry.check(call, self.allowed_actions)
+                if problem is None and self.index is not None:
+                    problem = self.index.check(call, self.adapter.read_state().country)
+                if problem is not None:
+                    out[id(call)] = problem
+                else:
+                    valid.append(call)
+            if valid:
+                try:
+                    results = self.adapter.apply_batch(valid)
+                except InputInterrupted:
+                    raise          # not a failed action: the queue keeps them for the next window
+                except Exception as exc:  # noqa: BLE001 - an adapter fault must not end the run
+                    results = [ActionResult(
+                        ok=False, action=c.name, call_id=c.call_id,
+                        message=f"Adapter raised {type(exc).__name__}: {exc}",
+                        error_kind="rejected") for c in valid]
+                for call, result in zip(valid, results, strict=True):
+                    if result.ok:
+                        self._track_directive(call)
+                    out[id(call)] = result
+            return [out[id(call)] for call in calls]
+
+        report = self.handover.run(self.adapter.read_state, apply, apply_batch)
         if report is not None:
             self._last_handover = report
         return report

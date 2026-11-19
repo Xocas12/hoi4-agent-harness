@@ -69,6 +69,11 @@ class GameAdapter(abc.ABC):
     def apply(self, call: ActionCall) -> ActionResult:
         """Execute one validated action."""
 
+    def apply_batch(self, calls: list[ActionCall]) -> list[ActionResult]:
+        """Execute several validated actions. Default: one after the other; an adapter whose
+        channel can send them together (the console: one file, one ``run``) overrides it."""
+        return [self.apply(call) for call in calls]
+
     # --- clock ---------------------------------------------------------------
     # The harness, not the model, owns time. The standard cycle is
     # pause -> read -> decide -> apply -> advance.

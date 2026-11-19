@@ -143,7 +143,7 @@ class AgentLoop:
                 min_days=self.config.campaign_review_min_days,
                 max_days=self.config.campaign_review_max_days,
                 wake_gap_days=self.config.campaign_wake_gap_days)
-                if self.config.campaign else None),
+                if self.config.paced else None),
         )
         self.supervisor = supervisor
         #: The days the model's last advance_time asked for (campaign: its next review).

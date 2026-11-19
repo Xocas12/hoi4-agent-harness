@@ -145,17 +145,31 @@ class ScanCodeKeys:
         self._send = send or _sendinput
         self._sleep = sleep
         self.key_gap, self.hold, self.char_gap = key_gap, hold, char_gap
+        #: Called right after every key event goes out. Rival mode uses it to take the
+        #: system's last-input stamp as its own, so a stamp that differs later is a person's.
+        self.on_send: Callable[[], None] | None = None
+        #: Called right before every key event goes out (and may only observe: raising here
+        #: would leave a key down). Rival mode checks for the person's input between two of
+        #: our events, so one that falls inside a chord is seen at its next event.
+        self.before_send: Callable[[], None] | None = None
+
+    def _emit(self, code: int, up: bool) -> None:
+        if self.before_send is not None:
+            self.before_send()
+        self._send(code, up)
+        if self.on_send is not None:
+            self.on_send()
 
     def chord(self, spec: str) -> None:
         self._chord(parse_chord(spec))
 
     def _chord(self, codes: list[int]) -> None:
         for code in codes:
-            self._send(code, False)
+            self._emit(code, False)
             self._sleep(self.key_gap)
         self._sleep(self.hold)
         for code in reversed(codes):
-            self._send(code, True)
+            self._emit(code, True)
             self._sleep(self.key_gap)
 
     @contextmanager
@@ -163,13 +177,13 @@ class ScanCodeKeys:
         """Keep a key (or chord) down while the body runs: shift for a queued order."""
         codes = parse_chord(spec)
         for code in codes:
-            self._send(code, False)
+            self._emit(code, False)
             self._sleep(self.key_gap)
         try:
             yield
         finally:
             for code in reversed(codes):
-                self._send(code, True)
+                self._emit(code, True)
                 self._sleep(self.key_gap)
 
     def type_text(self, text: str) -> None:

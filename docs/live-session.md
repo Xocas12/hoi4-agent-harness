@@ -696,3 +696,163 @@ from hoi4_harness.tactics.bridge import ControllerBridge
 bridge = ControllerBridge(layer, ScriptedController())
 print(bridge.decide(game.read_state()))       # look at the actions it would take; apply none yet
 ```
+
+## 13. Rival mode: steering an AI country while you play another (#31, #33, #91)
+
+[rival.md](rival.md) says what the mode is and what each safety rule is. Everything below
+the offline step is **assumed from the documentation and the fake game**. This is the sitting
+that finds out which assumptions the real game keeps, and it is the first time the harness
+types into a game while you are at the keyboard, so go in this order and stop at the first
+step that does not give the expected result. Paste each step's output into the issue named at
+the end.
+
+Setup: a new 1936 single-player game as **GER** (country A, you), the LLM Bridge mod last in
+the playset and **regenerated for schema v5**, the game restarted since. B is **POL**. The
+console works without `-debug`. Use the same three `export`s as step 10.
+
+**0. Offline first, no game needed.** The whole stack against the fake game, with a fake person
+who plays 45 s, pauses 90 s and repeats:
+
+```bash
+hoi4-harness play --rival SWE --fake-game --provider scripted \
+    --script profiles/rival-live-script.json --until 1936-09-01 --run-dir runs/rival-fake
+```
+
+Expect `marked: the mark event and a state line for SWE`, `Window on ...: 2 ran`, a second
+window, `SWE unmarked`, exit code 0.
+
+**1. The flag, by hand (no harness).** In the game's console type
+`effect POL llm_bridge_mark_harness`, unpause for 2 days at speed 3, pause.
+
+```bash
+grep "LLMB|v5|evt|tag=POL" "$HOI4_LOG_PATH" | tail -3
+grep "LLMB|v5|state|tag=POL" "$HOI4_LOG_PATH" | tail -2
+grep "LLMB|v5|state|tag=GER" "$HOI4_LOG_PATH" | tail -1
+```
+
+Expect an `evt` with `kind=16`, daily `state` lines for POL with `ai=1` (POL is an AI country
+and is reported only because of the flag), and still GER's own lines with `ai=0`. This is the
+claim the whole mode rests on: **an `is_ai = yes` country with the flag is reported.** If
+there are no POL state lines, `llm_bridge_is_harness` does not reach the on_actions for an AI
+country; say so in #91 and stop. Also look for a weekly `camp` line for POL.
+Then `effect POL llm_bridge_unmark_harness`, two days, and POL's lines must stop (`kind=17`).
+
+**2. B-scoped orders, by hand.** Mark POL again, then `effect POL llm_bridge_select_SOV`,
+`effect POL llm_bridge_raise_contain` and `effect POL llm_bridge_set_posture_defensive`.
+
+```bash
+grep "LLMB|v5|evt|tag=" "$HOI4_LOG_PATH" | tail -6
+```
+
+Expect `tag=POL` on kinds 13, 14 (`detail=contain SOV`) and 10, **not** `tag=GER`. A `tag=GER`
+here means `ROOT` in a console `effect POL` is not POL: the mod's log lines and every
+verification would be wrong for a steered country; paste the lines in #91. Then
+`list_flags POL` in the console: `llmb_contain_SOV` and `llmb_posture_defensive` should be
+there. (B's flags are not visible in your decisions tab: the log and `list_flags` are the
+evidence.) Whether POL's AI then *acts* on `contain` is the question of campaign.md's
+pre-flight 5 and takes weeks of game time; for an `invade`, give it a month at speed 5.
+
+**3. Your input clock, and whether our own keys count.** The game need not be in front:
+
+```python
+import time
+from hoi4_harness.rival.safety import system_input_watch
+from hoi4_harness.adapters.keys import ScanCodeKeys
+w = system_input_watch()
+print("supported:", w.supported)
+for i in range(12):
+    print(f"{w.idle_seconds():.1f}")          # press a key or move the mouse during this loop
+    time.sleep(0.5)
+ScanCodeKeys().chord("shift")                  # a harmless key, sent as the harness sends them
+print("after our own key:", w.idle_seconds())
+```
+
+Expect `supported: True`, the number resetting to ~0 when you press a key or move the mouse and
+growing otherwise, and **~0 right after our own `shift`**. That is the assumption the guard's
+design rests on: our keys are input too, so it compares stamps and not idle time. If our own
+key does not reset it, the guard still works but the idle gate is looser than documented.
+Paste the output in #31.
+
+**4. A pause, read from the log.** Game running at speed 1, then speed 5, then paused.
+
+```python
+import os, time
+from hoi4_harness.rival.safety import LogClock
+c = LogClock(os.environ["HOI4_LOG_PATH"], time.monotonic)
+for i in range(60):
+    print(c.last_date(), f"{c.still_for():.0f}s")   # watch it while you pause and unpause
+    time.sleep(1)
+```
+
+Expect the stillness to stay under 10 s at every speed while the game runs and to grow without
+bound once you pause. **Measure the longest gap between two date changes at speed 1** and paste
+it: `--rival-paused-seconds` (10) must exceed it. Also try the escape menu and an event popup
+left open: does the date stand still there too? Say which, because a window would open over
+them (rival.md, residual risks).
+
+**5. A real window, paused policy.** Game running as GER, then pause it and take your hands off
+the keyboard and the mouse.
+
+```bash
+hoi4-harness play --rival POL --live --provider scripted --script profiles/rival-live-script.json \
+    --game-dir "$HOI4_GAME_DIR" --until 1936-06-01 --run-dir runs/rival-live
+tail -f runs/rival-live/rival.log
+```
+
+Expect, in `rival.log`: `marking POL ... waiting for a safe window`, then after about 10 s of
+stillness the console opens once, flashes, closes, and `POL marked: the mark event and a state
+line for POL are in the log`. Then unpause, play for a month, pause and wait: `Window on
+1936-...: 2 ran`. The console must open and close **once per window**, however many actions
+are queued. Check:
+
+```bash
+grep "LLMB|v5|evt|tag=POL" "$HOI4_LOG_PATH" | tail -8      # kinds 14 (contain SOV) and 10 (posture)
+cat runs/rival-live/console/*-llmb_turn.txt                  # every line starts effect POL / eval_effect POL
+grep -L "gamespeed\|pause_in_hours\|human_ai\|savegame" runs/rival-live/console/*-llmb_turn.txt
+```
+
+Every console file must be listed by the last command (none contains a clock command), and
+the game's speed and pause state must be exactly what you left them. Paste `rival.log`.
+
+**6. Not while you are playing.** Unpause and play. `rival.log` should say `waiting: the game is
+not paused` and **nothing opens**. Pause, then keep moving the mouse: `waiting: there was
+keyboard or mouse input`. Alt-tab to another window: `waiting: the game window is not in
+front`. None of these may type anything. Paste.
+
+**7. You come back mid-sequence.** The mode's central risk. Use `--rival-idle-seconds 3` so a
+window opens quickly, have something queued (the script's second wake does), pause, and watch
+the console open. **Press a letter key (say `x`) while it is typing.**
+
+- Expect the console to close within a moment, `rival.log` to say `stopped before it finished
+  (the person started using the keyboard or mouse), 1 still queued`, nothing to have run, and
+  the next window to carry it out after you go quiet again.
+- **Then open the console yourself and look at its input line.** Empty is what the design
+  assumes. If it still holds the half-typed `run llmb_...` (or your `x`), say so in #31: the
+  next window would append to it and fail, and the abort needs to clear the line first.
+- Do it twice more with the key at different points (right after the opening backtick, and
+  just before the enter). Note how many of the three were caught.
+
+**8. The policies.** `--rival-act-when handover`: nothing happens until you run
+`hoi4-harness handover --run-dir runs/rival-live`, then one window, and the grant is gone
+afterwards. Run `hoi4-harness handover --release` while a window is typing: it must stop at
+the next key. `--rival-act-when never`: no console ever opens, the brief says the orders are
+advice, `rival.log` lists what was shown. Paste the lines.
+
+**9. You declare war on B.** Declare war on Poland as Germany. Within a few days of game time
+`rival.log` must show `wake: critical event: war declared: GER on POL`, and:
+
+```bash
+hoi4-harness observe --adapter logtail --country POL
+```
+
+shows `AT WAR with GER` and **nothing of GER's own numbers** (political power, factories,
+GER's other wars). A GER figure there is a leak: paste the brief in #91.
+
+**10. Leaving.** Ctrl-C the run while the game is paused and quiet: expect `POL unmarked` and
+a `kind=17` event. Run it again, pause nothing, Ctrl-C: expect `POL is still marked ... To undo
+it type in the console: effect POL llm_bridge_unmark_harness`. Type it.
+
+**What to paste where.** Steps 1, 2 and 5 (the flag works on an AI country, the scope is B's,
+the window is one file): #91. Steps 3, 4, 6 and 7 (the idle clock, the pause signal, the abort,
+the console line): #31 and #33; they decide whether `paused` is safe enough to be the default
+or `handover` should be. Step 9: #91.

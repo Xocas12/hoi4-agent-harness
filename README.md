@@ -98,7 +98,10 @@ see [docs/mods.md](docs/mods.md).
 Playing alongside the model rather than watching it: `--advisor` (it recommends,
 you act), `--player-clock` (it never touches the clock) and `--handover` (its
 actions queue until you hand it the keyboard, and are re-checked before they
-run) — see [docs/co-op.md](docs/co-op.md).
+run) — see [docs/co-op.md](docs/co-op.md). In a single-player game, `play --rival TAG`
+makes the model the grand strategist of an AI country while you play another: it
+decides whenever it likes and its orders are typed only in your pauses, after checks
+that you are away from the keyboard — see [docs/rival.md](docs/rival.md).
 
 Also configurable: which actions exist at all (`--actions`, `--without`), whether
 the reflex layer runs (`--no-reflex` hands every decision to the model), whether

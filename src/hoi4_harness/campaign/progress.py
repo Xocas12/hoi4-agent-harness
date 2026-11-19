@@ -55,6 +55,8 @@ class ProgressTracker:
 
     run_dir: Path | None = None
     objective: str = "conquer the world"
+    #: The brief block's heading: CAMPAIGN, or RIVAL when the model steers one AI country.
+    label: str = "CAMPAIGN"
     until: str | None = None
     max_usd: float | None = None
     #: The first campaign numbers seen, for "since the start".
@@ -107,7 +109,7 @@ class ProgressTracker:
         """The campaign block for a planner brief; empty before any numbers exist."""
         camp = state.campaign
         lines: list[str] = []
-        head = f"CAMPAIGN: objective {self.objective}"
+        head = f"{self.label}: objective {self.objective}"
         if self.until:
             head += f", until {self.until}"
         lines.append(head + f" (now {state.date}).")

@@ -49,7 +49,7 @@ from ..actions.catalog import AI_DIRECTIVES
 from ..identifiers import IdentifierIndex
 from ..observation.builder import snapshot
 from ..types import ActionCall, ActionResult, GameState
-from .input_driver import NotFocused
+from .input_driver import InputInterrupted, NotFocused
 from .keys import text_chords
 from .ui_scripts import verify
 
@@ -567,6 +567,8 @@ class ConsoleChannel:
             self.saves.mark()
         try:
             self._keys_sequence()
+        except InputInterrupted:
+            raise            # the caller re-queues: this is not a failed action
         except Exception as exc:   # noqa: BLE001 - report it; _keys_sequence tried to close
             return {i: _result(p.call, False, "rejected",
                                f"{type(exc).__name__}: {exc}; the console may be open",

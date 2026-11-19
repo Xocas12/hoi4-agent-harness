@@ -82,6 +82,9 @@ class CompositeAdapter(GameAdapter):
     def apply(self, call: ActionCall) -> ActionResult:
         return self.writer.apply(call)
 
+    def apply_batch(self, calls: list[ActionCall]) -> list[ActionResult]:
+        return self.writer.apply_batch(calls)
+
     def pause(self) -> None:
         if self.owns_clock:
             self.writer.pause()
