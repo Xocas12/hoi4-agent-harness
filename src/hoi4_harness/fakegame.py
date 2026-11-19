@@ -49,7 +49,7 @@ from .adapters.mock import MockAdapter
 from .identifiers import IdentifierIndex, Playset
 from .types import ActionCall, ConstructionItem, ProductionLine, ResearchSlot, ScenarioStart
 
-SCHEMA_VERSION = 3
+SCHEMA_VERSION = 4
 MONTHS = ("January", "February", "March", "April", "May", "June", "July", "August",
           "September", "October", "November", "December")
 #: Wall-clock seconds one in-game day takes at each game speed.

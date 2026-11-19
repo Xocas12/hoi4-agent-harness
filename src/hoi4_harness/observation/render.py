@@ -38,6 +38,22 @@ def _country_label(state: GameState) -> str:
     return f"{name} ({state.country})"
 
 
+def _war_line(war) -> str:
+    """One war. What a reader could not see is left out, never filled in."""
+    since = f" since {war.since}" if war.since else " (already on when telemetry began)"
+    seen = [
+        f"enemy {war.enemy_divisions} divisions" if war.enemy_divisions is not None else None,
+        None if war.borders is None else ("borders us" if war.borders else "no shared border"),
+        None if war.surrender_progress is None
+        else f"surrender progress {war.surrender_progress * 100:.0f}%",
+    ]
+    seen = [bit for bit in seen if bit]
+    if not seen:
+        return f"AT WAR with {war.against}{since} (war score {war.war_score:+.0f})"
+    score = [f"war score {war.war_score:+.0f}"] if war.war_score else []
+    return f"AT WAR with {war.against}{since} ({', '.join(score + seen)})"
+
+
 def render_full(state: GameState, max_events: int = 6, max_fronts: int = 3) -> str:
     """A complete situation brief.
 
@@ -120,7 +136,7 @@ def render_full(state: GameState, max_events: int = 6, max_fronts: int = 3) -> s
 
     if state.wars:
         for war in state.wars:
-            lines.append(f"AT WAR with {war.against} since {war.since} (war score {war.war_score:+.0f})")
+            lines.append(_war_line(war))
     lines.extend(summarise_fronts(state.fronts, limit=max_fronts))
 
     if state.delegated_armies or state.ai_directives or state.posture or state.theater_postures:

@@ -18,3 +18,11 @@ num_of_military_factories num_of_naval_factories manpower
 ## has_completed_focus
 
 ## has_focus_tree
+
+## has_war
+
+## is_neighbor_of
+
+## surrender_progress
+
+## every_enemy_country

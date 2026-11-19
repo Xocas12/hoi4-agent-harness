@@ -76,6 +76,12 @@ class War:
     since: str | None = None
     war_score: float = 0.0
     allies: list[str] = field(default_factory=list)
+    #: What a reader that sees the enemy can add; None is "not observed".
+    enemy_divisions: int | None = None
+    #: Whether the enemy's controlled territory touches the player's.
+    borders: bool | None = None
+    #: How close the enemy is to surrendering, 0-1.
+    surrender_progress: float | None = None
 
 
 @dataclass

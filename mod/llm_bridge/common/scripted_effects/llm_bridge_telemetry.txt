@@ -18,7 +18,7 @@
 # at runtime.
 
 llm_bridge_emit_state = {
-	set_variable = { LLMB_SCHEMA_VERSION = 3 }
+	set_variable = { LLMB_SCHEMA_VERSION = 4 }
 
 	# Economy and politics.
 	set_variable = { llmb_pp = political_power }
@@ -49,7 +49,7 @@ llm_bridge_emit_state = {
 	set_variable = { llmb_built_dock = total_constructed_dockyard }
 	set_variable = { llmb_built_infra = total_constructed_infrastructure }
 
-	log = "LLMB|v3|state|date=[GetDateText]|tag=[THIS.GetTag]|pp=[?llmb_pp]|stab=[?llmb_stab]|ws=[?llmb_ws]|civ=[?llmb_civ]|mil=[?llmb_mil]|doc=[?llmb_doc]|owned=[?llmb_owned]|mp=[?llmb_mp]|techs=[?llmb_techs]|built_civ=[?llmb_built_civ]|built_mil=[?llmb_built_mil]|built_dock=[?llmb_built_dock]|built_infra=[?llmb_built_infra]"
+	log = "LLMB|v4|state|date=[GetDateText]|tag=[THIS.GetTag]|pp=[?llmb_pp]|stab=[?llmb_stab]|ws=[?llmb_ws]|civ=[?llmb_civ]|mil=[?llmb_mil]|doc=[?llmb_doc]|owned=[?llmb_owned]|mp=[?llmb_mp]|techs=[?llmb_techs]|built_civ=[?llmb_built_civ]|built_mil=[?llmb_built_mil]|built_dock=[?llmb_built_dock]|built_infra=[?llmb_built_infra]"
 
 	llm_bridge_emit_army = yes
 
@@ -62,14 +62,14 @@ llm_bridge_emit_state = {
 # being crammed into the state line.
 llm_bridge_emit_army = {
 	set_variable = { llmb_divisions = num_divisions }
-	log = "LLMB|v3|army|tag=[THIS.GetTag]|divisions=[?llmb_divisions]|delegated=[?llmb_ai_delegated_armies]"
+	log = "LLMB|v4|army|tag=[THIS.GetTag]|divisions=[?llmb_divisions]|delegated=[?llmb_ai_delegated_armies]"
 }
 
 # Called from on_actions when something happens that should wake the planner
 # early. `kind` must match a GameEvent kind the harness knows; unknown kinds are
 # passed through as "info" rather than dropped.
 llm_bridge_emit_event = {
-	log = "LLMB|v3|evt|tag=[ROOT.GetTag]|kind=[?llmb_event_kind]|detail=[?llmb_event_detail]"
+	log = "LLMB|v4|evt|tag=[ROOT.GetTag]|kind=[?llmb_event_kind]|detail=[?llmb_event_detail]"
 }
 
 # A war is logged in the declarer's scope (ROOT); the side it was declared on is
@@ -77,5 +77,40 @@ llm_bridge_emit_event = {
 # declared on it as well as one it declared. VERIFY: FROM is the target in
 # on_declare_war in your version.
 llm_bridge_emit_war = {
-	log = "LLMB|v3|evt|tag=[ROOT.GetTag]|other=[FROM.GetTag]|kind=[?llmb_event_kind]|detail=[?llmb_event_detail]"
+	log = "LLMB|v4|evt|tag=[ROOT.GetTag]|other=[FROM.GetTag]|kind=[?llmb_event_kind]|detail=[?llmb_event_detail]"
+}
+
+# Wars (schema v4): one `war` line per enemy per day, so a harness that reads the
+# log can see a war start, who is in it and how strong the other side is, and
+# sees it end when the lines stop. Every token is documented in the 1.19.5/1.20
+# `documentation/` folder:
+#   has_war                triggers_documentation.md:5073 ("is country at war")
+#   every_enemy_country    effects_documentation.md:3898 (scope COUNTRY; the
+#                          enemies of the country in scope, PREV being that country)
+#   num_divisions          dynamic_variables_documentation.md:560 ("divisions a
+#                          country has control over")
+#   is_neighbor_of         triggers_documentation.md:6075 ("neighbor (controlled
+#                          territory) with specified country")
+#   surrender_progress     dynamic_variables_documentation.md:798 and
+#                          triggers_documentation.md:7718 ("close to surrendering")
+# The variables are set on the ENEMY (the scope every_enemy_country runs in) and
+# are read straight back, so nothing of the player's is touched. VERIFY LIVE: that
+# `[PREV.GetTag]` inside this `log` is the player, that `surrender_progress` reads
+# as a 0-1 fraction (it is multiplied by 100 here), and that `num_divisions` on a
+# foreign country is its own divisions and not the player's view of them.
+llm_bridge_emit_wars = {
+	if = {
+		limit = { has_war = yes }
+		every_enemy_country = {
+			set_variable = { llmb_war_divs = num_divisions }
+			set_variable = { llmb_war_border = 0 }
+			if = {
+				limit = { is_neighbor_of = PREV }
+				set_variable = { llmb_war_border = 1 }
+			}
+			set_variable = { llmb_war_surr = surrender_progress }
+			multiply_variable = { llmb_war_surr = 100 }
+			log = "LLMB|v4|war|tag=[PREV.GetTag]|enemy=[THIS.GetTag]|divs=[?llmb_war_divs]|border=[?llmb_war_border]|surr=[?llmb_war_surr]"
+		}
+	}
 }

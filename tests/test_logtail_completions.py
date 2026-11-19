@@ -7,7 +7,7 @@ mod prints cumulative counters and the reader turns a rise into the event.
 from hoi4_harness.adapters.logtail import EVENT_CODES, LogTailAdapter
 
 LINE = (
-    "[11:04:29][1936.01.{day:02d}.21]: LLMB|v3|state|date= 21:00, {day} January, 1936|tag={tag}"
+    "[11:04:29][1936.01.{day:02d}.21]: LLMB|v4|state|date= 21:00, {day} January, 1936|tag={tag}"
     "|pp=1.9|stab=83.2|ws=0|civ=9|mil=3|doc=3|mp=31153"
     "|techs={techs}|built_civ={civ}|built_mil={mil}|built_dock=0|built_infra={infra}\n"
 )
