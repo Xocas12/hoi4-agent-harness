@@ -13,7 +13,11 @@ The claims, in the order they are tried (cheapest and least risky first):
 3. ``gamespeed 3`` starts the clock;
 4. the space key stops it;
 5. ``gamespeed 0`` stops it, too;
-6. ``pause_in_hours`` stops the game by itself after the days asked.
+6. ``pause_in_hours`` stops the game by itself after the days asked;
+7. (``log+save`` reader) the console's ``savegame`` writes a text save the
+   harness can read, and what it read (production lines, the queue, divisions);
+8. (schema v4) the mod's ``war`` lines and ``wars`` are readable: at peace the
+   claim is only that the field is known, in a war it checks every field expanded.
 
 A FAIL names which assumption was wrong; ``docs/headless.md`` says what each one
 changes (a different ``headless_clock``, no refresh).
@@ -95,6 +99,46 @@ def run_checks(adapter: HeadlessComposite, days: int = 7,
             f"{'stood still' if still else 'moved'} afterwards")
 
     attempt("refresh: two fresh state lines while paused", refresh)
+
+    def savegame() -> tuple[bool, str]:
+        error = reader.refresh()
+        if error:
+            return False, error
+        state = peek()
+        path = reader._cache_path
+        megabytes = path.stat().st_size / 1e6 if path else 0.0
+        return True, (
+            f"{path.name if path else '?'} ({megabytes:.0f} MB, read in "
+            f"{reader.last_read_seconds or 0:.1f} s): {len(state.production)} production line(s), "
+            f"{len(state.construction)} queued building(s), "
+            f"{sum(g.count for g in state.divisions)} division(s); save of {reader._cache_date}")
+
+    if hasattr(reader, "refresh") and hasattr(reader, "last_read_seconds"):
+        attempt("savegame writes a text save the harness can read", savegame)
+
+    def wars() -> tuple[bool, str]:
+        from .bridge_check import check_log
+
+        state = peek()
+        if not state.known("wars"):
+            return False, ("wars are unknown: the mod is not schema v4 (no complete day with "
+                           "war lines yet, or the telemetry predates them)")
+        log = getattr(reader, "log", reader)
+        report = check_log(log.log_path, player=state.country)
+        problems = report.tag_problems + [f"{k}={v} did not expand" for k, v in
+                                          report.literal.items() if k.startswith("war.")]
+        if problems:
+            return False, "; ".join(problems)
+        if not state.wars:
+            return True, ("at peace: nothing to read (the war lines can only be proved in a "
+                          "war; declare one, or run this again then)")
+        return True, "; ".join(
+            f"{w.against}: {w.enemy_divisions} divisions, "
+            f"{'borders us' if w.borders else 'no shared border'}, "
+            f"surrender {0 if w.surrender_progress is None else w.surrender_progress * 100:.0f}%"
+            for w in state.wars)
+
+    attempt("the war lines are readable", wars)
 
     def resume_console() -> tuple[bool, str]:
         start = peek().date
