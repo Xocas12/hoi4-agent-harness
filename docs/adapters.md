@@ -376,6 +376,60 @@ install.
   places, and points off the screen (this driver does not scroll the tree; at
   1920x1080 that is most of every tab's lower years). Only the infantry tab has been
   measured live.
+
+  **Resolution, UI scale and window mode (`uilayout.py`).** The research slot and the
+  folder tabs are derived too, so `research.free_slot` and `research.tab.<folder>` are
+  no longer calibrated (name them to `calibrate` to record an override, which wins).
+  The screen is `height / 864 * gui_scale` pixels per GUI unit: 1.25 at 1080p with
+  `gui_scale=1.0`, measured. 864 is in no define or `.gui` file (the engine owns it;
+  `settings.txt` names 1536x864 as the default window size and `min_gui` 1280x720);
+  only the height enters, which the left-anchored windows measured so far agree with.
+  Windows are placed by `Orientation`: the child's top-left is the parent's anchor
+  point (`UPPER_LEFT`, `UPPER_RIGHT`, `LOWER_*`, `CENTER`, `CENTER_UP/DOWN`) plus its
+  `position`; `size` is units, a percent of the parent, or (negative) the parent less
+  that. The slot is `countrytechnologyview` (`show_position`, the open panel) >
+  `research_slots` > `slots_window` > `research_slots_grid`, cell 500x100; a tab is
+  `countrytechtreeview` > `folder_tabs` > `<folder>_tab`, centred on its sprite's frame
+  (the `.dds` header, halved for its two frames). At 1920x1080 this gives slot 0
+  (324, 435) against (322, 428) measured, and the infantry and support tabs
+  (81, 144) / (192, 144) against (78, 140) / (190, 140): within 4-7 px. Slots 1 and 2
+  come out 35 px lower than the (525, 650) measured; they are still inside the
+  125 px-high slot, but the cause of the gap is not known. The tech tree's content
+  origin is still the measured (9, 103): the `.gui` files give (10, 138), 35 GUI units
+  lower, and that is not explained either.
+  Display settings come from `settings.txt` and `pdx_settings.txt`. In a *borderless*
+  window the resolution they record is not what is drawn (this install records
+  1536x864 and runs at 1920x1080), so the live client rect is the truth; in
+  windowed or exclusive-fullscreen mode the recorded size must equal the window's or
+  the action is refused. The action is refused, before any input, when the settings
+  or the window size cannot be read, or the research windows are not in the playset's
+  interface files. A dry run falls back to the settings' size or 1920x1080.
+
+  Predicted points (centres, pixels; the slot is slot 0 with the panel open and the
+  list unscrolled; `infantry_at` is the infantry tab's anti-tank cell). Only the first
+  row is measured; every other row is **UNVERIFIED**, and the rows that change the
+  aspect ratio or the UI scale carry extra doubts, below the table.
+
+  | Window, UI scale | Scale | Slot 0 | Infantry tab | Support tab | `infantry_at` | Status |
+  |---|---|---|---|---|---|---|
+  | 1920x1080, 1.0 | 1.2500 | (324, 435) | (81, 144) | (192, 144) | (1280, 754) | measured (see above) |
+  | 1280x720, 1.0 | 0.8333 | (216, 290) | (54, 96) | (128, 96) | (853, 502) | UNVERIFIED |
+  | 1366x768, 1.0 | 0.8889 | (230, 309) | (57, 103) | (136, 103) | (910, 536) | UNVERIFIED |
+  | 2560x1440, 1.0 | 1.6667 | (432, 580) | (108, 192) | (256, 192) | (1707, 1005) | UNVERIFIED |
+  | 3440x1440, 1.0 | 1.6667 | (432, 580) | (108, 192) | (256, 192) | (1707, 1005) | UNVERIFIED |
+  | 1920x1200, 1.0 | 1.3889 | (360, 483) | (90, 160) | (213, 160) | (1422, 838) | UNVERIFIED |
+  | 1920x1080, 1.25 | 1.5625 | (405, 544) | (101, 180) | (240, 180) | (1600, 942) | UNVERIFIED |
+  | 1920x1080, 0.8 | 1.0000 | (259, 348) | (64, 116) | (154, 116) | (1024, 603) | UNVERIFIED |
+
+  What could be wrong: (1) 21:9 and 16:10 assume the scale follows the height alone;
+  an engine that follows the width on a narrower screen (16:10) would put 1920x1200 at
+  the 1.25 of 1080p, and `min_gui` (1280x720) may clamp the scale, which would cap
+  1920x1080 at UI scale 1.25 to 1.5 instead of 1.5625. (2) The left-anchored slot and
+  tabs do not depend on the width, so 3440x1440 equals 2560x1440 for them; the tree
+  content's percent-sized boxes and any right- or centre-anchored window do move.
+  (3) Slots 1 and 2 carry the unexplained 35 px. (4) `settings.txt`'s `size` is read
+  for windowed mode only; the client-rect reader (`window.client_rect`) is Windows-only
+  and has not been run against the live game.
   picked with `enter` on its detail window (the Research button's shortcut).
 - **hire_advisor**: `q` opens Political; advisor slots and candidates are icons
   (`politics.slot.<slot>`, `politics.candidate.<advisor_id>`), calibrated per name.

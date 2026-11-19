@@ -102,8 +102,9 @@ cp profiles/ui_scripts.1.19.json runs/ui_scripts.json
 ```
 
 The click paths are recorded for 1.19.5 at 1920x1080 (the keys, and the focus and
-map-search flows, were run in the game). Record the click targets they name at
-your resolution, with `--game-dir` set so names and tech positions resolve:
+map-search flows, were run in the game). The research slot and folder tabs are derived
+for any resolution (6a); record the other click targets they name at your resolution,
+with `--game-dir` set so names and tech positions resolve:
 
 ```bash
 hoi4-harness calibrate --game-dir "<HOI4 install>"
@@ -132,6 +133,32 @@ and production are unverified until the mod emits them or the save mapping
 reads them — expected at this stage; the result is still the evidence that the
 click path works, so note what you saw happen in-game. Paste a transcript
 excerpt into #3; delegation's result into #8.
+
+### 6a. Another resolution, UI scale or window mode (#3)
+
+`start_research` no longer needs `research.free_slot` / `research.tab.<folder>`
+calibrated: it derives them from the game's interface files and your display settings
+(predicted values per resolution: [adapters.md](adapters.md), the table under
+`start_research`). Only 1920x1080 at UI scale 1.0 has been measured. To check another
+setup, with the game running in it:
+
+1. Say what it is: window mode and resolution (Options > Graphics), the UI scale
+   (`gui_scale` in `settings.txt`), and whether the window is borderless.
+2. `hoi4-harness play --adapter logtail+input --actions start_research,note,advance_time --turns 1`
+   (a dry run; it logs `click research.free_slot at (x, y)` and the tab point
+   and sends nothing). With the game open, press `w`, take **one screenshot** of the
+   screen with the research panel open and then **one more** with the tech tree open
+   on the infantry tab, and mark on them the first free slot's centre and the
+   infantry tab's centre.
+3. Compare the logged points with the marks. Within about 10 px is a pass; report
+   the setup, the logged points and the marked ones in #3, one row per setup.
+4. If it refuses (`nothing was sent`), the message names why: the settings say a size
+   the window is not (change the setting, or the window), or the window or settings
+   could not be read. Report that too: in borderless mode the harness trusts the live
+   window size, so a refusal there means `window.client_rect` could not see it.
+5. Wide screens (3440x1440) and 16:10 (1920x1200) are the ones to look at first: if
+   the panel or the tabs are not where the logged points say, the scale does not follow
+   the height alone, and the message to #3 should include the screenshot's size.
 
 ### 6b. The rotated tech tabs (#3)
 
