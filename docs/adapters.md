@@ -630,3 +630,15 @@ sends a clock instruction at all — it only watches the date move — and
 `set_game_speed` is removed from the action list so the model cannot take the
 clock either. That is the mode to use when a person is playing the same
 campaign.
+
+## headless -- the log in, the console and keyboard out
+
+`--adapter headless` (or `--headless`) is a composite of `logtail` and a
+keyboard-only input driver behind the channel router: no mouse, no screenshots,
+no calibration. `adapters/headless.py` builds it. Two actions that exist only as
+clicks (`start_research`, `delegate_army_to_ai`) are removed from the tool list.
+The clock is the console's `gamespeed` and the space key, each proved by the date
+(`HeadlessClock`), and each console run ends by asking the mod for fresh
+telemetry so an action can be verified while the game is paused. What was
+checked for a no-mouse path, the fake game that runs the whole stack with no
+HOI4, and the settings are in [headless.md](headless.md).
