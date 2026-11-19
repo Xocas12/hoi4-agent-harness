@@ -1,0 +1,2908 @@
+HOI4txt
+player="SWE"
+ideology=democratic
+date="1938.2.4.22"
+difficulty="normal"
+version="Operation Postern v1.20.0.0.8873 (4533)"
+tutorial=no
+player_countries={
+	SWE={
+		user="player"
+		country_leader=yes
+		id=1
+	}
+}
+save_version=33
+mods={
+	"LLM Bridge"
+}
+start_date="1936.1.1.12"
+states={
+	38={
+		buildings={
+			infrastructure={
+				level=2
+				partial_health=0
+				healthy_levels=2
+			}
+			industrial_complex={
+				level=2
+				partial_health=0
+				healthy_levels=2
+			}
+			air_base={
+				level=3
+				partial_health=0
+				healthy_levels=3
+			}
+		}
+		owner="SWE"
+		manpower_pool={
+			available=461
+			locked=948280
+			total=962720
+		}
+		resistance={
+		}
+		flags={
+		}
+		demilitarized=no
+		is_border_conflict=no
+		state_category=town
+		variables={
+		}
+	}
+	39={
+		buildings={
+			infrastructure={
+				level=2
+				partial_health=0
+				healthy_levels=2
+			}
+			industrial_complex={
+				level=1
+				partial_health=0
+				healthy_levels=1
+			}
+		}
+		owner="ITA"
+		manpower_pool={
+			available=272
+			locked=300434
+			total=308137
+		}
+		resistance={
+		}
+		flags={
+		}
+		demilitarized=no
+		is_border_conflict=no
+		state_category=town
+		variables={
+			hre_states^0=-10737.41785
+			hre_states^num=1
+		}
+	}
+	40={
+		buildings={
+			infrastructure={
+				level=1
+				partial_health=0
+				healthy_levels=1
+			}
+			industrial_complex={
+				level=1
+				partial_health=0
+				healthy_levels=1
+			}
+		}
+		owner="D06"
+		manpower_pool={
+			available=0
+			locked=2144368
+			total=2177023
+		}
+		previous_owner={
+			"SOV"
+ 
+		}
+		resistance={
+		}
+		flags={
+			SOV_stalinist_state={
+				value=1
+				date="1936.3.11.1"
+			}
+		}
+		demilitarized=no
+		is_border_conflict=no
+		state_category=large_town
+		variables={
+		}
+	}
+	124={
+		buildings={
+			infrastructure={
+				level=3
+				partial_health=0
+				healthy_levels=3
+			}
+		}
+		owner="SWE"
+		manpower_pool={
+			available=29
+			locked=57985
+			total=58868
+		}
+		resistance={
+		}
+		flags={
+		}
+		demilitarized=no
+		is_border_conflict=no
+		state_category=small_island
+		variables={
+			den_develop_state_cost=25
+		}
+	}
+	138={
+		buildings={
+			infrastructure={
+				level=3
+				partial_health=0
+				healthy_levels=3
+			}
+			industrial_complex={
+				level=1
+				partial_health=0
+				healthy_levels=1
+			}
+			dockyard={
+				level=1
+				partial_health=0
+				healthy_levels=1
+			}
+		}
+		owner="SWE"
+		manpower_pool={
+			available=2580
+			locked=1066053
+			total=1082287
+		}
+		resistance={
+		}
+		flags={
+		}
+		demilitarized=no
+		is_border_conflict=no
+		state_category=city
+		variables={
+		}
+	}
+	139={
+		buildings={
+			infrastructure={
+				level=3
+				partial_health=0
+				healthy_levels=3
+			}
+			industrial_complex={
+				level=1
+				partial_health=0
+				healthy_levels=1
+			}
+		}
+		owner="SWE"
+		manpower_pool={
+			available=1015
+			locked=397205
+			total=403253
+		}
+		resistance={
+		}
+		flags={
+		}
+		demilitarized=no
+		is_border_conflict=no
+		state_category=rural
+		variables={
+		}
+	}
+	140={
+		buildings={
+			infrastructure={
+				level=3
+				partial_health=0
+				healthy_levels=3
+			}
+			arms_factory={
+				level=1
+				partial_health=0
+				healthy_levels=1
+			}
+			industrial_complex={
+				level=3
+				partial_health=0
+				healthy_levels=3
+			}
+			dockyard={
+				level=1
+				partial_health=0
+				healthy_levels=1
+			}
+			air_base={
+				level=1
+				partial_health=0
+				healthy_levels=1
+			}
+		}
+		owner="SWE"
+		manpower_pool={
+			available=8757
+			locked=905551
+			total=919341
+		}
+		resistance={
+		}
+		flags={
+		}
+		demilitarized=no
+		is_border_conflict=no
+		state_category=town
+		extra_shared_slots=2
+		variables={
+		}
+	}
+	141={
+		buildings={
+			infrastructure={
+				level=4
+				partial_health=0
+				healthy_levels=4
+			}
+			arms_factory={
+				level=2
+				partial_health=0
+				healthy_levels=2
+			}
+			industrial_complex={
+				level=3
+				partial_health=0
+				healthy_levels=3
+			}
+			dockyard={
+				level=2
+				partial_health=0
+				healthy_levels=2
+			}
+			air_base={
+				level=6
+				partial_health=0
+				healthy_levels=6
+			}
+		}
+		owner="SWE"
+		manpower_pool={
+			available=18026
+			locked=1514252
+			total=1537311
+		}
+		resistance={
+		}
+		flags={
+		}
+		demilitarized=no
+		is_border_conflict=no
+		state_category=city
+		extra_shared_slots=1
+		variables={
+			historical_capital_for_country=10782.86163
+		}
+	}
+	666={
+		buildings={
+			infrastructure={
+				level=2
+				partial_health=0
+				healthy_levels=2
+			}
+			industrial_complex={
+				level=1
+				partial_health=0
+				healthy_levels=1
+			}
+		}
+		owner="SWE"
+		manpower_pool={
+			available=49
+			locked=101978
+			total=103530
+		}
+		resistance={
+		}
+		flags={
+		}
+		demilitarized=no
+		is_border_conflict=no
+		state_category=rural
+		variables={
+		}
+	}
+	913={
+		buildings={
+			infrastructure={
+				level=3
+				partial_health=0
+				healthy_levels=3
+			}
+			industrial_complex={
+				level=1
+				partial_health=0
+				healthy_levels=1
+			}
+			air_base={
+				level=2
+				partial_health=0
+				healthy_levels=2
+			}
+		}
+		owner="SWE"
+		manpower_pool={
+			available=2795
+			locked=514077
+			total=521905
+		}
+		resistance={
+		}
+		flags={
+		}
+		demilitarized=no
+		is_border_conflict=no
+		state_category=town
+		variables={
+		}
+	}
+	915={
+		buildings={
+			infrastructure={
+				level=3
+				partial_health=0
+				healthy_levels=3
+			}
+		}
+		owner="SWE"
+		manpower_pool={
+			available=47
+			locked=97898
+			total=99388
+		}
+		resistance={
+		}
+		flags={
+		}
+		demilitarized=no
+		is_border_conflict=no
+		state_category=rural
+		variables={
+		}
+	}
+	916={
+		buildings={
+			infrastructure={
+				level=3
+				partial_health=0
+				healthy_levels=3
+			}
+		}
+		owner="SWE"
+		manpower_pool={
+			available=124
+			locked=254091
+			total=257960
+		}
+		resistance={
+		}
+		flags={
+		}
+		demilitarized=no
+		is_border_conflict=no
+		state_category=rural
+		variables={
+		}
+	}
+	917={
+		buildings={
+			infrastructure={
+				level=2
+				partial_health=0
+				healthy_levels=2
+			}
+		}
+		owner="SWE"
+		manpower_pool={
+			available=32
+			locked=66139
+			total=67146
+		}
+		resistance={
+		}
+		flags={
+		}
+		demilitarized=no
+		is_border_conflict=no
+		state_category=rural
+		variables={
+		}
+	}
+	918={
+		buildings={
+			infrastructure={
+				level=2
+				partial_health=0
+				healthy_levels=2
+			}
+		}
+		owner="SWE"
+		manpower_pool={
+			available=156
+			locked=320623
+			total=325505
+		}
+		resistance={
+		}
+		flags={
+		}
+		demilitarized=no
+		is_border_conflict=no
+		state_category=rural
+		variables={
+		}
+	}
+	919={
+		buildings={
+			infrastructure={
+				level=2
+				partial_health=0
+				healthy_levels=2
+			}
+		}
+		owner="SWE"
+		manpower_pool={
+			available=147
+			locked=301851
+			total=306447
+		}
+		resistance={
+		}
+		flags={
+		}
+		demilitarized=no
+		is_border_conflict=no
+		state_category=rural
+		variables={
+		}
+	}
+}
+equipments={
+	infantry_equipment_1={
+		id={ id=1326 type=70 }
+		max_version=0
+		is_frame=no
+		creator="GER"
+		origin="---"
+	}
+	infantry_equipment_1={
+		id={ id=1505 type=70 }
+		max_version=0
+		is_frame=no
+		creator="SWE"
+		origin="---"
+	}
+	support_equipment_1={
+		id={ id=1509 type=70 }
+		max_version=0
+		is_frame=no
+		creator="SWE"
+		origin="---"
+	}
+}
+division_templates={
+	division_template={
+		id={ id=21 type=52 }
+		name="Arméfördelning"
+		division_names_group="SWE_INF_01"
+		country="SWE"
+		original_tag="SWE"
+		foreign_template_tag="---"
+		priority=1
+		allow_new_equipment=yes
+		allow_foreign_equipment=yes
+		support={
+			artillery={ x=0 y=0 }
+			engineer={ x=0 y=1 }
+			recon={ x=0 y=2 }
+		}
+		regiments={
+			infantry={ x=0 y=0 }
+			infantry={ x=0 y=1 }
+			infantry={ x=1 y=0 }
+			infantry={ x=1 y=1 }
+			infantry={ x=2 y=0 }
+			infantry={ x=2 y=1 }
+		}
+		template_counter=-1
+		ingame_set_template_counter=no
+		origin_type=master_host
+	}
+	division_template={
+		id={ id=22 type=52 }
+		name="Kavalleribrigaden"
+		division_names_group="SWE_CAV_01"
+		country="SWE"
+		original_tag="SWE"
+		foreign_template_tag="---"
+		priority=1
+		allow_new_equipment=yes
+		allow_foreign_equipment=yes
+		support={
+			recon={ x=0 y=0 }
+		}
+		regiments={
+			cavalry={ x=0 y=0 }
+			cavalry={ x=0 y=1 }
+			cavalry={ x=0 y=2 }
+		}
+		template_counter=-1
+		ingame_set_template_counter=no
+		origin_type=master_host
+	}
+	division_template={
+		id={ id=23 type=52 }
+		name=" Pansarregemente"
+		division_names_group="SWE_ARM_01"
+		country="SWE"
+		original_tag="SWE"
+		foreign_template_tag="---"
+		priority=1
+		allow_new_equipment=yes
+		allow_foreign_equipment=yes
+		support={
+			recon={ x=0 y=0 }
+		}
+		regiments={
+			light_armor={ x=0 y=0 }
+			light_armor={ x=0 y=1 }
+			light_armor={ x=0 y=2 }
+		}
+		template_counter=-1
+		ingame_set_template_counter=no
+		origin_type=master_host
+	}
+	division_template={
+		id={ id=24 type=52 }
+		name="Militärområde"
+		division_names_group="SWE_GAR_01"
+		country="SWE"
+		original_tag="SWE"
+		foreign_template_tag="---"
+		priority=0
+		allow_new_equipment=yes
+		allow_foreign_equipment=yes
+		regiments={
+			infantry={ x=0 y=0 }
+			infantry={ x=0 y=1 }
+			cavalry={ x=1 y=0 }
+			cavalry={ x=1 y=1 }
+		}
+		template_counter=-1
+		ingame_set_template_counter=no
+		origin_type=master_host
+	}
+}
+countries={
+	ENG={
+		politics={
+			political_power=12.5
+		}
+CAN={
+		autonomous=yes
+}
+		stability=0.9
+	}
+	GER={
+		SWE={
+			opinion=10
+		}
+		politics={
+			political_power=999
+		}
+	}
+	SWE={
+		technology={
+			slots={
+				empty={
+					points=30
+				}
+				support_weapons={
+					used_saved_points=30
+					points_factor=1.05
+				}
+				empty={
+					points=24
+				}
+			}
+		}
+		production={
+			military_lines={
+				id={ id=25 type=56 }
+				produced=0.11998
+				active_factories=1
+				priority=0
+				amount=-1
+				speed=2.98466
+				cost=0.5
+				requested_factories=1
+				equipment_variant_index={ id=1505 type=70 }
+				factory_efficiencies={
+					53.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 
+				}
+				resources={
+					{
+						resource=steel
+						amount=2
+						need=0
+					}
+					{
+					}
+					{
+					}
+				}
+				industrial_manufacturer={ id=65 type=79 }
+			}
+			military_lines={
+				id={ id=26 type=56 }
+				produced=3.34617
+				active_factories=1
+				priority=1
+				amount=-1
+				speed=2.81571
+				cost=4
+				requested_factories=1
+				equipment_variant_index={ id=1509 type=70 }
+				factory_efficiencies={
+					50.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 
+				}
+				resources={
+					{
+						resource=aluminium
+						amount=1
+						need=0
+					}
+					{
+						resource=steel
+						amount=2
+						need=0
+					}
+					{
+					}
+				}
+			}
+			military_lines={
+				id={ id=500 type=56 }
+				produced=0.38622
+				active_factories=1
+				priority=2
+				amount=-1
+				speed=1.51896
+				cost=0.5
+				requested_factories=1
+				equipment_variant_index={ id=1505 type=70 }
+				factory_efficiencies={
+					26.97335 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 
+				}
+				resources={
+					{
+						resource=steel
+						amount=2
+						need=0
+					}
+					{
+					}
+					{
+					}
+				}
+			}
+			military_lines={
+				id={ id=612 type=56 }
+				queued_factories=1
+				priority=3
+				amount=-1
+				cost=0.5
+				requested_factories=1
+				equipment_variant_index={ id=1505 type=70 }
+				factory_efficiencies={
+					10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 10.00000 
+				}
+				resources={
+					{
+						resource=steel
+						amount=0
+						need=0
+					}
+					{
+					}
+					{
+					}
+				}
+			}
+			general_lines={
+				building={
+					id={ id=1273 type=59 }
+					produced=4076.4
+					active_factories=15
+					priority=0
+					amount=2
+					speed=120.75
+					cost=10800
+					created_date="1937.10.2.13"
+					building={
+						template=industrial_complex
+						location=38
+					}
+					allied_build=no
+				}
+			}
+		}
+		flags={
+			SWE_AI_RANDOM_DEMOCRATIC_NORDIC_DEFENCE_COUNCIL={
+				value=1
+				date="1936.1.1.12"
+			}
+			llmb_posture_offensive={
+				value=1
+				date="1936.4.1.20"
+			}
+			llmb_antagonize_FIN={
+				value=1
+				date="1936.2.28.5"
+			}
+			llmb_invade_FIN={
+				value=1
+				date="1936.3.1.1"
+			}
+			llmb_target_GER={
+				value=1
+				date="1938.1.21.21"
+			}
+			SWE_1936_axel_pehrssonbramstorp_is_pm={
+				value=1
+				date="1937.5.9.1"
+			}
+			llmb_posture_offensive_ETH={
+				value=1
+				date="1937.4.18.3"
+			}
+			llmb_protect_POL={
+				value=1
+				date="1938.1.21.21"
+			}
+			llmb_posture_defensive_GER={
+				value=1
+				date="1938.1.21.21"
+			}
+		}
+		units={
+			division={
+				id={ id=604 type=51 }
+				last_combat_date="1.1.1.1"
+				location=11160
+				logical_country="SWE"
+				id={ id=604 type=51 }
+				motorization_level=0
+				officer={
+					portraits={
+					}
+					male=yes
+				}
+				held_officer={
+				}
+				division_template_id={ id=21 type=52 }
+				division_name={
+					type=0
+					name_order=1
+				}
+				max_supply=108
+				organisation=44.44444
+				strength=154.2
+				equipment={
+					equipment={
+						id={ id=1326 type=70 }
+						amount=11
+					}
+					equipment={
+						id={ id=1505 type=70 }
+						amount=639
+					}
+					equipment={
+						id={ id=1507 type=70 }
+						amount=1.2
+					}
+					equipment={
+						id={ id=1509 type=70 }
+						amount=40
+					}
+					allow_zero_entries=no
+				}
+				script_id=-1
+				army_manpower={
+					army_manpower_value={
+						value={ tag="SWE" value=7100 }
+					}
+					army_manpower_need={
+						value={ tag="SWE" value=7100 }
+					}
+				}
+				experience=2130
+				requests={
+					reinforcement={
+						request={
+							need={
+								artillery_equipment=10.8
+							}
+							date="1936.1.16.5"
+						}
+					}
+					upgrades={
+						request={
+							request=11
+							total=650
+							equipment_variant_index={ id=1326 type=70 }
+						}
+					}
+					date="1938.1.29.5"
+				}
+				dig_in=8.2
+				dig_in_cap=8.2
+				acclimatization={
+					cold_climate=6599.2725
+					actively_gaining="cold_climate"
+					actively_gaining_speed=2.6625
+					max_acclimatization=7100
+				}
+				army_current_supply_ratio=108
+				supply_gain=0.15
+			}
+			division={
+				id={ id=605 type=51 }
+				last_combat_date="1.1.1.1"
+				location=11160
+				logical_country="SWE"
+				id={ id=605 type=51 }
+				motorization_level=0
+				officer={
+					portraits={
+					}
+					male=yes
+				}
+				held_officer={
+				}
+				division_template_id={ id=24 type=52 }
+				division_name={
+					type=0
+					override="Södra Militärområde"
+				}
+				max_supply=108
+				organisation=65
+				strength=100
+				equipment={
+					equipment={
+						id={ id=1326 type=70 }
+						amount=1
+					}
+					equipment={
+						id={ id=1505 type=70 }
+						amount=439
+					}
+					allow_zero_entries=no
+				}
+				script_id=-1
+				army_manpower={
+					army_manpower_value={
+						value={ tag="SWE" value=4000 }
+					}
+					army_manpower_need={
+						value={ tag="SWE" value=4000 }
+					}
+				}
+				experience=800
+				requests={
+					upgrades={
+						request={
+							request=1
+							total=440
+							equipment_variant_index={ id=1326 type=70 }
+						}
+					}
+					date="1938.1.29.6"
+				}
+				dig_in=5
+				dig_in_cap=5
+				acclimatization={
+					cold_climate=3717.9
+					actively_gaining="cold_climate"
+					actively_gaining_speed=1.5
+					max_acclimatization=4000
+				}
+				army_current_supply_ratio=108
+				supply_gain=0.15
+			}
+			division={
+				id={ id=606 type=51 }
+				last_combat_date="1.1.1.1"
+				location=11148
+				logical_country="SWE"
+				id={ id=606 type=51 }
+				motorization_level=0
+				officer={
+					portraits={
+					}
+					male=yes
+				}
+				held_officer={
+				}
+				division_template_id={ id=21 type=52 }
+				division_name={
+					type=0
+					name_order=6
+				}
+				max_supply=108
+				organisation=44.44444
+				strength=154.2
+				equipment={
+					equipment={
+						id={ id=1326 type=70 }
+						amount=8
+					}
+					equipment={
+						id={ id=1505 type=70 }
+						amount=642
+					}
+					equipment={
+						id={ id=1507 type=70 }
+						amount=1.2
+					}
+					equipment={
+						id={ id=1509 type=70 }
+						amount=40
+					}
+					allow_zero_entries=no
+				}
+				script_id=-1
+				army_manpower={
+					army_manpower_value={
+						value={ tag="SWE" value=7100 }
+					}
+					army_manpower_need={
+						value={ tag="SWE" value=7100 }
+					}
+				}
+				experience=2130
+				requests={
+					reinforcement={
+						request={
+							need={
+								artillery_equipment=10.8
+							}
+							date="1936.1.16.7"
+						}
+					}
+					upgrades={
+						request={
+							request=8
+							total=650
+							equipment_variant_index={ id=1326 type=70 }
+						}
+					}
+					date="1938.1.29.7"
+				}
+				dig_in=8.2
+				dig_in_cap=8.2
+				acclimatization={
+					cold_climate=7100
+					actively_gaining="cold_climate"
+					max_acclimatization=7100
+				}
+				army_current_supply_ratio=108
+				supply_gain=0.15
+			}
+			division={
+				id={ id=607 type=51 }
+				last_combat_date="1.1.1.1"
+				location=11148
+				logical_country="SWE"
+				id={ id=607 type=51 }
+				motorization_level=0
+				officer={
+					portraits={
+					}
+					male=yes
+				}
+				held_officer={
+				}
+				division_template_id={ id=24 type=52 }
+				division_name={
+					type=0
+					override="Norra Militärområde"
+				}
+				max_supply=108
+				organisation=65
+				strength=100
+				equipment={
+					equipment={
+						id={ id=1326 type=70 }
+						amount=1
+					}
+					equipment={
+						id={ id=1505 type=70 }
+						amount=439
+					}
+					allow_zero_entries=no
+				}
+				script_id=-1
+				army_manpower={
+					army_manpower_value={
+						value={ tag="SWE" value=4000 }
+					}
+					army_manpower_need={
+						value={ tag="SWE" value=4000 }
+					}
+				}
+				experience=800
+				requests={
+					upgrades={
+						request={
+							request=1
+							total=440
+							equipment_variant_index={ id=1326 type=70 }
+						}
+					}
+					date="1938.1.29.8"
+				}
+				dig_in=5
+				dig_in_cap=5
+				acclimatization={
+					cold_climate=4000
+					actively_gaining="cold_climate"
+					max_acclimatization=4000
+				}
+				army_current_supply_ratio=108
+				supply_gain=0.15
+			}
+			division={
+				id={ id=608 type=51 }
+				last_combat_date="1.1.1.1"
+				location=3375
+				logical_country="SWE"
+				id={ id=608 type=51 }
+				motorization_level=0
+				officer={
+					portraits={
+					}
+					male=yes
+				}
+				held_officer={
+				}
+				division_template_id={ id=21 type=52 }
+				division_name={
+					type=0
+					name_order=3
+				}
+				max_supply=108
+				organisation=44.44444
+				strength=154.2
+				equipment={
+					equipment={
+						id={ id=1326 type=70 }
+						amount=11
+					}
+					equipment={
+						id={ id=1505 type=70 }
+						amount=639
+					}
+					equipment={
+						id={ id=1507 type=70 }
+						amount=1.2
+					}
+					equipment={
+						id={ id=1509 type=70 }
+						amount=40
+					}
+					allow_zero_entries=no
+				}
+				script_id=-1
+				army_manpower={
+					army_manpower_value={
+						value={ tag="SWE" value=7100 }
+					}
+					army_manpower_need={
+						value={ tag="SWE" value=7100 }
+					}
+				}
+				experience=2130
+				requests={
+					reinforcement={
+						request={
+							need={
+								artillery_equipment=10.8
+							}
+							date="1936.1.16.9"
+						}
+					}
+					upgrades={
+						request={
+							request=11
+							total=650
+							equipment_variant_index={ id=1326 type=70 }
+						}
+					}
+					date="1938.1.29.9"
+				}
+				dig_in=8.2
+				dig_in_cap=8.2
+				acclimatization={
+					cold_climate=7100
+					actively_gaining="cold_climate"
+					max_acclimatization=7100
+				}
+				army_current_supply_ratio=108
+				supply_gain=0.15
+			}
+			division={
+				id={ id=609 type=51 }
+				last_combat_date="1.1.1.1"
+				location=3375
+				logical_country="SWE"
+				id={ id=609 type=51 }
+				motorization_level=0
+				officer={
+					portraits={
+					}
+					male=yes
+				}
+				held_officer={
+				}
+				division_template_id={ id=24 type=52 }
+				division_name={
+					type=0
+					override="Västra Militärområde"
+				}
+				max_supply=108
+				organisation=65
+				strength=100
+				equipment={
+					equipment={
+						id={ id=1326 type=70 }
+						amount=1
+					}
+					equipment={
+						id={ id=1505 type=70 }
+						amount=439
+					}
+					allow_zero_entries=no
+				}
+				script_id=-1
+				army_manpower={
+					army_manpower_value={
+						value={ tag="SWE" value=4000 }
+					}
+					army_manpower_need={
+						value={ tag="SWE" value=4000 }
+					}
+				}
+				experience=800
+				requests={
+					upgrades={
+						request={
+							request=1
+							total=440
+							equipment_variant_index={ id=1326 type=70 }
+						}
+					}
+					date="1938.1.29.10"
+				}
+				dig_in=5
+				dig_in_cap=5
+				acclimatization={
+					cold_climate=4000
+					actively_gaining="cold_climate"
+					max_acclimatization=4000
+				}
+				army_current_supply_ratio=108
+				supply_gain=0.15
+			}
+			division={
+				id={ id=610 type=51 }
+				last_combat_date="1.1.1.1"
+				location=6050
+				logical_country="SWE"
+				id={ id=610 type=51 }
+				motorization_level=0
+				officer={
+					portraits={
+					}
+					male=yes
+				}
+				held_officer={
+				}
+				division_template_id={ id=21 type=52 }
+				division_name={
+					type=0
+					name_order=4
+				}
+				max_supply=108
+				organisation=44.44444
+				strength=154.2
+				equipment={
+					equipment={
+						id={ id=1505 type=70 }
+						amount=650
+					}
+					equipment={
+						id={ id=1507 type=70 }
+						amount=1.2
+					}
+					equipment={
+						id={ id=1509 type=70 }
+						amount=40
+					}
+					allow_zero_entries=no
+				}
+				script_id=-1
+				army_manpower={
+					army_manpower_value={
+						value={ tag="SWE" value=7100 }
+					}
+					army_manpower_need={
+						value={ tag="SWE" value=7100 }
+					}
+				}
+				experience=2130
+				requests={
+					reinforcement={
+						request={
+							need={
+								artillery_equipment=10.8
+							}
+							date="1936.1.16.11"
+						}
+					}
+					date="1937.12.18.11"
+				}
+				dig_in=8.2
+				dig_in_cap=8.2
+				acclimatization={
+					cold_climate=7100
+					actively_gaining="cold_climate"
+					max_acclimatization=7100
+				}
+				army_current_supply_ratio=108
+				supply_gain=0.15
+			}
+			division={
+				id={ id=611 type=51 }
+				last_combat_date="1.1.1.1"
+				location=6050
+				logical_country="SWE"
+				id={ id=611 type=51 }
+				motorization_level=0
+				officer={
+					portraits={
+					}
+					male=yes
+				}
+				held_officer={
+				}
+				division_template_id={ id=22 type=52 }
+				division_name={
+					type=0
+					override="Kavalleribrigaden"
+				}
+				max_supply=108
+				organisation=57.5
+				strength=77
+				equipment={
+					equipment={
+						id={ id=1326 type=70 }
+						amount=7
+					}
+					equipment={
+						id={ id=1505 type=70 }
+						amount=393
+					}
+					equipment={
+						id={ id=1509 type=70 }
+						amount=10
+					}
+					allow_zero_entries=no
+				}
+				script_id=-1
+				army_manpower={
+					army_manpower_value={
+						value={ tag="SWE" value=3500 }
+					}
+					army_manpower_need={
+						value={ tag="SWE" value=3500 }
+					}
+				}
+				experience=1050
+				requests={
+					upgrades={
+						request={
+							request=7
+							total=400
+							equipment_variant_index={ id=1326 type=70 }
+						}
+					}
+					date="1938.2.3.12"
+				}
+				dig_in=5
+				dig_in_cap=5
+				acclimatization={
+					cold_climate=3500
+					actively_gaining="cold_climate"
+					max_acclimatization=3500
+				}
+				army_current_supply_ratio=108
+				supply_gain=0.15
+			}
+			division={
+				id={ id=612 type=51 }
+				last_combat_date="1.1.1.1"
+				location=6050
+				logical_country="SWE"
+				id={ id=612 type=51 }
+				motorization_level=0
+				officer={
+					portraits={
+					}
+					male=yes
+				}
+				held_officer={
+				}
+				division_template_id={ id=24 type=52 }
+				division_name={
+					type=0
+					override="Östra Militärområde"
+				}
+				max_supply=108
+				organisation=65
+				strength=100
+				equipment={
+					equipment={
+						id={ id=1505 type=70 }
+						amount=440
+					}
+					allow_zero_entries=no
+				}
+				script_id=-1
+				army_manpower={
+					army_manpower_value={
+						value={ tag="SWE" value=4000 }
+					}
+					army_manpower_need={
+						value={ tag="SWE" value=4000 }
+					}
+				}
+				experience=800
+				dig_in=5
+				dig_in_cap=5
+				acclimatization={
+					cold_climate=4000
+					actively_gaining="cold_climate"
+					max_acclimatization=4000
+				}
+				army_current_supply_ratio=108
+				supply_gain=0.15
+			}
+			division={
+				id={ id=613 type=51 }
+				last_combat_date="1.1.1.1"
+				location=9186
+				logical_country="SWE"
+				id={ id=613 type=51 }
+				motorization_level=0
+				officer={
+					portraits={
+					}
+					male=yes
+				}
+				held_officer={
+				}
+				division_template_id={ id=21 type=52 }
+				division_name={
+					type=0
+					name_order=5
+				}
+				max_supply=108
+				organisation=44.44444
+				strength=154.2
+				equipment={
+					equipment={
+						id={ id=1326 type=70 }
+						amount=12
+					}
+					equipment={
+						id={ id=1505 type=70 }
+						amount=638
+					}
+					equipment={
+						id={ id=1507 type=70 }
+						amount=1.2
+					}
+					equipment={
+						id={ id=1509 type=70 }
+						amount=40
+					}
+					allow_zero_entries=no
+				}
+				script_id=-1
+				army_manpower={
+					army_manpower_value={
+						value={ tag="SWE" value=7100 }
+					}
+					army_manpower_need={
+						value={ tag="SWE" value=7100 }
+					}
+				}
+				experience=2130
+				requests={
+					reinforcement={
+						request={
+							need={
+								artillery_equipment=10.8
+							}
+							date="1936.1.15.14"
+						}
+					}
+					upgrades={
+						request={
+							request=3
+							total=650
+							equipment_variant_index={ id=1326 type=70 }
+						}
+						delivery={
+							status=1
+							progress=6.3
+							total_progress=6.77117
+							produced={
+								equipment={
+									id={ id=1505 type=70 }
+									amount=9
+								}
+								allow_zero_entries=no
+							}
+						}
+					}
+					date="1938.2.3.14"
+				}
+				dig_in=8.2
+				dig_in_cap=8.2
+				acclimatization={
+					cold_climate=7100
+					actively_gaining="cold_climate"
+					max_acclimatization=7100
+				}
+				army_current_supply_ratio=108
+				supply_gain=0.15
+			}
+			division={
+				id={ id=614 type=51 }
+				last_combat_date="1.1.1.1"
+				location=9186
+				logical_country="SWE"
+				id={ id=614 type=51 }
+				motorization_level=0
+				officer={
+					portraits={
+					}
+					male=yes
+				}
+				held_officer={
+				}
+				division_template_id={ id=24 type=52 }
+				division_name={
+					type=0
+					override="Övre Norrland Militärområde"
+				}
+				max_supply=108
+				organisation=65
+				strength=100
+				equipment={
+					equipment={
+						id={ id=1326 type=70 }
+						amount=396
+					}
+					equipment={
+						id={ id=1505 type=70 }
+						amount=44
+					}
+					allow_zero_entries=no
+				}
+				script_id=-1
+				army_manpower={
+					army_manpower_value={
+						value={ tag="SWE" value=4000 }
+					}
+					army_manpower_need={
+						value={ tag="SWE" value=4000 }
+					}
+				}
+				experience=800
+				requests={
+					upgrades={
+						request={
+							request=396
+							total=440
+							equipment_variant_index={ id=1326 type=70 }
+						}
+					}
+					date="1938.2.3.15"
+				}
+				dig_in=5
+				dig_in_cap=5
+				acclimatization={
+					cold_climate=4000
+					actively_gaining="cold_climate"
+					max_acclimatization=4000
+				}
+				army_current_supply_ratio=108
+				supply_gain=0.15
+			}
+			division={
+				id={ id=615 type=51 }
+				last_combat_date="1.1.1.1"
+				location=408
+				logical_country="SWE"
+				id={ id=615 type=51 }
+				motorization_level=0
+				officer={
+					portraits={
+					}
+					male=yes
+				}
+				held_officer={
+				}
+				division_template_id={ id=24 type=52 }
+				division_name={
+					type=0
+					override="Gotlands Militärområde"
+				}
+				max_supply=108
+				organisation=65
+				strength=100
+				equipment={
+					equipment={
+						id={ id=1326 type=70 }
+						amount=396
+					}
+					equipment={
+						id={ id=1505 type=70 }
+						amount=44
+					}
+					allow_zero_entries=no
+				}
+				script_id=-1
+				army_manpower={
+					army_manpower_value={
+						value={ tag="SWE" value=4000 }
+					}
+					army_manpower_need={
+						value={ tag="SWE" value=4000 }
+					}
+				}
+				experience=800
+				requests={
+					upgrades={
+						request={
+							request=396
+							total=440
+							equipment_variant_index={ id=1326 type=70 }
+						}
+					}
+					date="1938.2.3.16"
+				}
+				dig_in=5
+				dig_in_cap=5
+				acclimatization={
+					cold_climate=1167.6
+					actively_gaining="cold_climate"
+					actively_gaining_speed=0.6
+					max_acclimatization=4000
+				}
+				army_current_supply_ratio=108
+				supply_gain=0.15
+			}
+			fleet={
+				id={ id=11 type=61 }
+				name="Kungliga Svenska Marinen"
+				color={ 219 219 10 }
+				icon=4
+				task_force={
+					id={ id=620 type=51 }
+					name="Kustflottan"
+					last_combat_date="1.1.1.1"
+					location=6050
+					logical_country="SWE"
+					ship={
+						id={ id=616 type=51 }
+						definition=heavy_cruiser
+						organisation=40
+						strength=159.5
+						equipment={
+							equipment={
+								id={ id=1537 type=70 }
+								amount=1
+							}
+							allow_zero_entries=no
+						}
+						ship_name={
+							type=1
+							is_name_ordered=no
+						}
+						max_manpower=1000
+						manpower=1000
+						officer={
+							portraits={
+							}
+							male=yes
+						}
+						held_officer={
+						}
+					}
+					ship={
+						id={ id=617 type=51 }
+						definition=destroyer
+						organisation=35
+						strength=25
+						equipment={
+							equipment={
+								id={ id=1532 type=70 }
+								amount=1
+							}
+							allow_zero_entries=no
+						}
+						ship_name={
+							type=1
+							name_order=35
+							is_name_ordered=no
+						}
+						max_manpower=250
+						manpower=250
+						officer={
+							portraits={
+							}
+							male=yes
+						}
+						held_officer={
+						}
+					}
+					ship={
+						id={ id=618 type=51 }
+						definition=destroyer
+						organisation=35
+						strength=25
+						equipment={
+							equipment={
+								id={ id=1532 type=70 }
+								amount=1
+							}
+							allow_zero_entries=no
+						}
+						ship_name={
+							type=1
+							name_order=36
+							is_name_ordered=no
+						}
+						max_manpower=250
+						manpower=250
+						officer={
+							portraits={
+							}
+							male=yes
+						}
+						held_officer={
+						}
+					}
+					ship={
+						id={ id=619 type=51 }
+						definition=destroyer
+						organisation=35
+						strength=25
+						equipment={
+							equipment={
+								id={ id=1534 type=70 }
+								amount=1
+							}
+							allow_zero_entries=no
+						}
+						ship_name={
+							type=1
+							override="HMS Clas Fleming"
+						}
+						max_manpower=250
+						manpower=250
+						officer={
+							portraits={
+							}
+							male=yes
+						}
+						held_officer={
+						}
+					}
+					mission={
+						mission=0
+						is_in_regions=yes
+						navy_engagement_rule=2
+						accessible_regions_range=2000
+					}
+					repair_mode=3
+					sortie_efficiency=2
+					underway_replenishment=no
+					use_fleet_color=yes
+					icon=5
+					ai_taskforce_composition={
+						requirements={
+						}
+						fulfillment={
+							sub_units={
+								54 54 72 
+							}
+							roles={
+								2 4 0 
+							}
+							amount={
+								2 1 1 
+							}
+						}
+					}
+				}
+				task_force={
+					id={ id=629 type=51 }
+					name="1a Eskadern"
+					last_combat_date="1.1.1.1"
+					location=11215
+					logical_country="SWE"
+					ship={
+						id={ id=621 type=51 }
+						definition=heavy_cruiser
+						organisation=40
+						strength=159.5
+						equipment={
+							equipment={
+								id={ id=1539 type=70 }
+								amount=1
+							}
+							allow_zero_entries=no
+						}
+						ship_name={
+							type=1
+							override="HMS Gustaf V"
+						}
+						max_manpower=1000
+						manpower=1000
+						officer={
+							portraits={
+							}
+							male=yes
+						}
+						held_officer={
+						}
+					}
+					ship={
+						id={ id=622 type=51 }
+						definition=heavy_cruiser
+						organisation=40
+						strength=159.5
+						equipment={
+							equipment={
+								id={ id=1539 type=70 }
+								amount=1
+							}
+							allow_zero_entries=no
+						}
+						ship_name={
+							type=1
+							name_order=1
+							is_name_ordered=no
+						}
+						max_manpower=1000
+						manpower=1000
+						officer={
+							portraits={
+							}
+							male=yes
+						}
+						held_officer={
+						}
+					}
+					ship={
+						id={ id=623 type=51 }
+						definition=heavy_cruiser
+						organisation=40
+						strength=159.5
+						equipment={
+							equipment={
+								id={ id=1539 type=70 }
+								amount=1
+							}
+							allow_zero_entries=no
+						}
+						ship_name={
+							type=1
+							name_order=2
+							is_name_ordered=no
+						}
+						max_manpower=1000
+						manpower=1000
+						officer={
+							portraits={
+							}
+							male=yes
+						}
+						held_officer={
+						}
+					}
+					ship={
+						id={ id=624 type=51 }
+						definition=light_cruiser
+						organisation=40
+						strength=120
+						equipment={
+							equipment={
+								id={ id=1540 type=70 }
+								amount=1
+							}
+							allow_zero_entries=no
+						}
+						ship_name={
+							type=1
+							is_name_ordered=no
+						}
+						max_manpower=600
+						manpower=600
+						officer={
+							portraits={
+							}
+							male=yes
+						}
+						held_officer={
+						}
+					}
+					ship={
+						id={ id=625 type=51 }
+						definition=destroyer
+						organisation=35
+						strength=25
+						equipment={
+							equipment={
+								id={ id=1533 type=70 }
+								amount=1
+							}
+							allow_zero_entries=no
+						}
+						ship_name={
+							type=1
+							name_order=37
+							is_name_ordered=no
+						}
+						max_manpower=250
+						manpower=250
+						officer={
+							portraits={
+							}
+							male=yes
+						}
+						held_officer={
+						}
+					}
+					ship={
+						id={ id=626 type=51 }
+						definition=destroyer
+						organisation=35
+						strength=25
+						equipment={
+							equipment={
+								id={ id=1533 type=70 }
+								amount=1
+							}
+							allow_zero_entries=no
+						}
+						ship_name={
+							type=1
+							name_order=38
+							is_name_ordered=no
+						}
+						max_manpower=250
+						manpower=250
+						officer={
+							portraits={
+							}
+							male=yes
+						}
+						held_officer={
+						}
+					}
+					ship={
+						id={ id=627 type=51 }
+						definition=destroyer
+						organisation=35
+						strength=25
+						equipment={
+							equipment={
+								id={ id=1533 type=70 }
+								amount=1
+							}
+							allow_zero_entries=no
+						}
+						ship_name={
+							type=1
+							name_order=39
+							is_name_ordered=no
+						}
+						max_manpower=250
+						manpower=250
+						officer={
+							portraits={
+							}
+							male=yes
+						}
+						held_officer={
+						}
+					}
+					ship={
+						id={ id=628 type=51 }
+						definition=destroyer
+						organisation=35
+						strength=25
+						equipment={
+							equipment={
+								id={ id=1533 type=70 }
+								amount=1
+							}
+							allow_zero_entries=no
+						}
+						ship_name={
+							type=1
+							name_order=40
+							is_name_ordered=no
+						}
+						max_manpower=250
+						manpower=250
+						officer={
+							portraits={
+							}
+							male=yes
+						}
+						held_officer={
+						}
+					}
+					mission={
+						mission=0
+						is_in_regions=yes
+						navy_engagement_rule=2
+						accessible_regions_range=2062.5
+					}
+					repair_mode=3
+					sortie_efficiency=2
+					underway_replenishment=no
+					use_fleet_color=yes
+					icon=5
+					ai_taskforce_composition={
+						requirements={
+						}
+						fulfillment={
+							sub_units={
+								54 72 107 
+							}
+							roles={
+								2 0 2 
+							}
+							amount={
+								4 3 1 
+							}
+						}
+					}
+				}
+				task_force={
+					id={ id=632 type=51 }
+					name="Ålandshavseskader"
+					last_combat_date="1.1.1.1"
+					location=408
+					logical_country="SWE"
+					ship={
+						id={ id=630 type=51 }
+						definition=heavy_cruiser
+						organisation=40
+						strength=159.5
+						equipment={
+							equipment={
+								id={ id=1537 type=70 }
+								amount=1
+							}
+							allow_zero_entries=no
+						}
+						ship_name={
+							type=1
+							name_order=4
+							is_name_ordered=no
+						}
+						max_manpower=1000
+						manpower=1000
+						officer={
+							portraits={
+							}
+							male=yes
+						}
+						held_officer={
+						}
+					}
+					ship={
+						id={ id=631 type=51 }
+						definition=heavy_cruiser
+						organisation=40
+						strength=159.5
+						equipment={
+							equipment={
+								id={ id=1537 type=70 }
+								amount=1
+							}
+							allow_zero_entries=no
+						}
+						ship_name={
+							type=1
+							name_order=5
+							is_name_ordered=no
+						}
+						max_manpower=1000
+						manpower=1000
+						officer={
+							portraits={
+							}
+							male=yes
+						}
+						held_officer={
+						}
+					}
+					mission={
+						mission=0
+						is_in_regions=yes
+						navy_engagement_rule=2
+						accessible_regions_range=2000
+					}
+					repair_mode=3
+					sortie_efficiency=2
+					underway_replenishment=no
+					use_fleet_color=yes
+					icon=5
+					ai_taskforce_composition={
+						requirements={
+						}
+						fulfillment={
+							sub_units={
+								72 
+							}
+							roles={
+								0 
+							}
+							amount={
+								2 
+							}
+						}
+					}
+				}
+				task_force={
+					id={ id=638 type=51 }
+					name="Karlskrona Avdelningen"
+					last_combat_date="1.1.1.1"
+					location=11215
+					logical_country="SWE"
+					ship={
+						id={ id=633 type=51 }
+						definition=heavy_cruiser
+						organisation=40
+						strength=159.5
+						equipment={
+							equipment={
+								id={ id=1537 type=70 }
+								amount=1
+							}
+							allow_zero_entries=no
+						}
+						ship_name={
+							type=1
+							name_order=6
+							is_name_ordered=no
+						}
+						max_manpower=1000
+						manpower=1000
+						officer={
+							portraits={
+							}
+							male=yes
+						}
+						held_officer={
+						}
+					}
+					ship={
+						id={ id=634 type=51 }
+						definition=heavy_cruiser
+						organisation=40
+						strength=159.5
+						equipment={
+							equipment={
+								id={ id=1537 type=70 }
+								amount=1
+							}
+							allow_zero_entries=no
+						}
+						ship_name={
+							type=1
+							name_order=7
+							is_name_ordered=no
+						}
+						max_manpower=1000
+						manpower=1000
+						officer={
+							portraits={
+							}
+							male=yes
+						}
+						held_officer={
+						}
+					}
+					ship={
+						id={ id=635 type=51 }
+						definition=submarine
+						organisation=30
+						strength=22.5
+						equipment={
+							equipment={
+								id={ id=1531 type=70 }
+								amount=1
+							}
+							allow_zero_entries=no
+						}
+						ship_name={
+							type=1
+							name_order=7
+							is_name_ordered=no
+						}
+						max_manpower=200
+						manpower=200
+						officer={
+							portraits={
+							}
+							male=yes
+						}
+						held_officer={
+						}
+					}
+					ship={
+						id={ id=636 type=51 }
+						definition=submarine
+						organisation=30
+						strength=22.5
+						equipment={
+							equipment={
+								id={ id=1531 type=70 }
+								amount=1
+							}
+							allow_zero_entries=no
+						}
+						ship_name={
+							type=1
+							name_order=8
+							is_name_ordered=no
+						}
+						max_manpower=200
+						manpower=200
+						officer={
+							portraits={
+							}
+							male=yes
+						}
+						held_officer={
+						}
+					}
+					ship={
+						id={ id=637 type=51 }
+						definition=submarine
+						organisation=30
+						strength=22.5
+						equipment={
+							equipment={
+								id={ id=1531 type=70 }
+								amount=1
+							}
+							allow_zero_entries=no
+						}
+						ship_name={
+							type=1
+							name_order=9
+							is_name_ordered=no
+						}
+						max_manpower=200
+						manpower=200
+						officer={
+							portraits={
+							}
+							male=yes
+						}
+						held_officer={
+						}
+					}
+					mission={
+						mission=0
+						is_in_regions=yes
+						navy_engagement_rule=2
+						accessible_regions_range=2300
+					}
+					repair_mode=3
+					sortie_efficiency=2
+					underway_replenishment=no
+					use_fleet_color=yes
+					icon=6
+					ai_taskforce_composition={
+						requirements={
+						}
+						fulfillment={
+							sub_units={
+								72 147 
+							}
+							roles={
+								0 6 
+							}
+							amount={
+								2 3 
+							}
+						}
+					}
+				}
+				task_force={
+					id={ id=648 type=51 }
+					name="Göteborgs Eskadern"
+					last_combat_date="1.1.1.1"
+					location=383
+					logical_country="SWE"
+					ship={
+						id={ id=639 type=51 }
+						definition=heavy_cruiser
+						organisation=40
+						strength=198
+						equipment={
+							equipment={
+								id={ id=1538 type=70 }
+								amount=1
+							}
+							allow_zero_entries=no
+						}
+						ship_name={
+							type=1
+							name_order=8
+							is_name_ordered=no
+						}
+						max_manpower=1000
+						manpower=1000
+						officer={
+							portraits={
+							}
+							male=yes
+						}
+						held_officer={
+						}
+					}
+					ship={
+						id={ id=640 type=51 }
+						definition=light_cruiser
+						organisation=40
+						strength=130
+						equipment={
+							equipment={
+								id={ id=1536 type=70 }
+								amount=1
+							}
+							allow_zero_entries=no
+						}
+						ship_name={
+							type=1
+							name_order=1
+							is_name_ordered=no
+						}
+						max_manpower=1000
+						manpower=1000
+						officer={
+							portraits={
+							}
+							male=yes
+						}
+						held_officer={
+						}
+					}
+					ship={
+						id={ id=641 type=51 }
+						definition=submarine
+						organisation=30
+						strength=15
+						equipment={
+							equipment={
+								id={ id=1529 type=70 }
+								amount=1
+							}
+							allow_zero_entries=no
+						}
+						ship_name={
+							type=1
+							is_name_ordered=no
+						}
+						max_manpower=200
+						manpower=200
+						officer={
+							portraits={
+							}
+							male=yes
+						}
+						held_officer={
+						}
+					}
+					ship={
+						id={ id=642 type=51 }
+						definition=submarine
+						organisation=30
+						strength=15
+						equipment={
+							equipment={
+								id={ id=1529 type=70 }
+								amount=1
+							}
+							allow_zero_entries=no
+						}
+						ship_name={
+							type=1
+							name_order=1
+							is_name_ordered=no
+						}
+						max_manpower=200
+						manpower=200
+						officer={
+							portraits={
+							}
+							male=yes
+						}
+						held_officer={
+						}
+					}
+					ship={
+						id={ id=643 type=51 }
+						definition=submarine
+						organisation=30
+						strength=15
+						equipment={
+							equipment={
+								id={ id=1529 type=70 }
+								amount=1
+							}
+							allow_zero_entries=no
+						}
+						ship_name={
+							type=1
+							name_order=2
+							is_name_ordered=no
+						}
+						max_manpower=200
+						manpower=200
+						officer={
+							portraits={
+							}
+							male=yes
+						}
+						held_officer={
+						}
+					}
+					ship={
+						id={ id=644 type=51 }
+						definition=submarine
+						organisation=30
+						strength=15
+						equipment={
+							equipment={
+								id={ id=1529 type=70 }
+								amount=1
+							}
+							allow_zero_entries=no
+						}
+						ship_name={
+							type=1
+							name_order=3
+							is_name_ordered=no
+						}
+						max_manpower=200
+						manpower=200
+						officer={
+							portraits={
+							}
+							male=yes
+						}
+						held_officer={
+						}
+					}
+					ship={
+						id={ id=645 type=51 }
+						definition=submarine
+						organisation=30
+						strength=15
+						equipment={
+							equipment={
+								id={ id=1529 type=70 }
+								amount=1
+							}
+							allow_zero_entries=no
+						}
+						ship_name={
+							type=1
+							name_order=4
+							is_name_ordered=no
+						}
+						max_manpower=200
+						manpower=200
+						officer={
+							portraits={
+							}
+							male=yes
+						}
+						held_officer={
+						}
+					}
+					ship={
+						id={ id=646 type=51 }
+						definition=submarine
+						organisation=30
+						strength=15
+						equipment={
+							equipment={
+								id={ id=1529 type=70 }
+								amount=1
+							}
+							allow_zero_entries=no
+						}
+						ship_name={
+							type=1
+							name_order=5
+							is_name_ordered=no
+						}
+						max_manpower=200
+						manpower=200
+						officer={
+							portraits={
+							}
+							male=yes
+						}
+						held_officer={
+						}
+					}
+					ship={
+						id={ id=647 type=51 }
+						definition=submarine
+						organisation=30
+						strength=15
+						equipment={
+							equipment={
+								id={ id=1530 type=70 }
+								amount=1
+							}
+							allow_zero_entries=no
+						}
+						ship_name={
+							type=1
+							name_order=6
+							is_name_ordered=no
+						}
+						max_manpower=200
+						manpower=200
+						officer={
+							portraits={
+							}
+							male=yes
+						}
+						held_officer={
+						}
+					}
+					mission={
+						mission=0
+						is_in_regions=yes
+						navy_engagement_rule=2
+						accessible_regions_range=2000
+					}
+					repair_mode=3
+					sortie_efficiency=2
+					underway_replenishment=no
+					use_fleet_color=yes
+					icon=6
+					ai_taskforce_composition={
+						requirements={
+						}
+						fulfillment={
+							sub_units={
+								72 107 147 
+							}
+							roles={
+								0 0 6 
+							}
+							amount={
+								1 1 7 
+							}
+						}
+					}
+				}
+				home_base=6050
+				automated_homebase=yes
+			}
+			fleet={
+				id={ id=1424 type=61 }
+				name="Sweden Fleet 1"
+				color={ 219 10 115 }
+				icon=4
+				task_force={
+					id={ id=1423 type=61 }
+					name="Sweden Reserve fleet 1"
+					last_combat_date="1.1.1.1"
+					location=9279
+					logical_country="SWE"
+					ship={
+						id={ id=2767 type=51 }
+						definition=destroyer
+						organisation=35
+						strength=40
+						equipment={
+							equipment={
+								id={ id=1535 type=70 }
+								amount=1
+							}
+							allow_zero_entries=no
+						}
+						ship_name={
+							type=1
+							is_name_ordered=no
+							equipment={ id=1535 type=70 }
+						}
+						max_manpower=300
+						manpower=300
+						officer={
+							portraits={
+							}
+							male=yes
+						}
+						held_officer={
+						}
+						history={
+							unit_medals={
+							}
+							army_history={
+								history_queue={
+									army_names="HMS Göteborg"
+									target_country="SWE"
+									location={
+9279 									}
+									date="1936.7.10.1"
+									unique=20
+									medal_count=no
+									inherit=yes
+								}
+							}
+						}
+					}
+					ship={
+						id={ id=2721 type=51 }
+						definition=submarine
+						organisation=30
+						strength=22.5
+						equipment={
+							equipment={
+								id={ id=1531 type=70 }
+								amount=1
+							}
+							allow_zero_entries=no
+						}
+						ship_name={
+							type=1
+							name_order=10
+							is_name_ordered=no
+							equipment={ id=1531 type=70 }
+						}
+						max_manpower=200
+						manpower=200
+						officer={
+							portraits={
+							}
+							male=yes
+						}
+						held_officer={
+						}
+						history={
+							unit_medals={
+							}
+							army_history={
+								history_queue={
+									army_names="HMS Delfinen"
+									target_country="SWE"
+									location={
+9279 									}
+									date="1936.1.31.1"
+									unique=20
+									medal_count=no
+									inherit=yes
+								}
+							}
+						}
+					}
+					ship={
+						id={ id=2730 type=51 }
+						definition=submarine
+						organisation=30
+						strength=22.5
+						equipment={
+							equipment={
+								id={ id=1531 type=70 }
+								amount=1
+							}
+							allow_zero_entries=no
+						}
+						ship_name={
+							type=1
+							name_order=11
+							is_name_ordered=no
+							equipment={ id=1531 type=70 }
+						}
+						max_manpower=200
+						manpower=200
+						officer={
+							portraits={
+							}
+							male=yes
+						}
+						held_officer={
+						}
+						history={
+							unit_medals={
+							}
+							army_history={
+								history_queue={
+									army_names="HMS Nordkaparen"
+									target_country="SWE"
+									location={
+9279 									}
+									date="1936.3.3.1"
+									unique=20
+									medal_count=no
+									inherit=yes
+								}
+							}
+						}
+					}
+					ship={
+						id={ id=2752 type=51 }
+						definition=submarine
+						organisation=30
+						strength=22.5
+						equipment={
+							equipment={
+								id={ id=1531 type=70 }
+								amount=1
+							}
+							allow_zero_entries=no
+						}
+						ship_name={
+							type=1
+							name_order=12
+							is_name_ordered=no
+							equipment={ id=1531 type=70 }
+						}
+						max_manpower=200
+						manpower=200
+						officer={
+							portraits={
+							}
+							male=yes
+						}
+						held_officer={
+						}
+						history={
+							unit_medals={
+							}
+							army_history={
+								history_queue={
+									army_names="HMS Springaren"
+									target_country="SWE"
+									location={
+9279 									}
+									date="1936.5.4.1"
+									unique=20
+									medal_count=no
+									inherit=yes
+								}
+							}
+						}
+					}
+					mission={
+						mission=8
+						is_in_regions=yes
+						hours_in_mission=21
+						navy_engagement_rule=2
+						accessible_regions_range=2500
+					}
+					repair_mode=3
+					sortie_efficiency=2
+					underway_replenishment=no
+					use_fleet_color=yes
+					icon=6
+					ai_taskforce_composition={
+						requirements={
+						}
+						fulfillment={
+							sub_units={
+								54 147 
+							}
+							roles={
+								2 6 
+							}
+							amount={
+								1 3 
+							}
+						}
+					}
+				}
+				home_base=9279
+				automated_homebase=yes
+			}
+		}
+		variables={
+			folkhemmet_civ=0.2
+			folkhemmet_dockyard=-0.2
+			folkhemmet_infra=0.2
+			folkhemmet_mil=-0.2
+			folkhemmet_stability=0.25
+			folkhemmet_war_support=-0.25
+			hungershield_stability_risk_1=0.12
+			hungershield_stability_risk_2=0.18
+			hungershield_stability_threshold_1=0.68
+			hungershield_stability_threshold_2=0.3
+			llmb_ai_delegated_armies=0
+			llmb_built_civ=1
+			llmb_built_dock=0
+			llmb_built_infra=0
+			llmb_built_mil=0
+			llmb_civ=25
+			llmb_divisions=12
+			llmb_doc=4
+			llmb_event_kind=11
+			llmb_mil=3
+			llmb_mp=34218
+			llmb_owned=32
+			llmb_pp=1321.28922
+			llmb_schema_version=3
+			llmb_stab=87.856
+			llmb_techs=34
+			llmb_ws=0
+			swe_cross_we_bear_army_morale_factor=0
+			swe_cross_we_bear_army_morale_factor_increase=0.02
+			swe_cross_we_bear_conscription=0
+			swe_cross_we_bear_conscription_increase=0.005
+			swe_cross_we_bear_coordination_bonus=0.06
+			swe_cross_we_bear_coordination_bonus_increase=0.02
+			swe_cross_we_bear_org_loss_at_low_org_factor=-0.09
+			swe_cross_we_bear_org_loss_at_low_org_factor_increase=0.03
+			swe_cross_we_bear_org_loss_when_moving=0.12
+			swe_cross_we_bear_org_loss_when_moving_increase=-0.04
+			swe_cross_we_bear_org_special_forces_cap=0.03
+			swe_cross_we_bear_org_special_forces_cap_increase=0.01
+			swe_hygenic_housing_cooldown=0
+			swe_refugee_from_war_average_manpower_per_country=1760
+			swe_refugee_from_war_total_manpower_gained=58079.69
+			swe_refugee_from_war_valid_countries=33
+			swe_refugee_max_manpower_country=10785.44451
+			swe_refugee_max_manpower_gained=12116.4
+			swe_refugee_min_manpower_country=10780.8494
+			swe_refugee_min_manpower_gained=213.78
+			swe_train_the_sheltered_manpower_cap_increase=6000
+			swe_train_the_sheltered_manpower_current_cap=8000
+			swe_train_the_sheltered_manpower_current_manpower=0
+			swe_train_the_sheltered_manpower_gain_per_level_growth_base=100
+			swe_train_the_sheltered_manpower_gain_per_level_growth_spread_max=300
+			swe_train_the_sheltered_manpower_gain_per_level_growth_spread_min=0
+		}
+		fuel_status={
+			fuel=55912.75000
+			max_fuel=76875.00000
+		}
+		politics={
+			parties={
+				democratic={
+					default=no
+					name="SWE_democratic_party"
+					long_name="SWE_democratic_party_long"
+					popularity=69.04424
+					country_leader={
+{
+							ideology="socialism"
+							character={ id=4598 type=73 }
+						}
+ {
+							ideology="liberalism"
+							character={ id=4606 type=73 }
+						}
+ {
+							ideology="socialism"
+							character={ id=4600 type=73 }
+						}
+ 					}
+				}
+				communism={
+					default=no
+					name="SWE_aat_communism_party"
+					long_name="SWE_aat_communism_party_long"
+					popularity=7.36563
+					country_leader={
+{
+							ideology="marxism"
+							character={ id=4604 type=73 }
+						}
+ 					}
+				}
+				fascism={
+					default=yes
+					popularity=2.76013
+					country_leader={
+{
+							ideology="fascism_ideology"
+							character={ id=11029 type=73 }
+						}
+ 					}
+				}
+				neutrality={
+					default=no
+					name="SWE_aat_hogern"
+					long_name="SWE_aat_hogern_long"
+					popularity=20.83
+					country_leader={
+{
+							ideology="despotism"
+							character={ id=11030 type=73 }
+						}
+ 					}
+				}
+			}
+			ideas={
+				SWE_hungershield SWE_severe_lack_of_ammunition SWE_gustaf_v_idea neutrality_idea league_of_nations_member_idea civilian_economy export_focus volunteer_only 
+			}
+			ruling_party=democratic
+			last_election="1936.11.20.1"
+			election_frequency=48
+			elections_allowed=yes
+			political_power=1321.28922
+		}
+		manpower={
+			ratio=150000
+		}
+		focus={
+			completed="SWE_defense_act"
+			completed="SWE_urbanization"
+			progress=24
+			current="SWE_work_projects_for_the_unemployed"
+			paused=no
+		}
+		research_slot=3
+		capital=141
+		stability=0.5
+		war_support=0.05
+		focus_tree="sweden_focus"
+	}
+}
