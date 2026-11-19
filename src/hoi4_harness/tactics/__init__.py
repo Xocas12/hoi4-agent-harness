@@ -10,11 +10,15 @@ Pure Python, no dependencies. See docs/tactics.md for what it models and what it
 
 from .controllers import CONTROLLERS, ScriptedController, VanillaLikeController
 from .env import StepResult, TacticalEnv
+from .learned import LearnedController
 from .model import Order
 from .scenario import Scenario, list_scenarios, load_scenario
 
+CONTROLLERS["learned"] = LearnedController
+
 __all__ = [
     "CONTROLLERS",
+    "LearnedController",
     "Order",
     "Scenario",
     "ScriptedController",
