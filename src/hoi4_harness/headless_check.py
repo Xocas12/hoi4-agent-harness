@@ -80,12 +80,19 @@ def run_checks(adapter: HeadlessComposite, days: int = 7,
 
     def refresh() -> tuple[bool, str]:
         seen = peek()          # the reader hands back its live state: copy what is compared
-        ticks, day = seen.telemetry_ticks or 0, seen.date
+        ticks = seen.telemetry_ticks or 0
         console.refresh()
         seen = peek()
-        return (seen.telemetry_ticks or 0) - ticks >= 2 and seen.date == day, (
-            f"complete days {ticks} -> {seen.telemetry_ticks} (need +2), "
-            f"date {day} -> {seen.date} (must not move)")
+        fresh = (seen.telemetry_ticks or 0) - ticks
+        # The refresh lines carry the paused clock's own hour, which can be a day
+        # past the last daily line (seen live: last daily line 17 Dec 21:00, game
+        # paused at 18 Dec 04:00). What proves "paused" is that the date then
+        # stands still, not that it equals the last daily line.
+        day = seen.date
+        still = not driver._date_moves()
+        return fresh >= 2 and still and peek().date == day, (
+            f"{fresh} fresh state line(s) (need 2), dated {day}, and the date "
+            f"{'stood still' if still else 'moved'} afterwards")
 
     attempt("refresh: two fresh state lines while paused", refresh)
 
@@ -110,6 +117,10 @@ def run_checks(adapter: HeadlessComposite, days: int = 7,
 
     attempt("gamespeed 0 stops it", console_cycle)
 
+    #: How many more times to look for the game to stop after the last day asked
+    #: for arrives: each look watches the date for the driver's probe time.
+    EXACT_SETTLE_LOOKS = 4
+
     def exact() -> tuple[bool, str]:
         start = peek().date
         timer = clock("exact")
@@ -117,8 +128,17 @@ def run_checks(adapter: HeadlessComposite, days: int = 7,
         timer.resume()
         reached = wait_for_days(reader.read_state, days, adapter.poll_seconds,
                                 sleep=driver._sleep, start=start)
+        # The pause comes EXACT_MARGIN_HOURS after the last day asked for, so the
+        # game is still running when that day's line arrives (seen live: the
+        # check looked then and called it still running; the game stopped
+        # itself about half a day later). Give it until the next day to stop.
         driver._running = None                  # it should have stopped by itself: look
         still = driver._date_moves()
+        for _ in range(EXACT_SETTLE_LOOKS):
+            if not still:
+                break
+            still = driver._date_moves()
+        reached = peek()
         elapsed = _days(start, reached.date)
         ok = not still and days <= elapsed <= days + 1
         if still:

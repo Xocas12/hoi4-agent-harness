@@ -54,7 +54,7 @@ def test_a_mod_without_the_refresh_effect_fails_the_refresh_claim(tmp_path):
     fake._scripted = lambda name: None if name == "llm_bridge_emit_state" else original(name)
     got = named(run_checks(adapter, echo=lambda line: None))
     refresh = got["refresh: two fresh state lines while paused"]
-    assert not refresh.ok and "need +2" in refresh.detail
+    assert not refresh.ok and "0 fresh state line(s) (need 2)" in refresh.detail
 
 
 def test_without_telemetry_it_stops_after_the_first_claim(tmp_path):
