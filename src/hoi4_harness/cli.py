@@ -695,13 +695,31 @@ def cmd_tactics(args: argparse.Namespace) -> int:
         for name in list_scenarios():
             print(name)
         return 0
+    if args.tactics_command == "train":
+        from .tactics.learned import PARAMS_PATH
+        from .tactics.train import train
+
+        scenarios = None if args.scenario == "all" else [args.scenario]
+        if scenarios and scenarios[0] not in list_scenarios():
+            print(f"tactics: unknown scenario {scenarios[0]!r}", file=sys.stderr)
+            return 2
+        policy = train(args.minutes, args.seed, scenarios)
+        policy.save(args.out or PARAMS_PATH)
+        print(f"saved {args.out or PARAMS_PATH}")
+        return 0
     names = list_scenarios() if args.scenario == "all" else [args.scenario]
     unknown = [n for n in names if n not in list_scenarios()]
     if unknown:
         known = ", ".join(list_scenarios())
         print(f"tactics: unknown scenario {unknown[0]!r}. Known: {known}", file=sys.stderr)
         return 2
-    controllers = list(CONTROLLERS) if args.controller == "both" else [args.controller]
+    groups = {"both": ["vanilla", "scripted"], "all": list(CONTROLLERS)}
+    controllers = groups.get(args.controller, [args.controller])
+    if "learned" in controllers and getattr(args, "params", None):
+        from .tactics.learned import LearnedController, Policy
+
+        learned = LearnedController(Policy.load(args.params))
+        controllers = [learned if c == "learned" else c for c in controllers]
     if args.tactics_command == "episode":
         print(json.dumps(run_episode(names[0], args.seed, controllers[0], args.opponent), indent=2))
         return 0
@@ -1020,7 +1038,9 @@ def build_parser() -> argparse.ArgumentParser:
                            ("episode", "play one seeded episode and print its metrics")):
         tp = tsub.add_parser(verb, help=helptext)
         tp.add_argument("scenario", help="scenario name, or 'all' (run only)")
-        tp.add_argument("--controller", choices=["vanilla", "scripted", "both"], default="scripted")
+        tp.add_argument("--controller", choices=["vanilla", "scripted", "learned", "both", "all"],
+                        default="scripted", help="'both' = vanilla + scripted, 'all' adds learned")
+        tp.add_argument("--params", help="learned-controller parameters (default: the committed file)")
         tp.add_argument("--opponent", choices=["vanilla", "scripted"], default="vanilla",
                         help="who plays the other side (default: the vanilla-like AI)")
         tp.add_argument("--seeds", type=int, default=20)
@@ -1028,6 +1048,13 @@ def build_parser() -> argparse.ArgumentParser:
         tp.add_argument("--seed", type=int, default=0, help="the seed for 'episode'")
         tp.add_argument("--json", action="store_true", help="machine-readable output")
         tp.set_defaults(func=cmd_tactics)
+
+    trp = tsub.add_parser("train", help="train the learned controller (behaviour cloning, then ES)")
+    trp.add_argument("scenario", nargs="?", default="all", help="one scenario, or 'all' (default)")
+    trp.add_argument("--minutes", type=float, default=12.0, help="wall-clock budget (default 12)")
+    trp.add_argument("--seed", type=int, default=0)
+    trp.add_argument("--out", help="where to write the parameters (default: the committed file)")
+    trp.set_defaults(func=cmd_tactics)
 
     calibrate = sub.add_parser("calibrate", help="record screen coordinates for the input driver")
     common(calibrate)
