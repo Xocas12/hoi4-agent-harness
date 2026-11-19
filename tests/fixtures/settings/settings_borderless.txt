@@ -1,0 +1,9 @@
+force_pow2_textures=no
+language="l_english"
+graphics={
+	size={ x=1536 y=864 }
+	min_gui={ x=1280 y=720 }
+	gui_scale=1.250000
+	fullScreen=no
+	borderless=yes
+}

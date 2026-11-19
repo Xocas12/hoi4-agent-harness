@@ -265,6 +265,7 @@ class IdentifierIndex:
     #: technology -> the technologies its ``path = { leads_to_tech }`` blocks name.
     tech_leads: dict[str, list[str]] = field(default_factory=dict)
     _focus_names: dict[str, str] | None = field(default=None, repr=False)
+    _research_layout: object = field(default=None, repr=False)
     _advisors: dict[str, list[AdvisorRole]] | None = field(default=None, repr=False)
     _equipment: set[str] | None = field(default=None, repr=False)
     _advisor_tokens: dict[str, str] = field(default_factory=dict, repr=False)
@@ -313,6 +314,15 @@ class IdentifierIndex:
                     owner=str(owner) if isinstance(owner, str) else None,
                 )
         return index
+
+    def research_layout(self):
+        """The research panel and tab layout of the playset's interface files
+        (uilayout.py), read on first use. Raises uilayout.LayoutRefused."""
+        if self._research_layout is None:
+            from .uilayout import ResearchLayout
+
+            self._research_layout = ResearchLayout.from_playset(self.playset)
+        return self._research_layout
 
     def _read_focus_file(self, parsed: dict) -> None:
         for block in _as_list(parsed.get("shared_focus")):

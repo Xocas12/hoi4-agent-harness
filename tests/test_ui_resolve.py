@@ -313,7 +313,9 @@ def test_check_scripts_passes_once_the_concrete_targets_are_calibrated(tmp_path,
     (tmp_path / "ui_scripts.json").write_text(PROFILE.read_text(encoding="utf-8"), encoding="utf-8")
     scripts = load_scripts(PROFILE)
     concrete = {t: (1, 1) for t in missing_targets(scripts, {})}
-    assert "research.free_slot" in concrete and "research.tech_point" not in concrete
+    # the research slot and tabs are derived from the interface files, not calibrated
+    assert "research.free_slot" not in concrete and "research.tech_point" not in concrete
+    assert "map.centre" in concrete
     save_calibration(Calibration(screen=(1920, 1080), coordinates=concrete),
                      tmp_path / "calibration.json")
     capsys.readouterr()

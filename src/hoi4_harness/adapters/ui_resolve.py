@@ -21,10 +21,12 @@ Derived values a script may use as ``{placeholders}``:
 from __future__ import annotations
 
 import re
+from collections.abc import Callable
 from dataclasses import dataclass, field
 
 from ..identifiers import IdentifierIndex, TechPlace
-from ..techtree import CONTENT_ORIGIN, REFERENCE_HEIGHT, Gridbox, LayoutUnknown, gui_point
+from ..techtree import CONTENT_ORIGIN, Gridbox, LayoutUnknown, gui_point
+from ..uilayout import Geometry, LayoutRefused
 
 #: Click targets computed per call rather than recorded, and the recorded targets
 #: each is computed from. ``hoi4-harness calibrate`` asks for the latter.
@@ -32,7 +34,17 @@ COMPUTED_TARGETS: dict[str, tuple[str, ...]] = {
     # Needs no calibration: the layout comes from the game's files, anchored at a
     # measured 1080p origin (``research.tree.origin`` is an optional override).
     "research.tech_point": (),
+    # The research panel's slot and the folder tabs come from the interface files
+    # (uilayout.py); a recorded ``research.free_slot`` / ``research.tab.<folder>``
+    # still overrides them.
+    "research.free_slot": (),
 }
+#: Click targets that start with one of these are computed too (the folder tabs).
+COMPUTED_PREFIXES = ("research.tab.",)
+
+
+def is_computed(target: str) -> bool:
+    return target in COMPUTED_TARGETS or target.startswith(COMPUTED_PREFIXES)
 #: Placeholders the resolver fills, beyond the action's own arguments.
 DERIVED_PARAMETERS: dict[str, frozenset[str]] = {
     "set_national_focus": frozenset({"focus_name"}),
@@ -118,6 +130,7 @@ def tech_point(
     screen: tuple[int, int] | None,
     tech: str = "",
     gridboxes: dict[tuple[str, str], Gridbox] | None = None,
+    geometry: Geometry | None = None,
 ) -> tuple[int, int]:
     """Where to click a technology, from the interface file's layout (techtree.py).
 
@@ -143,8 +156,10 @@ def tech_point(
             f"{place.folder}, which has no sub-tree box in interface/countrytechtreeview.gui, "
             "so its place on the tab is unknown; calibrate research.tech.<id> for it"
         )
-    width, height = screen if screen else (1920, 1080)
-    scale = height / REFERENCE_HEIGHT
+    if geometry is None:
+        width, height = screen if screen else (1920, 1080)
+        geometry = Geometry(width, height)
+    width, height, scale = geometry.width, geometry.height, geometry.scale
     points = set()
     for root, box in boxes.items():
         try:
@@ -163,8 +178,11 @@ def tech_point(
     box = next(iter(boxes.values()))
     (gx, gy), = points
     origin = coordinates.get("research.tree.origin")
-    ox, oy = origin if origin else (CONTENT_ORIGIN[0] * scale, CONTENT_ORIGIN[1] * scale)
+    # A recorded origin is a screen point; the rule works in the window.
+    ox, oy = ((origin[0] - geometry.origin[0], origin[1] - geometry.origin[1]) if origin
+              else (CONTENT_ORIGIN[0] * scale, CONTENT_ORIGIN[1] * scale))
     x, y = round(ox + gx * scale), round(oy + gy * scale)
+    # Points are checked in the window, then moved to where the window is on screen.
     if not (0 <= x < width and MIN_TECH_Y <= y < height):
         raise Unresolvable(
             f"{tech or 'the technology'} (column {place.column}, row {place.row} of the "
@@ -172,7 +190,7 @@ def tech_point(
             f"off the visible tree on a {width}x{height} screen; this driver does not scroll "
             "the tech tree"
         )
-    return x, y
+    return x + geometry.origin[0], y + geometry.origin[1]
 
 
 def box_name(place: TechPlace) -> str:
@@ -186,12 +204,15 @@ def resolve(
     coordinates: dict[str, tuple[int, int]],
     screen: tuple[int, int] | None,
     wanted: set[str] | frozenset[str] = frozenset(),
+    geometry: Callable[[], Geometry] | None = None,
 ) -> Resolved:
     """Derive the extra arguments and computed click points for one action.
 
     ``wanted`` is what the script uses (its placeholders and click targets): only
     those are derived, so a script that never types a focus name does not need
-    the localisation to run."""
+    the localisation to run. ``geometry`` gives the window the points are placed
+    in (uilayout.py), called only when a point is computed; it may raise
+    LayoutRefused, which refuses the action before any input."""
     args = dict(arguments)
     computed: dict[str, tuple[int, int]] = {}
     if name == "set_national_focus" and "focus_name" in wanted:
@@ -218,5 +239,39 @@ def resolve(
         if place is None:
             raise Unresolvable(f"no folder position for technology {tech} in this playset")
         args["tech_folder"] = place.folder
-        computed["research.tech_point"] = tech_point(place, coordinates, screen, tech, index.tech_gridboxes)
+        try:
+            window = geometry() if geometry else None
+            computed["research.tech_point"] = tech_point(
+                place, coordinates, screen, tech, index.tech_gridboxes, window)
+            _research_panel(computed, coordinates, index, place.folder, wanted, window, screen)
+        except LayoutRefused as why:
+            raise Unresolvable(str(why)) from None
     return Resolved(args, computed)
+
+
+def _research_panel(
+    computed: dict[str, tuple[int, int]],
+    coordinates: dict[str, tuple[int, int]],
+    index: IdentifierIndex,
+    folder: str,
+    wanted: set[str] | frozenset[str],
+    window: Geometry | None,
+    screen: tuple[int, int] | None,
+) -> None:
+    """The first research slot and the technology's folder tab, from the interface
+    files, unless the operator recorded them (a recorded point wins)."""
+    tab = f"research.tab.{folder}"
+    todo = []
+    if "research.free_slot" in wanted and "research.free_slot" not in coordinates:
+        todo.append("research.free_slot")
+    if (tab in wanted or "research.tab.{tech_folder}" in wanted) and tab not in coordinates:
+        todo.append(tab)
+    if not todo:
+        return
+    if window is None:
+        window = Geometry(*(screen or (1920, 1080)))
+    layout = index.research_layout()      # LayoutRefused: nothing derived, nothing sent
+    if "research.free_slot" in todo:
+        computed["research.free_slot"] = layout.slot_centre(0, window)
+    if tab in todo:
+        computed[tab] = layout.tab_centre(folder, window)

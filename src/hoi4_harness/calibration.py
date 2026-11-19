@@ -30,21 +30,13 @@ DEFAULT_FILENAME = "calibration.json"
 # uses for set_national_focus, start_research, queue_construction, set_production
 # (a draft) -- tests/test_ui_resolve.py keeps the two in step. Where a target is
 # templated the values are written out (every building, every tech folder).
+# The research slot and folder tabs are not asked for: they are derived from the
+# game's interface files (uilayout.py). Name them (`calibrate research.free_slot
+# research.tab.infantry_folder`) to record an override.
 # Not listed, because they depend on the action: politics.slot.<slot> and
 # politics.candidate.<advisor_id> (hire_advisor), production.line.<equipment>, and
 # optionally research.tree.origin / research.tech.<id> to correct the tech tree.
 DEFAULT_TARGETS = (
-    "research.free_slot",
-    "research.tab.infantry_folder",
-    "research.tab.support_folder",
-    "research.tab.armour_folder",
-    "research.tab.artillery_folder",
-    "research.tab.nsb_armour_folder",
-    "research.tab.air_techs_folder",
-    "research.tab.bba_air_techs_folder",
-    "research.tab.naval_folder",
-    "research.tab.industry_folder",
-    "research.tab.electronics_folder",
     "construction.building.civilian_factory",
     "construction.building.military_factory",
     "construction.building.dockyard",

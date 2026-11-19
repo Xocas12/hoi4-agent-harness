@@ -26,12 +26,14 @@ from pathlib import Path
 
 from ..calibration import load_calibration, screen_size
 from ..observation.builder import snapshot
+from ..paths import find_game_dir
 from ..types import ActionCall, ActionResult, GameState
+from ..uilayout import DisplaySettings, Geometry, LayoutRefused, geometry_for, read_display_settings
 from .base import AdapterInfo, GameAdapter
 from .keys import GuiKeys, ScanCodeKeys
-from .ui_resolve import COMPUTED_TARGETS, Unresolvable, resolve
+from .ui_resolve import Unresolvable, is_computed, resolve
 from .ui_scripts import Step, placeholders, unsafe_escape, verify
-from .window import FocusCheck, check_focus
+from .window import FocusCheck, check_focus, client_rect
 
 #: Panel and clock hotkeys for HOI4 1.19.5. Where the game states a binding it is
 #: in ``interface/topbar.gui`` (a button's ``shortcut =``; see ``topbar_shortcuts``);
@@ -99,6 +101,17 @@ class NotFocused(RuntimeError):
     """The game was not the focused window, so nothing was sent."""
 
 
+def default_display_settings() -> DisplaySettings | None:
+    """The display settings of the user's game directory, or None when unreadable."""
+    user_dir = find_game_dir()
+    if user_dir is None:
+        return None
+    try:
+        return read_display_settings(user_dir)
+    except LayoutRefused:
+        return None
+
+
 class MouseDisabled(RuntimeError):
     """A step needed the mouse and this driver was built without one (headless)."""
 
@@ -126,6 +139,9 @@ class InputConfig:
     #: The resolution the calibration was captured at (set by load_calibration);
     #: the bound a computed click point is checked against.
     screen: tuple[int, int] | None = None
+    #: Pin the window the computed points are placed in (what tests and a fixed
+    #: setup pass); by default it is read from the settings and the live window.
+    geometry: Geometry | None = None
     #: False builds a keyboard-only driver: ``click`` refuses, so no path through
     #: it can reach pyautogui or move the pointer (headless play).
     mouse: bool = True
@@ -151,6 +167,8 @@ class InputDriverAdapter(GameAdapter):
         gui=None,
         keys=None,
         index=None,
+        display_settings: Callable[[], DisplaySettings | None] | None = None,
+        window_rect: Callable[[], tuple[int, int, int, int] | None] | None = None,
     ):
         """``gui`` stands in for pyautogui -- what tests inject, so a test suite
         for an input driver cannot drive the machine it runs on.
@@ -174,12 +192,33 @@ class InputDriverAdapter(GameAdapter):
         self._keys_override = keys
         self._keys_cache = None
         self.index = index
+        self._display_settings = display_settings or (lambda: default_display_settings())
+        self._window_rect = window_rect or (lambda: client_rect())
         #: Click points computed for the action in flight (see ui_resolve.py).
         self._computed: dict[str, tuple[int, int]] = {}
         #: Whether the game was running when the clock was last seen: True,
         #: False, or None for not known. It decides whether to look or to press
         #: first, never whether to look at all (see _drive_clock).
         self._running: bool | None = None
+
+    def geometry(self) -> Geometry:
+        """The window computed click points are placed in. Raises LayoutRefused.
+
+        Pinned, else the calibration's screen (checked against the real screen when
+        it was loaded) with the settings' UI scale, else -- live -- the settings
+        checked against the window actually on screen: a mismatch, or a window or
+        settings that cannot be read, refuses. A dry run sends nothing, so it
+        falls back to the settings' size or 1920x1080 rather than refusing."""
+        if self.config.geometry is not None:
+            return self.config.geometry
+        settings = self._display_settings()
+        scale = settings.gui_scale if settings else 1.0
+        if self.config.screen is not None:
+            return Geometry(*self.config.screen, gui_scale=scale)
+        if self.dry_run:
+            size = settings.resolution if settings and settings.resolution else (1920, 1080)
+            return Geometry(*size, gui_scale=scale)
+        return geometry_for(settings, self._window_rect())
 
     def attach_reader(self, read_state: Callable[[], GameState]) -> None:
         """Give the writer eyes: the reader that verifies what it did."""
@@ -287,14 +326,15 @@ class InputDriverAdapter(GameAdapter):
             return self._result(call, False, "rejected", f"the {call.name} script {escape}")
         try:
             resolved = resolve(call.name, call.arguments, self.index, self.config.coordinates,
-                               self.config.screen, wanted=_wanted(template))
+                               self.config.screen, wanted=_wanted(template),
+                               geometry=self.geometry)
         except Unresolvable as exc:
             return self._result(call, False, "rejected", f"{exc}; nothing was sent")
         self._computed = resolved.coordinates
         steps = _expand_repeats([step.fill(resolved.arguments) for step in template])
         have = set(self.config.coordinates) | set(self._computed)
         missing = [s.value for s in steps if s.kind == "click" and s.value not in have
-                   and s.value not in COMPUTED_TARGETS]
+                   and not is_computed(s.value)]
         if missing:
             # Before any input: half a script is worse than none.
             return self._result(call, False, "rejected", (

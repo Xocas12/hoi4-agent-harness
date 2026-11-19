@@ -46,3 +46,11 @@ def _no_network_no_shared_cache(monkeypatch, tmp_path):
         raise AssertionError("a test tried to fetch a Workshop page; inject opener=")
 
     monkeypatch.setattr("hoi4_harness.modcontext.workshop._default_open", refuse)
+
+
+@pytest.fixture(autouse=True)
+def _no_real_display(monkeypatch):
+    """The click geometry is read from the user's settings and the live window; a
+    test pins it (or injects the readers) instead of depending on this machine."""
+    monkeypatch.setattr("hoi4_harness.adapters.input_driver.default_display_settings", lambda: None)
+    monkeypatch.setattr("hoi4_harness.adapters.input_driver.client_rect", lambda: None)
