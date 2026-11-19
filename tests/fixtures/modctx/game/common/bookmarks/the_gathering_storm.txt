@@ -1,0 +1,3 @@
+bookmarks = {
+	bookmark = { name = B date = 1936.1.1.12 default = yes }
+}

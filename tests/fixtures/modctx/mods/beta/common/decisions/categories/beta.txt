@@ -1,0 +1,4 @@
+swe_cat = {
+	priority = 99
+	allowed = { tag = SWE }
+}

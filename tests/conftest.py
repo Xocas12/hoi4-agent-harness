@@ -33,3 +33,16 @@ def _no_real_input(monkeypatch):
 
     monkeypatch.setattr("hoi4_harness.adapters.keys._sendinput", refuse)
     monkeypatch.setitem(sys.modules, "pyautogui", None)   # `import pyautogui` -> ImportError
+
+
+@pytest.fixture(autouse=True)
+def _no_network_no_shared_cache(monkeypatch, tmp_path):
+    """The Workshop brief reads a disk cache and, when allowed, the network. A
+    test gets an empty cache of its own, and a fetch that was not injected fails
+    the test instead of reaching steamcommunity.com."""
+    monkeypatch.setenv("HOI4_CACHE_DIR", str(tmp_path / "hoi4-cache"))
+
+    def refuse(*_args, **_kwargs):
+        raise AssertionError("a test tried to fetch a Workshop page; inject opener=")
+
+    monkeypatch.setattr("hoi4_harness.modcontext.workshop._default_open", refuse)

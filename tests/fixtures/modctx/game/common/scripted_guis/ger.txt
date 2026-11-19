@@ -1,0 +1,3 @@
+scripted_gui = {
+	ger_cat_window = { context_type = player_context }
+}

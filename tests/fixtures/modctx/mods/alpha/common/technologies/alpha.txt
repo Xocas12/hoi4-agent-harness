@@ -1,0 +1,4 @@
+technologies = {
+	alpha_rifle = { folder = { name = infantry_folder position = { x = 2 y = 1950 } } start_year = 1950 }
+	base_rifle = { folder = { name = infantry_folder position = { x = 0 y = 0 } } start_year = 1936 }
+}

@@ -1,0 +1,12 @@
+ideas = {
+	country = {
+		SWE_neutrality = { allowed = { original_tag = SWE } modifier = { stability_factor = 0.1 } }
+		GER_reich = { allowed = { original_tag = GER } }
+		hidden_ideas = { }
+	}
+	economy = {
+		law = yes
+		civilian_economy = { cost = 100 default = yes }
+		war_economy = { cost = 150 allowed = { NOT = { tag = FIN } } }
+	}
+}
