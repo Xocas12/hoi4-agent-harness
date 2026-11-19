@@ -92,6 +92,46 @@ with each enemy's divisions and surrender progress, the independent countries le
 run has spent."""
 
 
+RIVAL = """You are the grand strategist of {tag}, one country in a single-player game that a
+person is also playing. The person plays a different country, and may well be your enemy. {tag}
+is run by the game's own AI: it chooses the national focus and the research, builds and
+produces, designs and deploys divisions and moves every army. You cannot do any of that, and the
+tools for it are not offered. What you have is the layer above:
+- set_ai_directive and clear_ai_directives say who the AI should act on (invade, protect,
+  contain, befriend, antagonize, ignore). set_ai_posture sets how hard it presses, for every
+  front or for the front facing one country (theater). take_decision takes a decision the AI does
+  not; hire_advisor fills a slot it left empty, with {tag}'s political power.
+- note keeps a plan across wakes. advance_time days says how long until your next scheduled
+  review (7 to 90 days). You are also woken when a war starts or ends.
+
+Three facts about how you play, none of them negotiable:
+- {acting} Every action you take is QUEUED, and the result says so. It has not happened, and
+  nothing in the next brief will show it until it has. It is checked again when it runs and
+  reported as stale if the world moved. Plan for that delay, and do not repeat a call that is
+  already queued.
+- You do not own the clock. The person does: they pause, unpause and change the speed when they
+  like. Game time passes only while they let it, so a long pause means no time and no wake-up.
+- You know what {tag} can know, and nothing else. The brief is {tag}'s own numbers, its wars and
+  the divisions the game reports for its enemies. You cannot see the person's plans, economy or
+  orders, and you must not guess at them as if you could. If the person declares war on {tag},
+  that shows up as a war; that is all you are told.
+
+Directives and postures are standing orders: they stay until you change them. Steer, and let the
+AI run the country."""
+
+#: What the third fact says the actions' windows are, by ``rival_act_when``.
+RIVAL_WINDOWS = {
+    "paused": ("Your actions are typed into the game's console only while the person has the "
+               "game paused and is away from the keyboard, so they run in the person's pauses, "
+               "not on your schedule."),
+    "handover": ("Your actions are typed into the game's console only when the person hands "
+                 "you the keyboard on purpose, so they run when the person decides, not on "
+                 "your schedule."),
+    "never": ("Your actions are not run at all: each is shown to the person as advice, and "
+              "they decide whether to do it themselves."),
+}
+
+
 def playset_note(name: str) -> str:
     """Said once, in the stable prefix, when the game is not the one the model
     remembers. Guidance packs that assert historical dates stay as written; this
@@ -117,6 +157,8 @@ def build_system(
     headless_reader: str = "log+save",
     playset_context: str = "",
     campaign: bool = False,
+    rival: str = "",
+    rival_when: str = "paused",
 ) -> str:
     """Assemble the system prompt.
 
@@ -133,7 +175,9 @@ def build_system(
         # Sits with the mechanics, before any guidance: it corrects the fiction
         # that the harness executes what the model calls.
         parts.append(ADVISOR)
-    if campaign:
+    if rival:
+        parts.append(RIVAL.format(tag=rival, acting=RIVAL_WINDOWS.get(rival_when, RIVAL_WINDOWS["paused"])))
+    elif campaign:
         # Instead of the headless note: it lists what the mouse-only actions cannot do, and
         # a campaign's tool list is narrower than that for a different reason.
         parts.append(CAMPAIGN)
@@ -202,6 +246,8 @@ def system_for(config, index=None) -> str:
         headless_reader=config.headless_reader,
         playset_context=context,
         campaign=getattr(config, "campaign", False),
+        rival=getattr(config, "rival", ""),
+        rival_when=getattr(config, "rival_act_when", "paused"),
     )
 
 
