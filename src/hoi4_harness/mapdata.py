@@ -212,6 +212,54 @@ def scan_picture(bmp: Bmp24, by_colour: dict[int, int]):
     return count, sum_x2, sum_y, box, edges, unknown
 
 
+# --- unit stacks ---------------------------------------------------------------
+
+#: What the ``type`` column of ``map/unitstacks.txt`` means, as far as it could
+#: be read off the 1.19.5 file (rows are ``province;type;x;height;z;rotation;scale``;
+#: ``x``/``z`` are map units, so image y = map height - z). Only 38 is relied on.
+STACK_TYPES = {
+    0: "unit stack, centre slot (every province has one)",
+    **{i: "unit stack, further slot around the centre (land provinces)" for i in range(1, 9)},
+    9: "flank slot, left of centre (rotation +1.57)",
+    10: "flank slot, right of centre (rotation -1.57)",
+    **{i: "outer-ring slot (large provinces only)" for i in range(11, 19)},
+    19: "extra slot (some provinces; purpose not identified)",
+    20: "extra slot (some provinces; purpose not identified)",
+    **{i: f"copy of slot {i - 21} (second layer; purpose not identified)"
+       for i in range(21, 30)},
+    **{i: "copy of an outer-ring slot (purpose not identified)" for i in range(30, 38)},
+    38: "victory-point / city marker anchor (every province has one; the game "
+        "draws a VP marker here when the province holds a victory point)",
+}
+VP_MARKER = 38
+
+
+@dataclass(frozen=True)
+class StackPoint:
+    x: float          # image x, map pixels
+    y: float          # image y, map pixels, down from the top (= map height - z)
+    height: float     # the file's y (altitude), not a pixel coordinate
+    rotation: float
+    scale: float
+
+
+def read_unitstacks(text: str, map_height: int = 2048) -> dict[int, dict[int, StackPoint]]:
+    """Parse ``map/unitstacks.txt`` into ``{province: {type: StackPoint}}``.
+    Malformed rows are skipped; a repeated (province, type) keeps the last."""
+    out: dict[int, dict[int, StackPoint]] = {}
+    for line in text.splitlines():
+        parts = line.split("#", 1)[0].strip().split(";")
+        if len(parts) < 7:
+            continue
+        try:
+            prov, kind = int(parts[0]), int(parts[1])
+            x, height, z, rot, scale = (float(v) for v in parts[2:7])
+        except ValueError:
+            continue
+        out.setdefault(prov, {})[kind] = StackPoint(x, map_height - z, height, rot, scale)
+    return out
+
+
 # --- the layer ----------------------------------------------------------------
 
 
@@ -270,6 +318,27 @@ class MapLayer:
     _bmp_path: Path | None = field(default=None, repr=False)
     _state_of: dict[int, int] = field(default_factory=dict, repr=False)
     _interior: dict[tuple[str, int], tuple[int, int]] = field(default_factory=dict, repr=False)
+    _stacks: dict[int, dict[int, StackPoint]] | None = field(default=None, repr=False)
+    _stacks_path: Path | None = field(default=None, repr=False)
+
+    # --- unit stacks ----------------------------------------------------------
+
+    def stacks(self, province: int) -> dict[int, StackPoint]:
+        """Every stack point of ``province`` by type (empty if the file is absent)."""
+        if self._stacks is None:
+            path = self._stacks_path
+            text = path.read_text(encoding="utf-8-sig", errors="replace") if path else ""
+            self._stacks = read_unitstacks(text, self.height)
+        return self._stacks.get(province, {})
+
+    def anchor(self, province: int, kind: int = VP_MARKER) -> tuple[float, float]:
+        """Where the game anchors a stack of ``kind`` (default: the VP marker) in
+        ``province``, in map pixels. Better than the centroid for a city, which
+        can sit anywhere in the province. Raises MapError when there is none."""
+        point = self.stacks(province).get(kind)
+        if point is None:
+            raise MapError(f"province {province} has no stack of type {kind} in map/unitstacks.txt")
+        return point.x, point.y
 
     # --- loading --------------------------------------------------------------
 
@@ -295,6 +364,7 @@ class MapLayer:
                 _write_cache(cache_path, layer, key)
         layer.cache_key = key
         layer._bmp_path = files["provinces"]
+        layer._stacks_path = resolve_file(playset, "map/unitstacks.txt")
         layer._read_states(playset)
         return layer
 
