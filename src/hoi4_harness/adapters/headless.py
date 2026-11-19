@@ -315,7 +315,7 @@ def build_headless(config: HarnessConfig, fake=None) -> CompositeAdapter:
         fake = build_fake(config)
     send = sleep = focus_check = None
     if fake is not None:
-        send, sleep, focus_check = fake.send, fake.sleep, _always_focused
+        send, sleep, focus_check = fake.send, fake.sleep, fake.focus_check
     elif config.fake_game_files is not None:
         from ..fakegame import FileKeys
 
