@@ -19,7 +19,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from .progress import EVENTS_FILE, PROGRESS_FILE
-from .runner import CAMPAIGN_LOG
+from .runner import CAMPAIGN_LOG, load_state, resume_command
+from .saves import load_harness_saves
 
 REPORT_FILE = "campaign-report.md"
 #: Actions that are bookkeeping, not decisions about the war.
@@ -212,6 +213,34 @@ def _how_it_ended(data: RunData) -> list[str]:
     return lines
 
 
+def _where_to_resume(data: RunData) -> list[str]:
+    """Where the run stopped and the save and command to pick it up from; empty when it
+    reached the end date."""
+    end = data.run_end()
+    if end is not None and end.get("reached_end_date") and not end.get("stopped_reason"):
+        return []
+    state = load_state(data.run_dir)
+    last = data.progress[-1]["date"] if data.progress else None
+    stopped_at = (end or {}).get("end_date") or state.get("stopped_at") or last or "?"
+    reason = (end or {}).get("stopped_reason") or state.get("stopped_reason")
+    out = [f"The run stopped at **{stopped_at}**"
+           + (f": {reason}." if reason else " with no recorded reason (it was interrupted).")]
+    save_dir = Path(state["save_dir"]) if state.get("save_dir") else None
+    saves = load_harness_saves(data.run_dir)["saves"]
+    on_disk = [s for s in saves if save_dir is not None and (save_dir / s["name"]).exists()]
+    if on_disk:
+        newest = on_disk[-1]
+        out.append(f"Newest recovery save the harness took: `{newest['name']}` "
+                   f"(game date {newest.get('date') or '?'}) in `{save_dir}`.")
+        out.append("Load it in the game (Load game), pause, bring the game window to the front, "
+                   "then continue the run with:")
+    else:
+        out.append("No recovery save of this run is on disk. If the game is still open, pause it and "
+                   "bring it to the front; otherwise start from the newest save you have. Then:")
+    out += ["", "```", resume_command(data.run_dir, state.get("profile")), "```"]
+    return out
+
+
 def _summary(data: RunData) -> list[str]:
     rows = data.progress
     first, last = _first_with(rows, "owned_states"), _last_with(rows, "owned_states")
@@ -389,6 +418,9 @@ def render_report(data: RunData) -> str:
     out = [f"# Campaign report: {data.run_dir.name}", ""]
     out += ["## Summary", "", *_summary(data), ""]
     out += ["## How the run ended", "", *_how_it_ended(data), ""]
+    resume = _where_to_resume(data)
+    if resume:
+        out += ["## Where to resume", "", *resume, ""]
     out += ["## Wars", "", *_war_timeline(data), ""]
     out += ["## Territory over time", "", *_territory(data), ""]
     out += ["## What the model decided, and why", "",

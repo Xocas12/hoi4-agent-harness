@@ -39,6 +39,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+from contextlib import nullcontext
 from pathlib import Path
 
 from . import __version__
@@ -53,6 +54,7 @@ from .confirm import TerminalConfirmer
 from .env import HOI4Env
 from .eval.runner import PlaysetMismatch
 from .guidance import available as guidance_packs
+from .keepawake import keep_awake_for
 from .replay import ReplayError, list_turns, replay_turn
 
 
@@ -285,7 +287,8 @@ def cmd_campaign(args: argparse.Namespace, config: HarnessConfig) -> int:
 
     try:
         _, summary = run_campaign(config, resume=bool(getattr(args, "resume", False)),
-                                  quiet=args.quiet, echo=echo)
+                                  quiet=args.quiet, echo=echo,
+                                  profile=getattr(args, "profile", None))
     except CampaignStartError as exc:
         print(f"campaign: {exc}", file=sys.stderr)
         return 2
@@ -323,6 +326,21 @@ def cmd_rival(args: argparse.Namespace, config: HarnessConfig) -> int:
     return 0 if summary["reached_end_date"] or not summary["stopped_reason"] else 1
 
 
+def cmd_campaign_check(args: argparse.Namespace) -> int:
+    """``campaign-check``: the unattended-night preflight, nothing touched (docs/campaign.md)."""
+    from .campaign.preflight import FAIL, WARN, run_checks
+
+    config = _config_from_args(args)
+    checks = run_checks(config, user_dir=Path(args.user_dir) if args.user_dir else None,
+                        max_usd=args.max_usd)
+    for check in checks:
+        print(check.line())
+    fails = sum(c.status == FAIL for c in checks)
+    warns = sum(c.status == WARN for c in checks)
+    print(f"{len(checks)} checks: {fails} FAIL, {warns} WARN")
+    return 1 if fails else 0
+
+
 def cmd_campaign_report(args: argparse.Namespace) -> int:
     from .campaign.report import write_report
 
@@ -343,7 +361,8 @@ def cmd_play(args: argparse.Namespace) -> int:
     if config.campaign:
         return cmd_campaign(args, config)
     if config.rival:
-        return cmd_rival(args, config)
+        with keep_awake_for(config, lambda line: print(line, file=sys.stderr)):
+            return cmd_rival(args, config)
     if config.handover and config.advisor:
         print("play: --advisor never acts, so there is nothing to hand over; pick one",
               file=sys.stderr)
@@ -388,7 +407,11 @@ def cmd_play(args: argparse.Namespace) -> int:
             echo("confirm: the gate is off (--allow-all), so nothing will be asked")
         elif config.dry_run:
             echo("confirm: dry run refuses irreversible actions before the prompt; use --live")
-    report = loop.run(config.turns)
+    # Only a headless run types into the game; keep the PC awake for it (no-op when not live).
+    awake = (keep_awake_for(config, lambda line: print(line, file=sys.stderr))
+             if config.adapter == "headless" else nullcontext())
+    with awake:
+        report = loop.run(config.turns)
     loop.memory.save(run_dir / "memory.json")
     print(json.dumps(report.to_dict(), indent=2, default=str))
     return 0
@@ -1146,6 +1169,17 @@ def build_parser() -> argparse.ArgumentParser:
     play.add_argument("--confirm", action="store_true",
                       help="ask a person before every irreversible action (needs --live)")
     play.set_defaults(func=cmd_play)
+
+    campaign_check = sub.add_parser(
+        "campaign-check",
+        help="before leaving a campaign overnight: check the mod, settings, disk, key, budget and "
+             "power plan without touching the game (exit 1 on any FAIL)")
+    campaign_check.add_argument("--profile", required=True, help="the campaign profile to check")
+    campaign_check.add_argument("--max-usd", type=float, help="the cap you will run with")
+    campaign_check.add_argument("--user-dir", dest="user_dir", metavar="PATH",
+                                help="the Hearts of Iron IV user directory (default: found next to "
+                                     "HOI4_SAVE_DIR, else searched for)")
+    campaign_check.set_defaults(func=cmd_campaign_check)
 
     report = sub.add_parser(
         "campaign-report", help="write the markdown report of a campaign run directory")

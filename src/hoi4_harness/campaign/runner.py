@@ -34,8 +34,10 @@ from ..agent.loop import AgentLoop, RunReport, Supervisor
 from ..agent.memory import Memory
 from ..config import HarnessConfig
 from ..env import HOI4Env
+from ..keepawake import keep_awake_for
 from ..types import GameState
 from .progress import ProgressTracker
+from .saves import SaveTracker
 
 CAMPAIGN_LOG = "campaign.log"
 STATE_FILE = "campaign_state.json"
@@ -85,6 +87,13 @@ def save_state(run_dir: Path, **updates) -> None:
         pass
 
 
+def _save_dir(config: HarnessConfig) -> Path | None:
+    if config.save_dir:
+        return Path(config.save_dir)
+    from ..adapters.savegame import find_save_dir
+    return find_save_dir()
+
+
 def _months_between(earlier: str, later: str) -> int:
     try:
         a, b = date.fromisoformat(earlier), date.fromisoformat(later)
@@ -103,6 +112,8 @@ class CampaignSupervisor(Supervisor):
         self.loop: AgentLoop | None = None
         self.last_save: str | None = None
         self.saves_taken = 0
+        self.saves = SaveTracker(run_dir, _save_dir(config), config.campaign_keep_saves,
+                                 log=log.line) if not config.dry_run else None
         saved = load_state(run_dir)
         self.last_save = saved.get("last_recovery_save")
         try:
@@ -125,6 +136,8 @@ class CampaignSupervisor(Supervisor):
                     "ai=0): human_ai was toggled off, or the game was restarted. Not "
                     "playing on as a human country; resume to set it up again")
         self._recovery_save(state)
+        if self.saves is not None:
+            self.saves.prune()
         return None
 
     def after_turn(self, state: GameState, *, woke: bool, reason: str, actions: list[str],
@@ -169,6 +182,8 @@ class CampaignSupervisor(Supervisor):
         if console is None:
             return
         try:
+            if self.saves is not None:
+                self.saves.before_send(state.date)
             console.send_lines(["savegame"])
         except GameLost:
             raise
@@ -291,6 +306,7 @@ def run_campaign(
     echo: Callable[[str], None] | None = None,
     env: HOI4Env | None = None,
     until: str | None = None,
+    profile: str | Path | None = None,
 ) -> tuple[RunReport, dict]:
     """Run a campaign to its end date or its first reason to stop.
 
@@ -299,14 +315,24 @@ def run_campaign(
     ready and ``GameLost`` never: that is a clean stop with a reason. Any other failure is
     written to ``campaign.log`` and the transcript, then raised, so a crash is loud and
     the run can be resumed."""
-    from ..agent.llm import build_llm
-    from ..cli import _env_from_config
-
     _check_ready(config, planner)
     run_dir = Path(config.run_dir)
     run_dir.mkdir(parents=True, exist_ok=True)
     out = echo or (lambda line: None)
     log = CampaignLog(run_dir / CAMPAIGN_LOG, None if quiet else out)
+    if profile:
+        save_state(run_dir, profile=str(profile))
+    # A sleeping or locked PC types into nothing: hold it awake for the whole run (a no-op
+    # for a dry run or the fake game), and let go however the run ends.
+    with keep_awake_for(config, log.line):
+        return _run(config, planner, resume, env, until, run_dir, log)
+
+
+def _run(config: HarnessConfig, planner: LLMClient | None, resume: bool, env: HOI4Env | None,
+         until: str | None, run_dir: Path, log: CampaignLog) -> tuple[RunReport, dict]:
+    from ..agent.llm import build_llm
+    from ..cli import _env_from_config
+
     env = env or _env_from_config(config)
     adapter = env.adapter
     end = until or config.campaign_until
@@ -328,6 +354,7 @@ def run_campaign(
         raise
     if watchdog is not None:
         watchdog.reset()
+    save_state(run_dir, save_dir=str(_save_dir(config) or ""))
     supervisor = CampaignSupervisor(config, env, tracker, log, run_dir, watchdog)
     loop = AgentLoop(
         env=env,
@@ -353,6 +380,11 @@ def run_campaign(
         raise
     finally:
         loop.memory.save(run_dir / "memory.json")
+        if supervisor.saves is not None:
+            try:
+                supervisor.saves.prune()     # the last save is on disk by now: claim it, trim
+            except OSError:
+                pass
     try:
         # The last turn's end state, which no turn start saw: the series ends where the run did.
         tracker.record(env.read_state(), loop.budget.summary(), report.turns)
@@ -361,6 +393,12 @@ def run_campaign(
     reason = report.stopped_reason or (
         "reached the end date" if report.reached_end_date else "ran out of turns")
     log.line(f"STOP: {reason} at {report.end_date or '?'}; spent ${loop.budget.spend.usd:.2f}")
+    save_state(run_dir, stopped_reason=report.stopped_reason, stopped_at=report.end_date,
+               reached_end_date=report.reached_end_date)
+    if report.stopped_reason or not report.reached_end_date:
+        for line in resume_lines(run_dir, config.save_dir and Path(config.save_dir)
+                                 or _save_dir(config)):
+            log.line(line)
     summary = {
         "stopped_reason": report.stopped_reason, "reached_end_date": report.reached_end_date,
         "end_date": report.end_date, "start_date": report.start_date, "turns": report.turns,
@@ -368,6 +406,25 @@ def run_campaign(
         "days_played": days_between(report.start_date, report.end_date),
     }
     return report, summary
+
+
+def resume_command(run_dir: Path, profile: str | None = None) -> str:
+    """The exact line that continues a stopped run (docs/campaign.md)."""
+    return (f"hoi4-harness play --campaign --live --resume --profile {profile or '<profile.json>'} "
+            f"--run-dir {run_dir} --max-usd <N more if the budget was the reason>")
+
+
+def resume_lines(run_dir: Path, save_dir: Path | None) -> list[str]:
+    """Where a stopped run can be picked up: the newest harness save and the command."""
+    tracker = SaveTracker(run_dir, save_dir, 1)
+    tracker.collect()
+    latest = tracker.latest()
+    state = load_state(run_dir)
+    where = (f"load the recovery save {latest['name']} (taken at {latest.get('date') or '?'}) in "
+             f"{save_dir}" if latest else "no recovery save of this run is on disk: "
+             "continue the game as it is if it is still open")
+    return [f"RESUME: {where}; pause it, bring the game window to the front, then run: "
+            + resume_command(run_dir, state.get("profile"))]
 
 
 def _objective_label(config: HarnessConfig) -> str:

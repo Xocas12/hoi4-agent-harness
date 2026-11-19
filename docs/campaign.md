@@ -111,17 +111,56 @@ a reason, 2 could not start, 3 crashed.
 | Budget | stops with the game paused and `budget: ...` as the reason; `campaign_on_budget = "coast"` lets the AI play on with no calls |
 | Game process gone (`tasklist`, `campaign_game_process`) or `game.log` silent for `campaign_silence_minutes` (20) while the clock runs | `GameLost`: a clean stop with the reason; also the case of the mod not reporting for the player |
 | `ai=0` after the run started | stops: `human_ai` was toggled off or the game restarted; resume sets it up again |
-| Game window not in front | every key is gated on it; the harness waits, retrying every minute, up to `campaign_focus_wait_minutes` (360), then stops. The game keeps running meanwhile. Nothing is typed elsewhere |
+| Game window not in front | every key is gated on it; the harness waits, retrying every minute (logged), up to `campaign_focus_wait_minutes` (360) in all, then stops. The game keeps running meanwhile. Nothing is typed elsewhere, and the window is not pulled forward unless `campaign_take_focus` is true (default false: it would steal the keyboard from whatever you are doing) |
 | Harness crash | traceback summary in `campaign.log` and a `crash` record; resume with `--resume` |
 
 A recovery `savegame` goes out every `campaign_save_months` (6) in-game months, about 66 MB
-each (more late); the harness never deletes saves. It never presses Escape (a test checks
+each (more late). The save folder is OneDrive-synced, so they are pruned: the harness keeps the
+first save of the run and the newest `campaign_keep_saves` (6) and deletes the older ones. It
+only ever deletes a file that appeared in the folder after it asked for a save (the names it
+saw are in `harness_saves.json` in the run directory, with each file's size and modification
+time), and only while the file is unchanged; your own saves, including ones named like the
+game's (`GER_1938_...`), are never touched. It never presses Escape (a test checks
 the key log). `human_ai` is a toggle: it is sent only when the log says `ai=0`, once, and
 never on a resumed run that finds `ai=1`.
 
 Files in the run directory: `transcript.jsonl` (everything), `campaign.log` (a line a turn),
 `campaign_progress.jsonl`, `campaign_events.jsonl`, `campaign_state.json`, `memory.json`,
 `campaign-report.md`.
+
+## Before you leave it overnight
+
+1. `hoi4-harness campaign-check --profile profiles/campaign-ger-world.json --max-usd 40`
+   (reads files and `powercfg` only; touches nothing, prints no key). It checks that the
+   installed mod (`<Documents>/Paradox Interactive/Hearts of Iron IV/mod/llm_bridge` and
+   `llm_bridge.mod`, Documents possibly under OneDrive) matches `mod/llm_bridge` byte for byte
+   and is schema v5, that `dlc_load.json` enables it, `save_as_binary=no`, that
+   `HOI4_LOG_PATH`, `HOI4_SAVE_DIR` and `HOI4_GAME_DIR` exist, free disk for the saves (after
+   pruning), that the provider's API key variable is present, that `--max-usd` clears the
+   reserve and the profile's prices, and the power plan's sleep / display / lock timeouts on
+   AC. One PASS / WARN / FAIL line each; exit 1 on any FAIL. Fix every FAIL; read every WARN.
+2. The PC is kept awake for you: a live run holds `SetThreadExecutionState` (system and display
+   required) and logs `keep-awake: held` at the start and `released` at the end, on any exit.
+   A locked or sleeping screen would swallow every key, so do not lock it (Win+L) or sign out,
+   and do not close the laptop lid unless the power plan ignores it. The hold is a no-op off
+   Windows and on the fake game; plan timeouts the check lists as covered rely on it.
+3. Game loaded on the new 1936 game as Germany, paused, window in front, and nothing else
+   that grabs focus is going to open (updates, chat, a notification that steals the window). If
+   one does, the harness waits and logs it; it never types into another window.
+4. The pre-flight run of the checklist below passed, then start the real run with `--resume`.
+5. Look at `tail -f runs/<run>/campaign.log` once after the first review, then leave it.
+
+### When it stops, and how to carry on
+
+Every stop (game process gone, `game.log` silent for `campaign_silence_minutes`, the window
+never came back, the budget, `ai=0`, a crash) writes `STOP: <reason>` to `campaign.log` and a
+`game_lost` / `run_end` / `crash` record to the transcript, releases the keep-awake and leaves
+the game as it is. A stop that is not the end date also logs a `RESUME:` line, and
+`hoi4-harness campaign-report --run-dir runs/<run>` has a "Where to resume" section: where it
+stopped, why, the newest recovery save the harness took, and the exact command. To continue:
+load that save in the game (or leave the game as it is if it is still running), pause it, bring
+the window to the front, and run the printed line (the one under "the run", with `--resume`;
+add `--max-usd N` more if the budget was the reason).
 
 ## Live pre-flight checklist
 
@@ -144,7 +183,8 @@ Files in the run directory: `transcript.jsonl` (everything), `campaign.log` (a l
    intended)`. Within a month or two of a standing `invade` the AI should declare the war
    (`war declared: GER on X` in the brief); if no war comes, the AI does not act on the
    directive and the experiment has nothing to steer.
-6. Disk: ~3 GB of recovery saves over the run.
+6. Disk: recovery saves are pruned to the first and the newest `campaign_keep_saves`, so
+   about 0.6-1 GB at a time instead of ~3 GB over the run (`campaign-check` computes it).
 
 ## Cost estimate
 

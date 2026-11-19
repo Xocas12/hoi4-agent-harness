@@ -292,12 +292,19 @@ class HarnessConfig:
     campaign_wake_gap_days: int = 7
     #: A recovery ``savegame`` every this many in-game months (0: none). 66 MB each.
     campaign_save_months: int = 6
+    #: Keep the newest this-many saves the harness took, plus the first of the run, and
+    #: delete the older ones it made (never one it did not make; campaign/saves.py).
+    campaign_keep_saves: int = 6
     #: Stop, with a reason, when the game log has grown by nothing for this long while
     #: the game should be running.
     campaign_silence_minutes: float = 20.0
     #: How long the focus guard waits for the game to come back to the front, in all,
     #: before it gives up and stops the run.
     campaign_focus_wait_minutes: float = 360.0
+    #: Opt in to bringing the game window to the front when it is not there (Windows
+    #: ``SetForegroundWindow``). Off by default: the harness waits and never takes the
+    #: keyboard from whatever the person is doing.
+    campaign_take_focus: bool = False
     #: The game's process name, for the death check (empty: no check).
     campaign_game_process: str = "hoi4.exe"
     #: What an exhausted budget does: ``stop`` (leave the game paused, resumable) or
