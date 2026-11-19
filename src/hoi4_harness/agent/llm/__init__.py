@@ -43,6 +43,9 @@ def build_llm(config: LLMConfig) -> LLMClient:
             raise ValueError(f"api_key_env names {config.api_key_env}, which is not set")
         kwargs["api_key"] = key
     if provider == "scripted":
+        script = config.extra.get("script")
+        if script:
+            return ScriptedClient.from_file(script, model=config.model or "scripted")
         return ScriptedClient(model=config.model or "scripted")
     if provider == "anthropic":
         from .anthropic_provider import AnthropicClient

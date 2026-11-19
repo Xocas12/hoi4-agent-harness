@@ -230,6 +230,28 @@ class HarnessConfig:
     #: How hybrid actions reach the mod: scripted | decision.
     console_hybrid_via: str = "scripted"
     console_guards: bool = True
+    # --- headless play (adapters/headless.py) -----------------------------------
+    # adapter = "headless": the log for eyes, the console and the keyboard for
+    # hands, no mouse and no screen. The fields below only matter there.
+    #: How the clock is driven: console (gamespeed N), keys (space), auto (console,
+    #: then keys when the console did not take).
+    headless_clock: str = "auto"
+    #: What reads the game: logtail (the mod's telemetry) or savegame (a text save).
+    headless_reader: str = "logtail"
+    #: The speed the harness runs the game at when it advances (1-5).
+    headless_game_speed: int = 3
+    headless_poll_seconds: float = 0.5
+    #: Multiplies every real sleep. 1.0 is the game's own pace; tests shrink it.
+    headless_time_scale: float = 1.0
+    #: Ask the mod for fresh telemetry at the end of each console run, so an
+    #: action can be verified while the game is paused. None: on for headless.
+    console_refresh: bool | None = None
+    #: Run against a fake game with no HOI4 at all (fakegame.py). ``fake_game`` is
+    #: in this process, files under ``fake_game_dir`` (default: <run_dir>/fakegame);
+    #: ``fake_game_files`` is a ``hoi4-harness fakegame`` process already running.
+    fake_game: bool = False
+    fake_game_dir: Path | None = None
+    fake_game_files: Path | None = None
     # Co-op turn-taking: every action is queued and runs only when the player
     # grants a window (handover.py). For playing alongside a person, not for
     # scoring -- the eval runner refuses a handover run.
@@ -335,7 +357,8 @@ class HarnessConfig:
                         raise KeyError(f"Unknown configuration key budget.{sub_key!r}")
                     setattr(self.budget, sub_key, sub_value)
             elif key in {"run_dir", "save_dir", "log_path", "system_prompt_path", "game_dir",
-                         "ui_scripts_path", "calibration_path", "console_dir"} and value is not None:
+                         "ui_scripts_path", "calibration_path", "console_dir",
+                         "fake_game_dir", "fake_game_files"} and value is not None:
                 setattr(self, key, Path(value))
             elif key == "mod_dirs":
                 self.mod_dirs = [Path(v) for v in value]

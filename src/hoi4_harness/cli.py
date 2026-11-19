@@ -12,6 +12,9 @@
     hoi4-harness measure --campaign wartime_1939_1941   brief size and wake rate in a war
     hoi4-harness index --game-dir PATH      what countries and focuses a playset defines
     hoi4-harness experiment defensive_war   model-only vs AI-only vs hybrid, same seeds
+    hoi4-harness play --headless            no mouse, no screen: the log in, the console and keys out
+    hoi4-harness play --headless --fake-game   the same against a fake game, no HOI4 at all
+    hoi4-harness fakegame                   a fake game as its own process (play --fake-game-files)
     hoi4-harness play --handover            co-op: queue actions until the player hands over
     hoi4-harness handover                   hand the keyboard to a --handover session
     hoi4-harness verify-bridge              check the mod's tokens against an install and a log
@@ -108,6 +111,20 @@ def _config_from_args(args: argparse.Namespace) -> HarnessConfig:
         config.log_path = Path(args.log_path_arg)
     if getattr(args, "mods", None):
         config.mod_dirs = [Path(m) for m in args.mods]
+    if getattr(args, "script", None):
+        config.planner.extra["script"] = args.script
+    if getattr(args, "headless", False):
+        config.adapter = "headless"
+    if getattr(args, "fake_game", False) or getattr(args, "fake_game_dir", None):
+        config.fake_game = True
+    if getattr(args, "fake_game_dir", None):
+        config.fake_game_dir = Path(args.fake_game_dir)
+    if getattr(args, "fake_game_files", None):
+        config.fake_game_files = Path(args.fake_game_files)
+    if config.fake_game or config.fake_game_files:
+        # A fake game has no window to focus and nothing a keystroke can hurt, so
+        # it is the one target where --live is the point, not a risk.
+        config.adapter, config.dry_run = "headless", False
     return config
 
 
@@ -248,6 +265,31 @@ def cmd_play(args: argparse.Namespace) -> int:
     report = loop.run(config.turns)
     loop.memory.save(run_dir / "memory.json")
     print(json.dumps(report.to_dict(), indent=2, default=str))
+    return 0
+
+
+def cmd_fakegame(args: argparse.Namespace) -> int:
+    import threading
+
+    from .fakegame import FakeGame, demo_index
+
+    base = Path(args.dir)
+    if args.game_dir:
+        from .identifiers import IdentifierIndex, Playset
+
+        index = IdentifierIndex.build(Playset.from_paths(Path(args.game_dir)))
+    else:
+        index = demo_index(base / "playset")
+    game = FakeGame(base / "user", country=args.country.upper(), seed=args.seed or 1936,
+                    start=args.start_date or "1936-01-01", index=index)
+    print(f"fake game running. log: {game.log_path}", file=sys.stderr)
+    print(f"play against it with: hoi4-harness play --headless --fake-game-files {base / 'user'}",
+          file=sys.stderr)
+    stop = threading.Event()
+    try:
+        game.serve(stop, time_scale=args.time_scale)
+    except KeyboardInterrupt:
+        stop.set()
     return 0
 
 
@@ -750,6 +792,15 @@ def build_parser() -> argparse.ArgumentParser:
         p.add_argument("--seed", type=int, help="mock adapter seed")
         p.add_argument("--game-dir", dest="game_dir", metavar="PATH",
                        help="HOI4 install folder: check ids against what the game loads")
+        p.add_argument("--headless", action="store_true",
+                       help="read the game's log, act through the console and the keyboard: "
+                            "no mouse, no screen (docs/headless.md)")
+        p.add_argument("--fake-game", dest="fake_game", action="store_true",
+                       help="with --headless: run against a fake game in this process, no HOI4")
+        p.add_argument("--fake-game-dir", dest="fake_game_dir", metavar="PATH",
+                       help="where the fake game keeps its log and files (implies --fake-game)")
+        p.add_argument("--fake-game-files", dest="fake_game_files", metavar="PATH",
+                       help="with --headless: talk to a `hoi4-harness fakegame` process by its files")
         p.add_argument("--mod", dest="mods", action="append", metavar="PATH",
                        help="an active mod folder; repeat in load order")
 
@@ -782,11 +833,27 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="continue an interrupted run in --run-dir, rebuilding state from its transcript",
     )
+    play.add_argument("--script", metavar="PATH",
+                      help="scripted provider: replay these responses (JSON), then fall back "
+                           "to the keyword policy; offline, no model call")
     play.add_argument("--quiet", action="store_true",
                       help="no per-turn progress line on stderr")
     play.add_argument("--confirm", action="store_true",
                       help="ask a person before every irreversible action (needs --live)")
     play.set_defaults(func=cmd_play)
+
+    fakegame = sub.add_parser(
+        "fakegame", help="run a fake HOI4 that speaks the mod's log, run file and keys")
+    fakegame.add_argument("--dir", default="runs/fakegame", metavar="PATH",
+                          help="where it keeps its files (default runs/fakegame)")
+    fakegame.add_argument("--country", default="SWE")
+    fakegame.add_argument("--seed", type=int)
+    fakegame.add_argument("--start-date", dest="start_date")
+    fakegame.add_argument("--game-dir", dest="game_dir", metavar="PATH",
+                          help="use an install's content instead of the built-in demo playset")
+    fakegame.add_argument("--time-scale", dest="time_scale", type=float, default=1.0,
+                          help="game seconds per wall second multiplier (default 1.0)")
+    fakegame.set_defaults(func=cmd_fakegame)
 
     replay = sub.add_parser("replay", help="replay one turn from a transcript and compare models")
     replay.add_argument("transcript", metavar="PATH", help="a transcript.jsonl written by play or eval")

@@ -325,8 +325,9 @@ def verify(
     after = read_state()
     needs = list(NEEDS[call.name])
     if call.name == "set_ai_posture" and call.arguments.get("theater"):
-        # A theater-scoped posture is proved by the per-theater map, not the global one.
-        needs.append("theater_postures")
+        # A theater-scoped posture is proved by the per-theater map alone: the
+        # global posture may never have been set, and need not be seen.
+        needs = ["theater_postures"]
     check = VERIFIERS[call.name]
 
     def unseen_or_problem(state: GameState) -> tuple[list[str], str | None]:

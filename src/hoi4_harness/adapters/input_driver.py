@@ -174,9 +174,6 @@ class InputDriverAdapter(GameAdapter):
         self._keys_override = keys
         self._keys_cache = None
         self.index = index
-        #: Called after a script's steps and before it is verified: how headless
-        #: asks the game for fresh telemetry, so a paused game can be checked.
-        self.after_input: Callable[[], None] | None = None
         #: Click points computed for the action in flight (see ui_resolve.py).
         self._computed: dict[str, tuple[int, int]] = {}
         #: Whether the game was running when the clock was last seen: True,
@@ -325,8 +322,6 @@ class InputDriverAdapter(GameAdapter):
         before = snapshot(self._read_state())
         for step in steps:
             self._run_step(step)
-        if self.after_input is not None:
-            self.after_input()
         self._sleep(self.config.settle_seconds)
         outcome = verify(call, before, self._read_state, timeout=self.verify_timeout,
                          sleep=self._sleep)

@@ -351,9 +351,9 @@ class FakeGame:
     def _log(self, text: str) -> None:
         self._write(f"{self._stamp()}: {text}")
 
-    def _llmb(self, kind: str, **fields) -> str:
+    def _llmb(self, record: str, **fields) -> str:
         body = "|".join(f"{k}={v}" for k, v in fields.items())
-        return f"{self._stamp()}: LLMB|v{SCHEMA_VERSION}|{kind}|{body}"
+        return f"{self._stamp()}: LLMB|v{SCHEMA_VERSION}|{record}|{body}"
 
     def emit_state(self) -> None:
         """The mod's ``llm_bridge_emit_state``: the state line, the army line and
