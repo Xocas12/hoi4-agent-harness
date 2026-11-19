@@ -99,6 +99,10 @@ class NotFocused(RuntimeError):
     """The game was not the focused window, so nothing was sent."""
 
 
+class MouseDisabled(RuntimeError):
+    """A step needed the mouse and this driver was built without one (headless)."""
+
+
 class ClockUnobservable(RuntimeError):
     """Whether the game is paused could not be seen, so the clock was not driven."""
 
@@ -122,6 +126,9 @@ class InputConfig:
     #: The resolution the calibration was captured at (set by load_calibration);
     #: the bound a computed click point is checked against.
     screen: tuple[int, int] | None = None
+    #: False builds a keyboard-only driver: ``click`` refuses, so no path through
+    #: it can reach pyautogui or move the pointer (headless play).
+    mouse: bool = True
 
 
 class InputDriverAdapter(GameAdapter):
@@ -167,6 +174,9 @@ class InputDriverAdapter(GameAdapter):
         self._keys_override = keys
         self._keys_cache = None
         self.index = index
+        #: Called after a script's steps and before it is verified: how headless
+        #: asks the game for fresh telemetry, so a paused game can be checked.
+        self.after_input: Callable[[], None] | None = None
         #: Click points computed for the action in flight (see ui_resolve.py).
         self._computed: dict[str, tuple[int, int]] = {}
         #: Whether the game was running when the clock was last seen: True,
@@ -240,6 +250,8 @@ class InputDriverAdapter(GameAdapter):
             self._keys().chord(key)
 
     def click(self, target: str) -> None:
+        if not self.config.mouse:
+            raise MouseDisabled(f"click {target}: this driver has no mouse (headless)")
         self._require_focus()
         point = self._computed.get(target) or self.config.coordinates.get(target)
         if point is None:
@@ -313,6 +325,8 @@ class InputDriverAdapter(GameAdapter):
         before = snapshot(self._read_state())
         for step in steps:
             self._run_step(step)
+        if self.after_input is not None:
+            self.after_input()
         self._sleep(self.config.settle_seconds)
         outcome = verify(call, before, self._read_state, timeout=self.verify_timeout,
                          sleep=self._sleep)
@@ -346,7 +360,7 @@ class InputDriverAdapter(GameAdapter):
     def apply(self, call: ActionCall) -> ActionResult:
         try:
             return self._apply(call)
-        except (NotFocused, ClockUnobservable, KeyError, ValueError) as exc:
+        except (NotFocused, MouseDisabled, ClockUnobservable, KeyError, ValueError) as exc:
             # The same contract as every other adapter failure: report it, do not
             # pretend the action happened. The agent can read this and wait.
             return ActionResult(

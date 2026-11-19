@@ -45,6 +45,7 @@ ALIASES = {
     "return": "enter", "esc": "escape", "control": "ctrl", "add": "kp_plus",
     "subtract": "kp_minus", "plus": "kp_plus", "minus": "kp_minus", " ": "space",
 }
+_NAMES: dict[int, str] = {code: name for name, code in SCAN_CODES.items()}
 #: What shift turns a typed character into: the key that carries it.
 SHIFTED = {"_": "-"}
 
@@ -70,6 +71,12 @@ def scan_code(key: str) -> int:
     if name not in SCAN_CODES:
         raise ValueError(f"no scan code for key {key!r}")
     return SCAN_CODES[name]
+
+
+def key_name(code: int) -> str | None:
+    """The key a scan code names, or None. The inverse of ``scan_code``, for
+    anything that has to read the keys the harness sent (the fake game)."""
+    return _NAMES.get(code)
 
 
 def parse_chord(spec: str) -> list[int]:

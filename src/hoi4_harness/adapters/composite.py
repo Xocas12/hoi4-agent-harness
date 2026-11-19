@@ -12,7 +12,7 @@ tooling. That is what ``clock_owner`` decides.
 
 from __future__ import annotations
 
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 
 from ..types import ActionCall, ActionResult, GameEvent, GameState
 from .base import AdapterInfo, GameAdapter
@@ -26,11 +26,14 @@ class CompositeAdapter(GameAdapter):
         writer: GameAdapter,
         clock_owner: str = "harness",
         poll_seconds: float = 0.5,
+        sleep: Callable[[float], None] | None = None,
     ):
         self.reader = reader
         self.writer = writer
         self.clock_owner = clock_owner
         self.poll_seconds = poll_seconds
+        #: None: the real clock (wait_for_days' own default).
+        self._wait = {} if sleep is None else {"sleep": sleep}
         self.supported_actions = writer.supported_actions
         # A writer that verifies what it did needs to see the game; the reader
         # is the only thing here that can.
@@ -87,13 +90,14 @@ class CompositeAdapter(GameAdapter):
         speed change.
         """
         if not self.owns_clock:
-            return wait_for_days(self.reader.read_state, days, self.poll_seconds)
+            return wait_for_days(self.reader.read_state, days, self.poll_seconds, **self._wait)
 
         try:
             # Peeked, not read: a read can drain events the loop's wake rule needs.
             start = getattr(self.reader, "peek_state", self.reader.read_state)().date
             self.writer.resume()
-            return wait_for_days(self.reader.read_state, days, self.poll_seconds, start=start)
+            return wait_for_days(self.reader.read_state, days, self.poll_seconds, start=start,
+                                 **self._wait)
         finally:
             self.writer.pause()
 

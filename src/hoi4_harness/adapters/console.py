@@ -120,6 +120,15 @@ class ConsoleConfig:
     #: dry run never touches ``directory``.
     archive_dir: Path | None = None
     country: str | None = None
+    #: Ask the mod for fresh telemetry after the actions, in the same run file.
+    #: A paused game logs nothing on its own, so without this every action is
+    #: "unverified" until the clock runs a day. The state line closes the tick
+    #: that was open when the action went in, and the second one shows what the
+    #: action did (see ``ui_scripts.verify``: it wants two ticks). Needs the
+    #: scripted effect ``llm_bridge_emit_state``, which the mod ships.
+    refresh: bool = False
+    refresh_effect: str = "llm_bridge_emit_state"
+    refresh_repeats: int = 2
 
 
 class UnsafeConsoleLine(ValueError):
@@ -355,6 +364,44 @@ class ConsoleChannel:
 
     # --- running --------------------------------------------------------------
 
+    def refresh_lines(self, country: str) -> list[str]:
+        """The lines that make the mod log its state again, now."""
+        return [f"effect {country} {self.config.refresh_effect}"] * self.config.refresh_repeats
+
+    def send_lines(self, lines: list[str]) -> Path:
+        """Write ``lines`` as the run file and send the keys that run it.
+
+        No planning and no verification: for commands that are not actions
+        (``gamespeed``, a telemetry refresh), whose caller checks the outcome
+        its own way. Raises what the guarded steps raise (NotFocused, OSError...);
+        a dry run writes the archive copy only and sends nothing.
+        """
+        driver, config = self.driver, self.config
+        for line in lines:
+            check_console_line(line)
+        text_chords(f"run {config.filename}")
+        driver._require_focus()
+        self.last_lines = list(lines)
+        if driver.dry_run:
+            path = self._write(self._archive_path(), lines)
+            self._keys_sequence()
+            return path
+        path = self._write(self._run_dir() / config.filename, lines)
+        self._write(self._archive_path(), lines)
+        self._keys_sequence()
+        self._sleep(driver.config.settle_seconds)
+        return path
+
+    def refresh(self, country: str | None = None) -> None:
+        """Make the mod log its state now, outside any action's run file."""
+        tag = country or self.config.country
+        if not tag:
+            state = self._read_state() if self._read_state else None
+            tag = self._country(state) if state else None
+        if not tag:
+            return
+        self.send_lines(self.refresh_lines(tag.upper()))
+
     def keys(self, filename: str | None = None) -> list[str]:
         """The key sequence of a run, as the driver logs it."""
         name = filename or self.config.filename
@@ -385,6 +432,8 @@ class ConsoleChannel:
     def _send(self, before: GameState, planned: list[Planned]) -> dict[int, ActionResult]:
         driver, config = self.driver, self.config
         lines = [line for p in planned for line in p.lines]
+        if config.refresh:
+            lines += self.refresh_lines(self._country(before))
         self.last_lines = lines
         try:
             text_chords(f"run {config.filename}")        # typable, before anything is written
