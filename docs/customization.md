@@ -73,6 +73,7 @@ you at run time.
 | `log_path` / `HOI4_LOG_PATH` | `game.log`, for the logtail adapter |
 | `save_dir`, `window_title` | real-game adapters |
 | `game_dir` / `HOI4_GAME_DIR` / `--game-dir`, `mod_dirs` / `HOI4_MOD_DIRS` / `--mod` | the playset: ids are checked against what it defines — see [playsets.md](playsets.md) |
+| `mod_context`, `mod_context_fetch`, `mod_context_tokens`, `mod_context_cache_dir` / `--mod-context`, `--fetch-workshop` | a "This playset" prompt section (world brief per mod, the country's decisions and tree) and the read-only `list_decisions` / `describe_action` tools; off by default — see [mods.md](mods.md) |
 | `enforce_window_focus`, `--no-window-guard` | refuse to send input unless the game is focused (default on) |
 | `action_channels` | `{action: "ui" or "console"}`: which channel performs an action. Everything defaults to the ui until the console channel is verified in a live game; construction, production, advisors and the hybrid actions can opt in to the console, while focus and research cannot (no faithful effect) — see [adapters.md](adapters.md#console-channel----effects-through-run-instead-of-the-ui-83) |
 | `console_dir` / `HOI4_CONSOLE_DIR`, `console_filename`, `console_key`, `console_effect_command`, `console_hybrid_via`, `console_guards` | the console channel: where `run` reads (UNVERIFIED, default the game's user directory), the file and key it uses, the inline-effect command, and whether effects carry their own limits |

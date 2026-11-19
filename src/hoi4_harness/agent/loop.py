@@ -315,6 +315,8 @@ class AgentLoop:
             # seat. Both hybrid vocabularies are fair as advice, so only the
             # operator's whitelist narrows the full catalog.
             allowed = set(catalog.names()) - set(self.config.disabled_actions)
+            if not self.env.queries_enabled:
+                allowed -= catalog.QUERY_ACTIONS
             if self.config.enabled_actions is not None:
                 allowed &= set(self.config.enabled_actions)
             tools = registry.tool_specs(allowed)
@@ -424,6 +426,14 @@ class AgentLoop:
                     call_id=call.id,
                     rationale=response.text or None,
                 )
+                if action.name in catalog.QUERY_ACTIONS:
+                    # Reading the playset's files, not acting: answered in every mode,
+                    # not counted, not journalled.
+                    answer = self.env.act(action, turn_date)
+                    results.append(ToolResult(call_id=call.id, name=call.name,
+                                              content=answer.as_tool_content(),
+                                              is_error=not answer.ok))
+                    continue
                 if self.advisor:
                     # Intercepted: recorded, shown to the player, never executed.
                     # note is the one call that is processed (into the journal),

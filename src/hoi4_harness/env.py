@@ -10,9 +10,11 @@ tool rounds; both refuse with ``error_kind="budget"`` (see over_budget()).
 
 from __future__ import annotations
 
+import json
 from collections.abc import Iterable
 
 from .actions import registry
+from .actions.catalog import QUERY_ACTIONS
 from .adapters.base import GameAdapter
 from .config import HarnessConfig
 from .confirm import Confirmation
@@ -25,7 +27,7 @@ from .types import ActionCall, ActionResult, GameEvent, GameState, Observation
 #: Calls the per-turn action cap does not count: a note only writes to the
 #: journal, and advance_time hands the clock back -- the prompt asks for "up to
 #: N actions, then advance_time", and refusing it would not stop the turn.
-UNCAPPED_ACTIONS = frozenset({"note", "advance_time"})
+UNCAPPED_ACTIONS = frozenset({"note", "advance_time"}) | QUERY_ACTIONS
 
 
 class HOI4Env:
@@ -57,7 +59,44 @@ class HOI4Env:
     @property
     def allowed_actions(self) -> set[str]:
         """Adapter capability, narrowed by the operator's whitelist/blacklist."""
-        return self.config.allowed_actions(set(self.adapter.supported_actions))
+        supported = set(self.adapter.supported_actions)
+        if self.queries_enabled:
+            supported |= QUERY_ACTIONS
+        return self.config.allowed_actions(supported)
+
+    @property
+    def queries_enabled(self) -> bool:
+        """The read-only decision tools exist when the run asked for mod context
+        and has the playset's files to answer from."""
+        return bool(self.config.mod_context and self.index is not None)
+
+    def query(self, call: ActionCall) -> ActionResult:
+        """Answer ``list_decisions`` / ``describe_action`` from the playset's files.
+        Nothing is sent to the game and nothing counts against the action cap."""
+        def fail(message: str) -> ActionResult:
+            return ActionResult(ok=False, action=call.name, call_id=call.call_id, message=message,
+                                error_kind="unsupported")
+
+        if not self.queries_enabled:
+            return fail("this run has no playset files to answer from (mod context is off)")
+        problem = registry.check(call, QUERY_ACTIONS)
+        if problem is not None:
+            return problem
+        ctx = self.index.mod_context()
+        country = (self.config.country or self.adapter.read_state().country or "").upper()
+        if call.name == "list_decisions":
+            args = call.arguments
+            data = ctx.list_decisions(country, args.get("category"), args.get("query"),
+                                      int(args.get("limit", 25)))
+        else:
+            data = ctx.describe(str(call.arguments["id"]), country)
+            if data is None:
+                return ActionResult(ok=False, action=call.name, call_id=call.call_id,
+                                    message=f"Nothing called '{call.arguments['id']}' is a decision, "
+                                            f"a focus of {country}'s tree, or a technology or idea "
+                                            "this playset adds.", error_kind="invalid_args")
+        return ActionResult(ok=True, action=call.name, call_id=call.call_id,
+                            message=json.dumps(data, sort_keys=True, ensure_ascii=False))
 
     def read_state(self) -> GameState:
         return self.adapter.read_state()
@@ -127,6 +166,8 @@ class HOI4Env:
         and it is passed in rather than read here: the loop already has it, and
         on a screen adapter a state read costs a vision-model call.
         """
+        if call.name in QUERY_ACTIONS:
+            return self.query(call)
         if self.config.advisor:
             # The hard edge of advisor mode. The loop routes calls to the
             # advisor instead of here, but the env refusing is what makes the
