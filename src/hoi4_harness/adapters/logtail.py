@@ -220,6 +220,8 @@ class LogTailAdapter(GameAdapter):
         self._declared = 0
         self._war_since: dict[str, str | None] = {}
         self._seen_baseline = False
+        #: enemy -> the date the mod announced a war the lines have not shown yet.
+        self._announced: dict[str, str] = {}
 
     def info(self) -> AdapterInfo:
         return AdapterInfo(
@@ -265,6 +267,7 @@ class LogTailAdapter(GameAdapter):
             self._counters = {}
             self._ticks, self._closed, self._research_event = {}, {}, {}
             self._declared, self._war_since, self._seen_baseline = 0, {}, False
+            self._announced = {}
         self._identity = identity
         self._head = head
         applied = 0
@@ -343,9 +346,7 @@ class LogTailAdapter(GameAdapter):
             code = fields.get("kind", "")
             event_kind, severity = EVENT_CODES.get(code, (code or "unknown", "info"))
             if event_kind == "war_declared":
-                # The war line will show the same war a day-tick later; this one
-                # has already said so, and the line must not say it twice.
-                self._declared += 1
+                self._announce_war(fields)
             if event_kind in POSTURE_EVENTS or event_kind == "directives_cleared":
                 state.posture = POSTURE_EVENTS.get(event_kind)
                 if "posture" in state.unknown_fields:
@@ -437,6 +438,46 @@ class LogTailAdapter(GameAdapter):
         if stamp and tick["date"] and stamp != tick["date"]:
             return
         tick["war"][enemy] = fields
+        if enemy not in self._war_since:
+            # First sight of this enemy. Before any complete day it is part of the
+            # baseline, not news; after one, the mod's own declaration (if it came)
+            # has already said so and a war line alone is the report.
+            self._war_since[enemy] = tick["date"] if self._seen_baseline else None
+            if self._seen_baseline:
+                if self._declared > 0:
+                    self._declared -= 1
+                else:
+                    self._pending.append(GameEvent(
+                        kind="war_declared", text=f"at war with {enemy}", severity="critical",
+                        date=self._state.date))
+        # Positive evidence shows at once, like a probe line; only a complete day
+        # without the enemy takes it off the list.
+        if not any(w.against == enemy for w in self._state.wars):
+            self._state.wars = [*self._state.wars, self._war(enemy, fields)]
+
+    def _announce_war(self, fields: dict[str, str]) -> None:
+        """The mod's ``war_declared`` event: the player's war, said at the moment it
+        starts, a day before the ``war`` lines can. It puts the enemy on the list
+        now (with nothing known about it yet) so the brief the planner is woken
+        with already says who the war is against."""
+        player = (self.country or "").upper()
+        tag, other = fields.get("tag", "").strip().upper(), fields.get("other", "").strip().upper()
+        enemy = other if tag == player else tag
+        if not enemy or not player or enemy == player or enemy in self._war_since:
+            if not enemy or not player:
+                self._declared += 1
+            return
+        since = fields.get("_engine_date") or self._state.date
+        self._war_since[enemy] = self._announced[enemy] = since
+        self._state.wars = [*self._state.wars, War(against=enemy, since=since)]
+
+    @staticmethod
+    def _war(enemy: str, fields: dict[str, str], since: str | None = None) -> War:
+        return War(
+            against=enemy, since=since,
+            enemy_divisions=_int(fields.get("divs")),
+            borders={"1": True, "0": False}.get(fields.get("border", "").strip()),
+            surrender_progress=_percent(fields.get("surr")))
 
     def _close_tick(self, tag: str, tick: dict) -> None:
         last = self._closed.get(tag)
@@ -470,16 +511,19 @@ class LogTailAdapter(GameAdapter):
         state = self._state
         state.national_focus = min(tick["focus"]) if tick["focus"] else None
         state.research = [ResearchSlot(index=i, technology=t) for i, t in enumerate(sorted(tick["research"]))]
-        wars = []
-        for enemy, fields in sorted(tick["war"].items()):
-            if enemy not in self._war_since:
-                self._war_since[enemy] = tick["date"] if self._seen_baseline else None
-            wars.append(War(
-                against=enemy, since=self._war_since[enemy],
-                enemy_divisions=_int(fields.get("divs")),
-                borders={"1": True, "0": False}.get(fields.get("border", "").strip()),
-                surrender_progress=_percent(fields.get("surr"))))
-        for gone in set(self._war_since) - set(tick["war"]):
+        wars = [self._war(enemy, fields, self._war_since.get(enemy))
+                for enemy, fields in sorted(tick["war"].items())]
+        # A war the mod announced is on the list from the announcement; the day
+        # that closes now may be from before it, so it only comes off once a day
+        # from the announcement on has closed without a line for it.
+        for w in state.wars:
+            if w.against in tick["war"]:
+                self._announced.pop(w.against, None)
+            elif tick["date"] is None or tick["date"] <= self._announced.get(w.against, ""):
+                wars.append(w)
+            else:
+                self._announced.pop(w.against, None)
+        for gone in set(self._war_since) - {w.against for w in wars}:
             del self._war_since[gone]
         self._seen_baseline = True
         state.wars = wars
@@ -488,20 +532,14 @@ class LogTailAdapter(GameAdapter):
                 state.unknown_fields.remove(name)
 
     def _war_events(self, last: dict | None, tick: dict, date_: str) -> None:
-        """A war that appeared or went away between two complete days.
+        """A war that went away between two complete days (a new one is reported
+        the moment its first line, or the mod's event, arrives).
 
-        The mod's own ``war_declared`` event, where there was one, has already
-        been queued and is not repeated. The first day read is a baseline: a war
-        that was already on when the harness started is not news.
+        The first day read is a baseline: a war that was already on when the
+        harness started is not news, and neither is one that ended before it did.
         """
         if last is None:
             return
-        for enemy in sorted(set(tick["war"]) - set(last["war"])):
-            if self._declared > 0:
-                self._declared -= 1
-                continue
-            self._pending.append(GameEvent(
-                kind="war_declared", text=f"at war with {enemy}", severity="critical", date=date_))
         for enemy in sorted(set(last["war"]) - set(tick["war"])):
             self._pending.append(GameEvent(
                 kind="war_ended", text=f"war with {enemy} is over", severity="notable", date=date_))

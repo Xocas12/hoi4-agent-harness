@@ -94,3 +94,23 @@ def test_a_war_line_that_did_not_expand_is_a_missing_number_not_zero(tmp_path):
     day = _day(2, {"POL": (1, 1, 1)}).replace("divs=1", "divs=[?llmb_war_divs]")
     state = _read(tmp_path, _day(1), day, _day(3, {"POL": (1, 1, 1)}))
     assert state.wars[0].enemy_divisions is None
+
+
+def test_the_mods_declaration_puts_the_enemy_on_the_list_before_any_war_line(tmp_path):
+    declared = "[10:00:00][1939.09.02.10]: LLMB|v4|evt|tag=POL|other=SWE|kind=1|detail=0\n"
+    state = _read(tmp_path, _day(1), declared)
+    assert [(w.against, w.since) for w in state.wars] == [("POL", "1939-09-02")]
+    assert "AT WAR with POL since 1939-09-02 (war score +0)" in render_full(state)
+    # The closing of the day before the declaration must not take it off again.
+    state = _read(tmp_path, _day(1), declared, _day(2, {"POL": (40, 1, 0)}))
+    assert [w.against for w in state.wars] == ["POL"]
+    assert state.wars[0].enemy_divisions is None or state.wars[0].enemy_divisions == 40
+
+
+def test_a_war_line_shows_at_once_but_a_missing_one_waits_for_the_day_to_close(tmp_path):
+    state = _read(tmp_path, _day(1), _day(2, {"POL": (40, 1, 0)}))
+    assert [w.against for w in state.wars] == ["POL"]          # day 2 is still open
+    state = _read(tmp_path, _day(1), _day(2, {"POL": (40, 1, 0)}), _day(3))
+    assert [w.against for w in state.wars] == ["POL"]          # day 3 is open: day 2 had it
+    state = _read(tmp_path, _day(1), _day(2, {"POL": (40, 1, 0)}), _day(3), _day(4))
+    assert state.wars == []
