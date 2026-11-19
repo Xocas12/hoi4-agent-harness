@@ -300,7 +300,7 @@ def _equipment_names(equipments: dict) -> dict[str, str]:
     return names
 
 
-_EQUIPMENT_ENTRY = re.compile(r"^\t([A-Za-z0-9_]+)=\{[ \t]*\n\t\tid=\{ id=(\d+) ", re.M)
+_EQUIPMENT_ENTRY = re.compile(r"^\t([A-Za-z0-9_]+)=\{[ \t\r]*\n\t\tid=\{ id=(\d+) ", re.M)
 _COLUMN_ZERO_KEY = re.compile(r"^[A-Za-z_]", re.M)
 
 
