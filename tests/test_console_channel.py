@@ -326,8 +326,6 @@ def test_the_console_key_and_filename_are_configurable(tmp_path, index):
     (ActionCall("set_production", {"equipment": "support_equipment_1", "factories": 4}),
      {"production": [ProductionLine("infantry_equipment_1", 3)]}, "4 factories asked for, 2 free"),
     (PRODUCE, {"production": [ProductionLine("infantry_equipment_1", 1)]}, "already exists"),
-    (PRODUCE, {"unknown_fields": ["production"]}, "cannot see production"),
-    (PRODUCE, {"unknown_fields": ["military_factories"]}, "cannot see military_factories"),
     (HIRE, {"political_power": 24.0}, "costs 25 political power, 24 held"),
     (HIRE, {"unknown_fields": ["political_power"]}, "cannot see political power"),
     (ActionCall("hire_advisor", {"advisor_id": "SWE_ghost"}), {}, "no advisor 'SWE_ghost'"),
@@ -353,6 +351,19 @@ def test_a_failed_precondition_refuses_before_writing_and_sends_no_input(
     assert why in result.message and "nothing was sent" in result.message
     assert result.changed["channel"] == "console"
     nothing_happened(tmp_path, keys)
+
+
+@pytest.mark.parametrize("unseen", ["production", "military_factories"])
+def test_unseen_production_is_left_unchecked_not_refused(tmp_path, index, unseen):
+    """Seen live on 1.19.5: the line opened and the game gave it the free factory.
+    A player may ask for more factories than are free, so this is not a cheat."""
+    _, keys, _, channel = rig(tmp_path, index, game=Game(unknown_fields=[unseen]))
+    (result,) = channel.execute([PRODUCE])
+    assert result.error_kind != "rejected" or "nothing was sent" not in result.message
+    assert "free military factories" in result.changed["unchecked"]
+    assert run_file(tmp_path) == [
+        "eval_effect SWE = { add_equipment_production = { equipment = { type = infantry_equipment_1 } "
+        "requested_factories = 3 } }"]
 
 
 def test_a_refused_call_does_not_stop_the_others_in_a_batch(tmp_path, index):
@@ -390,9 +401,10 @@ def test_a_missing_reader_sends_nothing(tmp_path, index):
 # --- the channel per action -----------------------------------------------------------
 
 
-def test_everything_is_on_the_ui_until_the_console_is_verified_live():
+def test_the_console_is_the_default_for_the_actions_verified_live():
     channels = resolve_channels(None)
-    assert set(channels.values()) == {"ui"}
+    assert {n for n, c in channels.items() if c == "console"} == CONSOLE_ACTIONS
+    assert channels["set_national_focus"] == channels["start_research"] == "ui"
     assert CONSOLE_ACTIONS == {
         "queue_construction", "set_production", "hire_advisor",
         "set_ai_directive", "set_ai_posture", "clear_ai_directives"}
@@ -497,3 +509,20 @@ def test_the_index_reads_advisor_costs_and_buildable_equipment(index):
 
 def test_generated_targets_match_the_default_tag_list():
     assert ConsoleConfig().target_tags == modgen.DEFAULT_TAGS
+
+
+@pytest.mark.parametrize("line", [
+    'eval_effect SWE = { log = "a b" }',
+    'eval_effect SWE = { log = "x=1" }',
+])
+def test_a_quoted_string_the_console_would_split_is_refused(line):
+    from hoi4_harness.adapters.console import UnsafeConsoleLine, check_console_line
+    with pytest.raises(UnsafeConsoleLine):
+        check_console_line(line)
+
+
+def test_lines_without_quoted_text_pass_the_console_check():
+    from hoi4_harness.adapters.console import check_console_line
+    check_console_line('eval_effect SWE = { log = "LLMBPROBE:[?x]" }')
+    check_console_line("eval_effect SWE = { 38 = { add_building_construction = { "
+                       "type = industrial_complex level = 1 instant_build = no } } }")

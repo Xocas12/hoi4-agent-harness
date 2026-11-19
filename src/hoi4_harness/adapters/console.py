@@ -60,14 +60,16 @@ CONSOLE_ACTIONS = frozenset({
     "queue_construction", "set_production", "hire_advisor",
     "set_ai_directive", "set_ai_posture", "clear_ai_directives",
 })
-#: Everything on the UI path until the open questions in docs/adapters.md
-#: (where `run` reads, whether `eval_effect` takes an inline effect, -debug)
-#: are settled in a live game. Opt in per action with ``action_channels``.
+#: The console for every action it has a faithful effect for: settled live on
+#: 1.19.5 (run reads the user directory, needs no -debug, and eval_effect takes
+#: an inline effect; construction queued, a production line opened, an advisor
+#: was hired and a directive raised, each through the harness). Focus, research
+#: and delegation have no faithful effect and stay on the UI path.
 DEFAULT_CHANNELS: dict[str, str] = {
     "set_national_focus": "ui",
     "start_research": "ui",
     "delegate_army_to_ai": "ui",
-    **{name: "ui" for name in sorted(CONSOLE_ACTIONS)},
+    **{name: "console" for name in sorted(CONSOLE_ACTIONS)},
 }
 CHANNELS = ("ui", "console")
 
@@ -118,6 +120,24 @@ class ConsoleConfig:
     #: dry run never touches ``directory``.
     archive_dir: Path | None = None
     country: str | None = None
+
+
+class UnsafeConsoleLine(ValueError):
+    """A line the console would split wrongly."""
+
+
+def check_console_line(line: str) -> None:
+    """Refuse a quoted string holding a space or ``=``.
+
+    Seen live on 1.19.5: the console splits a run file's line on spaces and
+    ``=`` even inside quotes, so ``log = "a b"`` failed with "Unknown
+    effect-type: b" and ``log = "x=1"`` with "Unknown effect-type: =".
+    """
+    import re
+    for quoted in re.findall(r'"([^"]*)"', line):
+        if " " in quoted or "=" in quoted:
+            raise UnsafeConsoleLine(
+                f"the console splits quoted text on spaces and '=': {quoted!r}")
 
 
 @dataclass
@@ -190,7 +210,9 @@ class ConsoleChannel:
         return self.index
 
     def _inline(self, country: str, body: str) -> str:
-        return f"{self.config.effect_command} {country} = {{ {body} }}"
+        line = f"{self.config.effect_command} {country} = {{ {body} }}"
+        check_console_line(line)
+        return line
 
     def _plan_construction(self, call, args, country) -> Planned:
         building = BUILDING_IDS.get(str(args["building"]))
@@ -231,21 +253,25 @@ class ConsoleChannel:
         if factories < 1:
             raise Refused("setting 0 factories removes a line, and no effect does that the way "
                           "the UI does: use the ui channel for it")
-        for name in ("production", "military_factories"):
-            if not state.known(name):
-                raise Refused(f"the reader cannot see {name}, so the free factories cannot be "
-                              "counted; refusing rather than guessing")
-        if any(line.equipment == equipment for line in state.production):
-            raise Refused(f"a {equipment} line already exists; the effect would add a second "
-                          "line instead of changing it. Change an existing line on the ui channel")
-        free = state.military_factories - sum(line.factories for line in state.production)
-        if factories > free:
-            raise Refused(f"{factories} factories asked for, {free} free "
-                          f"({state.military_factories} military, "
-                          f"{state.military_factories - free} on other lines)")
+        # A player can open a line asking for more factories than are free; the
+        # game assigns what it has. So an unseen production panel is a check left
+        # undone, not a reason to refuse (seen live on 1.19.5: the line opened
+        # and took the one free factory).
+        unchecked: list[str] = []
+        if state.known("production") and state.known("military_factories"):
+            if any(line.equipment == equipment for line in state.production):
+                raise Refused(f"a {equipment} line already exists; the effect would add a second "
+                              "line instead of changing it. Change an existing line on the ui channel")
+            free = state.military_factories - sum(line.factories for line in state.production)
+            if factories > free:
+                raise Refused(f"{factories} factories asked for, {free} free "
+                              f"({state.military_factories} military, "
+                              f"{state.military_factories - free} on other lines)")
+        else:
+            unchecked = ["an existing line for this equipment", "free military factories"]
         body = (f"add_equipment_production = {{ equipment = {{ type = {equipment} }} "
                 f"requested_factories = {factories} }}")
-        return Planned(call, [self._inline(country, body)])
+        return Planned(call, [self._inline(country, body)], unchecked)
 
     def _plan_advisor(self, call, args, country, state) -> Planned:
         advisor = str(args["advisor_id"])

@@ -125,5 +125,5 @@ def test_the_committed_probe_is_generated_and_called_by_the_telemetry():
 
 
 def test_the_reader_counts_complete_days_of_telemetry(tmp_path):
-    assert read(tmp_path, state(2), focus(2, "SWE_rearm")).telemetry_ticks is None
+    assert read(tmp_path, state(2), focus(2, "SWE_rearm")).telemetry_ticks == 0
     assert read(tmp_path, state(2), state(3), state(4)).telemetry_ticks == 2
