@@ -90,7 +90,10 @@ Point it at an install and a playset (`--game-dir`, `--mod`, or
 `HOI4_GAME_DIR` / `HOI4_MOD_DIRS`) and invented focus, technology, state and
 country ids are refused with the nearest real ones, the brief lists the focuses
 available now, and a total conversion is recorded as such — see
-[docs/playsets.md](docs/playsets.md).
+[docs/playsets.md](docs/playsets.md). `hoi4-harness mod-actions --country GER` goes further:
+the decisions, focus tree and new techs a country has in that playset, a short world brief
+per mod, and `--mod-context` puts them in the prompt with a guarded `take_decision` —
+see [docs/mods.md](docs/mods.md).
 
 Playing alongside the model rather than watching it: `--advisor` (it recommends,
 you act), `--player-clock` (it never touches the clock) and `--handover` (its
@@ -198,7 +201,7 @@ verification checklist: [docs/mod-bridge.md](docs/mod-bridge.md).
 | Piece | State |
 |---|---|
 | Agent loop, budget, memory, policy | Working, tested |
-| Action catalog + validation | Working, tested (20 actions) |
+| Action catalog + validation | Working, tested (22 actions) |
 | Observation briefs + deltas | Working, tested |
 | Mock adapter | Working, tested, deterministic |
 | Log-tail adapter (reads the mod's telemetry) | Working, tested, run against a live 1.19.5 log; `verify-bridge` checks tag consistency and date shapes, and the brief shows focus, research and theater postures |
