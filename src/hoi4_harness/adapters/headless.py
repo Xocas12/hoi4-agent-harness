@@ -340,7 +340,8 @@ def build_headless(config: HarnessConfig, fake=None) -> CompositeAdapter:
             open_key=config.console_key, close_key=config.console_key,
             effect_command=config.console_effect_command, hybrid_via=config.console_hybrid_via,
             guards=config.console_guards, archive_dir=Path(config.run_dir),
-            country=config.country, refresh=refresh and config.headless_reader == "logtail"),
+            country=config.country, refresh=refresh and config.headless_reader == "logtail",
+            refresh_front=refresh and config.headless_reader == "logtail"),
         index=index, sleep=sleep)
     router = ChannelRouter(driver, console, channels)
     clock = HeadlessClock(driver, console, config.headless_clock, config.headless_game_speed)

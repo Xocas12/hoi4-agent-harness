@@ -113,7 +113,7 @@ def _with_console(driver, config: HarnessConfig):
             guards=config.console_guards,
             archive_dir=Path(config.run_dir),
             country=config.country,
-            refresh=bool(config.console_refresh),
+            refresh=bool(config.console_refresh), refresh_front=bool(config.console_refresh),
         ),
         index=config.build_index(),
     )

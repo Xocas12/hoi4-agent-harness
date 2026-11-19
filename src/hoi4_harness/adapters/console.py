@@ -129,6 +129,11 @@ class ConsoleConfig:
     refresh: bool = False
     refresh_effect: str = "llm_bridge_emit_state"
     refresh_repeats: int = 2
+    #: Also ask for the front picture (divisions per state, #85) with the refresh.
+    #: The effect lives in llm_bridge_divisions.txt; an older mod prints an
+    #: unknown-effect line in the game's error log and nothing else.
+    refresh_front: bool = False
+    front_effect: str = "llm_bridge_emit_front"
 
 
 class UnsafeConsoleLine(ValueError):
@@ -367,7 +372,11 @@ class ConsoleChannel:
 
     def refresh_lines(self, country: str) -> list[str]:
         """The lines that make the mod log its state again, now."""
-        return [f"effect {country} {self.config.refresh_effect}"] * self.config.refresh_repeats
+        lines = [f"effect {country} {self.config.refresh_effect}"] * self.config.refresh_repeats
+        if self.config.refresh_front:
+            # First, so the two state lines still end the run: they close the tick.
+            lines.insert(0, f"effect {country} {self.config.front_effect}")
+        return lines
 
     def send_lines(self, lines: list[str]) -> Path:
         """Write ``lines`` as the run file and send the keys that run it.

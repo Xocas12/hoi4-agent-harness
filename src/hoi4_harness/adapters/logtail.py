@@ -16,7 +16,7 @@ from datetime import date
 from pathlib import Path
 
 from ..paths import find_in_game_dir
-from ..types import ActionCall, ActionResult, GameEvent, GameState, ResearchSlot
+from ..types import ActionCall, ActionResult, GameEvent, GameState, ResearchSlot, StateForces
 from .base import AdapterInfo, GameAdapter
 from .clock import wait_for_days
 
@@ -201,6 +201,8 @@ class LogTailAdapter(GameAdapter):
         self._ticks: dict[str, dict] = {}
         self._closed: dict[str, dict] = {}
         self._research_event: dict[str, GameEvent] = {}
+        #: tag -> the ``div`` lines of the front picture being read (see _front).
+        self._front_lines: dict[str, list[StateForces]] = {}
 
     def info(self) -> AdapterInfo:
         return AdapterInfo(
@@ -245,6 +247,7 @@ class LogTailAdapter(GameAdapter):
             self._pending = []
             self._counters = {}
             self._ticks, self._closed, self._research_event = {}, {}, {}
+            self._front_lines = {}
         self._identity = identity
         self._head = head
         applied = 0
@@ -317,6 +320,8 @@ class LogTailAdapter(GameAdapter):
                 self._open_tick(fields)
         elif kind in {"focus", "research"}:
             self._probe(kind, fields)
+        elif kind in {"div", "divend"}:
+            self._front(kind, fields)
         elif kind == "evt":
             code = fields.get("kind", "")
             event_kind, severity = EVENT_CODES.get(code, (code or "unknown", "info"))
@@ -357,6 +362,39 @@ class LogTailAdapter(GameAdapter):
                     date=state.date,
                 )
             )
+
+    def _front(self, kind: str, fields: dict[str, str]) -> None:
+        """The front picture: ``div`` lines (one per state holding a division),
+        then a ``divend`` that says how many there were.
+
+        The picture replaces the last one only when its closing line arrives
+        and the count matches, so a poll that lands mid-run, or a run the game
+        was killed in the middle of, never shows half a front. A ``divend``
+        with n=0 is a real answer: nothing is in contact (or no war).
+        """
+        tag = fields.get("tag", "").strip().upper()
+        lines = self._front_lines.setdefault(tag, [])
+        if kind == "div":
+            try:
+                lines.append(StateForces(
+                    state=int(fields["state"]), controller=fields.get("ctl", "").strip().upper() or None,
+                    own=int(fields["own"]), own_weak=int(fields.get("own_weak", 0)),
+                    foe=int(fields["foe"]), foe_weak=int(fields.get("foe_weak", 0))))
+            except (KeyError, ValueError):
+                pass          # a token that did not expand: leave the line out, the count will not match
+            return
+        try:
+            expected = int(fields["n"])
+        except (KeyError, ValueError):
+            lines.clear()
+            return
+        picture = lines[-expected:] if expected else []
+        complete = len(lines) >= expected
+        lines.clear()
+        if not complete:
+            return
+        self._state.state_forces = sorted(picture, key=lambda f: f.state)
+        self._state.state_forces_date = fields.get("_engine_date") or self._state.date
 
     def _open_tick(self, fields: dict[str, str]) -> None:
         """A state line starts a tick: the probe lines after it say what is running.
