@@ -354,16 +354,14 @@ def test_a_failed_precondition_refuses_before_writing_and_sends_no_input(
 
 
 @pytest.mark.parametrize("unseen", ["production", "military_factories"])
-def test_unseen_production_is_left_unchecked_not_refused(tmp_path, index, unseen):
-    """Seen live on 1.19.5: the line opened and the game gave it the free factory.
-    A player may ask for more factories than are free, so this is not a cheat."""
+def test_unseen_production_is_refused_because_the_effect_duplicates_lines(tmp_path, index, unseen):
+    """Seen live on 1.19.5: with production unseen, the effect added a second,
+    empty Infantry Equipment I line beside the existing one."""
     _, keys, _, channel = rig(tmp_path, index, game=Game(unknown_fields=[unseen]))
     (result,) = channel.execute([PRODUCE])
-    assert result.error_kind != "rejected" or "nothing was sent" not in result.message
-    assert "free military factories" in result.changed["unchecked"]
-    assert run_file(tmp_path) == [
-        "eval_effect SWE = { add_equipment_production = { equipment = { type = infantry_equipment_1 } "
-        "requested_factories = 3 } }"]
+    assert result.error_kind == "rejected" and "nothing was sent" in result.message
+    assert "second line" in result.message
+    nothing_happened(tmp_path, keys)
 
 
 def test_a_refused_call_does_not_stop_the_others_in_a_batch(tmp_path, index):

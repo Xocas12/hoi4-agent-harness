@@ -1,0 +1,54 @@
+[
+  {
+    "text": "One of each the log can verify or honestly not: a focus available after Urbanization, a factory where Sweden has free slots, a directive and a theater posture.",
+    "calls": [
+      {
+        "name": "set_national_focus",
+        "arguments": {
+          "focus_id": "SWE_work_projects_for_the_unemployed"
+        }
+      },
+      {
+        "name": "queue_construction",
+        "arguments": {
+          "building": "civilian_factory",
+          "state": "38",
+          "count": 1
+        }
+      },
+      {
+        "name": "set_ai_directive",
+        "arguments": {
+          "directive": "protect",
+          "target": "POL"
+        }
+      },
+      {
+        "name": "set_ai_posture",
+        "arguments": {
+          "posture": "defensive",
+          "theater": "GER"
+        }
+      },
+      {
+        "name": "advance_time",
+        "arguments": {
+          "days": 7,
+          "reason": "let the orders land"
+        }
+      }
+    ]
+  },
+  {
+    "text": "Look, change nothing.",
+    "calls": [
+      {
+        "name": "advance_time",
+        "arguments": {
+          "days": 7,
+          "reason": "wait"
+        }
+      }
+    ]
+  }
+]

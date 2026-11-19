@@ -99,6 +99,10 @@ class NotFocused(RuntimeError):
     """The game was not the focused window, so nothing was sent."""
 
 
+class MouseDisabled(RuntimeError):
+    """A step needed the mouse and this driver was built without one (headless)."""
+
+
 class ClockUnobservable(RuntimeError):
     """Whether the game is paused could not be seen, so the clock was not driven."""
 
@@ -122,6 +126,9 @@ class InputConfig:
     #: The resolution the calibration was captured at (set by load_calibration);
     #: the bound a computed click point is checked against.
     screen: tuple[int, int] | None = None
+    #: False builds a keyboard-only driver: ``click`` refuses, so no path through
+    #: it can reach pyautogui or move the pointer (headless play).
+    mouse: bool = True
 
 
 class InputDriverAdapter(GameAdapter):
@@ -240,6 +247,8 @@ class InputDriverAdapter(GameAdapter):
             self._keys().chord(key)
 
     def click(self, target: str) -> None:
+        if not self.config.mouse:
+            raise MouseDisabled(f"click {target}: this driver has no mouse (headless)")
         self._require_focus()
         point = self._computed.get(target) or self.config.coordinates.get(target)
         if point is None:
@@ -346,7 +355,7 @@ class InputDriverAdapter(GameAdapter):
     def apply(self, call: ActionCall) -> ActionResult:
         try:
             return self._apply(call)
-        except (NotFocused, ClockUnobservable, KeyError, ValueError) as exc:
+        except (NotFocused, MouseDisabled, ClockUnobservable, KeyError, ValueError) as exc:
             # The same contract as every other adapter failure: report it, do not
             # pretend the action happened. The agent can read this and wait.
             return ActionResult(

@@ -12,6 +12,10 @@
     hoi4-harness measure --campaign wartime_1939_1941   brief size and wake rate in a war
     hoi4-harness index --game-dir PATH      what countries and focuses a playset defines
     hoi4-harness experiment defensive_war   model-only vs AI-only vs hybrid, same seeds
+    hoi4-harness play --headless            no mouse, no screen: the log in, the console and keys out
+    hoi4-harness play --headless --fake-game   the same against a fake game, no HOI4 at all
+    hoi4-harness headless-check --live      measure what headless play rests on, in the real game
+    hoi4-harness fakegame                   a fake game as its own process (play --fake-game-files)
     hoi4-harness play --handover            co-op: queue actions until the player hands over
     hoi4-harness handover                   hand the keyboard to a --handover session
     hoi4-harness verify-bridge              check the mod's tokens against an install and a log
@@ -108,6 +112,24 @@ def _config_from_args(args: argparse.Namespace) -> HarnessConfig:
         config.log_path = Path(args.log_path_arg)
     if getattr(args, "mods", None):
         config.mod_dirs = [Path(m) for m in args.mods]
+    if getattr(args, "operational_control", None):
+        config.operational_control = args.operational_control
+    if getattr(args, "script", None):
+        config.planner.extra["script"] = args.script
+    if getattr(args, "headless", False):
+        config.adapter = "headless"
+    if getattr(args, "headless_clock", None):
+        config.headless_clock = args.headless_clock
+    if getattr(args, "fake_game", False) or getattr(args, "fake_game_dir", None):
+        config.fake_game = True
+    if getattr(args, "fake_game_dir", None):
+        config.fake_game_dir = Path(args.fake_game_dir)
+    if getattr(args, "fake_game_files", None):
+        config.fake_game_files = Path(args.fake_game_files)
+    if config.fake_game or config.fake_game_files:
+        # A fake game has no window to focus and nothing a keystroke can hurt, so
+        # it is the one target where --live is the point, not a risk.
+        config.adapter, config.dry_run = "headless", False
     return config
 
 
@@ -191,10 +213,10 @@ def cmd_observe(args: argparse.Namespace) -> int:
     config = _config_from_args(args)
     try:
         env = _env_from_config(config)
-    except FileNotFoundError as exc:
+        observation = env.reset()
+    except (FileNotFoundError, RuntimeError) as exc:
         print(f"observe: {exc}", file=sys.stderr)
         return 1
-    observation = env.reset()
     print(observation.brief)
     return 0
 
@@ -207,10 +229,10 @@ def cmd_play(args: argparse.Namespace) -> int:
         return 2
     try:
         env = _env_from_config(config)
-    except FileNotFoundError as exc:
+        env.reset()
+    except (FileNotFoundError, RuntimeError) as exc:
         print(f"play: {exc}", file=sys.stderr)
         return 1
-    env.reset()
     run_dir = config.run_dir
     resume = bool(getattr(args, "resume", False))
 
@@ -248,6 +270,53 @@ def cmd_play(args: argparse.Namespace) -> int:
     report = loop.run(config.turns)
     loop.memory.save(run_dir / "memory.json")
     print(json.dumps(report.to_dict(), indent=2, default=str))
+    return 0
+
+
+def cmd_headless_check(args: argparse.Namespace) -> int:
+    from .headless_check import run_checks
+
+    args.headless = True
+    config = _config_from_args(args)
+    if config.dry_run:
+        print("headless-check: it sends keys and starts the clock, so it needs --live "
+              "(or a fake game). Load the game, pause it, put it in front, and re-run.",
+              file=sys.stderr)
+        return 2
+    try:
+        adapter = build_adapter(config)
+    except (FileNotFoundError, ValueError) as exc:
+        print(f"headless-check: {exc}", file=sys.stderr)
+        return 1
+    results = run_checks(adapter, days=args.days or 7)
+    failed = [r.name for r in results if not r.ok]
+    print(f"{len(results) - len(failed)} of {len(results)} passed"
+          + (f"; failed: {', '.join(failed)}" if failed else ""))
+    return 1 if failed else 0
+
+
+def cmd_fakegame(args: argparse.Namespace) -> int:
+    import threading
+
+    from .fakegame import FakeGame, demo_index
+
+    base = Path(args.dir)
+    if args.game_dir:
+        from .identifiers import IdentifierIndex, Playset
+
+        index = IdentifierIndex.build(Playset.from_paths(Path(args.game_dir)))
+    else:
+        index = demo_index(base / "playset")
+    game = FakeGame(base / "user", country=args.country.upper(), seed=args.seed or 1936,
+                    start=args.start_date or "1936-01-01", index=index)
+    print(f"fake game running. log: {game.log_path}", file=sys.stderr)
+    print(f"play against it with: hoi4-harness play --headless --fake-game-files {base / 'user'}",
+          file=sys.stderr)
+    stop = threading.Event()
+    try:
+        game.serve(stop, time_scale=args.time_scale)
+    except KeyboardInterrupt:
+        stop.set()
     return 0
 
 
@@ -740,6 +809,9 @@ def build_parser() -> argparse.ArgumentParser:
                        help="skip the confirmation gate on irreversible actions")
         p.add_argument("--no-reflex", dest="no_reflex", action="store_true",
                        help="disable the deterministic reflex layer; the model decides everything")
+        p.add_argument("--operational-control", dest="operational_control", choices=["llm", "ai"],
+                       help="llm: the model moves units; ai: the game's AI does, and the model "
+                            "sets directives and postures")
         p.add_argument("--player-clock", dest="player_clock", action="store_true",
                        help="a person is playing: never pause, resume or set game speed")
         p.add_argument("--no-llm", dest="no_llm", action="store_true",
@@ -750,6 +822,18 @@ def build_parser() -> argparse.ArgumentParser:
         p.add_argument("--seed", type=int, help="mock adapter seed")
         p.add_argument("--game-dir", dest="game_dir", metavar="PATH",
                        help="HOI4 install folder: check ids against what the game loads")
+        p.add_argument("--headless", action="store_true",
+                       help="read the game's log, act through the console and the keyboard: "
+                            "no mouse, no screen (docs/headless.md)")
+        p.add_argument("--headless-clock", dest="headless_clock",
+                       choices=["auto", "console", "keys", "exact"],
+                       help="with --headless: how the clock is driven (docs/headless.md)")
+        p.add_argument("--fake-game", dest="fake_game", action="store_true",
+                       help="with --headless: run against a fake game in this process, no HOI4")
+        p.add_argument("--fake-game-dir", dest="fake_game_dir", metavar="PATH",
+                       help="where the fake game keeps its log and files (implies --fake-game)")
+        p.add_argument("--fake-game-files", dest="fake_game_files", metavar="PATH",
+                       help="with --headless: talk to a `hoi4-harness fakegame` process by its files")
         p.add_argument("--mod", dest="mods", action="append", metavar="PATH",
                        help="an active mod folder; repeat in load order")
 
@@ -782,11 +866,34 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="continue an interrupted run in --run-dir, rebuilding state from its transcript",
     )
+    play.add_argument("--script", metavar="PATH",
+                      help="scripted provider: replay these responses (JSON), then fall back "
+                           "to the keyword policy; offline, no model call")
     play.add_argument("--quiet", action="store_true",
                       help="no per-turn progress line on stderr")
     play.add_argument("--confirm", action="store_true",
                       help="ask a person before every irreversible action (needs --live)")
     play.set_defaults(func=cmd_play)
+
+    check = sub.add_parser(
+        "headless-check",
+        help="try each claim headless play rests on (console clock, refresh) and say which hold")
+    common(check)
+    check.add_argument("--days", type=int, help="days for the pause_in_hours check (default 7)")
+    check.set_defaults(func=cmd_headless_check)
+
+    fakegame = sub.add_parser(
+        "fakegame", help="run a fake HOI4 that speaks the mod's log, run file and keys")
+    fakegame.add_argument("--dir", default="runs/fakegame", metavar="PATH",
+                          help="where it keeps its files (default runs/fakegame)")
+    fakegame.add_argument("--country", default="SWE")
+    fakegame.add_argument("--seed", type=int)
+    fakegame.add_argument("--start-date", dest="start_date")
+    fakegame.add_argument("--game-dir", dest="game_dir", metavar="PATH",
+                          help="use an install's content instead of the built-in demo playset")
+    fakegame.add_argument("--time-scale", dest="time_scale", type=float, default=1.0,
+                          help="game seconds per wall second multiplier (default 1.0)")
+    fakegame.set_defaults(func=cmd_fakegame)
 
     replay = sub.add_parser("replay", help="replay one turn from a transcript and compare models")
     replay.add_argument("transcript", metavar="PATH", help="a transcript.jsonl written by play or eval")

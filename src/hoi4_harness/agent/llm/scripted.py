@@ -31,6 +31,24 @@ class ScriptedClient(LLMClient):
         # quietly break the determinism the eval runner depends on.
         self._ids = itertools.count(1)
 
+    @classmethod
+    def from_file(cls, path, model: str = "scripted") -> ScriptedClient:
+        """A script from JSON: a list of responses, each ``{"text": "...", "calls":
+        [{"name": "queue_construction", "arguments": {...}}]}``. Once it is
+        used up the keyword policy takes over, which advances time."""
+        import json
+        from pathlib import Path
+
+        client = cls(model=model)
+        for entry in json.loads(Path(path).read_text(encoding="utf-8")):
+            calls = [client._call(c["name"], **c.get("arguments", {}))
+                     for c in entry.get("calls", [])]
+            client.script.append(LLMResponse(
+                text=entry.get("text", ""), tool_calls=calls,
+                stop_reason="tool_use" if calls else "end_turn",
+                usage=Usage(input_tokens=0, output_tokens=24), model=model))
+        return client
+
     def _call(self, name: str, **arguments) -> ToolCall:
         return ToolCall(id=f"scripted-{next(self._ids)}", name=name, arguments=arguments)
 

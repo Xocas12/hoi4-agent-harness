@@ -1,0 +1,8 @@
+{
+  "adapter": "headless",
+  "fake_game": true,
+  "operational_control": "ai",
+  "days_per_turn": 14,
+  "turns": 8,
+  "planner": {"provider": "scripted", "extra": {"script": "profiles/headless-demo-script.json"}}
+}

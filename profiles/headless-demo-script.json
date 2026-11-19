@@ -1,0 +1,12 @@
+[
+  {"text": "Opening orders.", "calls": [
+    {"name": "set_national_focus", "arguments": {"focus_id": "industrial_effort"}},
+    {"name": "queue_construction", "arguments": {"building": "civilian_factory", "state": "Svealand", "count": 2}},
+    {"name": "set_production", "arguments": {"equipment": "artillery_equipment_1", "factories": 2}},
+    {"name": "hire_advisor", "arguments": {"advisor_id": "SWE_demo_minister"}},
+    {"name": "set_ai_directive", "arguments": {"directive": "protect", "target": "POL"}},
+    {"name": "set_ai_posture", "arguments": {"posture": "defensive", "theater": "GER"}},
+    {"name": "advance_time", "arguments": {"days": 7, "reason": "let the orders land"}}
+  ]},
+  {"text": "Nothing new.", "calls": [{"name": "advance_time", "arguments": {"days": 30, "reason": "wait"}}]}
+]

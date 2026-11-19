@@ -215,6 +215,7 @@ verification checklist: [docs/mod-bridge.md](docs/mod-bridge.md).
 | OpenAI-compatible providers | Written, not yet run against a live key; a second provider is still needed for conformance (#22); suite in `tests/live/` |
 | Gemini provider | Written; the SDK surface moves — check this first if it fails |
 | Save-file adapter (#6) | Reads a 1.19.5 **text** save (needs `save_as_binary=no`): political power, stability and war support (via the mod's variables), manpower, owned factories, focus, research slots, production lines (factory counts) and divisions by template. The construction queue is not in the save. Verified against a real save |
+| Headless mode and fake game | Built and tested end to end against the fake; live plan in [docs/headless.md](docs/headless.md) |
 | Console channel (#83) | Built and unit-tested, opt-in; not yet run live; open questions in [docs/adapters.md](docs/adapters.md) |
 | Screen adapter | Capture works; vision→state is TODO |
 | Input driver (#3) | Keys go out as hardware scan codes (pyautogui keys do not reach HOI4, verified live), with the real 1.19.5 hotkeys and no Escape in scripts. `set_national_focus` via focus search is verified live end to end through the harness. Tech-tree click points are computed from `countrytechtreeview.gui` (within 4 px of 18 measured infantry-tab points), but `start_research`, `queue_construction`, `set_production` and `hire_advisor` have **not** yet been run live through the harness; rotated tabs (armour, air, industry, electronics) are refused. A verification that cannot be settled returns `unverified`, not `rejected`, until a fresh day of telemetry. Tests cannot send real input |
@@ -255,6 +256,17 @@ second provider has not been run, so the suite has not yet shown the wire format
 is portable. Token accounting was audited in code and priced against a real run's
 calls, but not compared with a Console invoice (#23).
 
+
+## Headless: no mouse, no screen
+
+`hoi4-harness play --headless` reads the game from the mod's log and acts through
+the console and the keyboard, with the clock driven the same way. No clicks, no
+screenshots, no calibration. Two actions that need clicks (`start_research`,
+`delegate_army_to_ai`) are not offered, and the prompt says why. A fake game that
+speaks the same files (`--fake-game`) runs the whole stack with no HOI4 at all.
+What was checked in the game's documentation, what is verified and what is still
+to be tried live is in [docs/headless.md](docs/headless.md); the live test plan is
+[docs/live-session.md](docs/live-session.md#10-headless-no-mouse-no-screen).
 
 ## Running it against the real game
 

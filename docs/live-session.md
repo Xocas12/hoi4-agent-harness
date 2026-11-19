@@ -274,3 +274,165 @@ replaced with it (#14). The experiment tables go into
 including "no difference" (#10). Against the mock these measure the harness;
 against the live game (`--adapter logtail+input`, once steps 3-6 hold) they
 measure the thing the project exists to ask.
+
+## 10. Headless: no mouse, no screen
+
+[headless.md](headless.md) says what the mode is and what was checked in the game's
+documentation. Everything below it is **assumed from the documentation** and
+encoded in the fake game; this is the sitting that finds out which assumptions
+the real game keeps. Run it with the game loaded and **paused**, SWE, the LLM
+Bridge mod last in the playset, and the game window in front. Keep your hands off
+the keyboard and the mouse from step 4 on: the harness types into whatever has
+the focus, and a stray key lands in the game.
+
+Set once:
+
+```bash
+export HOI4_GAME_DIR="C:/Program Files (x86)/Steam/steamapps/common/Hearts of Iron IV"
+export HOI4_LOG_PATH="$HOME/OneDrive/Documents/Paradox Interactive/Hearts of Iron IV/logs/game.log"
+```
+
+(`--country SWE` below keeps the reader to Sweden. The game need not be in
+`-debug`: the console is already known to work without it.)
+
+**0. Offline first, no game needed.** What to expect from every later step:
+
+```bash
+PYTHONPATH=src python -m pytest -q
+hoi4-harness headless-check --fake-game --run-dir runs/fake-check      # 7 of 7 passed
+hoi4-harness play --profile profiles/headless-fake.json --run-dir runs/fake-demo
+```
+
+**1. Pre-flight, nothing sent.**
+
+```bash
+hoi4-harness doctor --headless --country SWE
+hoi4-harness prompt --headless --game-dir "$HOI4_GAME_DIR" | grep -A3 "headless"
+```
+
+`adapter ok headless: read=True write=True`, and the prompt names `start_research`
+and `delegate_army_to_ai` as unavailable.
+
+**2. Read only.** Let the game run a few days, pause it, then:
+
+```bash
+hoi4-harness observe --headless --country SWE --game-dir "$HOI4_GAME_DIR"
+```
+
+A brief with real political power, stability, factories and manpower. `game.log`
+should hold `LLMB|v3|state|...|tag=SWE|...` lines, one per game day since the
+mod loaded. No input is sent; the mouse does not move.
+
+**3. Dry run of the actions.** Writes the run files and logs the keys; sends nothing.
+
+```bash
+hoi4-harness play --headless --country SWE --game-dir "$HOI4_GAME_DIR" \
+    --operational-control ai --script profiles/headless-live-script.json \
+    --turns 1 --days 1 --run-dir runs/live-dry
+```
+
+Every action `not_executed` with "dry run: would ...". Read
+`runs/live-dry/console/*-llmb_turn.txt`: the `eval_effect SWE = { ... }` and
+`effect SWE llm_bridge_*` lines, each file ending in two
+`effect SWE llm_bridge_emit_state`. (The turn waits up to 30 s for a date that
+never moves; that is the dry run, not a hang.)
+
+**4. The claims the clock rests on.** Game paused and in front.
+
+```bash
+hoi4-harness headless-check --live --country SWE --game-dir "$HOI4_GAME_DIR"
+```
+
+Takes one to two minutes (each "it stopped" proof waits the probe window). Expect
+`7 of 7 passed`. In the game: the date at the top moves during claims 3, 5 and 6
+and stops after each, and `game.log` shows the `[Y.M.D.H]` prefixes advancing.
+What a FAIL means, and the setting that routes around it:
+
+| FAIL | The assumption that broke | Set |
+|---|---|---|
+| the log has telemetry | mod not loaded, or `HOI4_LOG_PATH` wrong; take *Emit telemetry now* | fix that first |
+| refresh: two fresh state lines | `effect SWE llm_bridge_emit_state` did not log (two `state` lines with the same date should appear in `game.log`) | `console_refresh = false`: actions stay "unverified" while paused |
+| `gamespeed 3` starts the clock | the console command does not set the speed, or `run` stopped reading the file | `--headless-clock keys` |
+| the space key stops it | the key did not reach the game (focus? the console left open?) | `--headless-clock console` |
+| `gamespeed 0` stops it | informational only; space is the primary pause | none |
+| `pause_in_hours` stops the game | the command differs from its one-line description | do not use `exact` |
+
+Write down, from the game, **how many seconds a day takes at speed 3**: it sets
+`clock_probe_seconds` (which must be longer than a day).
+
+**5. One scripted campaign, live.** Hands off.
+
+```bash
+hoi4-harness play --headless --live --country SWE --game-dir "$HOI4_GAME_DIR" \
+    --operational-control ai --script profiles/headless-live-script.json \
+    --turns 2 --days 7 --run-dir runs/live-headless
+```
+
+Afterwards, per action (`runs/live-headless/transcript.jsonl`, `game.log`, and
+the game itself):
+
+| Action | Result in the transcript | `game.log` | In the game |
+|---|---|---|---|
+| `set_national_focus` SWE_defense_act | `unverified` | no `focus` line right after it; one from the next day on: `LLMB\|v3\|focus\|tag=SWE\|id=SWE_defense_act` | the focus is running (top left) |
+| `queue_construction` capital | `unverified` ("reader cannot see construction"), `changed.channel = console` | nothing; `built_civ` rises on completion | a civilian factory in the capital's queue (look after the run) |
+| `set_production` infantry_equipment_1 | `unverified` | nothing | a line for it, or the game declined because no factory was free: say which |
+| `set_ai_directive` protect POL | verified | `evt ... kind=13 detail=POL`, `kind=14 detail=protect POL` | the AI control line in the brief |
+| `set_ai_posture` defensive GER | verified | `evt ... kind=13 detail=GER`, `kind=15 detail=defensive GER` | the brief shows `GER: defensive` |
+
+The questions this step answers, each a plain yes or no:
+
+* The keys: did the console open and close each time, with nothing left open? Did
+  the game ever show the Escape menu, a panel left open, or text typed into the
+  wrong place?
+* After each console run, did `game.log` get **two** new `state` lines with the
+  same date (the refresh)? If the game was paused, did the date stay put?
+* Was anything wrong because a run file was only partly read? Compare
+  `llmb_turn.txt` in the user directory with the copy under
+  `runs/live-headless/console/`.
+* Did each turn advance exactly 7 days, and was the game paused at the end?
+  (`turn_end` dates in the transcript; the PAUSED banner.)
+* Did the pointer ever move? It must not.
+
+**6. The advisor.** Pick an affordable political advisor from
+`common/characters/` (a `slot = political_advisor` block with a `cost`), add
+`{"name": "hire_advisor", "arguments": {"advisor_id": "<character id>"}}` to a copy
+of the script and run it as in step 5 with `--turns 1`. Expected: `done and
+verified` (political power fell between the two refresh lines: compare `pp=` in
+the last two `state` lines), and the advisor is in the political panel in the
+game. Then try one you cannot afford: refused before anything is written, and the
+console never opens.
+
+**7. The exact clock.**
+
+```bash
+hoi4-harness play --headless --live --country SWE --game-dir "$HOI4_GAME_DIR" \
+    --headless-clock exact --turns 3 --days 7 --run-dir runs/live-exact
+```
+
+Expect each turn 7 days (8 at most), the game stopped by itself at the PAUSED
+banner, and no pause key press after the first turn. If `headless-check` failed the
+`pause_in_hours` claim, skip it.
+
+**8. Failure paths, on purpose.** One at a time, with the script edited:
+`queue_construction` in a state Sweden does not own (the game should queue
+nothing; look at the queue), and a count of 10 civilian factories in one state
+(only the free slots should queue). Both come back `unverified`; the game must not
+have queued what it had no slot for.
+
+**9. Probes that decide what to build next.** Each is one line typed by hand into
+the game's console (`grave`), outside the harness. Say what happened:
+
+* `get_var llmb_pp`, `list_flags SWE`, `eval_trigger SWE = { has_tech = infantry_weapons }`:
+  does the answer also reach `game.log`? If yes, on-demand probes (free building
+  slots, an advisor) are possible without a mod change.
+* `fast_forward 3`: what does it do, and does it stop by itself?
+* `savegame headless_probe` with `save_as_binary=no`: where does the file land, and
+  does `hoi4-harness observe --adapter savegame` show production and construction?
+  If so, a save-then-read after each action would make the two "unverified"
+  actions verifiable with no mouse.
+* Open the tech screen (`w`) and try Tab and the arrow keys: does anything select?
+  If one does, `start_research` has a keyboard path after all.
+
+**Decision.** If steps 4 and 5 hold, headless is the default for everything but
+research and delegation. If only the refresh fails, the mode still works but every
+log-verified action reads "unverified" until a day has passed.

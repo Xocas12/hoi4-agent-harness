@@ -26,6 +26,7 @@ ADAPTERS = (
     "logtail+input",
     "savegame+input",
     "screen+input",
+    "headless",
 )
 
 
@@ -40,6 +41,10 @@ def build_adapter(config: HarnessConfig) -> GameAdapter:
         return MockAdapter(
             seed=config.seed, country=config.country or "SWE", start=config.start_date
         )
+    if name == "headless":
+        from .headless import build_headless
+
+        return build_headless(config)
     if name == "savegame":
         from .savegame import SaveGameAdapter
 
@@ -108,6 +113,7 @@ def _with_console(driver, config: HarnessConfig):
             guards=config.console_guards,
             archive_dir=Path(config.run_dir),
             country=config.country,
+            refresh=bool(config.console_refresh),
         ),
         index=config.build_index(),
     )
