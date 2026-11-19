@@ -1,0 +1,15 @@
+[
+  {
+    "text": "Poland is the weakest neighbour and the one I can beat first. Pointing the AI at it, offensive on that front, and sleeping a month while it mobilises.",
+    "calls": [
+      {"name": "set_ai_directive", "arguments": {"directive": "invade", "target": "POL"}},
+      {"name": "set_ai_posture", "arguments": {"posture": "offensive", "theater": "POL"}},
+      {"name": "note", "arguments": {"text": "Plan: POL first, then see. Clear the invade directive once POL capitulates."}},
+      {"name": "advance_time", "arguments": {"days": 30, "reason": "let the AI mobilise and declare"}}
+    ]
+  },
+  {
+    "text": "The war is on. Nothing to change; check again in two weeks.",
+    "calls": [{"name": "advance_time", "arguments": {"days": 14, "reason": "war running"}}]
+  }
+]

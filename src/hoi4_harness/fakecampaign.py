@@ -129,7 +129,7 @@ class FakeAI:
             if country is None or tag in at_war:
                 continue
             if (today - self._asked[tag]).days >= DECLARE_DELAY:
-                game.start_war(tag, country.divisions)
+                game.start_war(tag, country.divisions, declared_by_player=True)
                 at_war.add(tag)
 
     def _rate(self, tag: str) -> float:

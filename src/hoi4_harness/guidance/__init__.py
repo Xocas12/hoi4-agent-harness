@@ -13,6 +13,7 @@ Built-in packs:
     doctrine       opinionated general advice (default)
     historical     stay close to what the country actually did
     coach          a prescriptive checklist, for weaker or smaller models
+    world-conquest the unattended campaign: the game's AI executes, the model steers
 
 Any path to a text file works too, so a project can ship its own doctrine:
 
@@ -24,7 +25,7 @@ from __future__ import annotations
 from pathlib import Path
 
 BUILTIN_DIR = Path(__file__).parent
-BUILTIN = ("none", "unconstrained", "minimal", "doctrine", "historical", "coach")
+BUILTIN = ("none", "unconstrained", "minimal", "doctrine", "historical", "coach", "world-conquest")
 
 
 def available() -> list[str]:

@@ -380,4 +380,32 @@ def build_headless(config: HarnessConfig, fake=None) -> CompositeAdapter:
                                clock_owner=config.clock_owner,
                                poll_seconds=config.headless_poll_seconds, sleep=sleep)
     adapter.fake_game = fake
+    adapter.watchdog = adapter.patient_focus = None
+    if config.campaign:
+        _watch_for_campaign(adapter, config, fake, driver, sleep)
     return adapter
+
+
+def _watch_for_campaign(adapter, config: HarnessConfig, fake, driver, sleep) -> None:
+    """An unattended run's guards: the death/silence watchdog inside every clock wait, and
+    a focus check that waits for the game to come back to the front instead of failing."""
+    from ..campaign.watch import PatientFocus, Watchdog, process_running
+    if fake is None and not config.enforce_window_focus:
+        raise ValueError("a campaign never types without the game in front: leave the window "
+                         "guard on (drop --no-window-guard)")
+    if fake is not None:
+        alive, now = (lambda: fake.alive), (lambda: fake._wall)
+    else:
+        name = config.campaign_game_process
+        alive, now = (lambda: process_running(name)), time.monotonic
+    watchdog = Watchdog(config.log_path, silence_seconds=config.campaign_silence_minutes * 60,
+                        process_alive=alive, now=now)
+    adapter.watchdog = watchdog
+    adapter.on_poll, adapter.on_advance = watchdog.check, watchdog.reset
+    # Every key the harness sends is gated on this; it now waits for the focus (a minute at
+    # a time) where it used to refuse, and still never sends a key to another window.
+    inner = driver._focus_check
+    patient = PatientFocus(inner, sleep=sleep, max_wait_seconds=config.campaign_focus_wait_minutes * 60)
+    driver._focus_check = patient
+    adapter.patient_focus = patient
+

@@ -318,7 +318,7 @@ class FakeGame:
         self.paused = True
         #: The console's ``human_ai`` toggle: the game's AI runs the player's country.
         self.human_ai = False
-        #: Country flags the console's effects set (``llmb_player`` is the one that matters).
+        #: Country flags the console's effects set (``llmb_harness`` is the one that matters).
         self.flags: set[str] = set()
         #: A game that is not running writes nothing and ticks no day (``kill``).
         self.alive = True
@@ -398,9 +398,9 @@ class FakeGame:
     @property
     def visible(self) -> bool:
         """Whether the mod's on_actions report this country: ``is_ai = no`` or the
-        ``llmb_player`` flag (``llm_bridge_is_player``). Under ``human_ai`` with no flag
+        ``llmb_harness`` flag (``llm_bridge_is_harness``). Under ``human_ai`` with no flag
         the player counts as AI and the daily log goes silent, as it would in the game."""
-        return not self.human_ai or "llmb_player" in self.flags
+        return not self.human_ai or "llmb_harness" in self.flags
 
     def emit_campaign(self) -> None:
         """The mod's ``llm_bridge_emit_campaign``: the weekly conquest numbers."""
@@ -451,9 +451,10 @@ class FakeGame:
             return war.enemy_divisions
         return sum(f.divisions_enemy for f in self.world.state.fronts if f.enemy == war.against)
 
-    def start_war(self, enemy: str, divisions: int = 30) -> None:
+    def start_war(self, enemy: str, divisions: int = 30, declared_by_player: bool = False) -> None:
         """The player is at war with ``enemy`` from now: the mod's ``war_declared``
-        event, and a ``war`` line in every state tick from here on."""
+        event (logged in the declarer's scope), and a ``war`` line in every state tick
+        from here on."""
         from .types import War
 
         state = self.world.state
@@ -461,7 +462,8 @@ class FakeGame:
             state.wars.append(War(against=enemy, since=self.date, enemy_divisions=divisions,
                                   borders=True, surrender_progress=0.0))
         if self.visible:
-            self._write(self._llmb("evt", tag=enemy, other=self.country, kind=1, detail=0))
+            declarer, target = (self.country, enemy) if declared_by_player else (enemy, self.country)
+            self._write(self._llmb("evt", tag=declarer, other=target, kind=1, detail=0))
 
     def capitulation(self, enemy: str) -> None:
         """``enemy`` capitulates: the mod's ``on_capitulation`` line (kind 2)."""
@@ -1001,9 +1003,12 @@ class FakeGame:
             return self.emit_front()
         if name == "llm_bridge_emit_campaign":
             return self.emit_campaign()
-        if name == "llm_bridge_mark_player":
-            self.flags.add("llmb_player")
+        if name == "llm_bridge_mark_harness":
+            self.flags.add("llmb_harness")
             return self._event(16)
+        if name == "llm_bridge_unmark_harness":
+            self.flags.discard("llmb_harness")
+            return self._event(17)
         if name == "llm_bridge_clear_directives":
             self.directives, self.global_posture, self.theater_postures = [], None, {}
             self.target = None

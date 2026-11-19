@@ -54,8 +54,9 @@ EVENT_CODES = {
     "14": ("directive_raised", "info"),
     # Mirrored from modgen.EVENT_THEATER_POSTURE; detail is "<posture> <TAG>".
     "15": ("theater_posture", "info"),
-    # Schema v5: the harness marked the player's country (llm_bridge_mark_player).
-    "16": ("player_marked", "info"),
+    # Schema v5: the harness marked the player's country (llm_bridge_mark_harness).
+    "16": ("harness_marked", "info"),
+    "17": ("harness_unmarked", "info"),
 }
 
 #: Counters on the state line that only ever go up. The game has no on_action
@@ -145,7 +146,7 @@ def parse_date(raw: str) -> str | None:
     return None
 
 
-def _event_text(event_kind: str, detail: str) -> str:
+def _event_text(event_kind: str, detail: str, fields: dict[str, str] | None = None) -> str:
     """What the brief says for an event.
 
     ``detail`` is free text only where the mod fills it in (a target, a raised
@@ -155,6 +156,13 @@ def _event_text(event_kind: str, detail: str) -> str:
     detail = detail.strip()
     label = event_kind.replace("_", " ")
     if detail in ("", "0"):
+        # A war or a surrender names its two sides (the scope it ran in, and FROM), so a
+        # campaign's report can say who declared on whom.
+        tag, other = (fields or {}).get("tag", "").strip(), (fields or {}).get("other", "").strip()
+        if event_kind == "war_declared" and tag and other:
+            return f"war declared: {tag} on {other}"
+        if event_kind == "capitulation" and tag:
+            return f"capitulation: {tag}" + (f" (to {other})" if other else "")
         return label
     if event_kind == "directive_target_selected":
         return f"target selected: {detail}"
@@ -399,7 +407,7 @@ class LogTailAdapter(GameAdapter):
             self._pending.append(
                 GameEvent(
                     kind=event_kind,
-                    text=_event_text(event_kind, fields.get("detail", "")),
+                    text=_event_text(event_kind, fields.get("detail", ""), fields),
                     severity=severity,
                     date=state.date,
                 )

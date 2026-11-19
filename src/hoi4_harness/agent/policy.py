@@ -33,6 +33,22 @@ from ..types import ActionCall, GameState
 
 
 @dataclass
+class CampaignPacing:
+    """How often a campaign wakes the model: the scheduled review is longer in peace
+    than at war, a critical event wakes it only after a minimum gap, and the model may
+    move its own next review within bounds (``advance_time days``)."""
+
+    peace_days: int = 30
+    war_days: int = 14
+    min_days: int = 7
+    max_days: int = 90
+    wake_gap_days: int = 7
+
+    def clamp(self, days: int) -> int:
+        return max(self.min_days, min(self.max_days, int(days)))
+
+
+@dataclass
 class WakeDecision:
     wake: bool
     reason: str
@@ -56,8 +72,13 @@ class Policy:
         wake_on_front_quiet: bool = True,
         wake_on_losing_ground: bool = True,
         reflex_delegate: bool = False,
+        campaign: CampaignPacing | None = None,
     ):
         self.days_per_turn = days_per_turn
+        #: Campaign pacing (docs/campaign.md); None is the normal fixed-interval policy.
+        self.campaign = campaign
+        #: The model's own next review, in days, set from its last advance_time.
+        self.review_override: int | None = None
         self.wake_on_no_focus = wake_on_no_focus
         self.wake_on_free_research_slot = wake_on_free_research_slot
         self.wake_on_encirclement = wake_on_encirclement
@@ -86,6 +107,9 @@ class Policy:
             # The reflex-only baseline: nothing is worth a model call, however
             # loud the game gets, because there is no model to wake.
             return WakeDecision(False, "planner disabled: reflex-only run")
+
+        if self.campaign is not None:
+            return self._campaign_wake(state, days_since_planner)
 
         for event in state.events:
             if event.severity == "critical":
@@ -116,6 +140,29 @@ class Policy:
         if days_since_planner >= self.days_per_turn:
             return WakeDecision(True, "scheduled review", "scheduled")
 
+        return WakeDecision(False, "nothing worth a decision")
+
+    def review_days(self, state: GameState) -> int:
+        """In-game days until the next scheduled review: the model's own choice if it
+        made one, else the campaign's peace or war interval, else ``days_per_turn``."""
+        if self.campaign is None:
+            return self.days_per_turn
+        if self.review_override is not None:
+            return self.review_override
+        return self.campaign.war_days if state.wars else self.campaign.peace_days
+
+    def _campaign_wake(self, state: GameState, days_since_planner: int) -> WakeDecision:
+        """Wake rules for a campaign, where the game's AI does everything the old
+        reflex and wartime rules watched (focus, research, fronts) and a wake is
+        money: a scheduled review, and the critical events a war or a surrender is."""
+        pacing = self.campaign
+        critical = next((e for e in state.events if e.severity == "critical"), None)
+        if critical is not None and days_since_planner >= pacing.wake_gap_days:
+            return WakeDecision(True, f"critical event: {critical.text}", "critical")
+        if days_since_planner >= self.review_days(state):
+            return WakeDecision(True, "scheduled review", "scheduled")
+        if critical is not None:
+            return WakeDecision(False, f"critical event inside the {pacing.wake_gap_days}-day gap")
         return WakeDecision(False, "nothing worth a decision")
 
     def _delegate(self, state: GameState) -> list[ActionCall]:

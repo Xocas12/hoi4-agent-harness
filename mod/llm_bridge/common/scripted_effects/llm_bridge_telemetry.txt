@@ -14,8 +14,8 @@
 # token that fails to expand costs nothing. Verified against a running game.
 #
 # Schema v5 (campaign mode): the state line gains ai=, the `camp` line (llm_bridge_
-# emit_campaign) is new, and every on_action limits on llm_bridge_is_player (is_ai =
-# no OR the llmb_player flag) instead of is_ai = no, so the log survives `human_ai`.
+# emit_campaign) is new, and every on_action limits on llm_bridge_is_harness (is_ai =
+# no OR the llmb_harness flag) instead of is_ai = no, so the log survives `human_ai`.
 #
 # Bump LLMB_SCHEMA_VERSION whenever the field set changes, and bump
 # SCHEMA_VERSION in hoi4_harness/adapters/logtail.py to match. They are compared
@@ -126,14 +126,21 @@ llm_bridge_emit_wars = {
 	}
 }
 
-# Marks the player's country for the bridge (schema v5). The harness runs this
-# once at the start of a campaign, BEFORE the console's `human_ai`, so the
-# telemetry keeps flowing once the game counts the player as AI. Idempotent.
-#   set_country_flag   effects_documentation.md (the flag itself is read by
-#                      has_country_flag, triggers_documentation.md:3660)
-llm_bridge_mark_player = {
-	set_country_flag = llmb_player
+# Marks THIS country for the bridge (schema v5): every on_action reports for a country
+# that is is_ai = no OR carries llmb_harness, each line under its own tag, so a log can
+# hold several countries and the reader keeps the one it is told to (--country). The
+# harness runs this before the console's `human_ai` so a campaign's telemetry survives
+# the player becoming AI, and later to steer an AI country while a person plays another.
+# Idempotent. `effect <TAG> llm_bridge_mark_harness` / `..._unmark_harness`.
+llm_bridge_mark_harness = {
+	set_country_flag = llmb_harness
 	set_variable = { llmb_event_kind = 16 }
+	llm_bridge_emit_event = yes
+}
+
+llm_bridge_unmark_harness = {
+	clr_country_flag = llmb_harness
+	set_variable = { llmb_event_kind = 17 }
 	llm_bridge_emit_event = yes
 }
 

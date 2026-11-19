@@ -173,8 +173,8 @@ What that established:
 - **Schema v5 (campaign mode): who is "the player".** Every on_action used to limit on
   `is_ai = no`. The console's `human_ai` hands the player's country to the game's AI, so
   every one of those limits went false and the log fell silent. Every limit now asks the
-  scripted trigger `llm_bridge_is_player` (`is_ai = no` OR the country flag `llmb_player`),
-  and the harness sets the flag with `effect <TAG> llm_bridge_mark_player` before it toggles
+  scripted trigger `llm_bridge_is_harness` (`is_ai = no` OR the country flag `llmb_harness`),
+  and the harness sets the flag with `effect <TAG> llm_bridge_mark_harness` before it toggles
   `human_ai` ([campaign.md](campaign.md)). The state line also carries `ai=` (the read-back
   of `is_ai`), and a weekly `camp` line (`on_weekly`) carries the conquest numbers.
 - **`front_unit_request` takes a literal country tag or none**, not a variable, so

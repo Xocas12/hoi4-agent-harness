@@ -1,7 +1,7 @@
 """The fake game under ``human_ai``: the telemetry gate, the flag, and a crude AI.
 
 The fake is only as good as what it models, so the thing worth pinning is that it
-models the *hazard*: with ``human_ai`` on and no ``llmb_player`` flag the daily log
+models the *hazard*: with ``human_ai`` on and no ``llmb_harness`` flag the daily log
 goes silent, exactly what the mod's old ``is_ai = no`` limits would have done in the
 game, and that the flag (set the way the harness sets it) brings it back.
 """
@@ -54,7 +54,7 @@ def test_under_human_ai_the_log_goes_silent_without_the_flag(game, keys):
 
 
 def test_the_flag_brings_the_daily_lines_back(game, keys):
-    run_lines(game, keys, "effect GER llm_bridge_mark_player", "human_ai")
+    run_lines(game, keys, "effect GER llm_bridge_mark_harness", "human_ai")
     before = len(llmb_lines(game, "state"))
     game.run_days(5)
     assert len(llmb_lines(game, "state")) == before + 5
@@ -62,7 +62,7 @@ def test_the_flag_brings_the_daily_lines_back(game, keys):
 
 
 def test_the_flag_can_be_set_with_an_eval_effect_too(game, keys):
-    run_lines(game, keys, "eval_effect GER = { set_country_flag = llmb_player }", "human_ai")
+    run_lines(game, keys, "eval_effect GER = { set_country_flag = llmb_harness }", "human_ai")
     assert game.visible
 
 
@@ -84,7 +84,7 @@ def test_the_campaign_line_comes_weekly_and_on_demand(game, keys):
 
 
 def test_the_ai_declares_the_war_a_directive_asks_for_and_wins_it(game, keys):
-    run_lines(game, keys, "effect GER llm_bridge_mark_player", "human_ai",
+    run_lines(game, keys, "effect GER llm_bridge_mark_harness", "human_ai",
               "effect GER llm_bridge_select_POL", "effect GER llm_bridge_raise_invade")
     game.run_days(10)
     assert not game.world.state.wars, "the AI waits before it declares"
@@ -99,7 +99,7 @@ def test_the_ai_declares_the_war_a_directive_asks_for_and_wins_it(game, keys):
 
 
 def test_without_a_directive_the_ai_stays_at_peace(game, keys):
-    run_lines(game, keys, "effect GER llm_bridge_mark_player", "human_ai")
+    run_lines(game, keys, "effect GER llm_bridge_mark_harness", "human_ai")
     game.run_days(120)
     assert not game.world.state.wars and not game.ai.capitulated
 
@@ -107,7 +107,7 @@ def test_without_a_directive_the_ai_stays_at_peace(game, keys):
 def test_an_offensive_posture_wins_faster(tmp_path):
     def days_to_win(posture):
         g = FakeGame(tmp_path / str(posture) / "user", country="GER", variance=0)
-        g.human_ai, g.flags = True, {"llmb_player"}
+        g.human_ai, g.flags = True, {"llmb_harness"}
         g.directives, g.global_posture = ["invade POL"], posture
         for day in range(1, 2000):
             g.tick_day()
@@ -140,3 +140,10 @@ def test_focus_comes_back_after_a_while(game):
     assert not game.focus_check("x").focused
     game.sleep(31)
     assert game.focus_check("x").focused
+
+
+def test_the_harness_flag_can_be_cleared_again(game, keys):
+    run_lines(game, keys, "effect GER llm_bridge_mark_harness", "human_ai")
+    assert game.visible
+    run_lines(game, keys, "effect GER llm_bridge_unmark_harness")
+    assert not game.visible and "llmb_harness" not in game.flags

@@ -53,7 +53,7 @@ silently wrong numbers.
 
 Verified on HOI4 1.19.5.0 for telemetry, focus and research probes, and for
 raising directives and theater posture (the telemetry line shown above is schema
-v5: v4 plus the `ai=` read-back, the weekly `camp` line and the `llmb_player` flag; v4 added `war` lines). Still unverified: research completion through the `techs` counter, the `owned`
+v5: v4 plus the `ai=` read-back, the weekly `camp` line and the `llmb_harness` flag; v4 added `war` lines). Still unverified: research completion through the `techs` counter, the `owned`
 field, and whether the game's AI acts on a directive. The script token names (variables, scope functions, on_action
 names, `ai_strategy` types) are the bit that moves between HOI4 versions — check them
 against `common/` in your own install before trusting a run. See

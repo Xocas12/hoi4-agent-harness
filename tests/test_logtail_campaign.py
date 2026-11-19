@@ -55,8 +55,8 @@ def test_a_v4_line_is_refused_not_misread():
         raise AssertionError("a v4 line must not be read by a v5 harness")
 
 
-def test_the_player_marked_event_is_info(tmp_path):
+def test_the_harness_marked_event_is_info(tmp_path):
     state = _read(tmp_path, STATE.format(ai=0)
                   + f"{STAMP}: LLMB|v5|evt|tag=GER|kind=16|detail=0\n")
-    assert [e.kind for e in state.events] == ["player_marked"]
+    assert [e.kind for e in state.events] == ["harness_marked"]
     assert state.events[0].severity == "info"

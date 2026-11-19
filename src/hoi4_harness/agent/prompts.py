@@ -70,6 +70,28 @@ the brief shows production and the queue as of the last save it did read. A focu
 start appears in the log only after a day of progress."""
 
 
+CAMPAIGN = """This is an unattended campaign, and you are its grand strategist. The game is running
+headless: the harness reads it from the mod's log and acts through the game's console. The
+game's own AI is running your country (the console's human_ai): it chooses the national focus
+and the research, builds and produces, designs and deploys divisions and runs every front. You
+cannot do any of that, and the tools for it are not offered, because the AI would undo or double
+it. What you have is the layer above:
+- set_ai_directive and clear_ai_directives say who the AI should act on (invade, protect,
+  contain, befriend, antagonize, ignore). set_ai_posture sets how hard it presses, for every
+  front or for the front facing one country (theater). take_decision takes a decision the AI does
+  not; hire_advisor fills a slot it left empty.
+- note keeps a plan across wakes. You are woken only for a scheduled review (weeks apart) or when
+  a war starts or ends; the game runs between wakes without you.
+- advance_time days sets how long the clock runs until your next scheduled review (7 to 90 days).
+  Every wake spends from a fixed money budget, so sleep long when the plan is working.
+
+A change you make reaches the game when the harness types it into the console, and the result
+says whether the game took it. Directives and postures are standing orders: they stay until you
+change them. The brief reports the conquest: states held and the share of the world, the wars
+with each enemy's divisions and surrender progress, the independent countries left, and what the
+run has spent."""
+
+
 def playset_note(name: str) -> str:
     """Said once, in the stable prefix, when the game is not the one the model
     remembers. Guidance packs that assert historical dates stay as written; this
@@ -94,6 +116,7 @@ def build_system(
     headless: bool = False,
     headless_reader: str = "log+save",
     playset_context: str = "",
+    campaign: bool = False,
 ) -> str:
     """Assemble the system prompt.
 
@@ -110,7 +133,11 @@ def build_system(
         # Sits with the mechanics, before any guidance: it corrects the fiction
         # that the harness executes what the model calls.
         parts.append(ADVISOR)
-    if headless:
+    if campaign:
+        # Instead of the headless note: it lists what the mouse-only actions cannot do, and
+        # a campaign's tool list is narrower than that for a different reason.
+        parts.append(CAMPAIGN)
+    elif headless:
         from ..adapters.headless import unavailable_actions
 
         parts.append(HEADLESS.format(gone=", ".join(unavailable_actions(headless_reader))))
@@ -174,6 +201,7 @@ def system_for(config, index=None) -> str:
         headless=config.adapter == "headless",
         headless_reader=config.headless_reader,
         playset_context=context,
+        campaign=getattr(config, "campaign", False),
     )
 
 
