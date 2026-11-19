@@ -364,6 +364,12 @@ install.
   and negative rows go left (`x = box.x + width/2 + w*row`). A percent `x` or `size`
   is a share of the screen width less the folder's margins. A folder with a different
   left margin (the air tabs have 0) moves its content by the difference.
+  **Measured live on 1.19.5 (1920x1080):** in `nsb_armour_folder`, `bba_air_techs_folder`,
+  `industry_folder` and `electronics_folder` the rule put x on the icon every time and y
+  40 GUI units (50 px) high, on 12 techs; `ROTATED_Y_OFFSET` corrects that, and all 12
+  then landed on their icons. `armour_folder` and `air_techs_folder` are the trees without
+  the tank and aircraft designer DLCs and were not shown by this install, so they and
+  artillery stay unmeasured. Before the measurement:
   **UNVERIFIED: the rotated tabs** (`armour_folder`, `nsb_armour_folder`,
   `air_techs_folder`, `bba_air_techs_folder`, `industry_folder`, `electronics_folder`).
   Without the game, they are checked only against themselves
@@ -511,7 +517,10 @@ not a code change. `docs/live-session.md` step 7 has the exact checks.
    line like the UI's.
 7. **Whether an open console is closed by `grave`**, and whether the console
    keeps text between uses (a stale line would prefix the `run`).
-8. **The rotated tech tabs' click points** (armour, air, industry, electronics),
+8. **The rotated tech tabs' click points**: settled on 1.19.5 for nsb armour, bba air,
+   industry and electronics (see the tech tree section); still open for the non-DLC
+   armour and air trees and for artillery. Originally:
+   **The rotated tech tabs' click points** (armour, air, industry, electronics),
    which are computed from the interface file but not measured:
    `docs/live-session.md` step 6b.
 

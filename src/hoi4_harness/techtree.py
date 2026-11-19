@@ -49,6 +49,11 @@ FOLDER_MARGINS = (13.0, 25.0)
 #: Where GUI (0, 0) of a folder's content lands, in GUI units, measured in the
 #: infantry tab at 1920x1080 (screen centre of support weapons I = (230, 435)).
 CONTENT_ORIGIN = (9.0, 103.0)
+#: The rotated formats (UP, UPPER_LEFT) sit this many GUI units lower than the
+#: rule puts them. Measured live on 1.19.5 at 1920x1080 on 12 techs across the
+#: nsb armour, bba air, industry and electronics tabs: x landed on the icon every
+#: time, y was 27-38 screenshot px high (mean 50 screen px = 40 GUI units).
+ROTATED_Y_OFFSET = 40.0
 
 _FOLDER = re.compile(r'containerWindowType\s*=\s*\{\s*name\s*=\s*"(\w+_folder)"', re.I)
 _GRIDBOX = re.compile(r"gridboxtype\s*=\s*\{", re.I)
@@ -145,7 +150,8 @@ def gui_point(box: Gridbox, column: int, row: int, screen_width: float | None = 
     if box.format == "LEFT":
         return (left + box.slot_width * (column + 0.5), box.y + box.slot_height * (row + 0.5))
     if box.format == "UPPER_LEFT":
-        return (left + box.slot_width * (row + 0.5), box.y + box.slot_height * (column + 0.5))
+        return (left + box.slot_width * (row + 0.5),
+                box.y + box.slot_height * (column + 0.5) + ROTATED_Y_OFFSET)
     if box.format == "UP":
         if box.width is None:
             raise LayoutUnknown("its UP box has no size, so its centre is unknown")
@@ -155,5 +161,5 @@ def gui_point(box: Gridbox, column: int, row: int, screen_width: float | None = 
                 "such a tree sit about 100 GUI units from where the rule puts it, so the "
                 "base of the percent is unclear")
         return (left + across(box.width, box.width_percent) / 2 + box.slot_width * row,
-                box.y + box.slot_height * (column + 0.5))
+                box.y + box.slot_height * (column + 0.5) + ROTATED_Y_OFFSET)
     raise LayoutUnknown(f"its box has format {box.format}, which the rule does not know")

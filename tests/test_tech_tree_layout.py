@@ -64,26 +64,27 @@ def test_the_layout_rule_on_the_fixture(fixture_index):
 
 
 # --- the rotated formats ----------------------------------------------------
-# GUI = (box + ...) as in techtree.py; screen = (origin + GUI) * 1.25, origin (9, 103),
+# GUI = (box + ...) as in techtree.py, plus ROTATED_Y_OFFSET (40) in y; screen =
+# (origin + GUI) * 1.25, origin (9, 103),
 # less 13 GUI units of x in a folder whose left margin is 0 (the air tabs).
 
 
 def test_upper_left_swaps_the_axes_and_starts_at_the_top_left(fixture_index):
     # armour1: row (x) 2, column (y) 3 -> GUI (0 + 70*2.5, 40 + 70*3.5) = (175, 285)
-    assert point(fixture_index, "armour1") == (230, 485)
+    assert point(fixture_index, "armour1") == (230, 535)
 
 
 def test_up_centres_row_zero_on_the_box_and_runs_the_years_down(fixture_index):
     # box (300, 32) 400 wide, slots 60x70, left margin 0: x = 300 + 200 + 60*row - 13
-    assert point(fixture_index, "early_fighter") == (620, 388)
-    assert point(fixture_index, "fighter1") == (620, 475)          # a year later: lower
-    assert point(fixture_index, "cas1") == (320, 475)              # row -4: 240 units left
+    assert point(fixture_index, "early_fighter") == (620, 438)
+    assert point(fixture_index, "fighter1") == (620, 525)          # a year later: lower
+    assert point(fixture_index, "cas1") == (320, 525)              # row -4: 240 units left
 
 
 def test_up_boxes_placed_and_sized_by_percent_use_the_width_between_the_margins(fixture_index):
     # 1536 GUI wide, margins 0 + 25: 10% + 80% / 2 of 1511 = 742.5, less 13, plus 70 for row 1
     x, y = point(fixture_index, "wide1")
-    assert abs(x - 1027) <= 1 and y == 560
+    assert abs(x - 1027) <= 1 and y == 610
 
 
 def test_a_box_that_cannot_be_placed_is_refused_with_the_reason(fixture_index):
