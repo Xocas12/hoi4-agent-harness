@@ -171,17 +171,7 @@ class RivalQueue(HandoverQueue):
         if not self.last_gate.ok:
             return None
         state = read_state()
-        report = RivalReport(granted_on=state.date, policy=policy.name)
-        runnable: list[Pending] = []
-        for entry in list(self.pending):
-            why = rival_stale_reason(entry.call, state, entry.queued_on, self.stale_days)
-            if why:
-                self.pending.remove(entry)
-                report.stale.append({"action": entry.call.name, "arguments": entry.call.arguments,
-                                     "queued_on": entry.queued_on, "ran_on": state.date,
-                                     "reason": why})
-            else:
-                runnable.append(entry)
+        report, runnable = self.triage(state)
         results: list[ActionResult] | None = None
         if runnable:
             calls = [e.call for e in runnable]
@@ -199,10 +189,35 @@ class RivalQueue(HandoverQueue):
                     policy.end()
         else:
             policy.end()
+        self.settle(report, runnable, results)
+        return report
+
+    def triage(self, state: GameState, limit: int | None = None) -> tuple[RivalReport, list[Pending]]:
+        """Drop what is stale against ``state`` (into the report) and return what may run.
+
+        ``limit`` keeps at most that many of the survivors, oldest first; the rest stay queued
+        for the next window (several rivals share one window, rival/multi.py)."""
+        report = RivalReport(granted_on=state.date, policy=self.policy.name if self.policy else "paused")
+        runnable: list[Pending] = []
+        for entry in list(self.pending):
+            why = rival_stale_reason(entry.call, state, entry.queued_on, self.stale_days)
+            if why:
+                self.pending.remove(entry)
+                report.stale.append({"action": entry.call.name, "arguments": entry.call.arguments,
+                                     "queued_on": entry.queued_on, "ran_on": state.date,
+                                     "reason": why})
+            else:
+                runnable.append(entry)
+        return report, runnable if limit is None else runnable[:max(0, limit)]
+
+    def settle(self, report: RivalReport, runnable: list[Pending],
+               results: list[ActionResult] | None) -> None:
+        """Book what a window did: ``results`` (None: nothing was sent) are parallel to
+        ``runnable``. Whatever never reached the game stays queued."""
         if results is not None:
             for entry, result in zip(runnable, results, strict=True):
                 info = {"action": entry.call.name, "arguments": entry.call.arguments,
-                        "queued_on": entry.queued_on, "ran_on": state.date}
+                        "queued_on": entry.queued_on, "ran_on": report.granted_on}
                 if not result.ok and any(t in result.message.lower() for t in _NOT_TYPED):
                     report.aborted, report.reason = True, "the game window was not in front"
                     continue              # stays queued: nothing reached the game
@@ -214,7 +229,6 @@ class RivalQueue(HandoverQueue):
         report.left_queued = len(self.pending)
         self._publish()
         self.reports.append(report)
-        return report
 
     def _advise(self, read_state: Callable[[], GameState]) -> RivalReport:
         """``never``: show what the model asked for and drop it, so the queue does not pile up."""

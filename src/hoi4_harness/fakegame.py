@@ -169,7 +169,9 @@ DEMO_FILES = {
     "common/country_tags/00_countries.txt":
         'SWE = "countries/Sweden.txt"\nGER = "countries/Germany.txt"\n'
         'POL = "countries/Poland.txt"\nFIN = "countries/Finland.txt"\n'
-        'ENG = "countries/England.txt"\nSOV = "countries/Soviet.txt"\n',
+        'ENG = "countries/England.txt"\nSOV = "countries/Soviet.txt"\n'
+        'FRA = "countries/France.txt"\nITA = "countries/Italy.txt"\n'
+        'USA = "countries/USA.txt"\nJAP = "countries/Japan.txt"\n',
     "common/national_focus/swe.txt": """focus_tree = {
 	id = swe_demo_tree
 	country = { factor = 0 modifier = { add = 10 tag = SWE } }

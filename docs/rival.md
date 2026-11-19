@@ -4,6 +4,8 @@ You start a single-player game as country A. The model is the grand strategist o
 an AI country in the same game. B's own AI runs its units, research, production and focuses;
 the model only sets the standing orders above that (who to invade, whom to protect, how hard
 to press, which decisions to take). You play A at your own pace, with your own clock.
+Several AI countries can be steered at once, each by its own strategist: see
+[Several countries at once](#several-countries-at-once).
 
 ```bash
 export HOI4_GAME_DIR="C:/Program Files (x86)/Steam/steamapps/common/Hearts of Iron IV"
@@ -148,14 +150,75 @@ grep "LLMB|v5|evt|tag=POL" "$HOI4_LOG_PATH" | tail -20
 record (`handover` records list what ran, what went stale and how long each action waited),
 `handover-queue.json` the current queue, `campaign_progress.jsonl` B's numbers over time.
 
+## Several countries at once
+
+`--rival FRA,ENG,SOV` steers all of them in the same game. A single tag works exactly as it did.
+
+```bash
+hoi4-harness play --rival FRA,ENG,SOV --live --model claude-opus-5-5 --max-usd 12     --game-dir "$HOI4_GAME_DIR" --run-dir runs/rival-three
+hoi4-harness play --rival majors --live ...      # GER ENG FRA ITA SOV USA JAP, minus the country you play
+hoi4-harness play --rival FRA,ENG,ITA --fake-game --provider scripted --until 1936-06-01     --run-dir runs/rival-fake                    # offline: three rivals and a fake person
+```
+
+**What is one per country.** Its own strategist (planner loop, transcript, notes in
+`memory.json`, progress series, queue, budget share) in its own folder, `runs/rival-three/FRA/`
+and so on, each with a `rival.log` of its own. Its own log reader, which keeps to its tag: a
+country sees its own lines and wars declared on it, never another rival's lines and never yours.
+`runs/rival-three/rival.log` is the combined one (decisions and windows with the tag in front,
+and the summary at the end).
+
+**What is shared, because there is one keyboard and one clock.**
+
+- **The marks.** Every rival is marked in one window at the start (one run file, one mark line
+  each) and unmarked in one window on the way out, including after a crash or a failed start.
+- **The window.** One policy, one key guard, one run file per window. It holds every country's
+  due actions, each in its own scope (`effect FRA ...`, `eval_effect ENG = { ... }`), and each
+  action is first re-checked against *that country's* state (the stale rules above). A window
+  types at most `--rival-window-cap` actions (default 12) across all countries, one country at a
+  time round and round, and the country that went first goes last in the next window, so a long
+  queue cannot starve the others. What is left stays queued. If you come back mid-window, every
+  country's actions stay queued, as for one.
+- **The clock.** Still yours. The loop runs in rounds: each country decides in turn (a model
+  call only for the ones whose schedule or events woke them), the window runs, then one wait on
+  the log's date until the earliest review any country asked for, or until something critical
+  happens to any of them.
+
+**When each one calls the model.** On its own schedule: 30 days in peace, 14 at war, or the
+days its last `advance_time` asked for, and at once on a critical event (a war declared on it)
+at most once per 7 days. The first reviews are staggered by `rival_stagger_days` (default 1)
+per country so they do not all fall on the same day; after that each country's own choices
+spread them. Calls are sequential. The review cadence knobs are per run, not per country:
+`campaign_review_peace_days`, `campaign_review_war_days`, `campaign_review_min_days`,
+`campaign_review_max_days` and the `advance_time` each strategist chooses; a quiet country that
+naps 60 days costs a sixth of one that reviews every 10.
+
+**Cost.** Roughly linear in the number of countries: three rivals cost about three times one,
+because each has its own conversation and its own brief. `--max-usd` is the total cap. It is
+split equally by default; `--rival-share FRA=2 --rival-share ENG=1` weights the split (the
+unlisted ones weigh 1). When a country's share runs out it stops calling the model (its AI
+keeps playing, its queue still runs) and the others carry on; its unused money is not handed to
+the others. When every share is spent the run stops and says so. `rival.log` and the summary
+(`rival-summary.json`) report spend per country.
+
+**Checks at the start.** The list must have no duplicates and every tag must be three
+characters. A tag that game.log shows as human (an `ai=0` state line: the country you play) is
+refused. `majors` drops your country from the seven; if the log does not say which one you play
+yet, it refuses rather than guess, and you list the tags.
+
+**At the end.** `rival.log` ends with one line per country: actions queued, ran, stale, failed
+and still queued, spend of its share, model calls. The same is in the summary JSON the command
+prints.
+
 ## Files, flags, exit codes
 
-`--rival TAG`, `--rival-act-when paused|handover|never`, `--rival-paused-seconds`,
+`--rival TAG[,TAG...]|majors`, `--rival-share TAG=WEIGHT`, `--rival-window-cap`,
+`--rival-act-when paused|handover|never`, `--rival-paused-seconds`,
 `--rival-idle-seconds`, `--rival-start-wait`, `--rival-exit-wait`, `--until`, `--resume`, `--max-usd` (a priced model needs one),
 `--fake-game --fake-human-script PATH` (what the fake person does, as
 `[[seconds, "pause"], [seconds, "type", "x"], [seconds, "war"]]`). Configuration fields are
 `rival`, `rival_act_when`, `rival_paused_seconds`, `rival_idle_seconds`, `rival_stale_days`,
-`rival_start_wait_minutes`, `rival_exit_wait_seconds`. Exit codes: 0 ended (or ran out of
+`rival_start_wait_minutes`, `rival_exit_wait_seconds`, and for several countries `rivals`,
+`rival_shares`, `rival_window_cap`, `rival_stagger_days`. Exit codes: 0 ended (or ran out of
 turns), 1 stopped with a reason, 2 could not start, 3 crashed.
 
 Rival mode refuses `--campaign`, `--advisor` and `--handover` (it has its own queue and
@@ -167,8 +230,14 @@ On the fake game: the marking, the B-only brief, actions queued while the game r
 in the next pause as one file, the stop when you type or unpause or withdraw the grant, the
 handover and never policies, the stale re-check, your declaration of war waking the model,
 the unmark, no pause key or `gamespeed` ever sent, no key outside a console, everything in B's
-scope. Not proved: that the real game accepts B-scoped `effect` / `eval_effect` from the
+scope. For several countries: every rival marked and unmarked, each country reading only its own
+lines (not another rival's, not yours), one window typing several countries' actions in one file
+each in its own scope, a person coming back mid-window stopping all of them, the cap and the
+turn-taking, staggered reviews, one country's budget share running out while the others go on.
+Not proved: that the real game accepts B-scoped `effect` / `eval_effect` from the
 console, that `is_ai`-gated on_actions keep logging B once flagged, that the log date is a
 usable pause signal, that the real AI acts on B's directives, how `GetLastInputInfo` behaves
-around SendInput on your machine. Those are the live plan: [live-session.md](live-session.md)
+around SendInput on your machine, and, for several countries, that the real game takes
+`effect` for more than one tag in one run file and logs each flagged country once marked
+(step 13.11). Those are the live plan: [live-session.md](live-session.md)
 step 13.

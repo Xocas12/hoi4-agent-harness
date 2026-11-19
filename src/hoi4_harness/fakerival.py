@@ -25,6 +25,7 @@ Nothing here is HOI4. It says what the fake does so a green test is read for wha
 from __future__ import annotations
 
 import json
+import re
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
@@ -39,6 +40,10 @@ HUMAN_PP = "777.0000"
 HUMAN_ENEMY = "SOV"
 HUMAN_DIVISIONS = 64
 
+#: In a several-rival game each country's ``techs`` counter is a number of its own (the first
+#: rival's is this, the next ones' a multiple of it): a leak test looks for another country's.
+SIGNATURE_TECHS = 1000
+
 KINDS = ("pause", "resume", "input", "type", "war", "focus_away", "call")
 
 
@@ -51,27 +56,8 @@ class Act:
     fn: Callable[[], None] | None = None
 
 
-class FakeRivalGame(FakeGame):
-    """The fake game, with a rival AI country and a person playing another."""
-
-    def __init__(self, user_dir: Path, rival: str = "SWE", human: str = "GER",
-                 human_script: list[Act] | None = None, **kwargs):
-        if rival == human:
-            raise ValueError("the person and the rival cannot be the same country")
-        self.human = human
-        #: Wall-clock second of the person's last input (the harness's own keys included).
-        self.last_input_wall = -1000.0
-        self._acts: list[Act] = sorted(human_script or [], key=lambda a: a.at)
-        #: What the person did and when, for a test to read back.
-        self.human_log: list[tuple[float, str, str]] = []
-        super().__init__(user_dir, country=rival, **kwargs)
-        # An AI country: the game's AI runs it from day one, and the state line says ai=1.
-        self.human_ai = True
-        # The person's country is theirs, not a target the crude AI can conquer.
-        self.ai.countries.pop(human, None)
-        self._emit_human()
-
-    # --- who the mod reports on ---------------------------------------------------------
+class _RivalSide:
+    """What makes a fake country an AI rival: reported only once flagged ``llmb_harness``."""
 
     @property
     def visible(self) -> bool:
@@ -83,7 +69,7 @@ class FakeRivalGame(FakeGame):
 
     def start_war(self, enemy: str, divisions: int = 30, declared_by_player: bool = False) -> None:
         """The rival is at war with ``enemy`` from now. The mod logs a declaration when either
-        side is a harness country (``on_declare_war``): the person always is, the rival only
+        side is a harness country (``on_declare_war``): the person always is, a rival only
         once marked. ``declared_by_player`` is "the rival declared it", as in the base class."""
         state = self.world.state
         if not any(w.against == enemy for w in state.wars):
@@ -92,6 +78,83 @@ class FakeRivalGame(FakeGame):
         declarer, target = (self.country, enemy) if declared_by_player else (enemy, self.country)
         if self._harness(declarer) or self._harness(target):
             self._write(self._llmb("evt", tag=declarer, other=target, kind=1, detail=0))
+
+
+class FakeRivalCountry(_RivalSide, FakeGame):
+    """One more AI country in a several-rival game: its own world, flags, directives and
+    telemetry, sharing the log, the clock and the console with the game it belongs to
+    (``FakeRivalGame.extras``). It has no keys of its own: effects aimed at its tag reach it
+    through the game's console."""
+
+    def __init__(self, user_dir: Path, country: str, human: str, techs: int | None = None,
+                 **kwargs):
+        self.human = human
+        super().__init__(user_dir, country=country, **kwargs)
+        self.human_ai = True            # an AI country from the start (the state line says ai=1)
+        self.ai.countries.pop(human, None)
+        if techs is not None:
+            self.world.techs = techs    # a number that is this country's alone
+
+
+class FakeRivalGame(_RivalSide, FakeGame):
+    """The fake game, with a rival AI country and a person playing another.
+
+    ``extra_rivals`` adds more AI countries to the same game (``extras``, by tag): each is a
+    full fake country of its own, logged under its own tag, steerable only through effects in
+    its own scope, and ticked with the game's clock."""
+
+    def __init__(self, user_dir: Path, rival: str = "SWE", human: str = "GER",
+                 human_script: list[Act] | None = None, extra_rivals: tuple[str, ...] = (),
+                 **kwargs):
+        if rival == human or human in extra_rivals:
+            raise ValueError("the person and the rival cannot be the same country")
+        if len({rival, *extra_rivals}) != 1 + len(extra_rivals):
+            raise ValueError("a rival is listed twice")
+        self.human = human
+        #: The other rivals by tag (empty for the one-rival game).
+        self.extras: dict[str, FakeRivalCountry] = {}
+        #: Wall-clock second of the person's last input (the harness's own keys included).
+        self.last_input_wall = -1000.0
+        self._acts: list[Act] = sorted(human_script or [], key=lambda a: a.at)
+        #: What the person did and when, for a test to read back.
+        self.human_log: list[tuple[float, str, str]] = []
+        super().__init__(user_dir, country=rival, **kwargs)
+        # An AI country: the game's AI runs it from day one, and the state line says ai=1.
+        self.human_ai = True
+        # The person's country is theirs, not a target the crude AI can conquer.
+        self.ai.countries.pop(human, None)
+        shared = {key: kwargs[key] for key in ("seed", "start", "index") if key in kwargs}
+        for k, tag in enumerate(extra_rivals, start=1):
+            self.extras[tag] = FakeRivalCountry(
+                self.user_dir, tag, human, techs=SIGNATURE_TECHS * (k + 1) + k, **shared)
+        if extra_rivals:
+            self.world.techs = SIGNATURE_TECHS
+        self._emit_human()
+
+    # --- several rivals ---------------------------------------------------------------
+
+    @property
+    def rivals(self) -> list[str]:
+        """Every AI country the game runs for the harness to steer, the first one first."""
+        return [self.country, *self.extras]
+
+    def country_game(self, tag: str) -> FakeGame:
+        """The fake country that holds ``tag``'s world (this game for its own country)."""
+        return self if tag == self.country else self.extras[tag]
+
+    def _scope_of(self, rest: str) -> FakeRivalCountry | None:
+        """The extra rival a console effect is aimed at (``effect TAG ...``, ``eval_effect
+        TAG = {...}``), None when it is this game's own country or nobody's."""
+        match = re.match(r"\s*([A-Za-z0-9]{3})\b", rest)
+        return self.extras.get(match.group(1).upper()) if match else None
+
+    def _scripted_effect(self, rest: str) -> None:
+        sub = self._scope_of(rest)
+        return sub._scripted_effect(rest) if sub is not None else super()._scripted_effect(rest)
+
+    def _eval_effect(self, rest: str) -> None:
+        sub = self._scope_of(rest)
+        return sub._eval_effect(rest) if sub is not None else super()._eval_effect(rest)
 
     # --- the person's country -------------------------------------------------------------
 
@@ -112,6 +175,8 @@ class FakeRivalGame(FakeGame):
 
     def tick_day(self) -> None:
         super().tick_day()
+        for sub in self.extras.values():
+            sub.tick_day()
         self._emit_human()
 
     # --- the person's behaviour ------------------------------------------------------------
@@ -153,7 +218,10 @@ class FakeRivalGame(FakeGame):
             self.touch()
             self._key(act.arg or "x", frozenset())
         elif act.kind == "war":
-            self.start_war(self.human, divisions=int(act.arg or 40), declared_by_player=False)
+            # "40" (divisions) or "40:ENG": the person declares on one of several rivals.
+            divisions, _, tag = act.arg.partition(":")
+            target = self.country_game(tag.upper()) if tag else self
+            target.start_war(self.human, divisions=int(divisions or 40), declared_by_player=False)
         elif act.kind == "focus_away":
             self.lose_focus(float(act.arg or 30))
         elif act.kind == "call" and act.fn is not None:

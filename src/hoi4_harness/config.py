@@ -336,6 +336,17 @@ class HarnessConfig:
     rival_start_wait_minutes: float = 30.0
     #: How long the exit waits for a window in which to unmark it (then it says what to type).
     rival_exit_wait_seconds: float = 60.0
+    #: Several rivals (docs/rival.md, "Several countries"): ``rival`` holds what was asked
+    #: for (``FRA,ENG,SOV`` or ``majors``) and ``rivals`` the tags it comes to once checked;
+    #: empty for the one-country form. Each gets its own strategist, its own run-dir folder
+    #: and a share of ``budget.max_usd`` (``rival_shares``: tag -> weight, default equal).
+    rivals: list[str] = field(default_factory=list)
+    rival_shares: dict[str, float] = field(default_factory=dict)
+    #: The most actions one window types across all the rivals together (a window is
+    #: seconds at the person's keyboard); the rest wait for the next, taken in turn.
+    rival_window_cap: int = 12
+    #: Game days between two rivals' first reviews, so they do not all call the model at once.
+    rival_stagger_days: int = 1
     #: The fake game's person: the country they play, and a JSON script of what they do and
     #: when (``[[seconds, "pause"], ...]``; default: play 45 s, pause 90 s, repeat).
     fake_rival_human: str = "GER"
