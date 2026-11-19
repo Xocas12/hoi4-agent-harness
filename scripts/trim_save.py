@@ -102,7 +102,7 @@ def trim(text: str) -> str:
         kept.append(chunk)
     # Scalar keys at two tabs (stability, war_support, capital...).
     body = text[c_open:matching_brace(text, c_open)]
-    for scalar in re.findall(r"^\t\t(?:%s)=[^{\n]*$" % "|".join(KEEP_COUNTRY), body, re.M):
+    for scalar in re.findall(rf"^\t\t(?:{'|'.join(KEEP_COUNTRY)})=[^{{\n]*$", body, re.M):
         kept.append(scalar)
     player_block = f"\t{player}={{\n" + "\n".join(
         k if k.startswith("\t\t") else "\t\t" + k for k in kept) + "\n\t}\n"
