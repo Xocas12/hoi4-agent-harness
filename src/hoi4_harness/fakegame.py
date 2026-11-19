@@ -305,6 +305,8 @@ class FakeGame:
         # A game loads paused.
         self.paused = True
         self.speed = max(1, min(5, speed))
+        #: Game hours left before ``pause_in_hours`` stops the game; None when unset.
+        self.pause_in: float | None = None
         self._acc = 0.0
         # --- the screen
         self._held: set[str] = set()
@@ -428,9 +430,17 @@ class FakeGame:
             return
         self._acc += seconds
         day = SECONDS_PER_DAY[self.speed]
-        while self._acc >= day:
+        while self._acc >= day and not self.paused:
             self._acc -= day
+            if self.pause_in is not None and self.pause_in < 24:
+                # The deadline falls inside this day: the game stops before it.
+                self.paused, self.pause_in = True, None
+                break
+            if self.pause_in is not None:
+                self.pause_in -= 24
             self.tick_day()
+        if self.paused:
+            self._acc = 0.0
 
     # --- the keyboard ---------------------------------------------------------
 
@@ -570,6 +580,8 @@ class FakeGame:
             return self._run_file(rest.strip())
         if command == "gamespeed":
             return self._gamespeed(rest.strip())
+        if command == "pause_in_hours":
+            return self._pause_in_hours(rest.strip())
         if command == "effect":
             return self._scripted_effect(rest)
         if command == "eval_effect":
@@ -598,6 +610,13 @@ class FakeGame:
             self.paused = True
         else:
             self.paused, self.speed = False, speed
+
+    def _pause_in_hours(self, rest: str) -> None:
+        try:
+            hours = float(rest)
+        except ValueError:
+            raise ScriptError("pause_in_hours <hours>") from None
+        self.pause_in = hours
 
     def _scripted_effect(self, rest: str) -> None:
         parts = rest.split()

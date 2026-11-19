@@ -346,3 +346,14 @@ def test_keys_from_a_file_play_like_keys_sent_directly(game):
     assert game.poll_keys() > 0
     assert not game.paused
     assert game.poll_keys() == 0
+
+
+def test_pause_in_hours_stops_the_game_after_whole_days_and_the_margin(game, keys):
+    run_lines(game, keys, "pause_in_hours 180", "gamespeed 3")       # 7 days and 12 hours
+    game.sleep(60)
+    assert game.date == "1936-01-08" and game.paused
+
+
+def test_pause_in_hours_needs_a_number(game, keys):
+    run_lines(game, keys, "pause_in_hours soon")
+    assert game.errors == ["pause_in_hours <hours>"]

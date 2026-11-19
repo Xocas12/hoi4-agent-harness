@@ -42,7 +42,10 @@ from .window import FocusCheck
 
 #: Actions with no path that avoids the mouse. Removed from the tool list.
 MOUSE_ACTIONS = frozenset({"start_research", "delegate_army_to_ai"})
-CLOCK_MODES = ("auto", "console", "keys")
+CLOCK_MODES = ("auto", "console", "keys", "exact")
+#: ``pause_in_hours`` is told this many hours past the days asked for, so the game
+#: cannot stop before the last day's state line whatever hour the daily tick runs at.
+EXACT_MARGIN_HOURS = 12
 READERS = ("logtail", "savegame")
 
 #: The one keyboard script headless ships: verified live on 1.19.5.
@@ -84,6 +87,13 @@ class HeadlessClock:
     press, so the game stops at once rather than two seconds into typing), each
     falling back to the other path when the date shows it did not take. ``console``
     and ``keys`` use one path for both.
+
+    ``exact`` is ``auto`` for a turn the harness knows the length of: it hands the
+    game ``pause_in_hours`` with the days and lets it stop itself, so the turn is
+    N days with no overshoot and no key racing the clock. (Documented in
+    console_commands_documentation.md; not yet seen in a live game.) The harness
+    then looks at the date before touching the pause key, since pressing it on a
+    game that has stopped would start it.
     """
 
     def __init__(self, driver: InputDriverAdapter, console: ConsoleChannel,
@@ -95,6 +105,8 @@ class HeadlessClock:
         self.driver, self.console, self.mode, self.speed = driver, console, mode, speed
         self.used_keys = 0       # times the keys had to stand in for the console
         self.used_console = 0    # times the console had to stand in for the keys
+        #: Days the turn in progress is for (set by HeadlessComposite.advance).
+        self.hint_days: int | None = None
 
     @property
     def running(self) -> bool | None:
@@ -105,6 +117,8 @@ class HeadlessClock:
         if driver.dry_run:
             driver.log.append("pause: dry run, nothing sent")
             return
+        if self.mode == "exact":
+            driver._running = None           # it may have stopped itself: look before pressing
         if self.mode != "console":
             # The space key first: one press, where the console takes ~2 s of typing
             # during which the game is still running and a week becomes two.
@@ -130,7 +144,10 @@ class HeadlessClock:
             driver.log.append("resume: dry run, nothing sent")
             return
         if self.mode != "keys":
-            self.console.send_lines([f"gamespeed {speed}"])
+            lines = [f"gamespeed {speed}"]
+            if self.mode == "exact" and self.hint_days:
+                lines.insert(0, f"pause_in_hours {self.hint_days * 24 + EXACT_MARGIN_HOURS}")
+            self.console.send_lines(lines)
             if driver._date_moves():
                 driver._running = True
                 self.speed = speed
@@ -143,6 +160,17 @@ class HeadlessClock:
                     "clock_probe_seconds")
             self.used_keys += 1
         driver.resume()
+
+
+class HeadlessComposite(CompositeAdapter):
+    """The composite, telling the clock how long the turn is (for ``exact``)."""
+
+    def advance(self, days: int) -> GameState:
+        self.writer.clock.hint_days = days
+        try:
+            return super().advance(days)
+        finally:
+            self.writer.clock.hint_days = None
 
 
 class HeadlessWriter(GameAdapter):
@@ -304,7 +332,7 @@ def build_headless(config: HarnessConfig, fake=None) -> CompositeAdapter:
         index=index, sleep=sleep)
     router = ChannelRouter(driver, console, channels)
     clock = HeadlessClock(driver, console, config.headless_clock, config.headless_game_speed)
-    adapter = CompositeAdapter(reader, HeadlessWriter(router, clock),
+    adapter = HeadlessComposite(reader, HeadlessWriter(router, clock),
                                clock_owner=config.clock_owner,
                                poll_seconds=config.headless_poll_seconds, sleep=sleep)
     adapter.fake_game = fake

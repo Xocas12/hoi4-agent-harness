@@ -486,3 +486,24 @@ def test_the_harness_plays_against_a_fake_game_running_on_its_own_clock(tmp_path
     assert fake.advisors and fake.directives == ["protect POL"]
     assert state.date > "1936-01-04"
     assert fake.paused
+
+
+# --- the exact clock (pause_in_hours) ---------------------------------------------------
+
+
+def test_the_exact_clock_lets_the_game_stop_itself_after_the_days_asked(tmp_path):
+    _, adapter, fake, env = stack(tmp_path, headless_clock="exact")
+    start = fake.world.date
+    state = env.advance(7)
+    assert (fake.world.date - start).days == 7 and state.date == fake.date
+    # No pause key raced the clock: the only spaces are the ones inside `run llmb_turn.txt`.
+    assert fake.paused and fake.keylog.count("space") == len(fake.runs)
+    assert ["pause_in_hours 180", "gamespeed 3"] in fake.runs
+
+
+def test_the_exact_clock_still_pauses_a_game_a_critical_event_cut_short(tmp_path):
+    _, adapter, fake, env = stack(tmp_path, headless_clock="exact", start_date="1939-08-30")
+    state = env.advance(10)                       # Germany invades Poland on 1 September
+    assert any(e.kind == "war_declared" for e in state.events)
+    assert fake.date < "1939-09-09" and fake.paused   # stopped by the harness, not the deadline
+    assert fake.keylog.count("space") > len(fake.runs)           # the pause key, pressed
