@@ -436,3 +436,44 @@ the game's console (`grave`), outside the harness. Say what happened:
 **Decision.** If steps 4 and 5 hold, headless is the default for everything but
 research and delegation. If only the refresh fails, the mode still works but every
 log-verified action reads "unverified" until a day has passed.
+
+## 11. Calibrating the tilted map camera (#85)
+
+The model and the four points measured so far are in
+[adapters.md](adapters.md#the-tilted-camera-a-homography-measured-4-points). Four
+points fit a homography exactly, so this sitting is what tests it. Read only: the
+harness sends nothing; you move the mouse and read the screen.
+
+1. Game loaded and paused, 1920x1080, SWE, no windows open over the map. Note the
+   zoom step; everything below holds for that step and that view only.
+2. Open the map search, search for a state (Sodermanland), let the camera jump
+   and zoom in. Take a screenshot. Do not pan or zoom after this.
+3. In the screenshot, find at least **six** victory-point city markers and read
+   each marker's screen position (+-3 px). Hovering gives the province id; the
+   names are in `localisation/english/victory_points_l_english.yml`
+   (`VICTORY_POINTS_<province>`). Use markers spread over the screen, not along
+   one line. The four known at this camera: Stockholm 6050 (1488, 579), Uppsala
+   9149 (1441.5, 418.5), Gavle 11091 (1047, 171), Falun 156 (483, 108); they are
+   only a starting set, and a different view needs a fresh measurement.
+4. Write the readings as `PROVINCE:SX,SY`. Pick two or three of the cities that
+   are far from the others and keep them out of the fit (`--hold`).
+5. Fit on the rest and predict the held-out ones:
+
+   ```bash
+   PYTHONPATH=src python scripts/predict_markers.py --game-dir "$HOI4_GAME_DIR" \
+       --ref 6050:1488,579 --ref 9149:1441.5,418.5 --ref 11091:1047,171 --ref 156:483,108 \
+       --ref <p>:<x>,<y> --ref <p>:<x>,<y> --hold <p>:<x>,<y> --hold <p>:<x>,<y>
+   ```
+
+6. Read the output. `model: perspective` with 5+ points prints real residuals; a
+   residual over 8 px is refused (a marker misread, or the map is not a plane
+   under this camera). `model: flat` means the camera is not tilted at this view,
+   and the flat camera is used. The held-out lines print `error` in px.
+7. Pass if every held-out city is within about 8 px of its prediction. If they are
+   not, say so in #85 with the table: the model is not a homography at this
+   zoom, or the marker anchor is not the stack point (check by adding the type 0
+   or 9/10 anchors instead).
+8. Record the matrix and the view (zoom step, what the search centred on) in #85.
+   A matrix is valid for one view only; moving the camera needs a refit.
+9. Then click-test: `screen_point(layer, "province", id, camera)` for a province in
+   view, move the mouse there yourself and see that the tooltip names that province.

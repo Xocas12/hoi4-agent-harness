@@ -488,6 +488,83 @@ value), it writes no telemetry line (verification would need a hand-written
 `clear_ai_directives` has to undo. A tag outside the generated list is refused
 with the `mod-directives --tags` command that adds it.
 
+### The tilted camera: a homography (measured, 4 points)
+
+Zoomed in, the flat model is wrong. Measured live (1.19.5, 1920x1080, after a map
+search for Sodermanland, zoomed in) the markers of four victory-point cities sat at
+
+| city (province) | map pixel (`unitstacks.txt` type 38) | screen |
+|---|---|---|
+| Stockholm (6050) | (3085.48, 324.16) | (1488, 579) |
+| Uppsala (9149) | (3085.52, 316.00) | (1441.5, 418.5) |
+| Gavle (11091) | (3069.84, 300.00) | (1047, 171) |
+| Falun (156) | (3041.84, 296.00) | (483, 108) |
+
+The y scale held at 15.5-17 screen px per map px but the x scale grew from about 20
+at the top of the screen to about 28 lower down: the camera is tilted. A flat
+`Camera` fitted to these four misses by 85, 49, 64 and 68 px. The map is a plane,
+so the right model is a 3x3 homography (8 degrees of freedom):
+
+```
+sx = (h1 x + h2 y + h3) / (h7 x + h8 y + 1)        sy = (h4 x + h5 y + h6) / (h7 x + h8 y + 1)
+```
+
+`fit_homography(pairs, viewport)` (in `mapcamera.py`) solves it by least squares
+over >= 4 `(map pixel, screen point)` pairs, normalising both coordinate sets
+first (centroid to origin, mean radius sqrt 2) so the 8x8 normal equations are
+well conditioned. It refuses collinear or repeated points, fewer than four pairs,
+a fit with a point behind the camera, and a worst residual over `tolerance`
+(default 8 px). `PerspectiveCamera` has `to_screen`, `to_map` (the inverse) and
+works with `screen_point`, which refuses off-screen targets as before.
+`fit_camera(pairs, viewport)` chooses per fit: a flat camera that explains three
+or more pairs within 4 px wins (fewer parameters extrapolate better, and it is
+right when the camera is not tilted); otherwise the homography. The result says
+which (`fit.model`), the residuals, and the flat model's residuals.
+
+**What the four live points prove: nothing yet.** Four pairs fix a homography
+exactly, so the residual is zero by construction. Fitted:
+
+```
+ 6.60813      -3.12444     -19019.1
+ 0.181391      3.41019      -1526.09
+ 8.34897e-05  -0.00313882       1          conditioning 1.67 (normalised), residuals 0 px
+```
+
+Only the flat model's failure is evidence (it misses by 49-85 px). That a
+homography describes the camera is untested until a held-out city lands where it
+is predicted (below, and `docs/live-session.md` step 11). The markers' visual
+anchor may sit a few px off the stack point, and the screen readings are +-3 px;
+perturbing the four readings by that much moves a prediction by about 100 px for
+a city near the cluster and by thousands for one far away, because four
+neighbouring points extrapolate badly. Treat a miss of tens of px for a nearby
+city as the expected noise, not as a refutation.
+
+The map-side anchor is `map/unitstacks.txt` (`MapLayer.anchor(province)`, type 38,
+the victory-point marker), which is better than a centroid for a city. Rows are
+`province;type;x;height;z;rotation;scale`; image y = 2048 - z. Type 38 is the VP
+marker anchor (every province has one); 0 is the centre unit-stack slot, 1-8 and
+11-18 further slots, 9/10 the flank slots, 21-37 copies of those. Apart from 38
+these readings come from the file's shape, not from the game; see `STACK_TYPES`.
+
+Predicted screen positions at that same camera (`scripts/predict_markers.py`;
+the viewport is 1920x1080 minus 40 px top and 120 px bottom). The window shows
+map x about 3016-3119, y about 286-339, so almost nothing else is on screen:
+
+| city (province) | map pixel | predicted screen | on screen? |
+|---|---|---|---|
+| Mariehamn (9228) | (3118.4, 307.0) | (2118, 291) | no, right of the screen |
+| Sundsvall (130) | (3077.12, 245.0) | (1126, -271) | no, above |
+| Ostersund (11148) | (3048.84, 215.0) | (787, -414) | no, above |
+| Karlstad (11114) | (3009.84, 321.0) | (-544, 470) | no, left |
+| Linkoping (9393) | (3048.64, 352.0) | (180, 1519) | no, below |
+| Norrkoping (11380) | (3064.52, 351.0) | (876, 1471) | no, below |
+| Goteborg (383) | (2993.84, 367.0) | (-3899, 2740) | no, far left and below |
+
+Vasteras and Orebro have no `VICTORY_POINTS_<id>` entry in 1.19.5 localisation, so
+they have no VP marker to predict. Everything above is outside the view, so it
+cannot be checked from this one screenshot. Pan or zoom out one step, take the
+points from the new view, and use the procedure below, which holds cities out.
+
 ### UNVERIFIED: settle these in a live game
 
 Nothing below has been run against the real game; each is a configuration value,
@@ -581,9 +658,9 @@ province. `Viewport` takes the margins for the top bar and the bottom panel.
 None of this was run against the game. What the model assumes, and could be
 wrong about:
 
-1. **The map is flat.** HOI4 tilts the map at some zoom levels, which makes
-   scale differ between the top and bottom of the screen. The fit refuses that
-   case instead of averaging over it.
+1. **The map is flat.** It is not, zoomed in (measured, above): HOI4 tilts the
+   camera. The flat `Camera.from_references` fit refuses that case instead of
+   averaging over it; use `fit_camera`, which falls back to the homography.
 2. **One scale per zoom step**, and the zoom steps are discrete. Measure each
    step you intend to use; do not interpolate.
 3. **The map wraps horizontally** in the game. The layer does not: a target near
