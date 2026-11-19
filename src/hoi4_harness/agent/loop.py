@@ -236,92 +236,128 @@ class AgentLoop:
         return max(1, self.policy.review_days(state) - days_since_planner)
 
     def _run_turns(self, turns: int, until: str | None) -> None:
+        self.begin()
+        for _ in range(turns):
+            days = self.decide(until)
+            if days is None:
+                break
+            state = self.env.advance(days)
+            if self.complete(state, until):
+                break
+
+    # --- a turn in two halves ----------------------------------------------------
+    #
+    # ``decide`` is everything up to the clock wait and ``complete`` everything after it, so a
+    # caller that owns ONE clock for several loops (rival mode with several countries) can run
+    # each loop's decision, wait once, and then close every turn. ``_run_turns`` is just the
+    # two in a row around ``env.advance``.
+
+    def begin(self, days_since_planner: int | None = None) -> None:
+        """Start a run: read the world, and arrange for the first turn to wake the planner
+        (or, with ``days_since_planner``, to wake it that many days into its schedule)."""
         state = self.env.read_state()
         if not self.report.start_date:
             self.report.start_date = state.date
         # Wake on the first iteration.
-        days_since_planner = (self.config.campaign_review_peace_days if self.policy.campaign
-                              else self.config.days_per_turn)
+        self._days_since_planner = (
+            days_since_planner if days_since_planner is not None
+            else self.config.campaign_review_peace_days if self.policy.campaign
+            else self.config.days_per_turn)
+        self._turn: dict = {}
 
-        for _ in range(turns):
-            state = self.env.read_state()
-            if until is not None and state.date >= until:
-                # Already there (a resumed run that had finished): nothing left to play.
-                self.report.reached_end_date = True
-                break
-            if self.supervisor is not None:
-                stop = self.supervisor.before_turn(state)
-                if stop:
-                    self.report.stopped_reason = stop
-                    break
-            self._answered = list(state.events)
-            turn_date = state.date
-            at_war = bool(state.wars)
-            self.history.append(deepcopy_state(state))
-            previous = self.history[-2] if len(self.history) >= 2 else None
-            decision = self.policy.should_wake(state, days_since_planner, previous)
-            blocked = self.budget.why_blocked()
-            downgraded = bool(decision.wake and blocked)
+    def decide(self, until: str | None) -> int | None:
+        """One turn up to the clock wait: observe, wake the planner or not, run the queue.
 
-            if blocked and self.config.campaign and self.config.campaign_on_budget == "stop":
-                # A campaign out of money stops where it is, the game paused and the run
-                # resumable with a bigger budget; "coast" is the other choice.
-                self.transcript.write("budget_stop", reason=blocked, date=state.date)
-                self.report.stopped_reason = f"budget: {blocked}"
-                break
+        Returns the days the clock should now run, or None when the run is over (the end date
+        reached, a supervisor's stop, a budget stop); ``report`` says which."""
+        state = self.env.read_state()
+        if until is not None and state.date >= until:
+            # Already there (a resumed run that had finished): nothing left to play.
+            self.report.reached_end_date = True
+            return None
+        if self.supervisor is not None:
+            stop = self.supervisor.before_turn(state)
+            if stop:
+                self.report.stopped_reason = stop
+                return None
+        self._answered = list(state.events)
+        turn_date = state.date
+        at_war = bool(state.wars)
+        self.history.append(deepcopy_state(state))
+        previous = self.history[-2] if len(self.history) >= 2 else None
+        decision = self.policy.should_wake(state, self._days_since_planner, previous)
+        blocked = self.budget.why_blocked()
+        downgraded = bool(decision.wake and blocked)
 
-            if downgraded:
-                self.transcript.write("budget_downgrade", reason=blocked, date=state.date)
-                decision.wake = False
+        if blocked and self.config.campaign and self.config.campaign_on_budget == "stop":
+            # A campaign out of money stops where it is, the game paused and the run
+            # resumable with a bigger budget; "coast" is the other choice.
+            self.transcript.write("budget_stop", reason=blocked, date=state.date)
+            self.report.stopped_reason = f"budget: {blocked}"
+            return None
 
-            if decision.wake:
-                actions, turn_tokens = self._planner_turn(decision.reason)
-                days_since_planner = 0
-            else:
-                actions, turn_tokens = self._reflex_turn(decision.reason)
+        if downgraded:
+            self.transcript.write("budget_downgrade", reason=blocked, date=state.date)
+            decision.wake = False
 
-            handover = self.env.run_handover()
-            if handover is not None:
-                self.transcript.write("handover", **handover.to_dict())
-                if self.progress:
-                    self.progress(handover.summary())
-            self._acknowledge()
-            # The last turn stops on the end date rather than running past it:
-            # a scenario is scored on the state at ``until``, not a week later.
-            days = self._turn_days(state, days_since_planner)
-            if until is not None:
-                left = days_between(turn_date, until)
-                if 0 < left < days:
-                    days = left
-            state = self.env.advance(days)
-            # Every turn's days count, the planner's own included. Adding only
-            # reflex turns left the turn after each review at 0, so with
-            # nothing else waking the planner it reviewed every other turn.
-            days_since_planner += self._days_elapsed(turn_date, state.date)
-            self.report.turns += 1
-            self.report.end_date = state.date
+        if decision.wake:
+            actions, turn_tokens = self._planner_turn(decision.reason)
+            self._days_since_planner = 0
+        else:
+            actions, turn_tokens = self._reflex_turn(decision.reason)
+
+        handover = self.env.run_handover()
+        if handover is not None:
+            self.transcript.write("handover", **handover.to_dict())
             if self.progress:
-                if decision.wake:
-                    marker = f"wake: {decision.reason}"
-                elif downgraded:
-                    marker = f"reflex (budget: {blocked})"
-                else:
-                    marker = "reflex"
-                self.progress(self._progress_line(turn_date, marker, actions, turn_tokens))
-            self.transcript.write(
-                "turn_end", date=state.date, turn=self.report.turns,
-                from_date=turn_date, at_war=at_war, woke=decision.wake,
-            )
-            self._checkpoint()
-            if self.supervisor is not None:
-                self.supervisor.after_turn(state, woke=decision.wake, reason=decision.reason,
-                                           actions=actions, tokens=turn_tokens)
+                self.progress(handover.summary())
+        self._acknowledge()
+        # The last turn stops on the end date rather than running past it:
+        # a scenario is scored on the state at ``until``, not a week later.
+        days = self._turn_days(state, self._days_since_planner)
+        if until is not None:
+            left = days_between(turn_date, until)
+            if 0 < left < days:
+                days = left
+        self._turn = {"date": turn_date, "at_war": at_war, "decision": decision,
+                      "downgraded": downgraded, "blocked": blocked, "actions": actions,
+                      "tokens": turn_tokens}
+        return days
 
-            if self.report.stopped_reason:
-                break
-            if until is not None and state.date >= until:
-                self.report.reached_end_date = True
-                break
+    def complete(self, state: GameState, until: str | None) -> bool:
+        """Close the turn ``decide`` opened, now that the clock has run and ``state`` is the
+        world after it. True when the run is over."""
+        turn = self._turn
+        turn_date, decision = turn["date"], turn["decision"]
+        # Every turn's days count, the planner's own included. Adding only
+        # reflex turns left the turn after each review at 0, so with
+        # nothing else waking the planner it reviewed every other turn.
+        self._days_since_planner += self._days_elapsed(turn_date, state.date)
+        self.report.turns += 1
+        self.report.end_date = state.date
+        if self.progress:
+            if decision.wake:
+                marker = f"wake: {decision.reason}"
+            elif turn["downgraded"]:
+                marker = f"reflex (budget: {turn['blocked']})"
+            else:
+                marker = "reflex"
+            self.progress(self._progress_line(turn_date, marker, turn["actions"], turn["tokens"]))
+        self.transcript.write(
+            "turn_end", date=state.date, turn=self.report.turns,
+            from_date=turn_date, at_war=turn["at_war"], woke=decision.wake,
+        )
+        self._checkpoint()
+        if self.supervisor is not None:
+            self.supervisor.after_turn(state, woke=decision.wake, reason=decision.reason,
+                                       actions=turn["actions"], tokens=turn["tokens"])
+
+        if self.report.stopped_reason:
+            return True
+        if until is not None and state.date >= until:
+            self.report.reached_end_date = True
+            return True
+        return False
 
     # --- one turn ------------------------------------------------------------
 

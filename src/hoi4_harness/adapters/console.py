@@ -535,12 +535,58 @@ class ConsoleChannel:
         return (self.saves is not None and not self.driver.dry_run
                 and any(c.name in SAVE_VERIFIED for c in calls))
 
+    def execute_shared(
+        self, parts: list[tuple["ConsoleChannel", list[ActionCall]]],
+    ) -> list[list[ActionResult]]:
+        """Several countries' actions in ONE run file and one pass of the keys (rival mode
+        with more than one rival).
+
+        ``parts`` is one ``(console, calls)`` per country, each console planning and verifying
+        its own country's calls against its own reader; ``self`` writes the file and sends the
+        keys, so every part's console must share ``self``'s driver settings. The lines go out
+        in the order given, then each country's telemetry refresh. One list of results per
+        part, in order; a refused call has sent nothing."""
+        results: list[dict[int, ActionResult]] = [{} for _ in parts]
+        flat: list[tuple[int, int, ConsoleChannel, GameState, Planned]] = []
+        for index, (console, calls) in enumerate(parts):
+            if console._read_state is None:
+                results[index] = {i: _result(c, False, "unverified",
+                                             "no reader to verify with; nothing was sent")
+                                  for i, c in enumerate(calls)}
+                continue
+            state = console._read_state()
+            for position, call in enumerate(calls):
+                try:
+                    flat.append((index, position, console, snapshot(state),
+                                 console.plan(call, state)))
+                except Refused as exc:
+                    results[index][position] = _result(
+                        call, False, "rejected", f"refused before writing: {exc}; nothing was sent")
+        if flat:
+            sent = self._send_flat([(console, before, planned) for _, _, console, before, planned in flat])
+            for slot, outcome in sent.items():
+                index, position = flat[slot][0], flat[slot][1]
+                results[index][position] = outcome
+        return [[results[i][n] for n in range(len(calls))] for i, (_, calls) in enumerate(parts)]
+
     def _send(self, before: GameState, planned: list[Planned]) -> dict[int, ActionResult]:
+        return self._send_flat([(self, before, p) for p in planned])
+
+    def _send_flat(
+        self, flat: list[tuple["ConsoleChannel", GameState, Planned]],
+    ) -> dict[int, ActionResult]:
+        """The shared half of ``_send``: ``flat`` is one ``(console, state before, plan)`` per
+        action, the console being whichever one planned it (always ``self`` for one country)."""
         driver, config = self.driver, self.config
+        planned = [p for _, _, p in flat]
         lines = [line for p in planned for line in p.lines]
-        if config.refresh:
-            lines += self.refresh_lines(self._country(before))
-        needs_save = self._wants_save([p.call for p in planned])
+        refreshed: list[ConsoleChannel] = []
+        for console, before, _ in flat:
+            if console.config.refresh and not any(console is seen for seen in refreshed):
+                refreshed.append(console)
+                lines += console.refresh_lines(console._country(before))
+        needs_save = all(c is self for c, _, _ in flat) and self._wants_save(
+            [p.call for p in planned])
         if needs_save:
             # Last, so the save holds what the lines above did. The save is
             # written a few seconds later, from the state at this command.
@@ -576,9 +622,9 @@ class ConsoleChannel:
         self._sleep(driver.config.settle_seconds)
         save_error = self.saves.collect() if needs_save else None
         out = {}
-        for i, p in enumerate(planned):
+        for i, (console, before, p) in enumerate(flat):
             if p.call.name == "take_decision":
-                ok, kind, message = self._verify_decision(p.call, before, p)
+                ok, kind, message = console._verify_decision(p.call, before, p)
                 out[i] = _result(p.call, ok, kind, message, lines=p.lines, unchecked=p.unchecked)
                 continue
             via_save = needs_save and p.call.name in SAVE_VERIFIED
@@ -586,8 +632,8 @@ class ConsoleChannel:
             if via_save and save_error is None:
                 # The save is the evidence here, whatever days the log has ticked.
                 baseline = dataclasses.replace(before, telemetry_ticks=None)
-            outcome = verify(p.verify_call or p.call, baseline, self._read_state,
-                             timeout=self.verify_timeout, sleep=self._sleep)
+            outcome = verify(p.verify_call or p.call, baseline, console._read_state,
+                             timeout=console.verify_timeout, sleep=console._sleep)
             message = outcome.message
             if via_save and save_error is not None and not outcome.ok:
                 message += f" The save could not be used: {save_error}."
