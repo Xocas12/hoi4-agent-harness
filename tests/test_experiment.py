@@ -61,3 +61,12 @@ def test_the_verdict_says_no_difference_when_there_is_none(scores, phrase):
 
 def test_the_command_rejects_an_unknown_scenario(capsys):
     assert main(["experiment", "nope"]) == 2
+
+
+def test_markdown_table_has_a_row_per_arm_with_pass_rates_and_spend(tmp_path):
+    result = run_experiment("defensive_war", HarnessConfig(), seeds=2, transcript_dir=tmp_path)
+    lines = result.markdown().splitlines()
+    assert len(lines) == 2 + len(ARMS)
+    assert all(line.count("|") == lines[0].count("|") for line in lines)
+    assert "2/2" in lines[2] or "0/2" in lines[2] or "1/2" in lines[2]
+    assert "USD total" in lines[0]

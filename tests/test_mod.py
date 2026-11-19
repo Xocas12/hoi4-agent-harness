@@ -141,3 +141,24 @@ def test_mod_and_harness_agree_on_the_telemetry_schema():
     match = re.search(r"LLMB_SCHEMA_VERSION = (\d+)", telemetry)
     assert match, "the mod does not set LLMB_SCHEMA_VERSION"
     assert int(match.group(1)) == SCHEMA_VERSION
+
+
+def test_every_log_line_carries_the_schema_version_as_text():
+    """Seen live: the version was a country variable set only on the player's
+    tick, so a war logged in an AI country's scope printed v0 and the reader
+    refused the whole log."""
+    from hoi4_harness.adapters.logtail import SCHEMA_VERSION
+
+    for path in MOD.rglob("*.txt"):
+        text = path.read_text(encoding="utf-8-sig")
+        assert "LLMB|v[?" not in text, f"{path.name} prints the version from a variable"
+        for found in re.findall(r"LLMB\|v(\d+)\|", text):
+            assert int(found) == SCHEMA_VERSION, f"{path.name} prints v{found}"
+
+
+def test_war_and_capitulation_lines_are_only_the_players_own():
+    hooks = (MOD / "common" / "on_actions" / "llm_bridge_on_actions.txt").read_text(encoding="utf-8-sig")
+    for hook in ("on_declare_war", "on_capitulation"):
+        block = hooks[hooks.index(hook):]
+        block = block[: block.index("\n\t}") + 3]
+        assert "is_ai = no" in block and "FROM = { is_ai = no }" in block, hook

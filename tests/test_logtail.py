@@ -9,10 +9,10 @@ from hoi4_harness.adapters.logtail import (
 )
 
 STATE = (
-    "[messagehandler.cpp:290]: LLMB|v1|state|date=1936.2.14|tag=SWE|pp=42|stab=63|ws=18"
+    "[messagehandler.cpp:290]: LLMB|v3|state|date=1936.2.14|tag=SWE|pp=42|stab=63|ws=18"
     "|civ=12|mil=5|doc=4|mp=214000\n"
 )
-EVENT = "[messagehandler.cpp:290]: LLMB|v1|evt|tag=SWE|kind=1|detail=Germany declared war\n"
+EVENT = "[messagehandler.cpp:290]: LLMB|v3|evt|tag=SWE|kind=1|detail=Germany declared war\n"
 NOISE = "[graphics.cpp:12]: some unrelated engine chatter\n"
 
 
@@ -33,7 +33,7 @@ def test_parses_a_telemetry_line_out_of_engine_noise():
 
 def test_a_schema_mismatch_fails_loudly():
     with pytest.raises(ValueError, match="do not run mismatched"):
-        parse_line(STATE.replace("|v1|", f"|v{SCHEMA_VERSION + 7}|"))
+        parse_line(STATE.replace(f"|v{SCHEMA_VERSION}|", f"|v{SCHEMA_VERSION + 7}|"))
 
 
 @pytest.mark.parametrize(
@@ -100,7 +100,7 @@ def test_an_acknowledged_event_is_not_reported_again(tmp_path):
 def test_acknowledging_keeps_what_arrived_after_the_read(tmp_path):
     adapter = LogTailAdapter(write_log(tmp_path, STATE, EVENT))
     seen = adapter.read_state().events
-    write_log(tmp_path, "[x]: LLMB|v1|evt|tag=SWE|kind=2|detail=Norway capitulated\n")
+    write_log(tmp_path, "[x]: LLMB|v3|evt|tag=SWE|kind=2|detail=Norway capitulated\n")
     adapter.read_state()                     # a later read in the same turn sees it
     adapter.acknowledge_events(seen)
     assert [e.text for e in adapter.read_state().events] == ["Norway capitulated"]
@@ -109,13 +109,13 @@ def test_acknowledging_keeps_what_arrived_after_the_read(tmp_path):
 def test_acknowledging_one_of_two_identical_events_keeps_the_other(tmp_path):
     """Two raises of the same directive on the same day are equal field for
     field. Matching by value would drop the one nobody has seen."""
-    raised = "[x]: LLMB|v1|evt|tag=SWE|kind=14|detail=protect FIN\n"
+    raised = "[x]: LLMB|v3|evt|tag=SWE|kind=14|detail=protect FIN\n"
     adapter = LogTailAdapter(write_log(tmp_path, STATE, raised))
     seen = adapter.read_state().events
     write_log(tmp_path, raised)
     assert len(adapter.read_state().events) == 2
     adapter.acknowledge_events(seen)
-    assert [e.text for e in adapter.read_state().events] == ["protect FIN"]
+    assert [e.text for e in adapter.read_state().events] == ["directive raised: protect FIN"]
 
 
 def test_the_clock_wait_does_not_swallow_the_war_that_ends_it(tmp_path):
@@ -203,7 +203,33 @@ def test_the_engine_date_wins_over_a_mod_field(tmp_path):
     path = tmp_path / "game.log"
     path.write_text(
         "[08:00:00][1937.03.09.12][messagehandler.cpp:290]: "
-        "LLMB|v1|state|date=[?broken]|tag=SWE|pp=10\n",
+        "LLMB|v3|state|date=[?broken]|tag=SWE|pp=10\n",
         encoding="utf-8",
     )
     assert LogTailAdapter(path).read_state().date == "1937-03-09"
+
+
+def test_the_date_text_the_game_really_prints_parses():
+    # Verified on 1.19.5.0: hour prefix, commas and a leading space.
+    assert parse_date(" 12:00, 1 January, 1936") == "1936-01-01"
+    assert parse_date(" 21:00, 2 January, 1936") == "1936-01-02"
+
+
+def test_the_engine_prefix_still_wins_over_the_mod_date(tmp_path):
+    line = ("[10:52:52][1936.03.05.12]: LLMB|v3|state|date= 12:00, 1 January, 1936|tag=SWE|pp=1.9\n")
+    assert LogTailAdapter(write_log(tmp_path, line)).read_state().date == "1936-03-05"
+
+
+def test_a_target_selection_reads_as_a_target_not_a_bare_zero(tmp_path):
+    selected = "[10:52:52][1936.01.01.12]: LLMB|v3|evt|tag=SWE|kind=13|detail=POL\n"
+    unset = "[10:52:52][1936.01.01.12]: LLMB|v3|evt|tag=SWE|kind=13|detail=0\n"
+    state = LogTailAdapter(write_log(tmp_path, STATE, selected, unset)).read_state()
+    texts = [e.text for e in state.events]
+    assert texts == ["target selected: POL", "directive target selected"]
+    assert "0" not in texts
+
+
+def test_a_raised_directive_reads_with_its_target(tmp_path):
+    raised = "[10:52:52][1936.01.01.12]: LLMB|v3|evt|tag=SWE|kind=14|detail=protect POL\n"
+    state = LogTailAdapter(write_log(tmp_path, STATE, raised)).read_state()
+    assert state.events[0].text == "directive raised: protect POL"

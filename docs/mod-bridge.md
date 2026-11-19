@@ -37,8 +37,10 @@ One pipe-delimited line per tick, prefixed so it can be found in a log full of
 engine chatter:
 
 ```
-LLMB|v1|state|date=1936.2.14|tag=SWE|pp=42|stab=63|ws=18|civ=12|mil=5|doc=4|mp=214000
-LLMB|v1|evt|tag=GER|other=SWE|kind=1|detail=0
+LLMB|v3|state|date= 12:00, 1 January, 1936|tag=SWE|pp=1.933|stab=83.248|ws=0|civ=9|mil=3|doc=3|owned=15|mp=31153|techs=12|built_civ=0|built_mil=0|built_dock=0|built_infra=2
+LLMB|v3|focus|tag=SWE|id=SWE_rearm
+LLMB|v3|research|tag=SWE|id=gwtank
+LLMB|v3|evt|tag=SWE|kind=13|detail=POL
 ```
 
 Rules the parser holds to, all of them tested in
@@ -133,3 +135,44 @@ Nothing here hooks the engine, reads process memory, or patches the executable â
 and it should stay that way; that boundary is the difference between an
 automated player and a cheat tool. A checksum-breaking mod is single-player only
 regardless, which suits a project that has no business in multiplayer.
+
+
+## Verified on 1.19.5.0
+
+The `focus` and `research` lines above are the probe's (see below). A live session on Sweden, 1936, printed these (engine prefix `[hh:mm:ss][Y.M.D.H]: `):
+
+```
+    LLMB|v1|boot|tag=SWE|start= 12:00, 1 January, 1936
+    LLMB|v1|state|date= 12:00, 1 January, 1936|tag=SWE|pp=1.933|stab=83.248|ws=0|civ=9|mil=3|doc=3|mp=31153
+    LLMB|v1|army|tag=SWE|divisions=12|delegated=0
+    [11:04:29][1936.01.02.21]: LLMB|v1|state|date= 21:00, 2 January, 1936|tag=SWE|...
+    LLMB|v1|evt|tag=SWE|kind=13|detail=0              <- "Target: POL" (before the fix; now detail=POL)
+    LLMB|v1|evt|tag=SWE|kind=14|detail=protect POL    <- "Directive: protect"
+```
+
+What that established:
+
+- **The date text** is `" 12:00, 1 January, 1936"`: a leading space, an hour prefix
+  and commas. `parse_date` reads it; the engine's own `[Y.M.D.H]` prefix is still
+  preferred. After the first day the state line arrives at 21:00, once a day.
+- **`on_daily` is per country, and `ROOT` is the country that is ticking.** The
+  first version logged from `ROOT`-less effects inside `on_daily`, so every country
+  printed the player's numbers under its own tag (LIT, BRA, POL, with `mp=0`), once
+  per country per day. The mod now emits only from the player's own tick.
+  `verify-bridge` flags a blank tag, or a tag that varies across state lines
+  ("tag varies across state lines: LIT, BRA, POL -- on_daily scope bug?"); with
+  `--country` it also flags any tag that is not the player's.
+- **`front_unit_request` takes a literal country tag or none**, not a variable, so
+  the per-target `ai_strategy` blocks stay generated rather than variable-driven.
+- **Completion events have no on_action.** The only completion hooks in 1.19.5 are
+  `on_mio_design_team_assigned_to_tech`, `on_mio_tech_research_cancelled` and
+  `on_mio_tech_research_completed`, all military-industrial-organisation ones. So
+  schema v2 derives them from the daily tick: `techs`
+  (`num_researched_technologies`) and cumulative `total_constructed_*` counters
+  rise on completion (`research_done`, `construction_complete`), and a generated
+  probe (`common/scripted_effects/llm_bridge_probe.txt`, `hoi4-harness mod-probe`)
+  logs a `focus` line for the focus in progress (`focus_progress`, gated on
+  `has_focus_tree`) and a `research` line for each technology being researched
+  (`is_researching_technology`). A focus or technology that stops appearing is
+  reported as complete when the next day's state line arrives, so a completion
+  is reported one day late.

@@ -33,7 +33,7 @@ from hoi4_harness.types import (
 
 FOCUS_SCRIPT = parse_steps([
     {"press": "f"}, {"click": "focus.search"}, {"type": "{focus_id}"},
-    {"click": "focus.first_result"}, {"press": "escape"},
+    {"click": "focus.first_result"},
 ])
 COORDS = {"focus.search": (10, 10), "focus.first_result": (20, 20)}
 
@@ -218,8 +218,8 @@ def test_build_adapter_loads_scripts_from_the_run_dir(tmp_path):
     ("delegate_army_to_ai", {"army": "all", "delegate": False},
      GameState(delegated_armies=["all"]), GameState()),
     ("set_ai_posture", {"posture": "defensive"}, GameState(), GameState(posture="defensive")),
-    ("set_ai_posture", {"posture": "offensive", "theater": "east"},
-     GameState(), GameState(theater_postures={"east": "offensive"})),
+    ("set_ai_posture", {"posture": "offensive", "theater": "POL"},
+     GameState(), GameState(theater_postures={"POL": "offensive"})),
     ("set_ai_directive", {"directive": "protect", "target": "FIN"},
      GameState(), GameState(ai_directives=["protect FIN (100)"])),
     ("clear_ai_directives", {},
@@ -240,7 +240,7 @@ def test_delegation_through_the_log_reader_is_unverified_not_assumed(tmp_path):
     from hoi4_harness.adapters.logtail import LogTailAdapter
 
     log = tmp_path / "game.log"
-    log.write_text("[x]: LLMB|v1|state|date=1936.1.1|tag=SWE|pp=1|stab=50|ws=10\n")
+    log.write_text("[x]: LLMB|v3|state|date=1936.1.1|tag=SWE|pp=1|stab=50|ws=10\n")
     reader = LogTailAdapter(log)
     driver = InputDriverAdapter(
         InputConfig(coordinates={"army.all": (1, 1), "army.ai_control_toggle": (2, 2)}),
@@ -257,15 +257,15 @@ def test_the_log_reader_learns_posture_from_the_mods_events(tmp_path):
     from hoi4_harness.adapters.logtail import LogTailAdapter
 
     log = tmp_path / "game.log"
-    log.write_text("[x]: LLMB|v1|state|date=1936.1.1|tag=SWE|pp=1|stab=50|ws=10\n")
+    log.write_text("[x]: LLMB|v3|state|date=1936.1.1|tag=SWE|pp=1|stab=50|ws=10\n")
     reader = LogTailAdapter(log)
     assert not reader.read_state().known("posture")
     with log.open("a") as handle:
-        handle.write("[x]: LLMB|v1|evt|tag=SWE|kind=10\n")
+        handle.write("[x]: LLMB|v3|evt|tag=SWE|kind=10\n")
     state = reader.read_state()
     assert state.known("posture") and state.posture == "defensive"
     with log.open("a") as handle:
-        handle.write("[x]: LLMB|v1|evt|tag=SWE|kind=12\n")
+        handle.write("[x]: LLMB|v3|evt|tag=SWE|kind=12\n")
     assert reader.read_state().posture is None
 
 
@@ -273,8 +273,8 @@ def test_verification_polling_does_not_drain_the_events_the_wake_rule_needs(tmp_
     from hoi4_harness.adapters.logtail import LogTailAdapter
 
     log = tmp_path / "game.log"
-    log.write_text("[x]: LLMB|v1|state|date=1936.1.1|tag=SWE|pp=1|stab=50|ws=10\n"
-                   "[x]: LLMB|v1|evt|tag=SWE|kind=1|detail=war\n")
+    log.write_text("[x]: LLMB|v3|state|date=1936.1.1|tag=SWE|pp=1|stab=50|ws=10\n"
+                   "[x]: LLMB|v3|evt|tag=SWE|kind=1|detail=war\n")
     reader = LogTailAdapter(log)
     writer = InputDriverAdapter(dry_run=True)
     CompositeAdapter(reader, writer)
@@ -294,15 +294,15 @@ def test_a_theater_posture_through_the_log_reader_is_unverified(tmp_path):
     from hoi4_harness.adapters.logtail import LogTailAdapter
 
     log = tmp_path / "game.log"
-    log.write_text("[x]: LLMB|v1|state|date=1936.1.1|tag=SWE|pp=1|stab=50|ws=10\n"
-                   "[x]: LLMB|v1|evt|tag=SWE|kind=10\n")
+    log.write_text("[x]: LLMB|v3|state|date=1936.1.1|tag=SWE|pp=1|stab=50|ws=10\n"
+                   "[x]: LLMB|v3|evt|tag=SWE|kind=10\n")
     driver = InputDriverAdapter(
         InputConfig(coordinates={"p": (1, 1)}), dry_run=False,
         focus_check=lambda t: FocusCheck(True, "Hearts of Iron IV"),
         scripts={"set_ai_posture": parse_steps([{"click": "p"}])},
         read_state=LogTailAdapter(log).peek_state, sleep=lambda s: None, gui=FakeGui(),
     )
-    result = driver.apply(ActionCall("set_ai_posture", {"posture": "offensive", "theater": "east"}))
+    result = driver.apply(ActionCall("set_ai_posture", {"posture": "offensive", "theater": "POL"}))
     assert result.error_kind == "unverified" and "theater_postures" in result.message
 
 
@@ -322,7 +322,7 @@ def test_a_placeholder_the_action_never_carries_is_refused_at_load(tmp_path):
     path = tmp_path / "s.json"
     path.write_text(json.dumps({"schema": 1, "scripts": {
         "start_research": [{"type": "{tech}"}]}}))
-    with pytest.raises(ValueError, match=r"start_research uses \{tech\}, but its arguments are technology"):
+    with pytest.raises(ValueError, match=r"start_research uses \{tech\}, but its arguments are .*technology"):
         load_scripts(path)
 
 

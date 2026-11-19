@@ -44,15 +44,16 @@ Everything else follows from those two:
 | 16 coarse actions | Not 200 fine ones. The tool block is on every request, and a long catalog confuses small models. |
 | Hard budget ceilings | Calls, tokens and dollars. On exhaustion the loop drops to the reflex layer and keeps playing rather than stopping. |
 
-Measured against the mock with a scripted planner (`hoi4-harness measure`): a
-wake sends ~1.7k input tokens, ~1.5k of them the cacheable prefix, and every turn
-of a campaign is a scheduled review. At the weekly default, 1936→1939 is ~190
-wakes — roughly 320k input tokens — and at the scripted planner's 1.25 calls a
-wake that is 240 calls, just inside the default 250-call ceiling. A scripted
-1939–1941 war grows the full brief by two fifths and leaves the wake rate flat
-at 4.4 a month. Those are the harness's numbers against a stand-in game, with
-characters/4 as the token count; a real game and a real model are what would
-confirm them. Method, caveats and the table are in
+Measured against the mock (`hoi4-harness measure`), first with a scripted planner
+and then with `claude-opus-5-5`: every turn of a campaign is a scheduled review,
+so the wake rate is the turn rate (about 4.3 a month, peace or war). The scripted
+planner's estimate of ~2.2k input tokens a wake was **wrong on input** — a real
+model sent 4.9k in peacetime (2.2x the estimate) and 7.1k in a scripted war
+(3.2x), because it makes 1.4–1.7 calls a wake and each resends the prompt. The
+full 1936→1939 campaign extrapolates to roughly 0.94M input tokens and $2.4 at
+the priced rates; that is extrapolated from capped runs, not run to the end.
+These are mock-world numbers: a real game's wartime brief and wake rate are still
+unmeasured. Method, caveats and the tables are in
 [docs/cost-and-timing.md](docs/cost-and-timing.md).
 
 ## Total customization
@@ -129,18 +130,38 @@ a whitelist named them), adds `set_ai_directive` / `set_ai_posture` /
 is. Offering both vocabularies at once is the failure case — a direct order and a
 standing directive that disagree produce behaviour attributable to neither.
 
-Whether hybrid actually *plays better* is unanswered and issue-tracked: it needs
-the same scenario run three ways (model-only, AI-only, hybrid) and scored the
-same. See [docs/hybrid-control.md](docs/hybrid-control.md).
+Whether hybrid actually *plays better* is only partly answered. The first
+experiment ran the same scenarios three ways (model-only, AI-only, hybrid) on the
+**mock**, 8 seeds each: hybrid won `winter_crisis` and tied AI-only on
+`defensive_war`, which all three arms failed. That says something about the
+harness against a scripted world, not about HOI4. In the real game it is not
+known that the AI changes its behaviour under a directive at all: directives and
+per-theater posture are raised and read back (verified live), but the AI's
+response to them has not been observed. See
+[docs/results/10-hybrid-experiment.md](docs/results/10-hybrid-experiment.md) and
+[docs/hybrid-control.md](docs/hybrid-control.md).
 
 ## The mod
 
 [`mod/llm_bridge/`](mod/llm_bridge/) is a small HOI4 mod that gives the harness a
-real bridge. The game prints a structured state line into `game.log` every tick
-and the harness tails it — exact numbers, live, for the cost of a file read,
-which is cheaper than parsing a save and cheaper than a vision call. It also
-carries the decisions and `ai_strategy` blocks the hybrid layer pushes intent
-through.
+real bridge. The game prints a structured state line into `game.log` once a day, on the
+player's own tick, and the harness tails it — exact numbers, live, for the cost of
+a file read, which is cheaper than parsing a save and cheaper than a vision call.
+It also carries the decisions and `ai_strategy` blocks the hybrid layer pushes
+intent through.
+
+It has been run in a live HOI4 1.19.5.0 game (Sweden, 1936–37; the mod declares
+`supported_version 1.19.*`). It loads with nothing in `error.log`, including the
+2.4 MB generated probe. Telemetry schema v3 reports real values for political
+power, stability, war support, factories, manpower, techs and construction
+counters, the running focus and the technologies being researched, and war and
+capitulation lines for the player's own wars only. A completed focus was reported
+live (`focus complete: SWE_defense_act`). Not yet seen live: research completion
+through the techs counter (tested, not observed) and the v3 `owned` field
+(factory count), which was added after the session. Directives and per-theater
+posture are raised through decisions and read back in the brief (live: `AI
+control: ETH: offensive | GER: defensive`); whether the game's AI behaves
+differently under one is **not verified**.
 
 ```bash
 export HOI4_LOG_PATH="$HOME/Documents/Paradox Interactive/Hearts of Iron IV/logs/game.log"
@@ -161,8 +182,8 @@ verification checklist: [docs/mod-bridge.md](docs/mod-bridge.md).
 ```
 
 - **[adapters/](src/hoi4_harness/adapters/)** — the bridge to a running game. `mock` (complete),
-  `logtail` (complete, needs the mod), `savegame` (parser done, mapping stubbed),
-  `screen` (capture done, vision call stubbed), `input_driver` (write side, stubbed),
+  `logtail` (complete, needs the mod), `savegame` (text saves: the player's numbers, research, production, divisions),
+  `screen` (capture done, vision call stubbed), `input_driver` (write side: scan-code keys and the focus script verified live, the rest not yet),
   `composite` (pair a reader with a writer).
 - **[actions/](src/hoi4_harness/actions/)** — the catalog, a dependency-free schema validator, and
   provider-neutral tool specs.
@@ -180,20 +201,23 @@ verification checklist: [docs/mod-bridge.md](docs/mod-bridge.md).
 | Action catalog + validation | Working, tested (20 actions) |
 | Observation briefs + deltas | Working, tested |
 | Mock adapter | Working, tested, deterministic |
-| Log-tail adapter (reads the mod's telemetry) | Working, tested |
-| Hybrid control vocabulary + mode switch | Working, tested; unproven as strategy |
-| LLM Bridge mod | Skeleton; structure CI-checked, script tokens need verifying in-game (`verify-bridge` checks them against an install and a log) |
+| Log-tail adapter (reads the mod's telemetry) | Working, tested, run against a live 1.19.5 log; `verify-bridge` checks tag consistency and date shapes, and the brief shows focus, research and theater postures |
+| Hybrid control vocabulary + mode switch | Working, tested; directives and theater posture raised and read back live; the AI's response to them not verified; mock-only experiment (#10) |
+| LLM Bridge mod | Verified live on 1.19.5.0: loads clean, schema v3 telemetry (daily, player's tick), focus completion seen; research completion and the `owned` field not yet seen live |
 | Eval runner + scenarios | Working, tested (7 scenarios, multi-seed, cross-model) |
-| Cost measurement (`measure`) | Working, tested; measured against the mock with a scripted planner |
-| Wartime brief + wake rules | Working, tested against synthetic and scripted wars; unmeasured in a real one |
-| Identifier index (playsets) | Working, tested against a fixture playset; not yet run on a real install |
-| Per-target AI directives | Generated and CI-checked; strategy types need verifying in-game |
+| Cost measurement (`measure`) | Working, tested; measured against the mock with `claude-opus-5-5` (#14): the scripted estimate was 2.2x low on input in peace, 3.2x in war |
+| Wartime brief + wake rules | Working, tested against synthetic and scripted wars; measured on the mock with a real model; unmeasured in a real game war |
+| Identifier index (playsets, #53) | Run on a real total conversion (The New Order: 512 countries, 15,069 focuses, 897 techs in ~4 s); near-match rejection, scenario playset declarations and a load-order warning when the bridge is not last |
+| Per-target AI directives | Generated and CI-checked; raised and read back live; whether the AI acts on them not verified |
+| Theater posture (#9) | A theater is the country a front faces; raised in the mod and read back live |
 | Guidance packs + profiles | Working, tested (6 packs, 3 example profiles) |
-| Anthropic / OpenAI-compatible providers | Written, not yet run against a live key; conformance suite in `tests/live/` |
+| Anthropic provider | Conformance suite passes live (#22); token accounting audited in code, still to be compared with a Console invoice (#23) |
+| OpenAI-compatible providers | Written, not yet run against a live key; a second provider is still needed for conformance (#22); suite in `tests/live/` |
 | Gemini provider | Written; the SDK surface moves — check this first if it fails |
-| Save-file adapter | Parser and targeted block reading work; field mapping needs a real save (`save-inspect` shows what to map) |
+| Save-file adapter (#6) | Reads a 1.19.5 **text** save (needs `save_as_binary=no`): political power, stability and war support (via the mod's variables), manpower, owned factories, focus, research slots, production lines (factory counts) and divisions by template. The construction queue is not in the save. Verified against a real save |
+| Console channel (#83) | Built and unit-tested, opt-in; not yet run live; open questions in [docs/adapters.md](docs/adapters.md) |
 | Screen adapter | Capture works; vision→state is TODO |
-| Input driver | Hotkeys, clicks and typing work; verified UI scripts for the five peacetime actions, click paths recorded per install (unrecorded in-game) |
+| Input driver (#3) | Keys go out as hardware scan codes (pyautogui keys do not reach HOI4, verified live), with the real 1.19.5 hotkeys and no Escape in scripts. `set_national_focus` via focus search is verified live end to end through the harness. Tech-tree click points are computed from `countrytechtreeview.gui` (within 4 px of 18 measured infantry-tab points), but `start_research`, `queue_construction`, `set_production` and `hire_advisor` have **not** yet been run live through the harness; rotated tabs (armour, air, industry, electronics) are refused. A verification that cannot be settled returns `unverified`, not `rejected`, until a fresh day of telemetry. Tests cannot send real input |
 
 Nothing that is a stub pretends otherwise at runtime: an adapter that cannot
 perform an action refuses it, and a field it cannot read renders as `unknown`
@@ -226,7 +250,10 @@ HOI4_LIVE_ANTHROPIC_MODEL=claude-haiku-4-5 ...   # pick the model per provider
 ```
 
 It also runs weekly in `.github/workflows/live-model.yml` for whichever keys
-the repository has; providers without one skip.
+the repository has; providers without one skip. Anthropic passes it live; a
+second provider has not been run, so the suite has not yet shown the wire format
+is portable. Token accounting was audited in code and priced against a real run's
+calls, but not compared with a Console invoice (#23).
 
 
 ## Running it against the real game
@@ -238,7 +265,8 @@ output goes to.
 
 ## Where it goes next
 
-Seven milestones, each a claim the repo cannot currently make, tracked as
+Seven milestones, each a claim the repo cannot currently make (v0.2 and v0.3 are
+partly made: see the status note in [docs/roadmap.md](docs/roadmap.md)), tracked as
 [milestones](https://github.com/Xocas12/hoi4-agent-harness/milestones) with the
 work broken out in [issue #24](https://github.com/Xocas12/hoi4-agent-harness/issues/24):
 
@@ -256,8 +284,10 @@ Two of those issues are the questions the project exists to answer: whether an
 agent can play coherently for a decade of game time on a budget
 ([#14](https://github.com/Xocas12/hoi4-agent-harness/issues/14)), and whether
 splitting command between a model and the game's own AI beats either alone
-([#10](https://github.com/Xocas12/hoi4-agent-harness/issues/10)). Everything else
-is plumbing in service of asking them properly.
+([#10](https://github.com/Xocas12/hoi4-agent-harness/issues/10)). Both have a
+first answer on the mock only (measured cost with a real model, a hybrid
+experiment); neither has been answered in the real game. Everything else is
+plumbing in service of asking them properly.
 
 ## License
 

@@ -12,7 +12,7 @@ from hoi4_harness.cli import main
 from hoi4_harness.config import HarnessConfig
 from hoi4_harness.env import HOI4Env
 from hoi4_harness.eval.runner import PlaysetMismatch, run_scenario
-from hoi4_harness.identifiers import IdentifierIndex, Playset
+from hoi4_harness.identifiers import IdentifierIndex, Mod, Playset
 from hoi4_harness.types import ActionCall, GameState
 
 FIXTURE = Path(__file__).parent / "fixtures" / "playset"
@@ -191,3 +191,47 @@ def test_the_index_command_reports_countries_and_a_countrys_focuses(capsys):
 def test_the_index_command_needs_an_install(capsys, monkeypatch):
     monkeypatch.delenv("HOI4_GAME_DIR", raising=False)
     assert main(["index"]) == 2
+
+
+# --- naming a mod the way the launcher does, and scenarios that need a playset
+
+
+def test_a_launcher_descriptor_file_stands_for_the_folder_it_names(tmp_path):
+    descriptor = tmp_path / "ugc_1.mod"
+    descriptor.write_text(f'name="x"\npath="{TOTAL_CONVERSION.as_posix()}"\n', encoding="utf-8")
+    index = IdentifierIndex.build(Playset.from_paths(GAME, [descriptor]))
+    assert index.playset.name == "New Order Fixture"
+    assert index.tags == IdentifierIndex.build(Playset.from_paths(GAME, [TOTAL_CONVERSION])).tags
+    (tmp_path / "bad.mod").write_text('name="x"\n', encoding="utf-8")
+    with pytest.raises(FileNotFoundError, match="no path="):
+        Playset.from_paths(GAME, [tmp_path / "bad.mod"])
+
+
+def test_a_scenario_that_needs_a_mod_runs_only_on_that_playset(tmp_path):
+    from dataclasses import replace
+
+    from hoi4_harness.eval.scenarios import SCENARIOS
+
+    needs_mod = replace(SCENARIOS["economy_ramp"], key="economy_ramp_nfa",
+                        playset="New Order Fixture")
+    on_mod = HarnessConfig(planner_enabled=False, game_dir=GAME, mod_dirs=[TOTAL_CONVERSION],
+                           run_dir=tmp_path)
+    assert run_scenario(needs_mod, on_mod).turns > 0
+    on_vanilla = HarnessConfig(planner_enabled=False, game_dir=GAME, run_dir=tmp_path)
+    with pytest.raises(PlaysetMismatch, match="written for the playset 'New Order Fixture'"):
+        run_scenario(needs_mod, on_vanilla)
+
+
+def test_eval_on_the_wrong_playset_is_a_usage_error_not_a_traceback(capsys, tmp_path):
+    code = main(["eval", "economy_ramp", "--no-llm", "--run-dir", str(tmp_path),
+                 "--game-dir", str(GAME), "--mod", str(TOTAL_CONVERSION)])
+    assert code == 2
+    assert "written for the playset 'vanilla'" in capsys.readouterr().err
+
+
+def test_a_bridge_loaded_before_a_replacing_mod_is_flagged():
+    replacing = Mod(path=TOTAL_CONVERSION, name="Replacer", replace_paths=["common/decisions"])
+    bad = Playset(game_dir=GAME, mods=[Mod.load(BRIDGE), replacing])
+    assert "common/decisions" in bad.load_order_warnings()[0]
+    good = Playset(game_dir=GAME, mods=[replacing, Mod.load(BRIDGE)])
+    assert good.load_order_warnings() == []

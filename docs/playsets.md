@@ -17,6 +17,12 @@ hoi4-harness index                    # what exists: countries, trees, techs, st
 hoi4-harness index --country GER --all
 ```
 
+A mod can also be named the way the launcher names it, by its descriptor:
+`--mod ".../Documents/Paradox Interactive/Hearts of Iron IV/mod/ugc_2438003901.mod"`
+resolves to the folder that file's `path=` line points at. The harness does not
+read the launcher's `dlc_load.json`; list the mods yourself, in the playset's
+order (the launcher's playset screen shows it).
+
 `HOI4_GAME_DIR` is the **install** (the folder holding `common/`), not the
 Documents folder where saves and logs live. `HOI4_MOD_DIRS` lists mod folders in
 load order, separated like `PATH` (`;` on Windows, `:` elsewhere); `--game-dir`
@@ -90,7 +96,31 @@ as long as it loads **after** it:
    line in the brief is how you would notice (see
    [hybrid-control.md](hybrid-control.md)).
 
-Unverified against a live total conversion: everything above is checked
-against a fixture playset in `tests/fixtures/playset/`, built to exercise the
-override rules, not against a real mod. Pointing it at one and reporting what
-`hoi4-harness index` prints is the first thing to do with a real install.
+`hoi4-harness index` checks the order for you: with the bridge listed before a
+mod that `replace_path`s a folder the bridge has files in, it prints a
+`WARNING` line naming the folders. (The launcher's own order is what the game
+uses; the index only reads what you pass it, so pass it in that order.)
+
+## Checked against a real total conversion
+
+Run against The New Order: Last Days of Europe 1.10.0b (workshop 2438003901)
+plus four small add-on mods (cheat and tool packs), on game 1.19.5. `index` on vanilla, then on
+that playset:
+
+```
+vanilla                          TNO playset
+countries        439             countries        512
+focus trees      67 (10465)      focus trees      457 (15069 focuses)
+technologies     552             technologies     897
+states           1081            states           2525
+```
+
+TNO's descriptor `replace_path`s `common/national_focus`, `common/country_tags`,
+`common/technologies` and `history/states`, so none of vanilla's trees survive:
+`SWE_defense_act` is refused there ("There is no focus ... Nearest real ones:
+GER_fuhrers_wehrmacht"), and an invented `GER_the_old_frend` is refused with
+`GER_the_old_friend` first among the near matches. `index` takes about 5 s
+for vanilla and 8 s for that playset, paid once at a run's start, not
+per turn. Treat the TNO numbers as a data point for the version named above:
+a different release or add-on set will print different ones, and the add-ons
+here add no ids of their own.

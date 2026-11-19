@@ -82,3 +82,21 @@ def test_resume_carries_cache_writes_forward(tmp_path):
                   "cache_write_input_tokens": 30},
     }) + "\n", encoding="utf-8")
     assert rebuild(path).usage.cache_write_input_tokens == 30
+
+
+def test_anthropic_output_tokens_already_include_thinking():
+    # The API bills thinking as output and folds it into output_tokens; a stray
+    # reasoning field must not be added on top (that would double count).
+    raw = SimpleNamespace(input_tokens=10, output_tokens=700, thinking_tokens=500)
+    assert anthropic_provider.usage_from_wire(raw).output_tokens == 700
+
+
+def test_a_recorded_call_is_priced_from_its_four_parts():
+    # The first priced Opus run (call 1: 2,832 in of which 2,426 written, 778 out).
+    guard = BudgetGuard(BudgetConfig(usd_per_m_input=4.0, usd_per_m_output=20.0,
+                                     usd_per_m_cached_input=0.2, usd_per_m_cache_write=5.0))
+    guard.record(Usage(2832, 778, 0, 2426))
+    guard.record(Usage(3991, 262, 2426, 0))
+    expected = (406 * 4 + 2426 * 5 + 778 * 20 + (3991 - 2426) * 4 + 2426 * 0.2 + 262 * 20) / 1e6
+    assert abs(guard.spend.usd - expected) < 1e-9
+    assert guard.spend.usage.input_tokens == 2832 + 3991

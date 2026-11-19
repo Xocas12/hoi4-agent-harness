@@ -22,7 +22,7 @@ listed by `hoi4-harness actions` (add `--json` for schemas).
 | `advance_time` | clock | Ends the turn |
 | `note` | memory | Free; writes to the journal |
 | `delegate_army_to_ai` | strategy | Hybrid control: the game's AI runs the army |
-| `set_ai_posture` | strategy | Global, or one theater |
+| `set_ai_posture` | strategy | Global, or one theater (the country a front faces, e.g. `SOV`) |
 | `set_ai_directive` | strategy | Confirmation-gated; targets a country |
 | `clear_ai_directives` | strategy | |
 

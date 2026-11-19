@@ -298,8 +298,8 @@ def test_the_date_read_before_the_unpause_does_not_drain_events(tmp_path, monkey
             raise NotImplementedError
 
     log = tmp_path / "game.log"
-    log.write_text("[x]: LLMB|v1|state|date=1936.1.1|tag=SWE|pp=1|stab=50|ws=10\n"
-                   "[x]: LLMB|v1|evt|tag=SWE|kind=1|detail=war\n", encoding="utf-8")
+    log.write_text("[x]: LLMB|v3|state|date=1936.1.1|tag=SWE|pp=1|stab=50|ws=10\n"
+                   "[x]: LLMB|v3|evt|tag=SWE|kind=1|detail=war\n", encoding="utf-8")
     game = Game(paused=True)                 # only its clock: the log never moves
     monkeypatch.setattr(
         composite_module, "wait_for_days",

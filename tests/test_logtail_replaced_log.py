@@ -5,7 +5,7 @@ from hoi4_harness.adapters.logtail import LogTailAdapter
 
 
 def line(date, tag, pp):
-    return (f"[10:00:00][{date}.1][effect.cpp:1] LLMB|v1|state|tag={tag}|pp={pp}|"
+    return (f"[10:00:00][{date}.1][effect.cpp:1] LLMB|v3|state|tag={tag}|pp={pp}|"
             "stab=50|ws=10|civ=10|mil=5|doc=2|mp=1000\n")
 
 

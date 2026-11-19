@@ -4,6 +4,594 @@
 # One block per (directive, target), each gated on its own flag. The
 # harness-side vocabulary is set_ai_directive {directive, target}.
 
+llmb_posture_defensive_GER = {
+	enable = { has_country_flag = llmb_posture_defensive_GER }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_GER } }
+	ai_strategy = { type = front_unit_request tag = GER value = 50 }
+}
+
+llmb_posture_defensive_ENG = {
+	enable = { has_country_flag = llmb_posture_defensive_ENG }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_ENG } }
+	ai_strategy = { type = front_unit_request tag = ENG value = 50 }
+}
+
+llmb_posture_defensive_FRA = {
+	enable = { has_country_flag = llmb_posture_defensive_FRA }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_FRA } }
+	ai_strategy = { type = front_unit_request tag = FRA value = 50 }
+}
+
+llmb_posture_defensive_ITA = {
+	enable = { has_country_flag = llmb_posture_defensive_ITA }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_ITA } }
+	ai_strategy = { type = front_unit_request tag = ITA value = 50 }
+}
+
+llmb_posture_defensive_SOV = {
+	enable = { has_country_flag = llmb_posture_defensive_SOV }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_SOV } }
+	ai_strategy = { type = front_unit_request tag = SOV value = 50 }
+}
+
+llmb_posture_defensive_USA = {
+	enable = { has_country_flag = llmb_posture_defensive_USA }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_USA } }
+	ai_strategy = { type = front_unit_request tag = USA value = 50 }
+}
+
+llmb_posture_defensive_JAP = {
+	enable = { has_country_flag = llmb_posture_defensive_JAP }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_JAP } }
+	ai_strategy = { type = front_unit_request tag = JAP value = 50 }
+}
+
+llmb_posture_defensive_CHI = {
+	enable = { has_country_flag = llmb_posture_defensive_CHI }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_CHI } }
+	ai_strategy = { type = front_unit_request tag = CHI value = 50 }
+}
+
+llmb_posture_defensive_PRC = {
+	enable = { has_country_flag = llmb_posture_defensive_PRC }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_PRC } }
+	ai_strategy = { type = front_unit_request tag = PRC value = 50 }
+}
+
+llmb_posture_defensive_MAN = {
+	enable = { has_country_flag = llmb_posture_defensive_MAN }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_MAN } }
+	ai_strategy = { type = front_unit_request tag = MAN value = 50 }
+}
+
+llmb_posture_defensive_POL = {
+	enable = { has_country_flag = llmb_posture_defensive_POL }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_POL } }
+	ai_strategy = { type = front_unit_request tag = POL value = 50 }
+}
+
+llmb_posture_defensive_CZE = {
+	enable = { has_country_flag = llmb_posture_defensive_CZE }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_CZE } }
+	ai_strategy = { type = front_unit_request tag = CZE value = 50 }
+}
+
+llmb_posture_defensive_AUS = {
+	enable = { has_country_flag = llmb_posture_defensive_AUS }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_AUS } }
+	ai_strategy = { type = front_unit_request tag = AUS value = 50 }
+}
+
+llmb_posture_defensive_HUN = {
+	enable = { has_country_flag = llmb_posture_defensive_HUN }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_HUN } }
+	ai_strategy = { type = front_unit_request tag = HUN value = 50 }
+}
+
+llmb_posture_defensive_ROM = {
+	enable = { has_country_flag = llmb_posture_defensive_ROM }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_ROM } }
+	ai_strategy = { type = front_unit_request tag = ROM value = 50 }
+}
+
+llmb_posture_defensive_YUG = {
+	enable = { has_country_flag = llmb_posture_defensive_YUG }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_YUG } }
+	ai_strategy = { type = front_unit_request tag = YUG value = 50 }
+}
+
+llmb_posture_defensive_GRE = {
+	enable = { has_country_flag = llmb_posture_defensive_GRE }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_GRE } }
+	ai_strategy = { type = front_unit_request tag = GRE value = 50 }
+}
+
+llmb_posture_defensive_BUL = {
+	enable = { has_country_flag = llmb_posture_defensive_BUL }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_BUL } }
+	ai_strategy = { type = front_unit_request tag = BUL value = 50 }
+}
+
+llmb_posture_defensive_ALB = {
+	enable = { has_country_flag = llmb_posture_defensive_ALB }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_ALB } }
+	ai_strategy = { type = front_unit_request tag = ALB value = 50 }
+}
+
+llmb_posture_defensive_TUR = {
+	enable = { has_country_flag = llmb_posture_defensive_TUR }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_TUR } }
+	ai_strategy = { type = front_unit_request tag = TUR value = 50 }
+}
+
+llmb_posture_defensive_SPR = {
+	enable = { has_country_flag = llmb_posture_defensive_SPR }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_SPR } }
+	ai_strategy = { type = front_unit_request tag = SPR value = 50 }
+}
+
+llmb_posture_defensive_POR = {
+	enable = { has_country_flag = llmb_posture_defensive_POR }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_POR } }
+	ai_strategy = { type = front_unit_request tag = POR value = 50 }
+}
+
+llmb_posture_defensive_BEL = {
+	enable = { has_country_flag = llmb_posture_defensive_BEL }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_BEL } }
+	ai_strategy = { type = front_unit_request tag = BEL value = 50 }
+}
+
+llmb_posture_defensive_HOL = {
+	enable = { has_country_flag = llmb_posture_defensive_HOL }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_HOL } }
+	ai_strategy = { type = front_unit_request tag = HOL value = 50 }
+}
+
+llmb_posture_defensive_LUX = {
+	enable = { has_country_flag = llmb_posture_defensive_LUX }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_LUX } }
+	ai_strategy = { type = front_unit_request tag = LUX value = 50 }
+}
+
+llmb_posture_defensive_DEN = {
+	enable = { has_country_flag = llmb_posture_defensive_DEN }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_DEN } }
+	ai_strategy = { type = front_unit_request tag = DEN value = 50 }
+}
+
+llmb_posture_defensive_NOR = {
+	enable = { has_country_flag = llmb_posture_defensive_NOR }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_NOR } }
+	ai_strategy = { type = front_unit_request tag = NOR value = 50 }
+}
+
+llmb_posture_defensive_SWE = {
+	enable = { has_country_flag = llmb_posture_defensive_SWE }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_SWE } }
+	ai_strategy = { type = front_unit_request tag = SWE value = 50 }
+}
+
+llmb_posture_defensive_FIN = {
+	enable = { has_country_flag = llmb_posture_defensive_FIN }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_FIN } }
+	ai_strategy = { type = front_unit_request tag = FIN value = 50 }
+}
+
+llmb_posture_defensive_EST = {
+	enable = { has_country_flag = llmb_posture_defensive_EST }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_EST } }
+	ai_strategy = { type = front_unit_request tag = EST value = 50 }
+}
+
+llmb_posture_defensive_LAT = {
+	enable = { has_country_flag = llmb_posture_defensive_LAT }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_LAT } }
+	ai_strategy = { type = front_unit_request tag = LAT value = 50 }
+}
+
+llmb_posture_defensive_LIT = {
+	enable = { has_country_flag = llmb_posture_defensive_LIT }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_LIT } }
+	ai_strategy = { type = front_unit_request tag = LIT value = 50 }
+}
+
+llmb_posture_defensive_SWI = {
+	enable = { has_country_flag = llmb_posture_defensive_SWI }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_SWI } }
+	ai_strategy = { type = front_unit_request tag = SWI value = 50 }
+}
+
+llmb_posture_defensive_IRE = {
+	enable = { has_country_flag = llmb_posture_defensive_IRE }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_IRE } }
+	ai_strategy = { type = front_unit_request tag = IRE value = 50 }
+}
+
+llmb_posture_defensive_CAN = {
+	enable = { has_country_flag = llmb_posture_defensive_CAN }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_CAN } }
+	ai_strategy = { type = front_unit_request tag = CAN value = 50 }
+}
+
+llmb_posture_defensive_AST = {
+	enable = { has_country_flag = llmb_posture_defensive_AST }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_AST } }
+	ai_strategy = { type = front_unit_request tag = AST value = 50 }
+}
+
+llmb_posture_defensive_NZL = {
+	enable = { has_country_flag = llmb_posture_defensive_NZL }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_NZL } }
+	ai_strategy = { type = front_unit_request tag = NZL value = 50 }
+}
+
+llmb_posture_defensive_SAF = {
+	enable = { has_country_flag = llmb_posture_defensive_SAF }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_SAF } }
+	ai_strategy = { type = front_unit_request tag = SAF value = 50 }
+}
+
+llmb_posture_defensive_RAJ = {
+	enable = { has_country_flag = llmb_posture_defensive_RAJ }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_RAJ } }
+	ai_strategy = { type = front_unit_request tag = RAJ value = 50 }
+}
+
+llmb_posture_defensive_SIA = {
+	enable = { has_country_flag = llmb_posture_defensive_SIA }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_SIA } }
+	ai_strategy = { type = front_unit_request tag = SIA value = 50 }
+}
+
+llmb_posture_defensive_PHI = {
+	enable = { has_country_flag = llmb_posture_defensive_PHI }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_PHI } }
+	ai_strategy = { type = front_unit_request tag = PHI value = 50 }
+}
+
+llmb_posture_defensive_MEX = {
+	enable = { has_country_flag = llmb_posture_defensive_MEX }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_MEX } }
+	ai_strategy = { type = front_unit_request tag = MEX value = 50 }
+}
+
+llmb_posture_defensive_BRA = {
+	enable = { has_country_flag = llmb_posture_defensive_BRA }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_BRA } }
+	ai_strategy = { type = front_unit_request tag = BRA value = 50 }
+}
+
+llmb_posture_defensive_ARG = {
+	enable = { has_country_flag = llmb_posture_defensive_ARG }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_ARG } }
+	ai_strategy = { type = front_unit_request tag = ARG value = 50 }
+}
+
+llmb_posture_defensive_PER = {
+	enable = { has_country_flag = llmb_posture_defensive_PER }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_PER } }
+	ai_strategy = { type = front_unit_request tag = PER value = 50 }
+}
+
+llmb_posture_defensive_IRQ = {
+	enable = { has_country_flag = llmb_posture_defensive_IRQ }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_IRQ } }
+	ai_strategy = { type = front_unit_request tag = IRQ value = 50 }
+}
+
+llmb_posture_defensive_SAU = {
+	enable = { has_country_flag = llmb_posture_defensive_SAU }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_SAU } }
+	ai_strategy = { type = front_unit_request tag = SAU value = 50 }
+}
+
+llmb_posture_defensive_EGY = {
+	enable = { has_country_flag = llmb_posture_defensive_EGY }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_EGY } }
+	ai_strategy = { type = front_unit_request tag = EGY value = 50 }
+}
+
+llmb_posture_defensive_ETH = {
+	enable = { has_country_flag = llmb_posture_defensive_ETH }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_ETH } }
+	ai_strategy = { type = front_unit_request tag = ETH value = 50 }
+}
+
+llmb_posture_offensive_GER = {
+	enable = { has_country_flag = llmb_posture_offensive_GER }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_GER } }
+	ai_strategy = { type = front_unit_request tag = GER value = 100 }
+}
+
+llmb_posture_offensive_ENG = {
+	enable = { has_country_flag = llmb_posture_offensive_ENG }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_ENG } }
+	ai_strategy = { type = front_unit_request tag = ENG value = 100 }
+}
+
+llmb_posture_offensive_FRA = {
+	enable = { has_country_flag = llmb_posture_offensive_FRA }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_FRA } }
+	ai_strategy = { type = front_unit_request tag = FRA value = 100 }
+}
+
+llmb_posture_offensive_ITA = {
+	enable = { has_country_flag = llmb_posture_offensive_ITA }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_ITA } }
+	ai_strategy = { type = front_unit_request tag = ITA value = 100 }
+}
+
+llmb_posture_offensive_SOV = {
+	enable = { has_country_flag = llmb_posture_offensive_SOV }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_SOV } }
+	ai_strategy = { type = front_unit_request tag = SOV value = 100 }
+}
+
+llmb_posture_offensive_USA = {
+	enable = { has_country_flag = llmb_posture_offensive_USA }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_USA } }
+	ai_strategy = { type = front_unit_request tag = USA value = 100 }
+}
+
+llmb_posture_offensive_JAP = {
+	enable = { has_country_flag = llmb_posture_offensive_JAP }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_JAP } }
+	ai_strategy = { type = front_unit_request tag = JAP value = 100 }
+}
+
+llmb_posture_offensive_CHI = {
+	enable = { has_country_flag = llmb_posture_offensive_CHI }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_CHI } }
+	ai_strategy = { type = front_unit_request tag = CHI value = 100 }
+}
+
+llmb_posture_offensive_PRC = {
+	enable = { has_country_flag = llmb_posture_offensive_PRC }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_PRC } }
+	ai_strategy = { type = front_unit_request tag = PRC value = 100 }
+}
+
+llmb_posture_offensive_MAN = {
+	enable = { has_country_flag = llmb_posture_offensive_MAN }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_MAN } }
+	ai_strategy = { type = front_unit_request tag = MAN value = 100 }
+}
+
+llmb_posture_offensive_POL = {
+	enable = { has_country_flag = llmb_posture_offensive_POL }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_POL } }
+	ai_strategy = { type = front_unit_request tag = POL value = 100 }
+}
+
+llmb_posture_offensive_CZE = {
+	enable = { has_country_flag = llmb_posture_offensive_CZE }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_CZE } }
+	ai_strategy = { type = front_unit_request tag = CZE value = 100 }
+}
+
+llmb_posture_offensive_AUS = {
+	enable = { has_country_flag = llmb_posture_offensive_AUS }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_AUS } }
+	ai_strategy = { type = front_unit_request tag = AUS value = 100 }
+}
+
+llmb_posture_offensive_HUN = {
+	enable = { has_country_flag = llmb_posture_offensive_HUN }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_HUN } }
+	ai_strategy = { type = front_unit_request tag = HUN value = 100 }
+}
+
+llmb_posture_offensive_ROM = {
+	enable = { has_country_flag = llmb_posture_offensive_ROM }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_ROM } }
+	ai_strategy = { type = front_unit_request tag = ROM value = 100 }
+}
+
+llmb_posture_offensive_YUG = {
+	enable = { has_country_flag = llmb_posture_offensive_YUG }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_YUG } }
+	ai_strategy = { type = front_unit_request tag = YUG value = 100 }
+}
+
+llmb_posture_offensive_GRE = {
+	enable = { has_country_flag = llmb_posture_offensive_GRE }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_GRE } }
+	ai_strategy = { type = front_unit_request tag = GRE value = 100 }
+}
+
+llmb_posture_offensive_BUL = {
+	enable = { has_country_flag = llmb_posture_offensive_BUL }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_BUL } }
+	ai_strategy = { type = front_unit_request tag = BUL value = 100 }
+}
+
+llmb_posture_offensive_ALB = {
+	enable = { has_country_flag = llmb_posture_offensive_ALB }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_ALB } }
+	ai_strategy = { type = front_unit_request tag = ALB value = 100 }
+}
+
+llmb_posture_offensive_TUR = {
+	enable = { has_country_flag = llmb_posture_offensive_TUR }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_TUR } }
+	ai_strategy = { type = front_unit_request tag = TUR value = 100 }
+}
+
+llmb_posture_offensive_SPR = {
+	enable = { has_country_flag = llmb_posture_offensive_SPR }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_SPR } }
+	ai_strategy = { type = front_unit_request tag = SPR value = 100 }
+}
+
+llmb_posture_offensive_POR = {
+	enable = { has_country_flag = llmb_posture_offensive_POR }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_POR } }
+	ai_strategy = { type = front_unit_request tag = POR value = 100 }
+}
+
+llmb_posture_offensive_BEL = {
+	enable = { has_country_flag = llmb_posture_offensive_BEL }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_BEL } }
+	ai_strategy = { type = front_unit_request tag = BEL value = 100 }
+}
+
+llmb_posture_offensive_HOL = {
+	enable = { has_country_flag = llmb_posture_offensive_HOL }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_HOL } }
+	ai_strategy = { type = front_unit_request tag = HOL value = 100 }
+}
+
+llmb_posture_offensive_LUX = {
+	enable = { has_country_flag = llmb_posture_offensive_LUX }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_LUX } }
+	ai_strategy = { type = front_unit_request tag = LUX value = 100 }
+}
+
+llmb_posture_offensive_DEN = {
+	enable = { has_country_flag = llmb_posture_offensive_DEN }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_DEN } }
+	ai_strategy = { type = front_unit_request tag = DEN value = 100 }
+}
+
+llmb_posture_offensive_NOR = {
+	enable = { has_country_flag = llmb_posture_offensive_NOR }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_NOR } }
+	ai_strategy = { type = front_unit_request tag = NOR value = 100 }
+}
+
+llmb_posture_offensive_SWE = {
+	enable = { has_country_flag = llmb_posture_offensive_SWE }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_SWE } }
+	ai_strategy = { type = front_unit_request tag = SWE value = 100 }
+}
+
+llmb_posture_offensive_FIN = {
+	enable = { has_country_flag = llmb_posture_offensive_FIN }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_FIN } }
+	ai_strategy = { type = front_unit_request tag = FIN value = 100 }
+}
+
+llmb_posture_offensive_EST = {
+	enable = { has_country_flag = llmb_posture_offensive_EST }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_EST } }
+	ai_strategy = { type = front_unit_request tag = EST value = 100 }
+}
+
+llmb_posture_offensive_LAT = {
+	enable = { has_country_flag = llmb_posture_offensive_LAT }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_LAT } }
+	ai_strategy = { type = front_unit_request tag = LAT value = 100 }
+}
+
+llmb_posture_offensive_LIT = {
+	enable = { has_country_flag = llmb_posture_offensive_LIT }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_LIT } }
+	ai_strategy = { type = front_unit_request tag = LIT value = 100 }
+}
+
+llmb_posture_offensive_SWI = {
+	enable = { has_country_flag = llmb_posture_offensive_SWI }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_SWI } }
+	ai_strategy = { type = front_unit_request tag = SWI value = 100 }
+}
+
+llmb_posture_offensive_IRE = {
+	enable = { has_country_flag = llmb_posture_offensive_IRE }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_IRE } }
+	ai_strategy = { type = front_unit_request tag = IRE value = 100 }
+}
+
+llmb_posture_offensive_CAN = {
+	enable = { has_country_flag = llmb_posture_offensive_CAN }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_CAN } }
+	ai_strategy = { type = front_unit_request tag = CAN value = 100 }
+}
+
+llmb_posture_offensive_AST = {
+	enable = { has_country_flag = llmb_posture_offensive_AST }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_AST } }
+	ai_strategy = { type = front_unit_request tag = AST value = 100 }
+}
+
+llmb_posture_offensive_NZL = {
+	enable = { has_country_flag = llmb_posture_offensive_NZL }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_NZL } }
+	ai_strategy = { type = front_unit_request tag = NZL value = 100 }
+}
+
+llmb_posture_offensive_SAF = {
+	enable = { has_country_flag = llmb_posture_offensive_SAF }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_SAF } }
+	ai_strategy = { type = front_unit_request tag = SAF value = 100 }
+}
+
+llmb_posture_offensive_RAJ = {
+	enable = { has_country_flag = llmb_posture_offensive_RAJ }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_RAJ } }
+	ai_strategy = { type = front_unit_request tag = RAJ value = 100 }
+}
+
+llmb_posture_offensive_SIA = {
+	enable = { has_country_flag = llmb_posture_offensive_SIA }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_SIA } }
+	ai_strategy = { type = front_unit_request tag = SIA value = 100 }
+}
+
+llmb_posture_offensive_PHI = {
+	enable = { has_country_flag = llmb_posture_offensive_PHI }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_PHI } }
+	ai_strategy = { type = front_unit_request tag = PHI value = 100 }
+}
+
+llmb_posture_offensive_MEX = {
+	enable = { has_country_flag = llmb_posture_offensive_MEX }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_MEX } }
+	ai_strategy = { type = front_unit_request tag = MEX value = 100 }
+}
+
+llmb_posture_offensive_BRA = {
+	enable = { has_country_flag = llmb_posture_offensive_BRA }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_BRA } }
+	ai_strategy = { type = front_unit_request tag = BRA value = 100 }
+}
+
+llmb_posture_offensive_ARG = {
+	enable = { has_country_flag = llmb_posture_offensive_ARG }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_ARG } }
+	ai_strategy = { type = front_unit_request tag = ARG value = 100 }
+}
+
+llmb_posture_offensive_PER = {
+	enable = { has_country_flag = llmb_posture_offensive_PER }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_PER } }
+	ai_strategy = { type = front_unit_request tag = PER value = 100 }
+}
+
+llmb_posture_offensive_IRQ = {
+	enable = { has_country_flag = llmb_posture_offensive_IRQ }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_IRQ } }
+	ai_strategy = { type = front_unit_request tag = IRQ value = 100 }
+}
+
+llmb_posture_offensive_SAU = {
+	enable = { has_country_flag = llmb_posture_offensive_SAU }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_SAU } }
+	ai_strategy = { type = front_unit_request tag = SAU value = 100 }
+}
+
+llmb_posture_offensive_EGY = {
+	enable = { has_country_flag = llmb_posture_offensive_EGY }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_EGY } }
+	ai_strategy = { type = front_unit_request tag = EGY value = 100 }
+}
+
+llmb_posture_offensive_ETH = {
+	enable = { has_country_flag = llmb_posture_offensive_ETH }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_ETH } }
+	ai_strategy = { type = front_unit_request tag = ETH value = 100 }
+}
+
 llmb_invade_GER = {
 	enable = { has_country_flag = llmb_invade_GER }
 	abort = { NOT = { has_country_flag = llmb_invade_GER } }

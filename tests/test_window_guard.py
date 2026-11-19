@@ -96,12 +96,25 @@ def test_dry_run_never_checks_because_nothing_is_sent():
     assert adapter.log == ["press space"]
 
 
+class RecordingKeys:
+    """Stands in for the keyboard: records chords instead of sending them."""
+
+    def __init__(self):
+        self.sent = []
+
+    def chord(self, spec):
+        self.sent.append(spec)
+
+    def type_text(self, text):
+        self.sent.append(f"type:{text}")
+
+
 def test_the_guard_can_be_switched_off_deliberately():
-    adapter = driver(unsupported(), enforce_focus=False)
-    adapter.log.append("sentinel")
-    # No exception from the guard; the only failure left is the missing SDK.
-    with pytest.raises(RuntimeError, match="pip install"):
-        adapter.press("space")
+    keys = RecordingKeys()
+    adapter = InputDriverAdapter(InputConfig(enforce_focus=False), dry_run=False,
+                                 focus_check=unsupported(), keys=keys)
+    adapter.press("space")      # no exception from the guard
+    assert keys.sent == ["space"]
 
 
 def test_a_misdirected_action_is_a_failed_result_not_a_crash():
@@ -121,5 +134,11 @@ def test_note_still_works_when_the_game_is_not_focused():
 
 
 def test_the_focused_case_passes_the_guard_and_reaches_the_input_layer():
-    with pytest.raises(RuntimeError, match="pip install"):
+    keys = RecordingKeys()
+    InputDriverAdapter(InputConfig(), dry_run=False, focus_check=focused(), keys=keys).press("space")
+    assert keys.sent == ["space"]
+
+
+def test_no_test_can_reach_the_real_keyboard():
+    with pytest.raises(AssertionError, match="real keystroke"):
         driver(focused()).press("space")

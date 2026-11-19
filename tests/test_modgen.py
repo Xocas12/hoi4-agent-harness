@@ -48,12 +48,13 @@ def test_raising_a_directive_sets_the_flag_for_the_selected_target_only():
 def test_decisions_are_targets_plus_directives_not_their_product():
     decisions = _files()["common/decisions/llm_bridge_target_decisions.txt"]
     names = re.findall(r"^\t(llmb_\w+) = \{", decisions, flags=re.M)
-    assert len(names) == 2 + len(AI_DIRECTIVES)
+    assert len(names) == 2 + len(AI_DIRECTIVES) + len(modgen.THEATER_POSTURE_CHOICES)
 
 
 def test_the_emitted_event_codes_are_ones_the_harness_reads():
     assert EVENT_CODES[str(modgen.EVENT_TARGET_SELECTED)][0] == "directive_target_selected"
     assert EVENT_CODES[str(modgen.EVENT_DIRECTIVE_RAISED)][0] == "directive_raised"
+    assert EVENT_CODES[str(modgen.EVENT_THEATER_POSTURE)][0] == "theater_posture"
 
 
 def test_generation_is_deterministic_and_deduplicates_tags():
@@ -84,7 +85,7 @@ def test_the_log_reader_rebuilds_standing_directives_from_the_generated_lines(tm
                               flags=re.S).group(1)
     line = re.search(r'log = "(.*?)"', raise_protect).group(1).replace("[ROOT.GetTag]", "SWE")
     log = tmp_path / "game.log"
-    log.write_text("[x]: LLMB|v1|state|date=1936.1.1|tag=SWE|pp=1|stab=50|ws=10\n")
+    log.write_text("[x]: LLMB|v3|state|date=1936.1.1|tag=SWE|pp=1|stab=50|ws=10\n")
     reader = LogTailAdapter(log)
     assert not reader.read_state().known("ai_directives")
     with log.open("a") as handle:
@@ -92,5 +93,5 @@ def test_the_log_reader_rebuilds_standing_directives_from_the_generated_lines(tm
     state = reader.read_state()
     assert state.known("ai_directives") and state.ai_directives == ["protect FIN"]
     with log.open("a") as handle:
-        handle.write("[x]: LLMB|v1|evt|tag=SWE|kind=12\n")
+        handle.write("[x]: LLMB|v3|evt|tag=SWE|kind=12\n")
     assert reader.read_state().ai_directives == []

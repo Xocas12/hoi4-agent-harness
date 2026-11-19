@@ -1,0 +1,42 @@
+technologies = {
+	@1918 = 0
+	@1936 = 2
+	@1938 = 4
+	@1942 = 12
+
+	# Two chains whose first techs share a position: only the sub-tree box tells them apart.
+	support_weapons = {
+		path = { leads_to_tech = support_weapons2 }
+		folder = { name = infantry_folder position = { x = 0 y = 0 } }
+	}
+	support_weapons2 = {
+		folder = { name = infantry_folder position = { x = 0 y = @1938 } }
+	}
+	infantry_weapons = {
+		path = { leads_to_tech = infantry_weapons1 }
+		folder = { name = infantry_folder position = { x = 0 y = -1 } }
+	}
+	infantry_weapons1 = {
+		path = { leads_to_tech = infantry_weapons2 }
+		path = { leads_to_tech = infantry_at }
+		folder = { name = infantry_folder position = { x = 0 y = @1936 } }
+	}
+	infantry_weapons2 = {
+		path = { leads_to_tech = far_tech }
+		folder = { name = infantry_folder position = { x = 0 y = @1938 } }
+	}
+	infantry_at = {
+		folder = { name = infantry_folder position = { x = 2 y = @1942 } }
+	}
+	far_tech = {
+		folder = { name = infantry_folder position = { x = 0 y = 40 } }
+	}
+	# no box for this root in the interface file
+	orphan_root = {
+		folder = { name = infantry_folder position = { x = 0 y = 0 } }
+	}
+	# a turned layout the rule does not understand
+	armour1 = {
+		folder = { name = armour_folder position = { x = 1 y = 3 } }
+	}
+}

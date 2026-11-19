@@ -67,25 +67,74 @@ A path you supply explicitly is used or it fails — discovery never runs as a
 fallback, because searching on after you named a directory would mean reading a
 different campaign than the one you pointed at.
 
-## savegame — parser and targeted reading done, field mapping needs a real save
+## savegame -- text saves, mapped against a 1.19.5 save
 
-Reads the most recent `*.hoi4` autosave. `parse_clausewitz()` handles Paradox's
-`key=value` / `key={...}` text format including repeated keys.
+Reads the most recent `*.hoi4` autosave and maps the player's numbers onto
+`GameState`. `parse_clausewitz()` handles Paradox's `key=value` / `key={...}`
+text format, including repeated keys and keyless `{ ... }` blocks inside a list
+(`country_leader={ { ... } { ... } }`).
 
-A save is 68–96 MB on the machine this was checked on, so the adapter no longer
-tokenizes all of it. A text save writes its top level at column 0, so
-`top_level_spans()` finds each top-level entry without parsing, `extract()`
-parses only the entries asked for, and `country_block()` cuts out the player's
-own block. On a synthetic 53 MB save that is 0.6 s against 11.8 s for a full
-parse. When the layout does not show a key (a save on one line), it falls back
-to the full parse rather than reporting the key absent.
+**Saves are binary unless you turn that off.** The game's default is
+`save_as_binary=yes` in `settings.txt`; set it to `no` and save again. A binary
+save (it starts `HOI4bin`) is refused with that instruction. This is separate
+from ironman, which also forbids reading.
 
-What is left is the mapping from the player's block to `GameState`, which has to
-be verified against a real save rather than guessed — block names have moved
-between patches. So the adapter reads the date and the player and puts the
-player's parsed block in `state.raw["country"]`, and declares everything else
-unknown until each field is checked. To do that work from the file rather than
-from memory:
+A save is 60-100 MB, so nothing parses all of it. `read_save()` cuts out four
+blocks by **brace matching** and parses each alone: the player's country inside
+`countries`, `states`, `division_templates` and `equipments`. (Brace matching,
+not indentation: the real save writes some nested blocks at column 0, such as
+`CAN={` inside ENG's block, so "the next line at the same indent" cuts a country
+short.) On the 63 MB checked save the whole read is about 4 s, nearly all of it
+reading the file.
+
+### What the 1.19.5 save contains, and where each field comes from
+
+Checked against the live game at 23 April 1937 (Sweden, started from the 1936
+bookmark; `tests/fixtures/swe_1937_04_23.hoi4` is a trimmed copy and
+`tests/test_savegame_mapping.py` asserts each figure).
+
+| GameState field | Where | Checked against |
+| --- | --- | --- |
+| `political_power` | country `politics.political_power` | 891.41 (top bar ~886-891) |
+| `manpower` | sum of `manpower_pool.available` over states the player **owns** | 32,980 (top bar "32.98K") |
+| `civilian_factories`, `military_factories`, `dockyards` | sum of `industrial_complex`, `arms_factory`, `dockyard` `level` over owned states | 9 / 3 / 3 |
+| `stability`, `war_support` | country `variables.llmb_stab`, `llmb_ws` (percent, from the bridge mod), divided by 100 | 82.6% and 0% |
+| `national_focus` | country `focus.current` | `SWE_defense_act` |
+| `research` | country `technology.slots`: one key per busy technology, plus `empty` entries | 1 busy (`infantry_weapons2`), 2 free |
+| `production` | country `production.military_lines`; equipment name from `equipments` via `equipment_variant_index` | two lines, 1 factory each |
+| `divisions` | country `units.division`, grouped by `division_template_id` -> `division_templates` name | 12 |
+| `ideology` | `politics.ruling_party` | `democratic` |
+
+Things that are not what they look like:
+
+* **`stability` and `war_support` in the country block are base values**
+  (`stability=0.47` where the game showed 82.6%). Modifiers are applied at read
+  time and are not stored. The adapter therefore reads the mod's computed
+  variables and, **without the mod, reports both unknown** rather than the base.
+  The mod writes them on its telemetry tick, so they can lag the save by up to a
+  day.
+* `manpower={ ratio=... }` in the country block is the recruitment ratio, not the
+  pool. The pool is per state.
+* `llmb_civ` (21 in the checked save) is the game's `num_of_civilian_factories`,
+  which includes factories gained through trade, not the 9 owned. Factories are
+  counted from the states.
+* A production line's `efficiency` is the mean of the first `active_factories`
+  entries of its `factory_efficiencies` (percent), and `output_per_day` is the
+  line's `speed` over its unit `cost`. Both are derived, not stored under those
+  names; the efficiencies (53, 50) look right but only the factory counts were
+  checked against the game.
+* `days_remaining` for research and focus is not stored (only points so far), so
+  it stays unset.
+
+### Still unknown (reported in `unknown_fields`, never defaulted)
+
+`construction` (the country block holds no queue; `country_reports.construction`
+is a daily count of factories on construction, not the items), `completed_focuses`
+(not in the country block), `wars`, `fronts`, the hybrid-control fields
+(`delegated_armies`, `ai_directives`, `posture`, `theater_postures`), and now
+`fuel` and `convoys`, which the brief used to print as `0`. Division `location`
+and `strength` are not read either: the save gives a province id and raw
+strength figures, not the units `DivisionGroup` documents.
 
 ```bash
 hoi4-harness save-inspect                   # newest save in HOI4_SAVE_DIR
@@ -93,11 +142,12 @@ hoi4-harness save-inspect path/to/save.hoi4
 ```
 
 prints the top-level entries by size and the player country's keys with a sample
-of each value — the input for writing `_to_state`, one verified field at a time.
+of each value. Its size table splits on any key at column 0, so on a real save it
+lists thousands of numeric entries: those are artefacts of the heuristic, not
+blocks.
 
-Constraints: non-ironman text saves only (ironman is binary and compressed); a
-save is a snapshot, so pair it with a short autosave interval; read-only, so
-compose it with a writer.
+Constraints: text saves only; a save is a snapshot, so pair it with a short
+autosave interval; read-only, so compose it with a writer.
 
 ## screen — capture done, vision TODO
 
@@ -114,7 +164,14 @@ routine ticks.
 
 ## input_driver — mechanics and verification done, click paths recorded per install
 
-The write side. Hotkeys (`HOTKEYS`) are preferred over coordinates because they
+The write side. Keyboard input is sent as **hardware scan codes** through
+`SendInput` ([`keys.py`](../src/hoi4_harness/adapters/keys.py), Windows only,
+a clear error elsewhere): HOI4 1.19 never sees the key events pyautogui posts
+(`pyautogui.press('space')` with the game focused did nothing; a scan-code
+keystroke toggled pause every time). Mouse clicks still go through pyautogui,
+which works. Text is typed per character (shift for capitals and `_`); a
+character with no scan code (`ö`) cannot be typed, and the whole string is
+refused before any key is sent. Hotkeys (`HOTKEYS`) are preferred over coordinates because they
 survive resolution and UI-scale changes; coordinates live in a calibration dict,
 not in code — `hoi4-harness calibrate` writes it (with the screen resolution it
 was captured at), and loading a calibration from another resolution is refused
@@ -131,6 +188,31 @@ which the agent can read and act on like any other rejection.
 A platform with no implemented check reports **unsupported** and refuses, rather
 than passing. A guard that always returns true is worse than no guard, because it
 gets trusted. `--no-window-guard` is the deliberate opt-out.
+
+### Hotkeys (1.19.5)
+
+`HOTKEYS` comes from `interface/topbar.gui` (`topbar_shortcuts()` reads it, for
+re-deriving on another version or under a mod) and was tried in the game:
+
+| Panel | Key | Source |
+|---|---|---|
+| national focus | `alt+q` | `national_focus_shortcut` |
+| research | `w` | keybind `research_open` |
+| construction | `t` | `construction_button` |
+| production | `y` | `production_button` |
+| decisions | `shift+q` | `decisionview_button` |
+| political / advisors | `q` | `player_flag` |
+| international market | `e` | |
+| trade | `r` | `trade_button` |
+| pause | `space` | `pause_button_date` |
+| speed | `kp_plus` / `kp_minus` | `button_speedup` / `button_speeddown` |
+
+There is no diplomacy panel hotkey. A script's `press` step takes either a key or
+chord (`ctrl+f`) or one of these names (`national_focus`).
+
+**Escape is never sent by a script.** With no panel open it opens the game menu,
+which then swallows every following key, and most of these panels close
+themselves when the action completes. A script that presses it is refused at load.
 
 ### The clock: a toggle, so look before pressing
 
@@ -168,14 +250,27 @@ kept apart on purpose ([`ui_scripts.py`](../src/hoi4_harness/adapters/ui_scripts
 - **The click path** is data. It depends on the game version, the UI scale and
   your layout, so — like coordinates — it lives in a file you record against
   your own game, `<run-dir>/ui_scripts.json` (or `HOI4_UI_SCRIPTS`). Steps are
-  `press`, `click` (a calibrated target), `type` and `wait`, and may carry
-  `{placeholders}` filled from the action's arguments:
+  `press`, `click` (a calibrated target), `type`, `wait` and `repeat` (the step
+  before it, N times in all), and may carry `{placeholders}` filled from the
+  action's arguments:
 
   ```json
   {"schema": 1, "scripts": {"set_national_focus": [
-    {"press": "f"}, {"click": "focus.search"}, {"type": "{focus_id}"},
-    {"click": "focus.first_result"}, {"press": "escape"}]}}
+    {"press": "national_focus"}, {"press": "ctrl+f"}, {"type": "{focus_name}"},
+    {"press": "shift+enter"}]}}
   ```
+
+  Some placeholders are derived from the arguments before any input is sent
+  ([`ui_resolve.py`](../src/hoi4_harness/adapters/ui_resolve.py)), and the action
+  is refused, with nothing sent, when one cannot be:
+
+  | Placeholder | From | Refused when |
+  |---|---|---|
+  | `{focus_name}` | the focus id's English name (`localisation/english`), as its longest ASCII-only run of words | no name, or nothing typable (`[...]` scripted loc, `ö`) |
+  | `{state_name}` | the same, for the state | the same |
+  | `{tech_folder}`, click target `research.tech_point` | the tech's sub-tree and `position` (see start_research below) | the point is off the screen or on the tab strip (the tree is not scrolled), or the sub-tree has no `LEFT` box in the interface file |
+
+  These need the game's files: pass `--game-dir`.
 
 - **The verification** is code, because it does not depend on the UI: a started
   focus is running, a researched technology is in a slot, a queued building
@@ -212,10 +307,12 @@ never is. Delegated armies are not reported by the mod, so delegation comes
 back `unverified` there — the honest answer until the mod emits it. An action
 with no recorded script is refused, as before.
 
-To set one up: copy [`profiles/ui_scripts.example.json`](../profiles/ui_scripts.example.json)
-— a template whose paths are guesses at the UI, to be checked step by step — to
-your run directory, fix it against what you see, then run `hoi4-harness
-calibrate`, which now walks the targets your scripts click. `calibration.json`
+To set one up on 1.19.5: copy [`profiles/ui_scripts.1.19.json`](../profiles/ui_scripts.1.19.json)
+to `<run-dir>/ui_scripts.json`, then run `hoi4-harness calibrate`, which walks
+exactly the targets it clicks (`calibration.DEFAULT_TARGETS`, kept in step by a
+test). [`ui_scripts.example.json`](../profiles/ui_scripts.example.json) stays as a
+template whose paths are guesses (for the hybrid actions), to be checked step by
+step. `calibration.json`
 in the run directory (or `HOI4_CALIBRATION`) is loaded automatically.
 
 `hoi4-harness check-scripts` is the pre-flight: the scripts parse, every
@@ -223,6 +320,182 @@ in the run directory (or `HOI4_CALIBRATION`) is loaded automatically.
 file loads, not on the first live attempt), and every concrete click target has
 a calibrated coordinate. Templated targets are listed with the values calibrated
 so far.
+
+### The five peacetime click paths (1.19.5)
+
+What was run in the live game is marked; the click targets are recorded per
+install.
+
+- **set_national_focus** (keys verified end to end): `alt+q` opens the focus
+  tree, `ctrl+f` selects its search bar, the focus's *localised name* is typed
+  (the search matches names and descriptions; "Defense Act" showed "1/3 Found"
+  and scrolled the tree to it), and `shift+enter` starts the current found focus
+  and closes the window by itself. Also in the game's help: `ctrl+tab` /
+  `ctrl+shift+tab` cycle the found focuses, `alt+enter` starts and keeps the window
+  open. No click targets.
+- **queue_construction**: `t`, click the building's icon
+  (`construction.building.<building>`), then the **map search** (`ctrl+f` when the
+  focus tree is not open; also the magnifier at the bottom right) takes the state
+  name; clicking its first row (`map.search.first_result`) centres and zooms the
+  camera on that state, so a click on the map centre (`map.centre`) lands in it,
+  repeated `count` times. State names are `STATE_<n>` localisation.
+- **start_research**: `w` opens Research with three slots; clicking a free one
+  (`research.free_slot`) opens the tech tree, folder tabs across the top
+  (`research.tab.<folder>`) and technologies on a grid with year columns. There is
+  no search box, so the point is computed. A tech's `position = { x y }` in
+  `common/technologies` is *not* a cell of the tab: it is relative to the tech's
+  sub-tree (`y` the year column, `x` the row). A sub-tree is the chain hanging off
+  one root technology (nothing in the folder leads to it) through
+  `path = { leads_to_tech }`, and `interface/countrytechtreeview.gui` places each
+  sub-tree as a `gridboxtype` named `<root>_tree` in the folder's container (so
+  `support_weapons2` and `infantry_weapons2`, both `x = 0 y = @1938`, sit in
+  different rows). In GUI units the tech's slot centre is
+  `box.position + slotsize * (cell + 1/2)` with `cell = (y, x)`, and the screen is
+  that times `height / 864` (1.25 at 1080p) from a content origin of (9, 103) GUI
+  units, i.e. (11, 129) px. Wide equipment boxes and small icons on one cell share
+  a centre. That reproduces 18 centres measured in the live infantry tab to within
+  4 px (`tests/test_tech_tree_layout.py`). Nothing needs calibrating; optional
+  overrides are `research.tree.origin` (the screen point of the content's GUI
+  (0, 0), if a UI scale or layout moves it) and an exact `research.tech.<id>`.
+  Not placed, and refused rather than guessed: sub-trees whose box is not
+  `format = "LEFT"` (the armour, air, industry and electronics tabs are turned
+  `UP`/`UPPER_LEFT`), boxes placed by percentages, techs with no `<root>_tree`
+  box (mods), and only the infantry tab has been measured live. Then a tech is
+  picked with `enter` on its detail window (the Research button's shortcut).
+- **hire_advisor**: `q` opens Political; advisor slots and candidates are icons
+  (`politics.slot.<slot>`, `politics.candidate.<advisor_id>`), calibrated per name.
+- **set_production**: a draft; `y` and a guess at the click path. Not walked in
+  the game.
+
+What proves each one: the running focus and the research slots when the reader
+reports them (the mod's `LLMB|v2|focus` and `research` probe lines), else
+**unverified**; a queued building only when it completes or when the reader shows
+the queue (**unverified** through the log reader); an advisor by the political
+power it costs.
+
+## console channel -- effects through `run` instead of the UI (#83)
+
+The input driver acts as a player does and pays for it in calibration. For six
+actions the game has an effect that does the same thing, and the console can run
+it with the same few keys every time, whatever panel is open and wherever the
+camera is. `--adapter logtail+input` routes each action to a **channel**, `ui`
+or `console`, and every result records which one it used in `changed.channel`.
+
+| Action | Default | What is written |
+| --- | --- | --- |
+| `queue_construction` | console | `add_building_construction`, one level per block, in the state |
+| `set_production` | console | `add_equipment_production` with `requested_factories` |
+| `hire_advisor` | console | `activate_advisor` and `add_political_power = -cost` |
+| `set_ai_directive`, `set_ai_posture` (incl. theater), `clear_ai_directives` | console | the mod's own scripted effects (below) |
+| `set_national_focus`, `start_research` | ui | none: their only effects (`complete_national_focus`, `set_technology`) skip the time and cost, which is a different game |
+| `delegate_army_to_ai` | ui | the mod has no delegation effect |
+
+Change a channel with `action_channels` in a profile (`{"queue_construction":
+"ui"}`); putting an action on the console that has no faithful effect is an
+error, not a silent fallback. A console action whose preconditions fail is
+refused, and does not fall back to the UI.
+
+### What gets sent
+
+`run` reads a file of *console commands* (`console_commands_documentation.md`:
+"Runs the specified file with list of commands"), one per line, so the file is
+not a bare effects block. Two commands carry the work:
+
+* `eval_effect <effect>`, "Runs the inlined effect on a selected scope", for
+  construction, production and advisors. Each line names its own scope
+  (`eval_effect SWE = { ... }`) rather than relying on the selected one.
+* `effect <tag> <scripted_effect_name>`, "Runs a scripted effect on selected
+  scope", for the hybrid actions: `llm_bridge_select_<TAG>` then
+  `llm_bridge_raise_<directive>` (or `llm_bridge_raise_theater_<posture>`),
+  `llm_bridge_set_posture_<defensive|offensive>`, `llm_bridge_clear_directives`.
+  These are what the mod's decisions call, so the mod logs its usual telemetry
+  events and verification is the one the UI path uses. `console_hybrid_via =
+  "decision"` writes `activate_decision = <the decision>` instead.
+
+Example file for a construction, a production line and an advisor:
+
+```
+eval_effect SWE = { 1 = { if = { limit = { is_owned_by = SWE free_building_slots = { building = arms_factory size > 0 } } add_building_construction = { type = arms_factory level = 1 instant_build = no } } } }
+eval_effect SWE = { add_equipment_production = { equipment = { type = infantry_equipment_1 } requested_factories = 3 } }
+eval_effect SWE = { if = { limit = { has_political_power > 24.99 } activate_advisor = SWE_cheap_one add_political_power = -25 } }
+```
+
+The keys, always: `grave` (scan code 0x29, the key left of `1`, the console on
+every layout), type `run <filename>`, `enter`, `grave`. They go through the same
+scan-code layer, focus guard and dry-run switch as every other input. A dry run
+writes the file under `<run_dir>/console/` and logs the keys without sending;
+a live run writes the file where `run` reads it and keeps a copy there too.
+Several actions in one `apply_batch` share one file and one `run`.
+
+Settings (profile key / environment): `console_dir` / `HOI4_CONSOLE_DIR` (where
+`run` reads; default the game's user directory), `console_filename` /
+`HOI4_CONSOLE_FILE` (default `llmb_turn.txt`), `console_key` / `HOI4_CONSOLE_KEY`
+(a key name or a raw scan code such as `0x29`), `console_effect_command` /
+`HOI4_CONSOLE_EFFECT_COMMAND` (default `eval_effect`), `console_hybrid_via`,
+`console_guards`.
+
+### Preconditions: checked before anything is written
+
+Effects skip the game's own checks, so the channel makes them first. A refused
+action writes no file and sends no input; the result says which check failed.
+
+| Check | Source | If it cannot be answered |
+| --- | --- | --- |
+| the player's country is known and exists | telemetry / `country` | refuse |
+| state exists (a name, key or id; `capital` is `capital_scope`) | identifier index | refuse |
+| equipment exists and is buildable (archetypes are not) | `common/units/equipment` | refuse |
+| no line for that equipment yet; `factories >= 1`; factories <= free military factories | reader (`production`, `military_factories`) | refuse |
+| advisor exists, one unambiguous base cost (pass `slot` if it has several) | `common/characters` | refuse |
+| political power >= that cost | reader (`political_power`) | refuse |
+| directive/theater target is a real tag the mod has plumbing for | index, `modgen.DEFAULT_TAGS` | refuse |
+| a province building (`fortification`), or a global `balanced` posture | no effect exists | refuse |
+
+Not observable by any reader today, so **unchecked** (listed in
+`changed.unchecked`, never guessed): state ownership, a free building slot, an
+advisor's `allowed`/`available` conditions, and cost modifiers (the base cost is
+charged). Where script can test it, the effect carries its own `limit`
+(`is_owned_by`, `free_building_slots`, `has_political_power`), so the game itself
+declines; verification then reports the change did not happen.
+`console_guards = false` drops those limits.
+
+A directive's `weight` is not carried: the mod's blocks have fixed values, as on
+the UI path. `set_production` with 0 factories (remove a line) and changing an
+existing line are refused: `add_equipment_production` only creates one.
+
+### `add_ai_strategy`: evaluated, not used
+
+The effects documentation says only "Adds strategy entry to country AI". Vanilla
+use gives the shape (`add_ai_strategy = { type = protect id = "POL" value = 150 }`),
+and it takes any tag, which the per-tag generated blocks do not. It is not used
+because it is additive and not removable by a flag (the only undo is a negative
+value), it writes no telemetry line (verification would need a hand-written
+`log`), and it would split directive state between two mechanisms that
+`clear_ai_directives` has to undo. A tag outside the generated list is refused
+with the `mod-directives --tags` command that adds it.
+
+### UNVERIFIED: settle these in a live game
+
+Nothing below has been run against the real game; each is a configuration value,
+not a code change. `docs/live-session.md` step 7 has the exact checks.
+
+1. **Which folder `run` reads.** Default: the game's user directory (the folder
+   with `logs/` and `mod/`). Alternatives: the install folder, a `script/` folder.
+   Set `console_dir` to what the check shows.
+2. **That `eval_effect` takes its effect on the same line**, and that a scope
+   name inside it (`SWE = { ... }`, `1 = { ... }`) is accepted. The docs give no
+   argument syntax. If it does not, `effect <tag> <name>` is documented but takes
+   a scripted-effect name, not inline script: only the hybrid actions would work,
+   and the others would need scripted effects added to the mod.
+3. **`-debug`.** Whether `run` and the console need the game started with `-debug`.
+4. **Ironman.** The console is expected to be off in ironman, and its use may mark
+   the save. Play non-ironman.
+5. **Whether `add_building_construction` goes through the construction queue**
+   (uses civilian factories, respects slots) or adds levels directly, and whether
+   `level = 1` blocks queue one item each, as the verification counts.
+6. **Whether `add_equipment_production` without `amount`** makes an unlimited
+   line like the UI's.
+7. **Whether an open console is closed by `grave`**, and whether the console
+   keeps text between uses (a stale line would prefix the `run`).
 
 ## composite
 

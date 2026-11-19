@@ -26,14 +26,16 @@ import re
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from .adapters.logtail import EVENT_CODES, FIELDS, PREFIX, engine_date, parse_date, parse_line
+from .adapters.logtail import COUNTERS, EVENT_CODES, FIELDS, PREFIX, engine_date, parse_date, parse_line
 
 MOD_DIR = Path(__file__).resolve().parents[2] / "mod" / "llm_bridge"
 
 #: Trigger tokens the telemetry reads, as written in llm_bridge_telemetry.txt.
 TELEMETRY_TRIGGERS = ("political_power", "stability", "war_support", "num_of_civilian_factories",
                       "num_of_military_factories", "num_of_naval_factories", "manpower",
-                      "num_divisions")
+                      "num_divisions", "num_researched_technologies",
+                      "total_constructed_civilian_factory", "total_constructed_military_factory",
+                      "total_constructed_dockyard", "total_constructed_infrastructure")
 
 #: Words that make an on_action a candidate for #2's completion events.
 COMPLETION_HINTS = ("focus", "research", "tech", "construct", "building")
@@ -149,10 +151,40 @@ class LogReport:
     mod_date_shapes: set[str] = field(default_factory=set)
     events: dict[str, int] = field(default_factory=dict)
     schema_error: str | None = None
+    #: Tags on state/army lines, in order of first appearance, and how many of
+    #: those lines had no tag at all.
+    tags: list[str] = field(default_factory=list)
+    blank_tags: int = 0
+    player: str | None = None
+
+    @property
+    def tag_problems(self) -> list[str]:
+        """Telemetry labelled with the wrong country, which the numbers hide.
+
+        A state line looks fine whichever country it describes; only the tag
+        says whose numbers they are. An on_daily that runs once per country, with
+        the effect in the wrong scope, prints every country's line under the
+        player's name -- or, as seen on 1.19.5.0, the player's numbers once per
+        country under that country's tag.
+        """
+        problems = []
+        if self.blank_tags:
+            problems.append(f"{self.blank_tags} state/army line(s) carry a blank tag"
+                            " -- the scope function printed nothing")
+        if self.player:
+            wrong = [t for t in self.tags if t != self.player.upper()]
+            if wrong:
+                problems.append(f"state lines tagged {', '.join(wrong)}, expected the player "
+                                f"{self.player.upper()} -- on_daily scope bug?")
+        elif len(self.tags) > 1:
+            problems.append(f"tag varies across state lines: {', '.join(self.tags)}"
+                            " -- on_daily scope bug?")
+        return problems
 
     @property
     def ok(self) -> bool:
-        return self.lines > 0 and not self.literal and self.schema_error is None
+        return (self.lines > 0 and not self.literal and self.schema_error is None
+                and not self.tag_problems)
 
     def render(self) -> str:
         if self.schema_error:
@@ -168,6 +200,10 @@ class LogReport:
                          + "  <- the token did not expand; the field reads as unknown")
         lines.append(f"  engine date prefix on {self.engine_dated}/{self.lines} line(s)"
                      + ("" if self.engine_dated else "  <- dates come from the mod's field alone"))
+        if self.tags:
+            lines.append("  tag on state/army lines: " + ", ".join(self.tags))
+        for problem in self.tag_problems:
+            lines.append(f"  TAG:       {problem}")
         if self.mod_date_shapes:
             lines.append("  mod date field shapes: " + ", ".join(sorted(self.mod_date_shapes)))
         if self.events:
@@ -177,8 +213,8 @@ class LogReport:
         return "\n".join(lines)
 
 
-def check_log(log_path: Path) -> LogReport:
-    report = LogReport()
+def check_log(log_path: Path, player: str | None = None) -> LogReport:
+    report = LogReport(player=player or None)
     for raw in Path(log_path).read_text(encoding="utf-8", errors="replace").splitlines():
         if PREFIX not in raw:
             continue
@@ -193,11 +229,18 @@ def check_log(log_path: Path) -> LogReport:
         report.lines += 1
         if engine_date(raw):
             report.engine_dated += 1
+        if kind in {"state", "army"}:
+            tag = fields.get("tag", "").strip().upper()
+            if not tag:
+                report.blank_tags += 1
+            elif tag not in report.tags:
+                report.tags.append(tag)
         if kind in {"state", "boot"}:
             date_field = fields.get("date") or fields.get("start")
             if date_field:
                 report.mod_date_shapes.add("parsed" if parse_date(date_field) else f"unparsed: {date_field}")
-            for key, (_, convert) in FIELDS.items():
+            converters = {**{k: c for k, (_, c) in FIELDS.items()}, **{k: int for k in COUNTERS}}
+            for key, convert in converters.items():
                 if key not in fields:
                     continue
                 try:

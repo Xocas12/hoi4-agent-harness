@@ -1,0 +1,63 @@
+{
+  "_comment": [
+    "Click paths for the five peacetime actions on HOI4 1.19.5 (Windows, 1920x1080).",
+    "Hotkeys are names from HOTKEYS in adapters/input_driver.py (topbar.gui bindings).",
+    "set_national_focus, queue_construction's search and the keys of all five were run in the live game;",
+    "the click targets are yours to record: `hoi4-harness calibrate`, then `check-scripts`.",
+    "{focus_name}, {state_name}, {tech_folder} and the computed target research.tech_point are",
+    "derived from the action's arguments before any input is sent (adapters/ui_resolve.py).",
+    "No step presses Escape: with no panel open it opens the game menu. See docs/adapters.md.",
+    "set_production is a DRAFT: its click path has not been walked in the game."
+  ],
+  "schema": 1,
+  "scripts": {
+    "set_national_focus": [
+      {"press": "national_focus"},
+      {"wait": 0.8},
+      {"press": "ctrl+f"},
+      {"wait": 0.3},
+      {"type": "{focus_name}"},
+      {"wait": 0.6},
+      {"press": "shift+enter"}
+    ],
+    "start_research": [
+      {"press": "research"},
+      {"wait": 0.8},
+      {"click": "research.free_slot"},
+      {"wait": 0.8},
+      {"click": "research.tab.{tech_folder}"},
+      {"wait": 0.5},
+      {"click": "research.tech_point"},
+      {"wait": 0.8},
+      {"press": "enter"}
+    ],
+    "queue_construction": [
+      {"press": "construction"},
+      {"wait": 0.8},
+      {"click": "construction.building.{building}"},
+      {"press": "ctrl+f"},
+      {"wait": 0.3},
+      {"type": "{state_name}"},
+      {"wait": 0.6},
+      {"click": "map.search.first_result"},
+      {"wait": 1.2},
+      {"click": "map.centre"},
+      {"repeat": "{count}"}
+    ],
+    "set_production": [
+      {"press": "production"},
+      {"wait": 0.8},
+      {"click": "production.line.{equipment}"},
+      {"click": "production.factories_field"},
+      {"type": "{factories}"},
+      {"press": "enter"}
+    ],
+    "hire_advisor": [
+      {"press": "politics"},
+      {"wait": 0.8},
+      {"click": "politics.slot.{slot}"},
+      {"wait": 0.5},
+      {"click": "politics.candidate.{advisor_id}"}
+    ]
+  }
+}

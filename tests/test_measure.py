@@ -86,3 +86,19 @@ def test_measure_needs_a_transcript_or_a_campaign(capsys):
     assert main(["measure"]) == 2
     assert main(["measure", "--campaign", "nope"]) == 2
     assert set(CAMPAIGNS) == {"peacetime_1936_1939", "wartime_1939_1941"}
+
+
+def test_wakes_per_month_ignores_turns_after_the_budget_ran_out(tmp_path):
+    path = tmp_path / "t.jsonl"
+    rows = []
+    for i in range(4):  # four funded weekly wakes
+        rows.append({"kind": "turn_end", "at_war": True, "woke": True,
+                     "from_date": f"1940-01-{1 + 7 * i:02d}", "date": f"1940-01-{8 + 7 * i:02d}"})
+    for _ in range(4):  # four reflex-only weeks after the ceiling
+        rows.append({"kind": "budget_downgrade", "reason": "spend ceiling reached"})
+        rows.append({"kind": "turn_end", "at_war": True, "woke": False,
+                     "from_date": "1940-01-29", "date": "1940-02-05"})
+    path.write_text("\n".join(json.dumps(r) for r in rows), encoding="utf-8")
+    war = measure(path).phase(True)
+    assert war.days == 56 and war.funded_days == 28
+    assert abs(war.wakes_per_month - 4 / (28 / 30.44)) < 1e-9

@@ -178,11 +178,18 @@ class GameState:
     country: str = "___"
     country_name: str = "Unknown"
     speed: int = 0                      # 0 = paused
+    #: Complete days of telemetry the reader has seen, for readers that see the
+    #: game one tick at a time (the log tail). None for readers that see it whole.
+    #: Verification uses it to tell "unchanged" from "not looked at again yet".
+    telemetry_ticks: int | None = None
     political_power: float = 0.0
     stability: float = 0.0
     war_support: float = 0.0
     manpower: int = 0
     civilian_factories: int = 0
+    #: Civilian factories on loan through trade, counted in the game's own
+    #: civilian figure but gone when the trade ends. None when unseen.
+    trade_civilian_factories: int | None = None
     military_factories: int = 0
     dockyards: int = 0
     fuel: float = 0.0
@@ -209,8 +216,9 @@ class GameState:
     ai_directives: list[str] = field(default_factory=list)
     posture: str | None = None
     #: Posture scoped to one theater, overriding ``posture`` there. A theater is
-    #: a front, by name: the cheapest definition that expresses "hold in the
-    #: east, press in the west", and one the brief already names.
+    #: the country a front faces, by tag: it is what the engine's own
+    #: ``front_unit_request`` strategy scopes on (``tag = KHM``), so the mod can
+    #: express it and the brief already names each front's enemy.
     theater_postures: dict[str, str] = field(default_factory=dict)
     events: list[GameEvent] = field(default_factory=list)
     unknown_fields: list[str] = field(default_factory=list)

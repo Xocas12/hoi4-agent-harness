@@ -11,15 +11,19 @@ on_actions = {
 			every_country = {
 				limit = { is_ai = no }
 				set_variable = { llmb_ai_delegated_armies = 0 }
-				log = "LLMB|v1|boot|tag=[ROOT.GetTag]|start=[GetDateText]"
+				log = "LLMB|v3|boot|tag=[THIS.GetTag]|start=[GetDateText]"
 				llm_bridge_emit_state = yes
 			}
 		}
 	}
 
+	# on_daily fires once per country, spread over the day's hours, with ROOT
+	# set to that country. Emit only on the player's own tick; looping
+	# every_country here logged the player's numbers once per country per day,
+	# under the ticking country's tag.
 	on_daily = {
 		effect = {
-			every_country = {
+			if = {
 				limit = { is_ai = no }
 				llm_bridge_emit_state = yes
 			}
@@ -28,22 +32,31 @@ on_actions = {
 
 	# --- events that should cut a scheduled wait short -----------------------
 
+	# Both fire for every war and surrender in the world, in the declarer's (or
+	# the capitulating country's) scope, with FROM the other side. Seen live on
+	# 1.19.5: AI-vs-AI wars filled the log. Only the player's own get a line.
 	on_declare_war = {
 		effect = {
-			set_variable = { llmb_event_kind = 1 }   # war_declared
-			llm_bridge_emit_war = yes
+			if = {
+				limit = { OR = { is_ai = no FROM = { is_ai = no } } }
+				set_variable = { llmb_event_kind = 1 }   # war_declared
+				llm_bridge_emit_war = yes
+			}
 		}
 	}
 
 	on_capitulation = {
 		effect = {
-			set_variable = { llmb_event_kind = 2 }   # capitulation
-			llm_bridge_emit_event = yes
+			if = {
+				limit = { OR = { is_ai = no FROM = { is_ai = no } } }
+				set_variable = { llmb_event_kind = 2 }   # capitulation
+				llm_bridge_emit_event = yes
+			}
 		}
 	}
 
-	# TODO: focus completion, research completion and construction completion.
-	# on_focus_finished / on_research_complete style hooks exist but the exact
-	# names and scopes differ by version -- verify against common/on_actions in
-	# your install rather than copying from a wiki page of unknown vintage.
+	# Focus, research and construction completion have no on_action in 1.19.5
+	# (only the military-industrial-organisation ones do). The harness derives
+	# them from the daily state line and the probe lines instead: see
+	# scripted_effects/llm_bridge_probe.txt and docs/mod-bridge.md.
 }

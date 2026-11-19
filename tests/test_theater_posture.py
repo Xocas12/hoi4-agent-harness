@@ -33,14 +33,14 @@ def _posture(adapter, posture, theater=None):
 def test_two_theaters_hold_different_postures_and_the_brief_shows_both():
     adapter = _two_front_war()
     adapter.apply(ActionCall("delegate_army_to_ai", {"army": "all", "delegate": True}))
-    assert _posture(adapter, "offensive", "east").ok
-    assert _posture(adapter, "defensive", "west").ok
+    assert _posture(adapter, "offensive", "POL").ok
+    assert _posture(adapter, "defensive", "FRA").ok
     adapter.advance(1)
     state = adapter.read_state()
 
-    assert state.theater_postures == {"east": "offensive", "west": "defensive"}
+    assert state.theater_postures == {"POL": "offensive", "FRA": "defensive"}
     brief = render_full(state)
-    assert "theaters: east offensive, west defensive" in brief
+    assert "1 army(s) delegated to the game AI | FRA: defensive | POL: offensive" in brief
 
     east = next(f for f in state.fronts if f.name == "east")
     west = next(f for f in state.fronts if f.name == "west")
@@ -54,7 +54,7 @@ def test_a_theater_posture_overrides_the_global_one_only_there():
     adapter = _two_front_war()
     adapter.apply(ActionCall("delegate_army_to_ai", {"army": "all", "delegate": True}))
     _posture(adapter, "defensive")
-    _posture(adapter, "offensive", "east")
+    _posture(adapter, "offensive", "POL")
     assert adapter.posture_on("east") == "offensive"
     assert adapter.posture_on("west") == "defensive"
 
@@ -62,23 +62,23 @@ def test_a_theater_posture_overrides_the_global_one_only_there():
 def test_an_unknown_theater_is_rejected_with_the_real_ones():
     adapter = _two_front_war()
     adapter.apply(ActionCall("delegate_army_to_ai", {"army": "all", "delegate": True}))
-    result = _posture(adapter, "offensive", "africa")
+    result = _posture(adapter, "offensive", "USA")
     assert not result.ok and result.error_kind == "invalid_args"
-    assert "Fronts: east, west" in result.message
+    assert "Fronts face: FRA, POL" in result.message
 
 
 def test_the_delta_reports_a_theater_changing_posture():
     adapter = _two_front_war()
     adapter.apply(ActionCall("delegate_army_to_ai", {"army": "all", "delegate": True}))
     before = snapshot(adapter.read_state())
-    _posture(adapter, "offensive", "east")
+    _posture(adapter, "offensive", "POL")
     text = render_delta(before, adapter.read_state())
-    assert "AI posture on east: global -> offensive" in text
+    assert "AI posture on POL: global -> offensive" in text
 
 
 def test_clearing_directives_clears_theater_postures_too():
     adapter = _two_front_war()
     adapter.apply(ActionCall("delegate_army_to_ai", {"army": "all", "delegate": True}))
-    _posture(adapter, "offensive", "east")
+    _posture(adapter, "offensive", "POL")
     adapter.apply(ActionCall("clear_ai_directives", {}))
     assert adapter.read_state().theater_postures == {}

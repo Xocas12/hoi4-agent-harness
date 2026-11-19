@@ -25,17 +25,38 @@ SCHEMA_VERSION = 1
 
 DEFAULT_FILENAME = "calibration.json"
 
-# What `hoi4-harness calibrate` walks through when the operator does not name
-# targets. The panels the hotkeys already open, since the clicks that need
-# calibrating are the ones *inside* them that no hotkey reaches. Each UI script
-# the input driver grows will name what it needs; this list grows with it.
+# What `hoi4-harness calibrate` walks through when the operator names nothing and
+# there is no scripts file: exactly the click targets profiles/ui_scripts.1.19.json
+# uses for set_national_focus, start_research, queue_construction, set_production
+# (a draft) -- tests/test_ui_resolve.py keeps the two in step. Where a target is
+# templated the values are written out (every building, every tech folder).
+# Not listed, because they depend on the action: politics.slot.<slot> and
+# politics.candidate.<advisor_id> (hire_advisor), production.line.<equipment>, and
+# optionally research.tree.origin / research.tech.<id> to correct the tech tree.
 DEFAULT_TARGETS = (
-    "national_focus",
-    "research",
-    "production",
-    "construction",
-    "diplomacy",
-    "trade",
+    "research.free_slot",
+    "research.tab.infantry_folder",
+    "research.tab.support_folder",
+    "research.tab.armour_folder",
+    "research.tab.artillery_folder",
+    "research.tab.nsb_armour_folder",
+    "research.tab.air_techs_folder",
+    "research.tab.bba_air_techs_folder",
+    "research.tab.naval_folder",
+    "research.tab.industry_folder",
+    "research.tab.electronics_folder",
+    "construction.building.civilian_factory",
+    "construction.building.military_factory",
+    "construction.building.dockyard",
+    "construction.building.infrastructure",
+    "construction.building.air_base",
+    "construction.building.anti_air",
+    "construction.building.radar",
+    "construction.building.fortification",
+    "construction.building.synthetic_refinery",
+    "map.search.first_result",
+    "map.centre",
+    "production.factories_field",
 )
 
 

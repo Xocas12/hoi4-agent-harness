@@ -29,12 +29,14 @@ from __future__ import annotations
 
 import difflib
 import hashlib
+import os
 import re
 from collections.abc import Iterable
 from dataclasses import dataclass, field
 from pathlib import Path
 
 from .adapters.savegame import parse_clausewitz
+from .techtree import Gridbox, parse_gridboxes
 from .types import ActionCall, ActionResult, GameState
 
 VANILLA = "vanilla"
@@ -42,6 +44,7 @@ VANILLA = "vanilla"
 #: Arguments that name a country, per action.
 TAG_ARGUMENTS = {
     "set_ai_directive": "target",
+    "set_ai_posture": "theater",
     "diplomacy": "target",
     "set_trade": "from_country",
 }
@@ -75,6 +78,19 @@ class Mod:
                    replace_paths=[p.replace("\\", "/").strip("/") for p in replace])
 
 
+def _resolve_descriptor(path: Path) -> Path:
+    """A launcher ``.mod`` file (``Documents/.../mod/ugc_123.mod``) stands for
+    the folder its ``path=`` names, so an installed mod can be named the way the
+    launcher names it."""
+    if path.is_file() and path.suffix.lower() == ".mod":
+        text = path.read_text(encoding="utf-8-sig", errors="replace")
+        target = _descriptor_value(text, "path") or _descriptor_value(text, "archive")
+        if not target:
+            raise FileNotFoundError(f"{path} names no mod folder (no path= line)")
+        return Path(target)
+    return path
+
+
 def _descriptor_value(text: str, key: str) -> str | None:
     match = re.search(rf'^\s*{key}\s*=\s*"([^"]*)"', text, flags=re.M)
     return match.group(1) if match else None
@@ -97,6 +113,7 @@ class Playset:
             )
         mods = []
         for mod_dir in mod_dirs:
+            mod_dir = _resolve_descriptor(Path(mod_dir))
             if not Path(mod_dir).is_dir():
                 raise FileNotFoundError(f"mod folder {mod_dir} does not exist")
             mods.append(Mod.load(Path(mod_dir)))
@@ -121,11 +138,32 @@ class Playset:
             for replaced in replace:
                 if folder == replaced or folder.startswith(replaced + "/"):
                     files.clear()
-            base = root / folder
-            if base.is_dir():
-                for path in sorted(base.rglob(pattern)):
-                    files[path.relative_to(root).as_posix()] = path
+            for key, path in _walk(root, folder, pattern):
+                files[key] = path
         return [files[key] for key in sorted(files)]
+
+    def load_order_warnings(self) -> list[str]:
+        """The bridge listed before a mod that ``replace_path``s a folder the
+        bridge has files in: the game drops the bridge's files there, so its
+        hooks and decisions silently vanish. The bridge belongs last."""
+        warnings = []
+        for i, bridge in enumerate(self.mods):
+            if not _is_bridge(bridge):
+                continue
+            used = {p.relative_to(bridge.path).parent.as_posix()
+                    for p in bridge.path.rglob("*.txt")}
+            for later in self.mods[i + 1:]:
+                if _is_bridge(later):
+                    continue
+                hit = sorted(r for r in later.replace_paths
+                             if any(u == r or u.startswith(r + "/") for u in used))
+                if hit:
+                    warnings.append(
+                        f"{bridge.name} loads before {later.name}, which replaces "
+                        f"{', '.join(hit)}: the bridge's files there are dropped. "
+                        "Put LLM Bridge last in the load order."
+                    )
+        return warnings
 
     def describe(self) -> dict:
         return {
@@ -133,6 +171,19 @@ class Playset:
             "game_dir": str(self.game_dir),
             "mods": [{"name": m.name, "version": m.version, "path": str(m.path)} for m in self.mods],
         }
+
+
+def _walk(root: Path, folder: str, pattern: str) -> Iterable[tuple[str, Path]]:
+    """(relative posix path, absolute path) for every file under root/folder
+    matching ``pattern``. os.walk and string joins: pathlib's rglob and
+    relative_to cost seconds on a total conversion's thousands of files."""
+    base = os.path.join(root, folder)
+    suffix = pattern.lstrip("*")  # only "*.txt" / "*.yml" are used
+    for current, _dirs, names in os.walk(base):
+        rel = os.path.relpath(current, root).replace("\\", "/")
+        for name in names:
+            if name.endswith(suffix):
+                yield f"{rel}/{name}", Path(current) / name
 
 
 def _is_bridge(mod: Mod) -> bool:
@@ -167,6 +218,34 @@ class StateInfo:
 
 
 @dataclass
+class TechPlace:
+    """Where a technology sits in its folder: ``common/technologies`` gives
+    ``position = { x y }`` where ``y`` is a year column (``@1936`` names one) and
+    ``x`` the row. The tree is drawn left to right, so ``column`` runs across the
+    screen and ``row`` down it. Both are relative to the technology's sub-tree, not
+    the tab: ``roots`` are the technologies at the top of the chains
+    (``path = { leads_to_tech }``) that reach this one, and the interface file places
+    each root's sub-tree (see ``techtree.py``)."""
+
+    folder: str
+    column: int
+    row: int
+    roots: tuple[str, ...] = field(default=(), compare=False)
+
+
+@dataclass(frozen=True)
+class AdvisorRole:
+    """One advisor block of a character: the slot it fills and what it costs.
+
+    ``cost`` is the base political power from the definition; None when the
+    block names none (the game then applies a default this index does not know),
+    which callers must treat as unknown rather than free."""
+
+    slot: str | None
+    cost: float | None
+
+
+@dataclass
 class IdentifierIndex:
     playset: Playset
     tags: set[str] = field(default_factory=set)
@@ -174,6 +253,13 @@ class IdentifierIndex:
     shared_focuses: dict[str, Focus] = field(default_factory=dict)
     technologies: set[str] = field(default_factory=set)
     states: dict[str, StateInfo] = field(default_factory=dict)
+    tech_places: dict[str, TechPlace] = field(default_factory=dict)
+    #: ``(folder, "<root>_tree")`` -> the sub-tree's box in countrytechtreeview.gui.
+    tech_gridboxes: dict[tuple[str, str], Gridbox] = field(default_factory=dict)
+    _focus_names: dict[str, str] | None = field(default=None, repr=False)
+    _advisors: dict[str, list[AdvisorRole]] | None = field(default=None, repr=False)
+    _equipment: set[str] | None = field(default=None, repr=False)
+    _advisor_tokens: dict[str, str] = field(default_factory=dict, repr=False)
 
     # --- building -------------------------------------------------------------
 
@@ -187,11 +273,22 @@ class IdentifierIndex:
                     index.tags.add(match.group(1))
         for path in playset.layered("common/national_focus"):
             index._read_focus_file(_parse(path))
+        leads: dict[str, list[str]] = {}
         for path in playset.layered("common/technologies"):
             for block in _as_list(_parse(path).get("technologies")):
+                variables = {k: v for k, v in block.items() if k.startswith("@")}
                 for key, value in block.items():
                     if isinstance(value, dict) and not key.startswith("@") and key != "_items":
                         index.technologies.add(key)
+                        place = _tech_place(value, variables)
+                        if place:
+                            index.tech_places[key] = place
+                        leads[key] = [str(t) for p in _as_list(value.get("path"))
+                                      if isinstance(p, dict)
+                                      for t in _as_list(p.get("leads_to_tech")) if isinstance(t, str)]
+        _attach_roots(index.tech_places, leads)
+        for path in playset.layered("interface", "countrytechtreeview.gui"):
+            index.tech_gridboxes = parse_gridboxes(path.read_text(encoding="utf-8-sig", errors="replace"))
         names = index._state_names()
         for path in playset.layered("history/states"):
             for block in _as_list(_parse(path).get("state")):
@@ -246,6 +343,80 @@ class IdentifierIndex:
                 if replacing or key not in names:
                     names[key] = value
         return names
+
+    def focus_name(self, focus_id: str) -> str | None:
+        """The English display name of a focus, or None when none is defined.
+
+        Read on first use and kept for the focus ids this index knows: the
+        English localisation is large and only the input driver needs it.
+        """
+        if self._focus_names is None:
+            wanted = set(self.shared_focuses) | {f for t in self.trees for f in t.focuses}
+            names: dict[str, str] = {}
+            files = [p for p in self.playset.layered("localisation", "*.yml")
+                     if "english" in p.as_posix().lower()]
+            files.sort(key=lambda path: "replace" in path.parent.parts)
+            for path in files:
+                replacing = "replace" in path.parent.parts
+                text = path.read_text(encoding="utf-8-sig", errors="replace")
+                for key, value in re.findall(r'^\s*([\w.]+):\d*\s*"(.*)"', text, flags=re.M):
+                    if key in wanted and (replacing or key not in names):
+                        names[key] = value
+            self._focus_names = names
+        return self._focus_names.get(focus_id)
+
+    def advisor_roles(self, advisor_id: str) -> list[AdvisorRole] | None:
+        """The roles of the character ``advisor_id`` names (a character id or an
+        advisor's ``idea_token``), or None when no such advisor is defined.
+
+        ``activate_advisor`` takes the character id; an idea token is accepted
+        here because the brief and the UI show both. Read on first use: a total
+        conversion has hundreds of character files."""
+        if self._advisors is None:
+            roles: dict[str, list[AdvisorRole]] = {}
+            tokens: dict[str, str] = {}
+            for path in self.playset.layered("common/characters"):
+                for block in _as_list(_parse(path).get("characters")):
+                    for char_id, body in (block.items() if isinstance(block, dict) else []):
+                        found = _advisor_blocks(body)
+                        if not found:
+                            continue
+                        # A mod redefining a character replaces it, as the game does.
+                        roles[char_id] = []
+                        for advisor in found:
+                            cost = _number(_first(advisor.get("cost")))
+                            slot = _first(advisor.get("slot"))
+                            roles[char_id].append(
+                                AdvisorRole(slot if isinstance(slot, str) else None, cost))
+                            token = _first(advisor.get("idea_token"))
+                            if isinstance(token, str):
+                                tokens.setdefault(token, char_id)
+            self._advisors = roles
+            self._advisor_tokens = tokens
+        if advisor_id in self._advisors:
+            return self._advisors[advisor_id]
+        char_id = self._advisor_tokens.get(advisor_id)
+        return self._advisors.get(char_id) if char_id else None
+
+    def advisor_character(self, advisor_id: str) -> str | None:
+        """The character id ``activate_advisor`` wants for ``advisor_id``."""
+        if self.advisor_roles(advisor_id) is None:
+            return None
+        return advisor_id if advisor_id in self._advisors else self._advisor_tokens[advisor_id]
+
+    def equipment_types(self) -> set[str]:
+        """Equipment a production line can be made for: every entry of
+        ``common/units/equipment`` that is not an archetype (an archetype is a
+        family name, such as ``infantry_equipment``, not something that is built)."""
+        if self._equipment is None:
+            found: set[str] = set()
+            for path in self.playset.layered("common/units/equipment"):
+                for block in _as_list(_parse(path).get("equipments")):
+                    for key, body in (block.items() if isinstance(block, dict) else []):
+                        if isinstance(body, dict) and str(_first(body.get("is_archetype"))) != "yes":
+                            found.add(key)
+            self._equipment = found
+        return self._equipment
 
     # --- lookups --------------------------------------------------------------
 
@@ -392,6 +563,8 @@ def _strip_comment(line: str) -> str:
     class``) must not decide whether the '#' was in a string, or the tokenizer
     reads from that quote across lines to the next one.
     """
+    if "#" not in line:  # nearly every line: skip the character scan
+        return line
     quoted = False
     for i, char in enumerate(line):
         if char == '"':
@@ -427,6 +600,69 @@ def _all_values(block, key: str) -> list[str]:
                 else:
                     found += _all_values(v, key)
     return found
+
+
+def _number(raw) -> float | None:
+    try:
+        return float(str(raw).strip())
+    except ValueError:
+        return None
+
+
+def _advisor_blocks(body) -> list[dict]:
+    """Every ``advisor = { ... }`` block in a character, including those inside
+    the ``instance`` wrappers a character uses to vary by DLC."""
+    found: list[dict] = []
+    for item in _as_list(body):
+        if not isinstance(item, dict):
+            continue
+        for key, value in item.items():
+            if key == "advisor":
+                found += [v for v in _as_list(value) if isinstance(v, dict)]
+            elif key == "instance":
+                for inner in _as_list(value):
+                    found += _advisor_blocks(inner)
+    return found
+
+
+def _tech_place(block: dict, variables: dict) -> TechPlace | None:
+    folder = _first(block.get("folder"))
+    if not isinstance(folder, dict) or not folder.get("name"):
+        return None
+    position = _first(folder.get("position"))
+    if not isinstance(position, dict):
+        return None
+
+    def number(raw) -> int | None:
+        text = str(raw).strip()
+        text = str(variables.get(text, text)).strip() if text.startswith("@") else text
+        try:
+            return int(float(text))
+        except ValueError:
+            return None
+
+    row, column = number(position.get("x")), number(position.get("y"))
+    if row is None or column is None:
+        return None
+    return TechPlace(folder=str(folder["name"]), column=column, row=row)
+
+
+def _attach_roots(places: dict[str, TechPlace], leads: dict[str, list[str]]) -> None:
+    """Fill ``roots``: per folder, the technologies nothing else in the folder leads
+    to, and for each technology the roots whose chains reach it (file order)."""
+    for place in places.values():
+        place.roots = ()
+    led_to = {t for src, targets in leads.items() if src in places
+              for t in targets if t in places and places[t].folder == places[src].folder}
+    for root in (t for t in places if t not in led_to):
+        seen, queue = {root}, [root]
+        while queue:
+            tech = queue.pop()
+            places[tech].roots += (root,)
+            for nxt in leads.get(tech, ()):
+                if nxt in places and nxt not in seen and places[nxt].folder == places[root].folder:
+                    seen.add(nxt)
+                    queue.append(nxt)
 
 
 def _focus(block) -> Focus | None:

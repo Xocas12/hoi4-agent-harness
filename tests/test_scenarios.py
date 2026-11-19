@@ -270,7 +270,7 @@ def _commit_the_reserve(state):
     return [
         ActionCall("deploy_divisions", {"template": "Infantry", "count": 12, "location": "home"}),
         ActionCall("delegate_army_to_ai", {"army": "all", "delegate": True}),
-        ActionCall("set_ai_posture", {"posture": "defensive", "theater": "center"}),
+        ActionCall("set_ai_posture", {"posture": "defensive", "theater": "SOV"}),
     ]
 
 
@@ -286,7 +286,7 @@ def test_winter_crisis_half_measures_are_not_enough():
         if state.delegated_armies:
             return []
         return [ActionCall("delegate_army_to_ai", {"army": "all", "delegate": True}),
-                ActionCall("set_ai_posture", {"posture": "defensive", "theater": "center"})]
+                ActionCall("set_ai_posture", {"posture": "defensive", "theater": "SOV"})]
 
     assert run_card(SCENARIOS["winter_crisis"], delegate_only).score < 1.0
 

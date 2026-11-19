@@ -34,8 +34,9 @@ One pipe-delimited line per tick, prefixed so the parser can find it in a log
 full of everything else:
 
 ```
-LLMB|v1|state|date=1936.2.14|tag=SWE|pp=42|stab=63|ws=18|civ=12|mil=5|doc=4|mp=214000
-LLMB|v1|evt|tag=GER|other=POL|kind=1|detail=0
+LLMB|v3|state|date=1936.2.14|tag=SWE|pp=42|stab=63|ws=18|civ=12|mil=5|doc=4|owned=15|mp=214000|techs=12|built_civ=0|built_mil=0|built_dock=0|built_infra=2
+LLMB|v3|focus|tag=SWE|id=SWE_rearm
+LLMB|v3|evt|tag=GER|other=POL|kind=1|detail=0
 ```
 
 Event kinds are numeric codes (`1` is a war declaration); the table is
@@ -49,9 +50,11 @@ silently wrong numbers.
 
 ## Status
 
-Skeleton, and the parts that are unverified say so in the file that contains
-them. The script token names (variables, scope functions, on_action names,
-`ai_strategy` types) are the bit that moves between HOI4 versions — check them
+Verified on HOI4 1.19.5.0 for telemetry, focus and research probes, and for
+raising directives and theater posture (the telemetry line shown above is schema
+v3). Still unverified: research completion through the `techs` counter, the `owned`
+field, and whether the game's AI acts on a directive. The script token names (variables, scope functions, on_action
+names, `ai_strategy` types) are the bit that moves between HOI4 versions — check them
 against `common/` in your own install before trusting a run. See
 [../docs/mod-bridge.md](../docs/mod-bridge.md).
 

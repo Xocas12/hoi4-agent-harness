@@ -19,6 +19,6 @@ def test_every_documented_line_parses():
         parsed = parse_line(line)
         assert parsed is not None, line
         kind, fields = parsed
-        assert kind in {"state", "boot", "evt"}, line
+        assert kind in {"state", "boot", "evt", "focus", "research"}, line
         if kind == "evt":
             assert fields["kind"] in EVENT_CODES, line

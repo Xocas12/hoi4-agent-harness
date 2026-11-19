@@ -18,6 +18,7 @@ resolution.
 
 from __future__ import annotations
 
+import re
 import time
 from collections.abc import Callable
 from dataclasses import dataclass, field
@@ -27,25 +28,71 @@ from ..calibration import load_calibration, screen_size
 from ..observation.builder import snapshot
 from ..types import ActionCall, ActionResult, GameState
 from .base import AdapterInfo, GameAdapter
-from .ui_scripts import Step, verify
+from .keys import GuiKeys, ScanCodeKeys
+from .ui_resolve import COMPUTED_TARGETS, Unresolvable, resolve
+from .ui_scripts import Step, placeholders, unsafe_escape, verify
 from .window import FocusCheck, check_focus
 
+#: Panel and clock hotkeys for HOI4 1.19.5. Where the game states a binding it is
+#: in ``interface/topbar.gui`` (a button's ``shortcut =``; see ``topbar_shortcuts``);
+#: each was also tried in the live game. Two are not in that file as literals:
+#: ``research`` is the ``research_open`` keybind (w), and the political panel
+#: opens from the player flag (q). There is no diplomacy panel hotkey: topbar.gui
+#: binds ``e`` to the international market button, and ``r`` to trade.
 HOTKEYS = {
     "pause": "space",
-    "speed_up": "add",
-    "speed_down": "subtract",
-    "production": "b",
-    "research": "n",
-    "national_focus": "f",
-    "diplomacy": "j",
-    "trade": "t",
-    "construction": "c",
-    "division_designer": "u",
+    "speed_up": "kp_plus",       # topbar.gui button_speedup
+    "speed_down": "kp_minus",    # topbar.gui button_speeddown
+    "national_focus": "alt+q",   # topbar.gui national_focus_shortcut
+    "research": "w",             # keybind research_open
+    "construction": "t",         # topbar.gui construction_button
+    "production": "y",           # topbar.gui production_button
+    "decisions": "shift+q",      # topbar.gui decisionview_button
+    "politics": "q",             # topbar.gui player_flag
+    "international_market": "e",
+    "trade": "r",
 }
+#: Searching inside a panel: the focus tree's search bar, and the map search when
+#: no focus tree is open (the magnifier at the map's bottom right does the same).
+SEARCH_KEY = "ctrl+f"
+
+
+def topbar_shortcuts(text: str) -> dict[str, str]:
+    """Every ``shortcut = "..."`` in a topbar.gui, keyed by the button name it
+    sits in. How the table above was derived, and how to re-derive it for another
+    game version or a mod that rebinds them."""
+    found: dict[str, str] = {}
+    name = None
+    for line in text.splitlines():
+        match = re.match(r'\s*name\s*=\s*"([^"]+)"', line)
+        if match:
+            name = match.group(1)
+        match = re.match(r'\s*shortcut\s*=\s*"([^"]+)"', line)
+        if match and name:
+            found.setdefault(name, match.group(1).lower())
+    return found
 
 
 #: How often the clock check re-reads the date while it watches.
 CLOCK_POLL_SECONDS = 0.5
+
+
+def _wanted(steps: list[Step]) -> set[str]:
+    return placeholders(steps) | {s.value for s in steps if s.kind == "click"}
+
+
+def _expand_repeats(steps: list[Step]) -> list[Step]:
+    """``{"repeat": N}`` runs the step before it N times in all."""
+    out: list[Step] = []
+    for step in steps:
+        if step.kind == "repeat":
+            times = int(float(step.value))
+            if times < 1:
+                raise KeyError(f"repeat {step.value}: must be at least 1")
+            out.extend([out[-1]] * (times - 1))
+        else:
+            out.append(step)
+    return out
 
 
 class NotFocused(RuntimeError):
@@ -72,6 +119,9 @@ class InputConfig:
     #: day takes at the speed the game runs. Too short shows up at an unpause:
     #: the date is not seen to move, and the clock refuses to go on.
     clock_probe_seconds: float = 10.0
+    #: The resolution the calibration was captured at (set by load_calibration);
+    #: the bound a computed click point is checked against.
+    screen: tuple[int, int] | None = None
 
 
 class InputDriverAdapter(GameAdapter):
@@ -92,9 +142,16 @@ class InputDriverAdapter(GameAdapter):
         sleep: Callable[[float], None] = time.sleep,
         verify_timeout: float = 3.0,
         gui=None,
+        keys=None,
+        index=None,
     ):
         """``gui`` stands in for pyautogui -- what tests inject, so a test suite
-        for an input driver cannot drive the machine it runs on."""
+        for an input driver cannot drive the machine it runs on.
+
+        ``keys`` is the keyboard: anything with ``chord(spec)`` and
+        ``type_text(text)``. By default hardware scan codes (keys.py), the only
+        keys HOI4 accepts; with only ``gui`` injected, keys go through it. ``index``
+        is the identifier index that localised names and tech positions come from."""
         self.config = config or InputConfig()
         self.dry_run = dry_run
         self.log: list[str] = []
@@ -107,6 +164,11 @@ class InputDriverAdapter(GameAdapter):
         self.verify_timeout = verify_timeout
         self.supported_actions = self.BUILT_IN | frozenset(self.scripts)
         self._gui_override = gui
+        self._keys_override = keys
+        self._keys_cache = None
+        self.index = index
+        #: Click points computed for the action in flight (see ui_resolve.py).
+        self._computed: dict[str, tuple[int, int]] = {}
         #: Whether the game was running when the clock was last seen: True,
         #: False, or None for not known. It decides whether to look or to press
         #: first, never whether to look at all (see _drive_clock).
@@ -160,15 +222,26 @@ class InputDriverAdapter(GameAdapter):
         pyautogui.FAILSAFE = True  # slam the mouse into a screen corner to abort
         return pyautogui
 
+    def _keys(self):
+        if self._keys_override is not None:
+            return self._keys_override
+        if self._gui_override is not None:
+            return GuiKeys(self._gui_override)
+        if self._keys_cache is None:
+            self._keys_cache = ScanCodeKeys(sleep=self._sleep)
+        return self._keys_cache
+
     def press(self, key: str) -> None:
+        """Press a key or chord (``alt+q``); a name in HOTKEYS means its binding."""
+        key = HOTKEYS.get(key, key)
         self._require_focus()
         self.log.append(f"press {key}")
         if not self.dry_run:
-            self._gui().press(key)
+            self._keys().chord(key)
 
     def click(self, target: str) -> None:
         self._require_focus()
-        point = self.config.coordinates.get(target)
+        point = self._computed.get(target) or self.config.coordinates.get(target)
         if point is None:
             raise KeyError(f"No calibrated coordinate for {target!r}. Run: hoi4-harness calibrate")
         self.log.append(f"click {target} at {point}")
@@ -181,9 +254,11 @@ class InputDriverAdapter(GameAdapter):
         self._require_focus()
         self.log.append(f"type {text}")
         if not self.dry_run:
-            self._gui().write(text, interval=0.02)
+            self._keys().type_text(text)
 
     def _run_step(self, step: Step) -> None:
+        if step.kind == "repeat":      # expanded before the run (_expand_repeats)
+            return
         if step.kind == "press":
             self.press(step.value)
         elif step.kind == "click":
@@ -197,8 +272,20 @@ class InputDriverAdapter(GameAdapter):
 
     def _scripted(self, call: ActionCall) -> ActionResult:
         """Run the recorded click path, then prove it worked."""
-        steps = [step.fill(call.arguments) for step in self.scripts[call.name]]
-        missing = [s.value for s in steps if s.kind == "click" and s.value not in self.config.coordinates]
+        template = self.scripts[call.name]
+        escape = unsafe_escape(template)
+        if escape:
+            return self._result(call, False, "rejected", f"the {call.name} script {escape}")
+        try:
+            resolved = resolve(call.name, call.arguments, self.index, self.config.coordinates,
+                               self.config.screen, wanted=_wanted(template))
+        except Unresolvable as exc:
+            return self._result(call, False, "rejected", f"{exc}; nothing was sent")
+        self._computed = resolved.coordinates
+        steps = _expand_repeats([step.fill(resolved.arguments) for step in template])
+        have = set(self.config.coordinates) | set(self._computed)
+        missing = [s.value for s in steps if s.kind == "click" and s.value not in have
+                   and s.value not in COMPUTED_TARGETS]
         if missing:
             # Before any input: half a script is worse than none.
             return self._result(call, False, "rejected", (
@@ -206,14 +293,23 @@ class InputDriverAdapter(GameAdapter):
                 + " ".join(missing)
             ))
         if self.dry_run:
-            for step in steps:
-                self._run_step(step)
+            try:
+                for step in steps:
+                    self._run_step(step)
+            finally:
+                self._computed = {}
             return self._result(call, False, "not_executed", (
                 "dry run: would " + "; ".join(s.describe() for s in steps)
             ))
         if self._read_state is None:
             return self._result(call, False, "unverified",
                                 "no reader to verify with; nothing was sent")
+        try:
+            return self._send_and_verify(call, steps)
+        finally:
+            self._computed = {}
+
+    def _send_and_verify(self, call: ActionCall, steps: list[Step]) -> ActionResult:
         before = snapshot(self._read_state())
         for step in steps:
             self._run_step(step)
@@ -242,6 +338,7 @@ class InputDriverAdapter(GameAdapter):
             resolution = screen_size()
         calibration = load_calibration(path, current_resolution=resolution)
         self.config.coordinates = dict(calibration.coordinates)
+        self.config.screen = calibration.screen
 
     def read_state(self) -> GameState:
         raise NotImplementedError("Write-only adapter; compose it with a reader.")
@@ -249,7 +346,7 @@ class InputDriverAdapter(GameAdapter):
     def apply(self, call: ActionCall) -> ActionResult:
         try:
             return self._apply(call)
-        except (NotFocused, ClockUnobservable, KeyError) as exc:
+        except (NotFocused, ClockUnobservable, KeyError, ValueError) as exc:
             # The same contract as every other adapter failure: report it, do not
             # pretend the action happened. The agent can read this and wait.
             return ActionResult(
@@ -324,7 +421,7 @@ class InputDriverAdapter(GameAdapter):
                 self._running = running
                 return
         for _ in range(2):
-            self.press(HOTKEYS["pause"])
+            self.press("pause")
             self._sleep(self.config.settle_seconds)
             if self._date_moves() == running:
                 self._running = running

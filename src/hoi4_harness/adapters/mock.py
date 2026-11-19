@@ -365,7 +365,6 @@ class MockAdapter(GameAdapter):
                 if group.location in closing:
                     group.location = "home"
             self._merge_groups()
-            s.theater_postures = {k: v for k, v in s.theater_postures.items() if k not in closing}
         for name, count in change.enemy_divisions.items():
             for front in s.fronts:
                 if front.name == name:
@@ -418,8 +417,15 @@ class MockAdapter(GameAdapter):
         self.state.divisions = [g for g in self.state.divisions if g.count > 0]
 
     def posture_on(self, front_name: str) -> str | None:
-        """The posture that governs one front: its theater's, else the global one."""
-        return self.state.theater_postures.get(front_name, self.state.posture)
+        """The posture that governs one front: its theater's, else the global one.
+
+        A theater is the country the front faces, so every front against one
+        enemy shares a posture, as the mod's per-tag flags would give them.
+        """
+        front = next((f for f in self.state.fronts if f.name == front_name), None)
+        if front is not None and front.enemy in self.state.theater_postures:
+            return self.state.theater_postures[front.enemy]
+        return self.state.posture
 
     def _bleed_one_division(self, front_name: str) -> bool:
         """Destroy one division on a front that is giving ground. False: nobody left."""
@@ -639,12 +645,12 @@ class MockAdapter(GameAdapter):
         if not self.state.delegated_armies:
             return self._fail(call, "No armies are delegated, so posture does nothing yet.")
         posture = call.arguments["posture"]
-        theater = call.arguments.get("theater")
+        theater = str(call.arguments.get("theater") or "").strip().upper()
         if theater:
-            if not any(front.name == theater for front in self.state.fronts):
-                known = ", ".join(f.name for f in self.state.fronts) or "none"
+            if not any(front.enemy == theater for front in self.state.fronts):
+                known = ", ".join(sorted({f.enemy for f in self.state.fronts})) or "none"
                 return self._fail(
-                    call, f"No front named '{theater}'. Fronts: {known}.", "invalid_args"
+                    call, f"No front faces '{theater}'. Fronts face: {known}.", "invalid_args"
                 )
             self.state.theater_postures[theater] = posture
             return self._ok(call, f"Posture on {theater} set to {posture}.", theater=theater)

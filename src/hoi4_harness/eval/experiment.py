@@ -69,6 +69,30 @@ class Experiment:
         return (f"hybrid ({hybrid:.2f}) beats both AI-only ({ai:.2f}) and model-only "
                 f"({model:.2f}) by more than {TIE:.2f}")
 
+    def markdown(self) -> str:
+        """The result as a markdown table: mean +- sd, per-objective pass rates, spend."""
+        import statistics
+
+        objectives = list(next(iter(self.arms.values())).cards[0].objectives)
+        head = ["scenario", "arm", "seeds", "score mean +- sd (min-max)",
+                *[f"`{name}`" for name in objectives], "LLM calls", "tokens in", "tokens out",
+                "USD total", "USD/run"]
+        lines = ["| " + " | ".join(head) + " |", "|" + "---|" * len(head)]
+        for arm in ARMS:
+            agg = self.arms[arm]
+            sd = statistics.pstdev(agg.scores) if agg.n > 1 else 0.0
+            mean = lambda attr, agg=agg: sum(getattr(c, attr) for c in agg.cards) / agg.n  # noqa: E731
+            rates = [f"{sum(1 for c in agg.cards if c.objectives.get(name))}/{agg.n}"
+                     for name in objectives]
+            total = sum(c.usd for c in agg.cards)
+            lines.append("| " + " | ".join([
+                self.scenario.key, arm, str(agg.n),
+                f"{statistics.fmean(agg.scores):.2f} +- {sd:.2f} ({agg.low:.2f}-{agg.high:.2f})",
+                *rates, f"{mean('planner_calls'):.0f}", f"{mean('tokens_in'):,.0f}",
+                f"{mean('tokens_out'):,.0f}", f"${total:.2f}", f"${total / agg.n:.2f}",
+            ]) + " |")
+        return "\n".join(lines)
+
     def render(self) -> str:
         rows = [["arm", "median", "range", "calls", "tokens in", "tokens out", "usd"]]
         for arm in ARMS:

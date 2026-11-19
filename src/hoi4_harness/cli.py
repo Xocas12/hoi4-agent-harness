@@ -18,6 +18,7 @@
     hoi4-harness save-inspect               what a save contains, for mapping it
     hoi4-harness check-scripts              pre-flight the input driver's scripts and calibration
     hoi4-harness mod-directives --tags ...  regenerate the mod's per-target directives
+    hoi4-harness mod-probe                  regenerate the focus/research probe from the install
 
 Everything defaults to the mock adapter and the scripted model, so a fresh clone
 does something useful with no API key and no game installed.
@@ -40,6 +41,7 @@ from .calibration import DEFAULT_FILENAME, DEFAULT_TARGETS
 from .config import HarnessConfig
 from .confirm import TerminalConfirmer
 from .env import HOI4Env
+from .eval.runner import PlaysetMismatch
 from .guidance import available as guidance_packs
 from .replay import ReplayError, list_turns, replay_turn
 
@@ -413,6 +415,23 @@ def cmd_mod_directives(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_mod_probe(args: argparse.Namespace) -> int:
+    """Regenerate the focus/research probe from the configured install."""
+    from . import modgen
+
+    config = _config_from_args(args)
+    if config.game_dir is None:
+        print("mod-probe: point --game-dir (or HOI4_GAME_DIR) at the HOI4 install", file=sys.stderr)
+        return 2
+    try:
+        index = config.build_index()
+    except FileNotFoundError as exc:
+        print(f"mod-probe: {exc}", file=sys.stderr)
+        return 2
+    print(f"wrote {modgen.write_probe(Path(args.mod_dir), index)}")
+    return 0
+
+
 def cmd_index(args: argparse.Namespace) -> int:
     """What exists in the configured playset: countries, focuses, technologies, states."""
     config = _config_from_args(args)
@@ -428,6 +447,8 @@ def cmd_index(args: argparse.Namespace) -> int:
     print(f"playset          {summary['playset']}  [{summary['fingerprint']}]")
     for mod in index.playset.mods:
         print(f"  mod            {mod.name} {mod.version}".rstrip() + f"  ({mod.path})")
+    for warning in index.playset.load_order_warnings():
+        print(f"  WARNING        {warning}")
     print(f"countries        {summary['tags']}: {' '.join(sorted(index.tags)[:40])}"
           + (" ..." if summary["tags"] > 40 else ""))
     print(f"focus trees      {summary['focus_trees']} ({summary['focuses']} focuses)")
@@ -461,6 +482,8 @@ def cmd_experiment(args: argparse.Namespace) -> int:
         print(f"experiment: {exc.args[0]}", file=sys.stderr)
         return 2
     print(result.render())
+    if getattr(args, "markdown", None):
+        Path(args.markdown).write_text(result.markdown() + "\n", encoding="utf-8")
     return 0
 
 
@@ -496,7 +519,7 @@ def cmd_verify_bridge(args: argparse.Namespace) -> int:
     if log is not None and log.exists():
         if checked:
             print()
-        report = check_log(log)
+        report = check_log(log, player=config.country)
         print(report.render())
         checked += 1
         failed |= not report.ok
@@ -522,12 +545,12 @@ def calibration_targets(config: HarnessConfig) -> list[str]:
     target ('construction.{building}') cannot be aimed at, so it is reported
     and left for the operator to name per value."""
     from .adapters.ui_scripts import DEFAULT_FILENAME as SCRIPTS_FILENAME
-    from .adapters.ui_scripts import load_scripts, targets_in
+    from .adapters.ui_scripts import expanded_targets, load_scripts
 
     path = config.ui_scripts_path or config.run_dir / SCRIPTS_FILENAME
     if not Path(path).exists():
         return list(DEFAULT_TARGETS)
-    targets = targets_in(load_scripts(path))
+    targets = expanded_targets(load_scripts(path))
     templated = [t for t in targets if "{" in t]
     for target in templated:
         print(f"note: {target} depends on the action's arguments; calibrate each value by name",
@@ -546,7 +569,7 @@ def cmd_check_scripts(args: argparse.Namespace) -> int:
     scripts_path = config.ui_scripts_path or config.run_dir / SCRIPTS_FILENAME
     calibration_path = config.calibration_path or config.run_dir / DEFAULT_FILENAME
     if not Path(scripts_path).exists():
-        print(f"check-scripts: no {scripts_path}; copy profiles/ui_scripts.example.json there",
+        print(f"check-scripts: no {scripts_path}; copy profiles/ui_scripts.1.19.json there",
               file=sys.stderr)
         return 2
     try:
@@ -716,6 +739,8 @@ def build_parser() -> argparse.ArgumentParser:
     experiment.add_argument("scenario")
     experiment.add_argument("--seeds", type=int, default=5, metavar="N",
                             help="seeds per arm (default 5)")
+    experiment.add_argument("--markdown", metavar="PATH",
+                            help="also write the results as a markdown table to PATH")
     experiment.set_defaults(func=cmd_experiment)
 
     measure_p = sub.add_parser(
@@ -768,6 +793,14 @@ def build_parser() -> argparse.ArgumentParser:
                         help="exit 1 if the committed files differ from what would be generated")
     moddir.set_defaults(func=cmd_mod_directives)
 
+    probe = sub.add_parser(
+        "mod-probe", help="regenerate the mod's focus/research probe from the game install"
+    )
+    common(probe)
+    probe.add_argument("--mod-dir", dest="mod_dir", default="mod/llm_bridge",
+                       help="the llm_bridge mod folder (default: mod/llm_bridge)")
+    probe.set_defaults(func=cmd_mod_probe)
+
     check_scripts = sub.add_parser(
         "check-scripts", help="pre-flight the input driver's scripts and calibration"
     )
@@ -787,7 +820,12 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
-    return args.func(args)
+    try:
+        return args.func(args)
+    except PlaysetMismatch as exc:
+        # A scenario run against the wrong playset is a usage error, not a crash.
+        print(f"{args.command}: {exc}", file=sys.stderr)
+        return 2
 
 
 if __name__ == "__main__":

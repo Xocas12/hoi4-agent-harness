@@ -23,10 +23,11 @@ from hoi4_harness.env import HOI4Env
 from hoi4_harness.types import ActionResult
 
 STATE = (
-    "[messagehandler.cpp:290]: LLMB|v1|state|date={date}|tag=SWE|pp=42|stab=63|ws=18"
+    "[messagehandler.cpp:290]: LLMB|v3|state|date={date}|tag=SWE|pp=42|stab=63|ws=18"
     "|civ=12|mil=5|doc=4|mp=214000\n"
 )
-WAR = "[messagehandler.cpp:290]: LLMB|v1|evt|tag=SWE|kind=1|detail=Germany declared war\n"
+FOCUS = "[messagehandler.cpp:290]: LLMB|v3|focus|tag=SWE|id=SWE_hold_the_line\n"
+WAR = "[messagehandler.cpp:290]: LLMB|v3|evt|tag=SWE|kind=1|detail=Germany declared war\n"
 WAR_WAKE = "critical event: Germany declared war"
 
 
@@ -42,7 +43,10 @@ class Game:
         self._write(self._state_line())
 
     def _state_line(self) -> str:
-        return STATE.format(date=f"{self.day.year}.{self.day.month}.{self.day.day}")
+        # The mod's probe prints the running focus right behind the state line;
+        # without it the reader (rightly) reports that no focus is running.
+        return (STATE.format(date=f"{self.day.year}.{self.day.month}.{self.day.day}")
+                + FOCUS)
 
     def _write(self, *lines: str) -> None:
         with self.log.open("a", encoding="utf-8") as handle:

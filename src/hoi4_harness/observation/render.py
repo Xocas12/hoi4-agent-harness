@@ -26,6 +26,18 @@ def _val(state: GameState, field: str, fmt=str) -> str:
     return "unknown" if not state.known(field) else fmt(getattr(state, field))
 
 
+def _country_label(state: GameState) -> str:
+    """``Sweden (SWE)``, or just ``SWE`` when no adapter knows the name.
+
+    The log reader sees a tag and nothing else, and the identifier index holds
+    no localised names, so "Unknown (SWE)" is what it used to print.
+    """
+    name = (state.country_name or "").strip()
+    if not name or name == "Unknown" or name == state.country:
+        return state.country
+    return f"{name} ({state.country})"
+
+
 def render_full(state: GameState, max_events: int = 6, max_fronts: int = 3) -> str:
     """A complete situation brief.
 
@@ -33,7 +45,7 @@ def render_full(state: GameState, max_events: int = 6, max_fronts: int = 3) -> s
     many the war has -- see observation/fronts.py.
     """
     lines: list[str] = []
-    lines.append(f"## {state.country_name} ({state.country}) -- {state.date}")
+    lines.append(f"## {_country_label(state)} -- {state.date}")
 
     lines.append(
         "PP {pp} | stability {stab} | war support {ws} | manpower {mp}".format(
@@ -44,8 +56,10 @@ def render_full(state: GameState, max_events: int = 6, max_fronts: int = 3) -> s
         )
     )
     lines.append(
-        "Factories: {civ} civ / {mil} mil / {dock} dockyards | fuel {fuel} | convoys {conv}".format(
-            civ=_val(state, "civilian_factories"),
+        "Factories: {civ} / {mil} mil / {dock} dockyards | fuel {fuel} | convoys {conv}".format(
+            civ=_val(state, "civilian_factories") + " civ" + (
+                f" (+{state.trade_civilian_factories} from trade)"
+                if state.trade_civilian_factories else ""),
             mil=_val(state, "military_factories"),
             dock=_val(state, "dockyards"),
             fuel=_val(state, "fuel", lambda v: f"{v:.0f}"),
@@ -58,7 +72,9 @@ def render_full(state: GameState, max_events: int = 6, max_fronts: int = 3) -> s
         lines.append(f"Resources: {detail}")
 
     if state.national_focus:
-        lines.append(f"Focus: {state.national_focus} ({state.focus_days_remaining}d left)")
+        left = state.focus_days_remaining
+        # The log reader sees which focus runs, not how long is left.
+        lines.append(f"Focus: {state.national_focus}" + (f" ({left}d left)" if left is not None else ""))
     elif state.known("national_focus"):
         lines.append("Focus: NONE SELECTED")
     else:
@@ -69,7 +85,10 @@ def render_full(state: GameState, max_events: int = 6, max_fronts: int = 3) -> s
     busy = [s for s in state.research if s.technology]
     free = len(state.research) - len(busy)
     if state.known("research"):
-        detail = "; ".join(f"{s.technology} ({s.days_remaining}d)" for s in busy) or "idle"
+        detail = "; ".join(
+            s.technology + (f" ({s.days_remaining}d)" if s.days_remaining is not None else "")
+            for s in busy
+        ) or "idle"
         lines.append(f"Research: {detail}" + (f" | {free} SLOT(S) FREE" if free else ""))
 
     if state.production:
@@ -109,12 +128,9 @@ def render_full(state: GameState, max_events: int = 6, max_fronts: int = 3) -> s
         if state.delegated_armies:
             bits.append(f"{len(state.delegated_armies)} army(s) delegated to the game AI")
         if state.posture:
-            bits.append(f"posture {state.posture}")
-        if state.theater_postures:
-            bits.append(
-                "theaters: "
-                + ", ".join(f"{name} {p}" for name, p in sorted(state.theater_postures.items()))
-            )
+            bits.append(f"posture {state.posture}" + (" (global)" if state.theater_postures else ""))
+        # One entry per theater, each a country a front faces: "GER: offensive".
+        bits.extend(f"{tag}: {p}" for tag, p in sorted(state.theater_postures.items()))
         if state.ai_directives:
             bits.append("directives: " + "; ".join(state.ai_directives[:4]))
         lines.append("AI control: " + " | ".join(bits))

@@ -97,8 +97,10 @@ contradict the current one, and the model re-argues settled decisions.
 ## The arithmetic
 
 This section started as an estimate: ~2.2k input tokens a wake, ~190 wakes for
-1936–1939. It is now measured: the estimate was high on the size of a wake and
-about right on the number.
+1936–1939. It is now measured: the estimate was right on the number of wakes
+and wrong, by 2-3x too low, on the size of one once a real model plays (see
+"Measured with a real model"). The scripted-planner table and its notes below
+measure the wake rules; they understate what a model bills.
 
 **Method.** `hoi4-harness measure --campaign NAME` plays a long campaign against
 the mock and reads its transcript. Every wake records the brief's size, what the
@@ -142,6 +144,49 @@ threshold over several turns rather than in one, which added ~3 tokens to the
 mean delta. The earlier table (110 / 110 / 76 / 76 wakes) came from a mock whose
 planner turns ran the model's days and then another week, so three turns in four
 were 14 days long.
+
+### Measured with a real model (claude-opus-5-5, 2026-11-16)
+
+The table above is the harness's wake rules played by a scripted stand-in. The
+same two campaigns were then played by `claude-opus-5-5` against the mock
+(`hoi4-harness measure --campaign NAME --provider anthropic --model
+claude-opus-5-5 --max-usd N`), priced at $4 in / $20 out / $0.20 cache read /
+$5 cache write per million tokens. **These are mock-world numbers.** The mock's
+war is a script, so brief size and wake rate in the real game's wartime still
+need the live bridge (#1, #3). Token counts below are the provider's own, from
+each call's `usage`; only the brief column is chars/4 (`tiktoken` was not
+installed).
+
+Both runs were capped, so each covers the start of its campaign and then fell
+to reflexes when the ceiling hit. Rates are over the days the model was funded
+for (the transcript's `budget_downgrade` marks where it stopped).
+
+| campaign | funded to | wakes | calls (per wake) | input / wake | cache hit | output / wake | USD |
+|---|---|---|---|---|---|---|---|
+| peacetime 1936-39 | 1937-07-21 (cap $1.00) | 81 | 110 (1.36) | 4,880 | 68% | 273 | $1.01 |
+| wartime 1939-41 | 1940-12-13 (cap $1.60) | 67 + 5 pre-war | 116 (1.73) | 7,055 | 56% | 522 | $1.61 |
+
+Wake rate over the funded days was 4.3 a month in both, the same as the
+scripted run: with a review due every turn it is the turn rate. What the
+real model changed is the size of a wake.
+
+**The estimate was falsified on input.** ~2.2k input tokens a wake was too low
+by 2.2x in peacetime (4.9k) and 3.2x in wartime (7.1k). Extrapolating the
+per-wake figures to the full 192 and 123 wakes gives about 0.94M input and 52k
+output for 1936-1939 (estimate: ~400k / ~40k, so input 2.3x, output 1.3x
+under), and about 0.87M input and 64k output for the wartime campaign; roughly
+$2.4 and $3.0 at these prices (extrapolated, not run to the end). Three causes:
+
+- The cacheable prefix is 2,426 tokens (the first call's cache write), not the
+  ~1.5k that chars/4 gave.
+- A real model makes 1.4-1.7 calls a wake, not 1.25, and each call resends the
+  whole prompt.
+- The per-turn message grows with the model's journal and digest: 562 (peace)
+  and 917 (war) chars/4-tokens, against 150-187 for the scripted planner.
+
+War did add: per-wake input rose by half, output nearly doubled, cache hit fell
+from 68% to 56% as the per-turn part grew relative to the prefix. The brief
+itself stayed small (mean 49 peacetime, 75 wartime; max 167 and 298).
 
 What that says:
 
@@ -211,8 +256,13 @@ free — so set all four from the price sheet (`HOI4_USD_PER_M_*`, or `budget.*`
 in a profile). `doctor` warns when a real provider would run unpriced, since
 `$0.00` then means "nobody set a rate", not "free".
 
-Not yet done: checking a real run's reported spend against a provider's own
-usage dashboard. That needs a key and a run, and is the remaining half of #23.
+Checked against a real run, mechanically: a 12-turn mock run on
+`claude-opus-5-5` (2026-11-16 10:59:19-11:00:19 UTC, 15 calls) reported 45,724
+input tokens (9,334 uncached, 33,964 cache read, 2,426 cache write), 3,838
+output tokens, $0.1330, and the per-call usage in its transcript sums to those
+figures. Anthropic's `output_tokens` already includes thinking tokens, which
+the provider does not add again. Comparing that against the Console's usage
+page is still to do (it needs the account owner) and is the remaining half of #23.
 
 ## What would break this
 

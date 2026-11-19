@@ -4,6 +4,57 @@ Seven milestones, ordered by what unblocks the most. Each one is a claim the rep
 cannot currently make; the issues under it are what it would take to make it.
 Tracked at [github.com/Xocas12/hoi4-agent-harness/milestones](https://github.com/Xocas12/hoi4-agent-harness/milestones).
 
+## Status after the second live session (2026-11-16)
+
+A second sitting with HOI4 1.19.5.0 (Sweden, 1936-37) moved v0.2 and v0.3 from
+theory to partly verified. Nothing below is claimed beyond what ran; the live
+checklist is [live-session.md](live-session.md).
+
+**Verified live**
+
+- #1 mod and telemetry: loads on 1.19.5 (`supported_version 1.19.*`) with no
+  errors in `error.log`, including the 2.4 MB generated probe. Schema v3: one state
+  line a day on the player's own tick, real values for political power, stability,
+  war support, factories, manpower, techs and `built_*`; daily probe lines name the
+  running focus and the technologies being researched; focus completion reported
+  (`focus complete: SWE_defense_act`); war and capitulation lines for the
+  player's own wars only.
+- #7 directives and #9 theater posture: raised through decisions and read back
+  (the brief showed `AI control: ETH: offensive | GER: defensive`). A theater is
+  the country a front faces.
+- #3 input: keys sent as hardware scan codes (pyautogui keys do not reach HOI4);
+  real 1.19.5 hotkeys; no Escape in scripts; `set_national_focus` via focus search
+  works end to end through the harness.
+- #6 save adapter: reads a 1.19.5 text save (`save_as_binary=no`) and was checked
+  against a real save. The construction queue is not in the save.
+- #53 playsets: indexed The New Order (512 countries, 15,069 focuses, 897 techs)
+  in ~4 s.
+- #22 provider conformance: Anthropic passes live.
+
+**Built and tested, not yet seen live**
+
+- Research completion through the `techs` counter, and the schema v3 `owned` field
+  (added after the session).
+- #3 `start_research` (tech-tree points computed from `countrytechtreeview.gui`,
+  within 4 px of 18 measured infantry-tab points), `queue_construction`,
+  `set_production`, `hire_advisor`. Rotated tabs (armour, air, industry,
+  electronics) are refused. Verification reports `unverified`, not `rejected`,
+  until a fresh day of telemetry.
+- #83 console channel: opt-in; open questions in [adapters.md](adapters.md).
+
+**Measured on the mock only**
+
+- #14 cost with `claude-opus-5-5` ([cost-and-timing.md](cost-and-timing.md)): the
+  old estimate was low on input by 2.2x in peacetime and 3.2x in wartime.
+- #10 hybrid experiment ([results/10-hybrid-experiment.md](results/10-hybrid-experiment.md),
+  [hybrid-control.md](hybrid-control.md)): a result about the harness against a
+  scripted world.
+
+**Still open**
+
+- Whether the game's AI changes behaviour under a directive: not verified.
+- #22 needs a second provider; #23 needs a comparison with a Console invoice.
+
 ## v0.1.1 — Robustness
 
 *Claim: the harness survives an overnight run.*

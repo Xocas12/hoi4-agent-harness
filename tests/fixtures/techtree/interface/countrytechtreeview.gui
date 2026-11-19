@@ -1,0 +1,37 @@
+guiTypes = {
+	containerWindowType = {
+		name = "countrytechtreeview"
+		containerWindowType = {
+			name = "infantry_folder"
+			position = { x=0 y=47 }
+			gridboxtype = {
+				name = "support_weapons_tree"
+				position = { x = 140 y = 210 }
+				slotsize = { width = 70 height = 70 }
+				format = "LEFT"
+			}
+			# gridboxtype = { name = "infantry_weapons_tree" position = { x = 1 y = 1 } }
+			gridboxtype = {
+				name = "infantry_weapons_tree"
+				position = { x = 140 y = 325 }
+				slotsize = { width = 70 height = 70 }
+				format = "LEFT"
+			}
+			gridboxtype = {
+				name = "percent_tree"
+				position = { x = 10% y = 172 }
+				slotsize = { width = 70 height = 70 }
+				format = "UP"
+			}
+		}
+		containerWindowType = {
+			name = "armour_folder"
+			gridboxtype = {
+				name = "armour1_tree"
+				position = { x = 0 y = 40 }
+				slotsize = { width = 70 height = 70 }
+				format = "UPPER_LEFT"
+			}
+		}
+	}
+}

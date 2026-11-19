@@ -49,12 +49,12 @@ from ..types import ActionCall, GameState
 
 SCHEMA_VERSION = 1
 DEFAULT_FILENAME = "ui_scripts.json"
-STEP_KINDS = ("press", "click", "type", "wait")
+STEP_KINDS = ("press", "click", "type", "wait", "repeat")
 
 
 @dataclass(frozen=True)
 class Step:
-    kind: str       # press | click | type | wait
+    kind: str       # press | click | type | wait | repeat (the previous step, N times in all)
     value: str
 
     def fill(self, arguments: dict) -> Step:
@@ -81,8 +81,24 @@ def parse_steps(raw: list[dict]) -> list[Step]:
             raise ValueError(f"step {index}: unknown step {kind!r}; known: {', '.join(STEP_KINDS)}")
         if kind == "wait":
             float(value)
+        if kind == "repeat" and index == 0:
+            raise ValueError("step 0: 'repeat' has no previous step to repeat")
         steps.append(Step(kind, str(value)))
     return steps
+
+
+def unsafe_escape(steps: list[Step]) -> str | None:
+    """Why a script may not press Escape, or None.
+
+    With no panel open Escape opens the game menu, which then swallows every key
+    that follows -- and most panels in these scripts close themselves when the
+    action completes, so a trailing Escape is exactly that case. Nothing here can
+    see whether a panel is open, so no script may press it.
+    """
+    if any(s.kind == "press" and s.value.strip().lower() in ("escape", "esc") for s in steps):
+        return ("presses Escape: with no panel open that opens the game menu, which swallows "
+                "the keys after it. Let the panel close itself, or click its close button")
+    return None
 
 
 def load_scripts(path: Path) -> dict[str, list[Step]]:
@@ -100,6 +116,9 @@ def load_scripts(path: Path) -> dict[str, list[Step]]:
                 f"Scriptable: {', '.join(sorted(VERIFIERS))}"
             )
         steps = parse_steps(raw)
+        escape = unsafe_escape(steps)
+        if escape:
+            raise ValueError(f"{path}: {action} {escape}")
         unknown = sorted(placeholders(steps) - _parameters(action))
         if unknown:
             # Caught here, at load, rather than on the first live attempt: a
@@ -123,9 +142,29 @@ def placeholders(steps: list[Step]) -> set[str]:
 
 def _parameters(action: str) -> set[str]:
     from ..actions.catalog import get
+    from .ui_resolve import DERIVED_PARAMETERS
 
     spec = get(action)
-    return set((spec.parameters.get("properties") or {}) if spec else ())
+    own = set((spec.parameters.get("properties") or {}) if spec else ())
+    return own | set(DERIVED_PARAMETERS.get(action, ()))
+
+
+def expanded_targets(scripts: dict[str, list[Step]]) -> list[str]:
+    """``targets_in`` with each templated target written out for the values it
+    can take (every building, every tech folder). What ``calibrate`` walks.
+    A target whose placeholder has no fixed value set stays as written."""
+    from .ui_resolve import template_values
+
+    values = template_values()
+    out: dict[str, None] = {}
+    for target in targets_in(scripts):
+        names = [n for _, n, _, _ in string.Formatter().parse(target) if n]
+        if len(names) == 1 and names[0] in values:
+            for value in values[names[0]]:
+                out[target.replace("{" + names[0] + "}", value)] = None
+        else:
+            out[target] = None
+    return list(out)
 
 
 def missing_targets(scripts: dict[str, list[Step]], coordinates: dict) -> list[str]:
@@ -134,14 +173,25 @@ def missing_targets(scripts: dict[str, list[Step]], coordinates: dict) -> list[s
     return [t for t in targets_in(scripts) if "{" not in t and t not in coordinates]
 
 
+def computed_targets(steps: list[Step]) -> set[str]:
+    """Click targets a script names that the resolver computes per call."""
+    from .ui_resolve import COMPUTED_TARGETS
+
+    return {s.value for s in steps if s.kind == "click" and s.value in COMPUTED_TARGETS}
+
+
 def targets_in(scripts: dict[str, list[Step]]) -> list[str]:
     """Every click target the scripts need, for ``hoi4-harness calibrate``.
-    Targets with placeholders are listed as written."""
+    Targets with placeholders are listed as written; a computed target is
+    replaced by the recorded points it is computed from."""
+    from .ui_resolve import COMPUTED_TARGETS
+
     seen: dict[str, None] = {}
     for steps in scripts.values():
         for step in steps:
             if step.kind == "click":
-                seen[step.value] = None
+                for target in COMPUTED_TARGETS.get(step.value, (step.value,)):
+                    seen[target] = None
     return list(seen)
 
 
@@ -286,6 +336,15 @@ def verify(
         unseen = [name for name in needs if not state.known(name)]
         return unseen, None if unseen else check(before, state, call.arguments)
 
+    def no_fresh_day(state: GameState) -> bool:
+        # A reader that sees the game a tick at a time has said nothing new until
+        # a day that *began after the input* has closed: the next close is the
+        # day that was already open when the keys went in. Seen live: a paused
+        # game reported a focus it had just started as "did not change".
+        if before.telemetry_ticks is None:
+            return False
+        return (state.telemetry_ticks or 0) < before.telemetry_ticks + 2
+
     waited = 0.0
     unseen, problem = unseen_or_problem(after)
     while (unseen or problem is not None) and waited < timeout:
@@ -293,6 +352,11 @@ def verify(
         waited += poll
         after = read_state()
         unseen, problem = unseen_or_problem(after)
+    if problem is not None and not unseen and no_fresh_day(after):
+        return Outcome(False, "unverified", (
+            "input sent, but the game has not run a full day since, so the reader has nothing "
+            "new to check it against (paused?). Treat it as not done until a later brief shows it."
+        ))
     if unseen:
         return Outcome(False, "unverified", (
             f"input sent, but the reader cannot see {', '.join(unseen)}, so the change could not "

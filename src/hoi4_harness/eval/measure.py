@@ -36,6 +36,9 @@ DAYS_PER_MONTH = 30.44
 class Phase:
     name: str
     days: int = 0
+    #: days of turns the model was still funded for; a run that hits its spend
+    #: ceiling keeps playing on reflexes, which are not wakes and say nothing about a rate
+    funded_days: int = 0
     turns: int = 0
     wakes: int = 0
     brief_tokens: list[int] = field(default_factory=list)
@@ -51,7 +54,7 @@ class Phase:
 
     @property
     def wakes_per_month(self) -> float:
-        return self.wakes / (self.days / DAYS_PER_MONTH) if self.days else 0.0
+        return self.wakes / (self.funded_days / DAYS_PER_MONTH) if self.funded_days else 0.0
 
     @property
     def cache_hit(self) -> float | None:
@@ -115,6 +118,7 @@ def measure(path: str | Path) -> Measurement:
     path = Path(path)
     result = Measurement(source=str(path))
     current: Phase | None = None
+    downgraded = False
     for line in path.read_text(encoding="utf-8").splitlines():
         try:
             record = json.loads(line)
@@ -141,11 +145,17 @@ def measure(path: str | Path) -> Measurement:
             current.input_tokens += int(usage.get("input_tokens", 0))
             current.cached_input_tokens += int(usage.get("cached_input_tokens", 0))
             current.output_tokens += int(usage.get("output_tokens", 0))
+        elif kind == "budget_downgrade":
+            downgraded = True
         elif kind == "turn_end" and "at_war" in record:
             phase = result.phase(bool(record["at_war"]))
             phase.turns += 1
             phase.wakes += bool(record.get("woke"))
-            phase.days += _days(record.get("from_date"), record.get("date"))
+            days = _days(record.get("from_date"), record.get("date"))
+            phase.days += days
+            if not downgraded:
+                phase.funded_days += days
+            downgraded = False
     return result
 
 

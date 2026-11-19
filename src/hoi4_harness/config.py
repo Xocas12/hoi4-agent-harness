@@ -215,6 +215,21 @@ class HarnessConfig:
     # and after pressing it; this must be longer than an in-game day takes at
     # the speed the game runs.
     clock_probe_seconds: float = 10.0
+    # --- the console channel (#83) ---------------------------------------------
+    # Which channel performs each action, as {action: "ui" | "console"}. Only the
+    # actions you name change; the rest keep adapters.console.DEFAULT_CHANNELS.
+    action_channels: dict[str, str] = field(default_factory=dict)
+    #: Where the game's `run` command reads files from. UNVERIFIED: unset means
+    #: the game's user directory. HOI4_CONSOLE_DIR.
+    console_dir: Path | None = None
+    console_filename: str = "llmb_turn.txt"          # HOI4_CONSOLE_FILE
+    #: The console key: a key name (grave) or a raw scan code (0x29). HOI4_CONSOLE_KEY.
+    console_key: str = "grave"
+    #: The console command that runs an inline effect. HOI4_CONSOLE_EFFECT_COMMAND.
+    console_effect_command: str = "eval_effect"
+    #: How hybrid actions reach the mod: scripted | decision.
+    console_hybrid_via: str = "scripted"
+    console_guards: bool = True
     # Co-op turn-taking: every action is queued and runs only when the player
     # grants a window (handover.py). For playing alongside a person, not for
     # scoring -- the eval runner refuses a handover run.
@@ -266,6 +281,12 @@ class HarnessConfig:
             operational_control=os.environ.get("HOI4_OPERATIONAL_CONTROL", "llm").strip(),
             clock_owner=os.environ.get("HOI4_CLOCK_OWNER", "harness").strip(),
             clock_probe_seconds=_env_float("HOI4_CLOCK_PROBE_SECONDS", 10.0) or 10.0,
+            console_dir=(Path(os.environ["HOI4_CONSOLE_DIR"])
+                         if os.environ.get("HOI4_CONSOLE_DIR") else None),
+            console_filename=os.environ.get("HOI4_CONSOLE_FILE", "llmb_turn.txt"),
+            console_key=os.environ.get("HOI4_CONSOLE_KEY", "grave").strip(),
+            console_effect_command=os.environ.get("HOI4_CONSOLE_EFFECT_COMMAND",
+                                                  "eval_effect").strip(),
             handover=_env_bool("HOI4_HANDOVER", False),
             country=(os.environ.get("HOI4_COUNTRY") or "").strip().upper() or None,
             start_date=os.environ.get("HOI4_START_DATE", "1936-01-01"),
@@ -314,7 +335,7 @@ class HarnessConfig:
                         raise KeyError(f"Unknown configuration key budget.{sub_key!r}")
                     setattr(self.budget, sub_key, sub_value)
             elif key in {"run_dir", "save_dir", "log_path", "system_prompt_path", "game_dir",
-                         "ui_scripts_path", "calibration_path"} and value is not None:
+                         "ui_scripts_path", "calibration_path", "console_dir"} and value is not None:
                 setattr(self, key, Path(value))
             elif key == "mod_dirs":
                 self.mod_dirs = [Path(v) for v in value]

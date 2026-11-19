@@ -18,7 +18,7 @@
 # at runtime.
 
 llm_bridge_emit_state = {
-	set_variable = { LLMB_SCHEMA_VERSION = 1 }
+	set_variable = { LLMB_SCHEMA_VERSION = 3 }
 
 	# Economy and politics.
 	set_variable = { llmb_pp = political_power }
@@ -29,11 +29,30 @@ llm_bridge_emit_state = {
 	set_variable = { llmb_civ = num_of_civilian_factories }
 	set_variable = { llmb_mil = num_of_military_factories }
 	set_variable = { llmb_doc = num_of_naval_factories }
-	set_variable = { llmb_mp = ROOT.manpower }
+	# Excludes trade and lend-lease (dynamic_variables_documentation.md); the
+	# civilian count above includes trade, so the harness splits the two.
+	set_variable = { llmb_owned = num_of_factories }
+	set_variable = { llmb_mp = manpower }
 
-	log = "LLMB|v[?LLMB_SCHEMA_VERSION]|state|date=[GetDateText]|tag=[ROOT.GetTag]|pp=[?llmb_pp]|stab=[?llmb_stab]|ws=[?llmb_ws]|civ=[?llmb_civ]|mil=[?llmb_mil]|doc=[?llmb_doc]|mp=[?llmb_mp]"
+	# Completion signals (#2). 1.19.5 has no on_action for a finished focus,
+	# research or building (only MIO ones), so the harness derives them from
+	# how these counters move between two state lines. All are country-scope
+	# dynamic variables in documentation/dynamic_variables_documentation.md.
+	# techs: researched technologies. built_*: cumulative buildings completed.
+	# There is no variable for the current focus, so the probe below asks about
+	# each focus id with focus_progress / has_completed_focus instead.
+	set_variable = { llmb_techs = num_researched_technologies }
+	set_variable = { llmb_built_civ = total_constructed_civilian_factory }
+	set_variable = { llmb_built_mil = total_constructed_military_factory }
+	set_variable = { llmb_built_dock = total_constructed_dockyard }
+	set_variable = { llmb_built_infra = total_constructed_infrastructure }
+
+	log = "LLMB|v3|state|date=[GetDateText]|tag=[THIS.GetTag]|pp=[?llmb_pp]|stab=[?llmb_stab]|ws=[?llmb_ws]|civ=[?llmb_civ]|mil=[?llmb_mil]|doc=[?llmb_doc]|owned=[?llmb_owned]|mp=[?llmb_mp]|techs=[?llmb_techs]|built_civ=[?llmb_built_civ]|built_mil=[?llmb_built_mil]|built_dock=[?llmb_built_dock]|built_infra=[?llmb_built_infra]"
 
 	llm_bridge_emit_army = yes
+
+	# Which focus and technologies are running (generated; see llm_bridge_probe.txt).
+	llm_bridge_emit_probe = yes
 }
 
 # Front and army summary. This is the state that does not compress well and the
@@ -41,14 +60,14 @@ llm_bridge_emit_state = {
 # being crammed into the state line.
 llm_bridge_emit_army = {
 	set_variable = { llmb_divisions = num_divisions }
-	log = "LLMB|v[?LLMB_SCHEMA_VERSION]|army|tag=[ROOT.GetTag]|divisions=[?llmb_divisions]|delegated=[?llmb_ai_delegated_armies]"
+	log = "LLMB|v3|army|tag=[THIS.GetTag]|divisions=[?llmb_divisions]|delegated=[?llmb_ai_delegated_armies]"
 }
 
 # Called from on_actions when something happens that should wake the planner
 # early. `kind` must match a GameEvent kind the harness knows; unknown kinds are
 # passed through as "info" rather than dropped.
 llm_bridge_emit_event = {
-	log = "LLMB|v[?LLMB_SCHEMA_VERSION]|evt|tag=[ROOT.GetTag]|kind=[?llmb_event_kind]|detail=[?llmb_event_detail]"
+	log = "LLMB|v3|evt|tag=[ROOT.GetTag]|kind=[?llmb_event_kind]|detail=[?llmb_event_detail]"
 }
 
 # A war is logged in the declarer's scope (ROOT); the side it was declared on is
@@ -56,5 +75,5 @@ llm_bridge_emit_event = {
 # declared on it as well as one it declared. VERIFY: FROM is the target in
 # on_declare_war in your version.
 llm_bridge_emit_war = {
-	log = "LLMB|v[?LLMB_SCHEMA_VERSION]|evt|tag=[ROOT.GetTag]|other=[FROM.GetTag]|kind=[?llmb_event_kind]|detail=[?llmb_event_detail]"
+	log = "LLMB|v3|evt|tag=[ROOT.GetTag]|other=[FROM.GetTag]|kind=[?llmb_event_kind]|detail=[?llmb_event_detail]"
 }
