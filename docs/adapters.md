@@ -389,6 +389,12 @@ install.
   and negative rows go left (`x = box.x + width/2 + w*row`). A percent `x` or `size`
   is a share of the screen width less the folder's margins. A folder with a different
   left margin (the air tabs have 0) moves its content by the difference.
+  **Measured live on 1.19.5 (1920x1080):** in `nsb_armour_folder`, `bba_air_techs_folder`,
+  `industry_folder` and `electronics_folder` the rule put x on the icon every time and y
+  40 GUI units (50 px) high, on 12 techs; `ROTATED_Y_OFFSET` corrects that, and all 12
+  then landed on their icons. `armour_folder` and `air_techs_folder` are the trees without
+  the tank and aircraft designer DLCs and were not shown by this install, so they and
+  artillery stay unmeasured. Before the measurement:
   **UNVERIFIED: the rotated tabs** (`armour_folder`, `nsb_armour_folder`,
   `air_techs_folder`, `bba_air_techs_folder`, `industry_folder`, `electronics_folder`).
   Without the game, they are checked only against themselves
@@ -536,7 +542,10 @@ not a code change. `docs/live-session.md` step 7 has the exact checks.
    line like the UI's.
 7. **Whether an open console is closed by `grave`**, and whether the console
    keeps text between uses (a stale line would prefix the `run`).
-8. **The rotated tech tabs' click points** (armour, air, industry, electronics),
+8. **The rotated tech tabs' click points**: settled on 1.19.5 for nsb armour, bba air,
+   industry and electronics (see the tech tree section); still open for the non-DLC
+   armour and air trees and for artillery. Originally:
+   **The rotated tech tabs' click points** (armour, air, industry, electronics),
    which are computed from the interface file but not measured:
    `docs/live-session.md` step 6b.
 
@@ -606,7 +615,17 @@ province. `Viewport` takes the margins for the top bar and the bottom panel.
 None of this was run against the game. What the model assumes, and could be
 wrong about:
 
-1. **The map is flat.** HOI4 tilts the map at some zoom levels, which makes
+1. **The map is flat: FALSE at the zoom the map search uses** (measured live on
+   1.19.5, 1920x1080). After searching Södermanland, four victory-point markers
+   (Stockholm, Uppsala, Gävle, Falun; positions from `map/unitstacks.txt`, type 38,
+   image y = 2048 - z) gave a steady y scale of 15.5-17 screen px per map pixel but
+   an x scale of 20 between the two northern cities and up to 28 lower down: a
+   perspective camera. `Camera.from_references` refuses such a fit, correctly. A
+   perspective model (or a fully zoomed-out view, unmeasured) is needed before unit
+   orders can be aimed, and province centroids are poor anchors at this zoom; use
+   the `unitstacks.txt` positions. The map search also did not put the state's
+   click point at the screen centre. Original note:
+   HOI4 tilts the map at some zoom levels, which makes
    scale differ between the top and bottom of the screen. The fit refuses that
    case instead of averaging over it.
 2. **One scale per zoom step**, and the zoom steps are discrete. Measure each

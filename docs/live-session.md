@@ -147,23 +147,23 @@ further off). Predictions are what
 | Tab | Technology | Predicted |
 |---|---|---|
 | Armour (`UP`, percent box) | `gwtank` (the root, top middle) | (948, 388) |
-| | `basic_light_tank` | (598, 562) |
-| | `basic_heavy_tank` | (1298, 562) |
-| Armour, new tank design (`UPPER_LEFT`) | `gwtank_chassis` | (1168, 222) |
-| | `armor_tech_1` | (318, 485) |
-| | `improved_light_tank_chassis` | (905, 572) |
-| Air (`UP`, no left margin) | `early_fighter` | (620, 388) |
-| | `CAS1` | (320, 562) |
-| | `tactical_bomber1` | (1564, 562) |
-| Air, BBA (`UP`, no left margin) | `iw_small_airframe` | (358, 388) |
-| | `iw_large_airframe` | (876, 388) |
-| | `early_bombs` | (1682, 388) |
-| Industry (`UP`) | `basic_machine_tools` | (336, 388) |
-| | `construction1` | (1049, 562) |
-| | `fuel_refining` | (1756, 562) |
-| Electronics (`UP`) | `electronic_mechanical_engineering` | (361, 381) |
-| | `radio` | (211, 531) |
-| | `atomic_research` | (1374, 381) |
+| | `basic_light_tank` | (598, 612) |
+| | `basic_heavy_tank` | (1298, 612) |
+| Armour, new tank design (`UPPER_LEFT`) | `gwtank_chassis` | (1168, 272) |
+| | `armor_tech_1` | (318, 535) |
+| | `improved_light_tank_chassis` | (905, 622) |
+| Air (`UP`, no left margin) | `early_fighter` | (620, 438) |
+| | `CAS1` | (320, 612) |
+| | `tactical_bomber1` | (1564, 612) |
+| Air, BBA (`UP`, no left margin) | `iw_small_airframe` | (358, 438) |
+| | `iw_large_airframe` | (876, 438) |
+| | `early_bombs` | (1682, 438) |
+| Industry (`UP`) | `basic_machine_tools` | (336, 438) |
+| | `construction1` | (1049, 612) |
+| | `fuel_refining` | (1756, 612) |
+| Electronics (`UP`) | `electronic_mechanical_engineering` | (361, 431) |
+| | `radio` | (211, 581) |
+| | `atomic_research` | (1374, 431) |
 
 The names are ids; the tab shows localised names, so find each tech by its year
 row and by its column (the light, medium and heavy tanks are three columns four
