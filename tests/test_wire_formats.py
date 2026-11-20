@@ -215,13 +215,14 @@ def test_a_schema_strict_mode_cannot_express_goes_out_unmarked():
 
 def test_the_catalog_gets_strict_on_exactly_the_fully_required_tools():
     """Pinned so a catalog edit revisits this consciously: strict covers the
-    twelve actions with nothing optional; the other fifteen keep validate.py."""
+    thirteen actions with nothing optional; the other fifteen keep validate.py."""
     wire = openai.wire_tools(tool_specs(), strict=True)
     marked = {t["function"]["name"] for t in wire if t["function"].get("strict")}
     assert marked == {
         "set_national_focus", "start_research", "set_production", "set_air_mission",
         "set_naval_mission", "describe_action", "set_trade", "set_game_speed", "note",
         "delegate_army_to_ai", "clear_ai_directives", "assign_battle_plan",
+        "change_production_equipment",
     }
 
 
