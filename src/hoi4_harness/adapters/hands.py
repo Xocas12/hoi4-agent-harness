@@ -73,6 +73,9 @@ class Hands:
     refused: dict[str, str] = field(default_factory=dict)
     #: The armies ``delegate_army_to_ai`` can name (recorded points), plus ``all`` if recorded.
     armies: list[str] = field(default_factory=list)
+    #: The production click path (adapters/production_ui.py): recorded points and what is missing;
+    #: empty when it was not wired.
+    production: dict = field(default_factory=dict)
 
     def refuse(self, actions, reason: str) -> None:
         for action in ([actions] if isinstance(actions, str) else actions):
@@ -96,6 +99,7 @@ class Hands:
             out.append("delegate_army_to_ai is UNVERIFIED against the real game (draft click path, "
                        f"recorded points for: {', '.join(self.armies)}); the toggle cannot be read "
                        "back, so every result is 'unverified'")
+        out.extend(self.production_lines(offered))
         plans = sorted(set(PLAN_ACTIONS) & set(offered))
         if plans:
             out.append(f"battle plans live: {', '.join(plans)}: UNVERIFIED against the real game "
@@ -106,7 +110,35 @@ class Hands:
             out.append("division orders are UNVERIFIED against the real game (docs/unit-orders.md)")
         return out
 
+    def production_lines(self, offered) -> list[str]:
+        """The start-log lines for production by click: what edits a line, what is missing."""
+        if not self.production or "set_production" not in set(offered):
+            why = self.refused.get("set_production") or self.refused.get(
+                "change_production_equipment")
+            return [f"production by mouse not offered: {why}"] if why else []
+        edit, change = self.production["edit_missing"], self.production["equipment_missing"]
+        out = []
+        if edit:
+            out.append("production by mouse: set_production can only OPEN a line (console) until "
+                       "the counter points are recorded; an existing line is refused, naming: "
+                       + ", ".join(edit))
+        else:
+            out.append("production by mouse live: set_production edits an existing line (+/- by "
+                       "row), opens one only when none exists; UNVERIFIED against the real game "
+                       "(docs/live-session.md section 14b)")
+        if "change_production_equipment" in set(offered):
+            out.append("change_production_equipment live (UNVERIFIED against the real game)")
+        elif change:
+            out.append("production by mouse: change_production_equipment not offered: record "
+                       + ", ".join(change))
+        return out
+
     def summary(self, offered) -> dict:
         """What the prompt reads (``HarnessConfig.campaign_hands``)."""
+        offered = set(offered)
+        production = {"edit": bool(self.production) and not self.production.get("edit_missing")
+                      and "set_production" in offered,
+                      "equipment": "change_production_equipment" in offered}
         return {"mouse": self.mouse, "offered": self.live(offered),
-                "refused": dict(self.refused), "armies": list(self.armies)}
+                "refused": dict(self.refused), "armies": list(self.armies),
+                "production": production}

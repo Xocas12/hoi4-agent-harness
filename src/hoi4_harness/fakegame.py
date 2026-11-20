@@ -393,6 +393,13 @@ class FakeGame:
         self.army_ui: dict | None = None
         self.ai_armies: dict[str, bool] = {}
         self._army_selected: str | None = None
+        #: The production screen, for the click path (adapters/production_ui.py):
+        #: ``{"rows": {n: (x, y)}, "plus": .., "minus": .., "remove": .., "change": ..,
+        #: "picker": {equipment: (x, y)}}`` with ``tolerance`` px. Row n is the nth line of
+        #: ``world.state.production``. The points are the test's own. None: no production clicks
+        #: do anything. A DRAFT model of a screen nobody has driven in the real game.
+        self.production_ui: dict | None = None
+        self._production = {"row": None, "picker": False}
         #: Every click the screens above took or ignored, for a person reading a test.
         self.ui_log: list[str] = []
         self.search: str | None = None        # the text field that has the keyboard, if any
@@ -602,6 +609,8 @@ class FakeGame:
                 self.ui_log.append(f"research: click {pos} hit nothing on the tree")
                 return True
             return True
+        if self.production_ui is not None and self.panel == "production":
+            return self._production_click(pos)
         army = self.army_ui
         if army is not None:
             tol = army.get("tolerance", 12)
@@ -614,6 +623,60 @@ class FakeGame:
                 self._toggle_army_ai()
                 return True
         return False
+
+    def _production_click(self, pos) -> bool:
+        """A click on the production screen: select a row, +/- the selected line, remove it,
+        open the equipment list and pick from it. Every click is taken (even to ignore it)."""
+        ui, mine = self.production_ui, self._production
+        tol = ui.get("tolerance", 12)
+        lines = self.world.state.production
+        if mine["picker"]:
+            mine["picker"] = False
+            for equipment, point in ui["picker"].items():
+                if self._near(pos, point, tol):
+                    line = self._selected_line()
+                    if line is None:
+                        self.ui_log.append("production: an equipment was picked with no line selected")
+                    else:
+                        self.ui_log.append(f"production: {line.equipment} -> {equipment}")
+                        line.equipment = equipment
+                    return True
+            self.ui_log.append(f"production: click {pos} hit nothing on the equipment list")
+            return True
+        for n, point in ui["rows"].items():
+            if self._near(pos, point, tol):
+                mine["row"] = int(n) - 1
+                self.ui_log.append(f"production: row {n} selected")
+                return True
+        line = self._selected_line()
+        for name, point in (("plus", ui.get("plus")), ("minus", ui.get("minus")),
+                            ("remove", ui.get("remove")), ("change", ui.get("change"))):
+            if point is None or not self._near(pos, point, tol):
+                continue
+            if line is None:
+                self.ui_log.append(f"production: {name} pressed with no line selected")
+            elif name == "plus":
+                free = self.world.state.military_factories - sum(x.factories for x in lines)
+                if free > 0:
+                    line.factories += 1
+                self.ui_log.append(f"production: {line.equipment} + -> {line.factories}")
+            elif name == "minus":
+                line.factories = max(line.factories - 1, 0)
+                self.ui_log.append(f"production: {line.equipment} - -> {line.factories}")
+            elif name == "remove":
+                lines.remove(line)
+                mine["row"] = None
+                self.ui_log.append(f"production: {line.equipment} line removed")
+            else:
+                mine["picker"] = True
+                self.ui_log.append("production: the equipment list opened")
+            return True
+        self.ui_log.append(f"production: click {pos} hit nothing on the production screen")
+        return True
+
+    def _selected_line(self):
+        row, lines = self._production["row"], self.world.state.production
+        return lines[row] if row is not None and 0 <= row < len(lines) else None
 
     def _toggle_army_ai(self) -> None:
         name = self._army_selected
@@ -846,6 +909,8 @@ class FakeGame:
             self.panel = None if self.panel == panel else panel
             if self.panel == "research":
                 self._research.update(stage="panel", tab=None, tech=None)
+            if self.panel == "production":
+                self._production.update(row=None, picker=False)
 
     def _console_key(self, name: str, mods: frozenset[str]) -> None:
         if name == "enter":

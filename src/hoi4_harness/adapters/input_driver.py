@@ -203,6 +203,8 @@ class InputDriverAdapter(GameAdapter):
         #: Performs the division orders, once ``enable_unit_orders`` has set it.
         self.order_executor = None
         self.plan_executor = None
+        #: Edits production lines by click (adapters/production_ui.py).
+        self.production_executor = None
         #: Click points computed for the action in flight (see ui_resolve.py).
         self._computed: dict[str, tuple[int, int]] = {}
         #: Whether the game was running when the clock was last seen: True,
@@ -395,6 +397,17 @@ class InputDriverAdapter(GameAdapter):
         self.plan_executor = executor
         self.supported_actions = self.supported_actions | frozenset(PLAN_ACTIONS)
 
+    def enable_production(self, executor) -> None:
+        """Perform ``set_production`` (editing a line that exists) and, when ``offer_equipment``,
+        ``change_production_equipment``, by click, through ``executor`` (adapters/production_ui.py).
+        UNVERIFIED against the real game."""
+        from .production_ui import PRODUCTION_ACTIONS
+
+        if not self.config.mouse:
+            raise MouseDisabled("production by click needs a mouse and this driver has none")
+        self.production_executor = executor
+        self.supported_actions = self.supported_actions | frozenset(PRODUCTION_ACTIONS)
+
     def enable_unit_orders(self, executor) -> None:
         """Offer ``move_division`` and ``attack_province``, performed by ``executor``
         (adapters/unit_orders.py). Needs a mouse: a headless driver refuses."""
@@ -549,6 +562,9 @@ class InputDriverAdapter(GameAdapter):
                                 message="Clock handed back to the harness.")
         if call.name in self.scripts:
             return self._scripted(call)
+        if (self.production_executor is not None and call.name in self.production_executor.actions
+                and call.name in self.supported_actions):
+            return self.production_executor(call)
         if (self.plan_executor is not None and call.name in self.plan_executor.actions
                 and call.name in self.supported_actions):
             return self.plan_executor(call)

@@ -57,11 +57,13 @@ MOUSE_ACTIONS = frozenset({
     "move_division", "attack_province",
     # Battle plans are drawn with the mouse too (adapters/battle_plans.py; not live-verified).
     "draw_front_line", "draw_offensive", "assign_battle_plan",
+    # Editing a production line is a click on the production screen (adapters/production_ui.py).
+    "change_production_equipment",
 })
 #: Actions the log cannot make safe. add_equipment_production adds a second line
 #: for equipment that already has one (seen live on 1.19.5), and only a reader
 #: that sees production -- a text save -- can check that first.
-NEEDS_PRODUCTION_READER = frozenset({"set_production"})
+NEEDS_PRODUCTION_READER = frozenset({"set_production", "change_production_equipment"})
 #: The readers that see production.
 PRODUCTION_READERS = ("log+save", "savegame")
 
@@ -451,6 +453,10 @@ def build_headless(config: HarnessConfig, fake=None) -> CompositeAdapter:
     ledger = None
     if hands.mouse:
         ledger = _wire_hands(driver, console, config, hands, fake)
+    if getattr(driver, "production_executor", None) is not None:
+        channels.setdefault("set_production", "ui")
+        if "set_production" not in config.action_channels:
+            channels["set_production"] = "ui"
     router = ChannelRouter(driver, console, channels)
     clock = HeadlessClock(driver, console, config.headless_clock, config.headless_game_speed)
     writer = HeadlessWriter(router, clock, config.headless_reader, mouse=hands.mouse)
@@ -579,11 +585,39 @@ def _wire_hands(driver, console, config: HarnessConfig, hands: Hands, fake):
     else:
         enable_battle_plans(driver, orders_ok.layer, orders_ok._camera, orders_ok.centre,
                             unattended=bool(config.campaign))
+    _wire_production(driver, console, config, hands, driver.index)
     if "start_research" in driver.scripts:
         config.wake_on_free_research_slot = True
         if not config.dry_run:
             driver.after_input = _refresh_after_input(console, config)
     return ledger
+
+
+def _wire_production(driver, console, config: HarnessConfig, hands: Hands, index) -> None:
+    """Production by click (adapters/production_ui.py): needs a reader that sees the lines (a text
+    save), so the rows can be named. ``set_production`` then edits an existing line when the
+    counter points are recorded and refuses, naming them, when they are not; the equipment change
+    is offered only when its points are recorded."""
+    from . import production_ui as pu
+
+    coordinates = driver.config.coordinates
+    hands.production = pu.recorded_summary(coordinates)
+    if config.headless_reader not in PRODUCTION_READERS:
+        hands.refuse(pu.PRODUCTION_ACTIONS, f"the {config.headless_reader} reader does not see "
+                     "production lines, so no row can be named (needs log+save or savegame)")
+        return
+    buildable = index.equipment_types if index is not None else None
+    pu.enable_production(
+        driver, console, saves=console.saves,
+        buildable=(lambda name: name in buildable()) if buildable is not None else None)
+    # set_production leaves the console channel for the click path (the executor opens a new
+    # line through the console itself, the one case it is faithful for).
+    hands.production["edit_missing"] = pu.missing_for_edit(coordinates)
+    hands.production["equipment_missing"] = pu.missing_for_equipment(coordinates)
+    if hands.production["equipment_missing"]:
+        hands.refuse(pu.EQUIPMENT_ACTION, "no recorded points for it: "
+                     + pu.calibrate_line(hands.production["equipment_missing"]))
+        _drop(driver, pu.EQUIPMENT_ACTION)
 
 
 def _drop(driver, name: str) -> None:

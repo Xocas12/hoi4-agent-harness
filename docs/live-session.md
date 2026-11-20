@@ -935,5 +935,61 @@ send nothing (no clicks, no keys in the other window), and continue when you bri
 Check `runs/hands-1/campaign.log` for `STOP:` lines when you end it, and that the game was left
 paused.
 
+### 14b. Production by click: edit a line, never duplicate it (#112)
+
+Built against the fake game only. `set_production` over the console DUPLICATES a line that exists
+(seen live), so the click path edits it on the production screen instead. It needs a reader that
+sees the lines (`headless_reader = log+save`, the default; the rows are read from the save), a
+spare game with 3 or 4 military factories, and these steps. About ten minutes. Do not touch the
+mouse or keyboard during step 3.
+
+**1. Record the points.** Open the production screen (`y`), with at least two lines, say
+Infantry Equipment I with 2 factories and Artillery with 1, and the equipment list reachable.
+Aim the mouse at each target and press Enter:
+
+```bash
+hoi4-harness calibrate production.line.1 production.line.2 production.line.3     production.factories.plus production.factories.minus production.line.remove     production.equipment.change production.equipment.infantry_equipment_1     production.equipment.artillery_equipment_1
+```
+
+* `production.line.N`: the Nth row of the line list, any spot on the row that selects it (not the
+  + / - buttons, not the equipment icon). Record as many rows as you have lines (up to 8).
+* `production.factories.plus` / `.minus`: the + and - that change the SELECTED line's factories.
+  If the game puts them on each row, record the ones on row 1 and say so: that is assumption P3
+  failing.
+* `production.line.remove`: the button that deletes the selected line (skip it to leave removal
+  off; the refusal then names it).
+* `production.equipment.change`: the button that opens the equipment list for the selected line;
+  `production.equipment.<id>`: the entry for each equipment you want a line to be able to switch
+  to (the id as the game names it, e.g. `infantry_equipment_2`).
+
+**2. Read the start log.** `hoi4-harness campaign-check ...` must show `production: set_production
+edits an existing line by click`, and `campaign.log` the line `production by mouse live`. With a
+point missing, the log says which: `production by mouse: ... not offered: record ...`.
+
+**3. Drive each case.** With the harness (or `game.apply` in a Python session on the live
+adapter, game window in front), one call at a time, checking the game after each:
+
+| Call | What the screen must show |
+|---|---|
+| `set_production(infantry_equipment_1, 3)` on a 2-factory line | the SAME line now at 3 factories; no second Infantry line |
+| `set_production(infantry_equipment_1, 1)` | that line at 1 |
+| `change_production_equipment(infantry_equipment_1, infantry_equipment_2)` | the line makes the new variant, keeps its factories; progress may reset (say so) |
+| `set_production(<equipment with no line>, 1)` | one new line, opened by the console effect |
+| `set_production(<that equipment>, 0)` | that line gone |
+| `set_production(infantry_equipment_1, 99)` | refused before any click (not enough free factories) |
+
+**4. What to check, and report.** After each call: the result in `transcript.jsonl` (`done and
+verified` means a fresh save agreed; `rejected ... did not change` means a click missed: say which
+point, at what resolution and UI scale; `unverified` means no save could be read), and the screen:
+number of lines unchanged for an edit, the production panel left open (the next research call
+presses `w` then `y` and does not care). Also settle these assumptions, each one a line in your
+report: P1 row N of the screen is the Nth `military_lines` entry of the save (reorder the lines in
+the game and repeat step 3 once); P2 `w` then `y` always leaves the production screen open; P3
+selecting a row then + / - acts on that row; P4 a recorded equipment entry is where the list puts
+it (the list may scroll or filter by category: say if it does).
+
+If an edit lands on the wrong line the click path is wrong, not the model: leave production edits
+off (do not record the points) and report which assumption failed.
+
 What to report: for each step, what the log said, what the game did, and the transcript result.
 Whatever does not match, with the log line, is the next thing to fix.

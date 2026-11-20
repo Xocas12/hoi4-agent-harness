@@ -52,6 +52,7 @@ DIRECTIVE_ACTIONS = frozenset(
 #: order costs two 66 MB saves to verify. The clock is the harness's.
 GAME_AI_OWNED = frozenset({
     "set_national_focus", "start_research", "queue_construction", "set_production",
+    "change_production_equipment",
     "design_division_template", "deploy_divisions", "delegate_army_to_ai", "set_trade",
     "set_game_speed", "diplomacy",
 })

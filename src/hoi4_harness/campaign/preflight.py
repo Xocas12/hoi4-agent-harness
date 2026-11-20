@@ -377,6 +377,22 @@ def check_hands(config: HarnessConfig, now: Callable[[], datetime] = datetime.no
         out.append(Check(WARN, "delegation", f"no recorded points for {DELEGATE_TOGGLE} and "
                          "army.<name> in calibration.json: delegate_army_to_ai will not be offered "
                          "(hoi4-harness calibrate ...)"))
+    from ..adapters import production_ui as pu
+
+    edit, change = pu.missing_for_edit(recorded), pu.missing_for_equipment(recorded)
+    if config.headless_reader not in ("log+save", "savegame"):
+        out.append(Check(INFO, "production", f"the {config.headless_reader} reader does not see "
+                         "production lines: no production by mouse (needs log+save)"))
+    elif not edit:
+        out.append(Check(INFO, "production", "set_production edits an existing line by click (a "
+                         "DRAFT click path, unverified in the real game)"
+                         + ("" if not change else "; change_production_equipment will not be "
+                            f"offered until {', '.join(change)} are recorded")))
+    else:
+        out.append(Check(WARN, "production", "set_production can only open a new line (an "
+                         "existing line is refused) and change_production_equipment is not "
+                         f"offered: {pu.calibrate_line(edit)} (and "
+                         "production.equipment.change production.equipment.<id> for the change)"))
     return out
 
 

@@ -132,7 +132,8 @@ def campaign_llm(hands=None) -> str:
     (``HarnessConfig.campaign_hands``: ``offered``, ``armies``); with none offered it is
     exactly the keyboard-and-console text (``CAMPAIGN_LLM``)."""
     offered = set((hands or {}).get("offered") or ())
-    if not offered:
+    production = (hands or {}).get("production") or {}
+    if not offered and not production.get("edit") and not production.get("equipment"):
         return CAMPAIGN_LLM
     got = {"research": "start_research" in offered,
            "orders": bool(offered & {"move_division", "attack_province"}),
@@ -159,6 +160,16 @@ def campaign_llm(hands=None) -> str:
             "then runs that army on its front) or takes it back (delegate false). The harness "
             "cannot read the toggle back, so the result is always 'unverified': keep a record of "
             "what you handed over in your notes." + named)
+    if production.get("edit"):
+        lines.append(
+            "- Production: set_production EDITS the line that already makes that equipment "
+            "(factories up or down, 0 removes it) by clicking the production screen, and opens a "
+            "new line only when none exists; it never makes a second line for the same "
+            "equipment. It runs only while the game window is in front, and the result says "
+            "whether the line now shows the number you asked for."
+            + (" change_production_equipment switches an existing line to other equipment "
+               "(for example a newer variant) and keeps its factories; it refuses when the "
+               "other equipment already has a line." if production.get("equipment") else ""))
     if not got["orders"] and not got["delegate"]:
         lines.append("- Armies: no tool here moves a division, and the game's AI is not moving "
                      "them. They stand where they are; plan for a war you cannot attack in.")
@@ -169,8 +180,9 @@ def campaign_llm(hands=None) -> str:
         lines.append("- Divisions you do not order stand where they are; the game's AI is not "
                      "moving them.")
     note_keeps = (
-        "- Still not available: changing a running production line, and anything not in your "
-        "tool list.")
+        "- Still not available: anything not in your tool list." if production.get("edit") else
+        "- Still not available: changing a running production line (set_production only opens a "
+        "line for equipment that has none), and anything not in your tool list.")
     return (CAMPAIGN_LLM.split("- Your tool list is the whole")[0]
             + "- Your tool list is the whole of what you can do. Some of it the harness does with "
               "the mouse; the rest through the console and the keyboard. Do not plan around a tool "

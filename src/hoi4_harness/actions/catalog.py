@@ -101,8 +101,12 @@ ACTIONS: list[ActionSpec] = [
         name="set_production",
         category="economy",
         description=(
-            "Set how many military factories are assigned to one equipment line. "
-            "Setting 0 removes the line. Total assigned may not exceed available factories."
+            "Set how many military factories one equipment line holds. If a line for that "
+            "equipment already EXISTS it is edited in place (factories up or down, 0 removes it); "
+            "a new line is opened only when none exists. It never makes a second line for the "
+            "same equipment. Total assigned may not exceed available factories. Editing an "
+            "existing line is done with the mouse (the production screen), so it is only "
+            "possible where that is set up; the result says when it is not."
         ),
         parameters=_schema(
             {
@@ -110,6 +114,23 @@ ACTIONS: list[ActionSpec] = [
                 "factories": {"type": "integer", "minimum": 0, "maximum": 200},
             },
             ["equipment", "factories"],
+        ),
+    ),
+    ActionSpec(
+        name="change_production_equipment",
+        category="economy",
+        description=(
+            "Change the equipment of a production line that exists (for example to a newer "
+            "variant): the line keeps its factories and is NOT duplicated. Refused when "
+            "to_equipment already has a line (edit that one with set_production). Done with the "
+            "mouse on the production screen."
+        ),
+        parameters=_schema(
+            {
+                "from_equipment": {"type": "string", "description": "Equipment of the existing line."},
+                "to_equipment": {"type": "string", "description": "Equipment it should make."},
+            },
+            ["from_equipment", "to_equipment"],
         ),
     ),
     ActionSpec(

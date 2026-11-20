@@ -138,13 +138,18 @@ report `fronts`), and, from the log reader's front picture, a state you held tha
 controls, or a contact that ended while the war goes on. The fake game proves the rules on those
 inputs; how often they fire in a real 1941 is unmeasured.
 
-**Production is out.** `set_production`'s click path is a draft nobody has walked, the fake game
-has no production screen to test it against, and the console path (`add_equipment_production`)
-opens a second line beside an existing one, which this change must not use. The mouse tools stay
-research, orders and delegation; the console `set_production` keeps its existing behaviour (only
-with a reader that sees production).
+**Production by click (#112).** `set_production` edits the line that exists instead of opening a
+second beside it, and `change_production_equipment` switches an existing line's equipment, by clicks
+on the production screen at points a person records (`production.line.N`,
+`production.factories.plus` / `.minus`, `production.line.remove`, `production.equipment.change`,
+`production.equipment.<id>`; `docs/live-session.md` section 14b). The rows are read from the text
+save, so it needs `headless_reader = log+save`; the result is checked against a fresh save. A new
+line is still opened by the console effect, and only when none exists for that equipment. Without
+the points `set_production` keeps its old behaviour (it opens a new line, and refuses an existing
+one naming the points to record) and `change_production_equipment` is not offered; the start log
+and `campaign-check` say which. Under `human_ai` (the game-AI campaign) none of this applies.
 
-**Not live-verified, in one list:** the `rslots` telemetry and so the idle-slot wake; the
+**Not live-verified, in one list:** production by click (all of it); the `rslots` telemetry and so the idle-slot wake; the
 post-click telemetry refresh while paused; research through the *campaign's* wiring (the click
 path itself was run live 2026-11-19); division orders; the camera fingerprint and its unattended
 age rule; delegation (the whole click path); the wartime wake rules; the guidance and prompt
