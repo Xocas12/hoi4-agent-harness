@@ -44,7 +44,7 @@ jobs:
       - run: pip install -e ".[dev,anthropic,openai,google]"
       - name: Conformance against every configured provider
         env:
-          HOI4_LIVE_TESTS: "1"
+          HOI4_LIVE_PROVIDER_TESTS: "1"
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}

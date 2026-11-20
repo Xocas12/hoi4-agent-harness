@@ -1,0 +1,2 @@
+model,uncached_input_tokens,cache_read_tokens,cache_write_tokens,output_tokens,requests,cost_usd
+claude-opus-5-5,9334,33964,2426,3838,3,0.1750
