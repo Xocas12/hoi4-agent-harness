@@ -3,7 +3,7 @@ player="GER"
 ideology=fascism
 date="1936.1.1.12"
 difficulty="normal"
-version="Operation Postern v1.20.0.0.8873 (1cd9)"
+version="Operation Postern v1.20.0.0.8873 (b2d2)"
 tutorial=no
 player_countries={
 	GER={
@@ -1462,15 +1462,11 @@ CAN={
 			}
 		}
 		flags={
-			GER_AI_RANDOM_FASCIST={
+			GER_AI_RANDOM_KAISER={
 				value=1
 				date="1936.1.1.12"
 			}
 			SWI_country_to_appease={
-				value=1
-				date="1936.1.1.12"
-			}
-			llmb_harness={
 				value=1
 				date="1936.1.1.12"
 			}
@@ -4302,10 +4298,10 @@ CAN={
 			}
 		}
 		variables={
-			communist_game_weight=56
+			communist_game_weight=32
 			crossing_the_atlantic_max_states_for_dockyards=10
-			democratic_game_weight=48
-			fascist_game_weight=88
+			democratic_game_weight=64
+			fascist_game_weight=44
 			ger_alfred_rosenberg_modifier_consumer_goods_factor=0
 			ger_alfred_rosenberg_modifier_industrial_capacity_factory=0
 			ger_alfred_rosenberg_modifier_production_speed_arms_factory_factor=0
@@ -4508,28 +4504,15 @@ CAN={
 			ger_wunderwaffen_sp_tag_submarine_speed_factor=0
 			ger_wunderwaffen_sp_tag_tank_speed_factor=0
 			ger_wunderwaffen_special_project_speed_factor=0
-			llmb_ai=1
+			llmb_ai=0
 			llmb_ai_delegated_armies=0
 			llmb_built_civ=0
 			llmb_built_dock=0
 			llmb_built_infra=0
 			llmb_built_mil=0
-			llmb_c_capit=0
-			llmb_c_ctl=24
-			llmb_c_divs=30
-			llmb_c_enemies=0
-			llmb_c_exist=99
-			llmb_c_fmem=1
-			llmb_c_indep=81
-			llmb_c_infac=1
-			llmb_c_leader=1
-			llmb_c_owned=24
-			llmb_c_wstates=1081
 			llmb_civ=35
 			llmb_divisions=30
 			llmb_doc=10
-			llmb_event_kind=16
-			llmb_front_states=0
 			llmb_mil=28
 			llmb_mp=1316296
 			llmb_owned=73
@@ -4537,12 +4520,12 @@ CAN={
 			llmb_schema_version=5
 			llmb_stab=81
 			llmb_techs=55
-			llmb_ws=0
+			llmb_ws=35
 			number_of_states_getting_dockyards=0
 			platonic_local_dangerous_fascist=10791.33511
 			ss_anger=0
 			swe_manpower_to_communist_support=4000
-			unaligned_game_weight=52
+			unaligned_game_weight=60
 			wehrmacht_anger=0
 		}
 		fuel_status={
@@ -4586,7 +4569,7 @@ CAN={
 					popularity=15
 					country_leader={
 {
-							ideology="despotism"
+							ideology="oligarchism"
 							character={ id=11089 type=73 }
 						}
  					}
