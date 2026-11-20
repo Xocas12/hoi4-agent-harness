@@ -312,9 +312,11 @@ class HarnessConfig:
     #: ``coast`` (the AI plays on to the end date with no model calls).
     campaign_on_budget: str = "stop"
     #: Stop, with a reason, at the next turn boundary once the PLAYER's own country
-    #: capitulates (the objective says "without losing the country", so the run has
-    #: failed). Off: play on in exile.
-    campaign_stop_on_capitulation: bool = True
+    #: capitulates. Off (the default): play on in exile. A capitulated country lives on in
+    #: HOI4 (government in exile, whatever states it still holds), so the run wakes the
+    #: model with the news and goes on; it ends only when the country holds no states
+    #: (see ``CampaignSupervisor._no_states_left``).
+    campaign_stop_on_capitulation: bool = False
     #: Toggle ``human_ai`` at the start (the one step that needs the game).
     campaign_human_ai: bool = True
     #: Stop unless the state line's ``ai=`` reads 1 after the toggle.

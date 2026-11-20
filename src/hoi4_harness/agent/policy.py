@@ -32,6 +32,30 @@ from ..observation.fronts import LOW_SUPPLY, is_quiet
 from ..types import ActionCall, GameState
 
 
+def own_capitulation(state: GameState, tag: str) -> tuple[str, str] | None:
+    """``(date, victor)`` when this turn's events say the player's own country ``tag``
+    capitulated, else None; ``victor`` is "" when the log did not name one.
+
+    The mod logs ``capitulation`` in the capitulating country's scope: the text reads
+    ``capitulation: GER`` or ``capitulation: GER (to SOV)`` for the player itself and
+    ``capitulation: POL (to GER)`` for an enemy that gave in to the player."""
+    tag = (tag or "").upper()
+    if not tag or tag == "___":
+        return None
+    for event in state.events:
+        if event.kind != "capitulation":
+            continue
+        words = event.text.partition(":")[2].split()
+        if words and words[0].upper() == tag:
+            victor = event.text.partition("(to ")[2].partition(")")[0].strip().upper()
+            return (event.date or state.date, victor)
+    return None
+
+
+def player_tag(state: GameState, fallback: str = "") -> str:
+    return state.country if state.country and state.country != "___" else (fallback or "")
+
+
 @dataclass
 class CampaignPacing:
     """How often a campaign wakes the model: the scheduled review is longer in peace
@@ -73,7 +97,10 @@ class Policy:
         wake_on_losing_ground: bool = True,
         reflex_delegate: bool = False,
         campaign: CampaignPacing | None = None,
+        country: str = "",
     ):
+        #: The player's tag from the config, for when the state does not carry it.
+        self.country = country
         self.days_per_turn = days_per_turn
         #: Campaign pacing (docs/campaign.md); None is the normal fixed-interval policy.
         self.campaign = campaign
@@ -107,6 +134,15 @@ class Policy:
             # The reflex-only baseline: nothing is worth a model call, however
             # loud the game gets, because there is no model to wake.
             return WakeDecision(False, "planner disabled: reflex-only run")
+
+        # The player's own surrender is the one event no gap or review interval may hold
+        # back: the model must hear it the turn it is seen, in every mode.
+        fell = own_capitulation(state, player_tag(state, self.country))
+        if fell is not None:
+            date, victor = fell
+            return WakeDecision(
+                True, f"your own country capitulated on {date}" + (f" to {victor}" if victor else ""),
+                "critical")
 
         if self.campaign is not None:
             return self._campaign_wake(state, days_since_planner)

@@ -65,6 +65,9 @@ class ProgressTracker:
     last_review: dict | None = None
     #: War events since the model last looked, as (date, text).
     news: list[tuple[str, str]] = field(default_factory=list)
+    #: ``{"date", "to"}`` once the player's own country capitulated; the brief says so on
+    #: every turn after.
+    capitulation: dict | None = None
     samples: int = 0
     latest: dict | None = None
     spend: dict = field(default_factory=dict)
@@ -113,6 +116,7 @@ class ProgressTracker:
         if self.until:
             head += f", until {self.until}"
         lines.append(head + f" (now {state.date}).")
+        lines += self._capitulation_lines(state)
         if camp is not None and camp.owned_states is not None:
             held = f"You hold {camp.owned_states} states"
             if camp.state_share is not None:
@@ -152,6 +156,18 @@ class ProgressTracker:
                          + "; ".join(f"{d} {text}" for d, text in self.news[-8:])
                          + (f" (+{len(self.news) - 8} earlier)" if len(self.news) > 8 else ""))
         return lines
+
+    def _capitulation_lines(self, state: GameState) -> list[str]:
+        cap = self.capitulation
+        if not cap:
+            return []
+        who = state.country if state.country and state.country != "___" else (cap.get("tag") or "Your country")
+        held = state.campaign.owned_states if state.campaign is not None else None
+        text = f"{who} CAPITULATED on {cap['date']}" + (f" to {cap['to']}" if cap.get("to") else "")
+        text += (f"; you are a government in exile holding {held} states" if held is not None
+                 else "; you are a government in exile")
+        return [text + ". The run goes on: what you still hold, and what you can take back, is "
+                "what counts now.", ]
 
     def reviewed(self) -> None:
         """The model has seen the brief: what it reads next is news again."""

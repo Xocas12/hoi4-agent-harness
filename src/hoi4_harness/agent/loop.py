@@ -137,6 +137,7 @@ class AgentLoop:
             wake_on_front_quiet=self.config.wake_on_front_quiet,
             wake_on_losing_ground=self.config.wake_on_losing_ground,
             reflex_delegate=self.config.reflex_delegate,
+            country=self.config.country or "",
             campaign=(CampaignPacing(
                 peace_days=self.config.campaign_review_peace_days,
                 war_days=self.config.campaign_review_war_days,

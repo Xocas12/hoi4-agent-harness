@@ -28,6 +28,7 @@ def capitulate_at(env, day, tag=None, to="SOV"):
 
 
 def play(tmp_path, tag=None, **options):
+    options.setdefault("campaign_stop_on_capitulation", True)   # the default is now to play on
     config = campaign_config(tmp_path, campaign_until="1936-09-01", **options)
     env = build_env(config)
     capitulate_at(env, DAY, tag)
