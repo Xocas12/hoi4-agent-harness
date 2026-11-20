@@ -8,13 +8,12 @@ Every expected number below was read off the running game at that moment, not
 off the save: the top bar (PP 2, stability 81%, war support 35%, manpower 1.31M,
 73 factories) and the mod's log line
 
-    LLMB|v5|state|... pp=2.324|stab=81|ws=0|civ=35|mil=28|doc=10|owned=73|mp=1316296|ai=1|techs=55
+    LLMB|v5|state|... pp=2.324|stab=81|ws=35|civ=35|mil=28|doc=10|owned=73|mp=1316296|ai=0|techs=55
     army divisions=30
 
-The war support the mod logged was 0 because it read the bare ``war_support``
-variable, which is 0 on 1.20 (see the telemetry fix and #97). The fixture
-keeps that 0 as logged, so the war-support test below is a known failure until a
-save is taken after the fix is live.
+The first fixture logged war support as 0: the mod read the bare ``war_support``
+variable, which is 0 on 1.20 (#97). This one was taken on 2026-11-20 with the fixed mod
+(``has_war_support``) installed, and its state line read ``ws=35``, the top bar's 35%.
 """
 
 from __future__ import annotations
@@ -109,16 +108,13 @@ def test_6_the_player_block_is_not_the_decoy(raw):
 
 
 def test_6_war_support_reports_what_the_mod_logged(state, raw):
-    # llmb_ws is 0 in this save (the telemetry bug), and the mapping reports it faithfully.
+    # The mapping reports llmb_ws as the mod logged it, in percent.
     logged = float(raw["country"]["variables"]["llmb_ws"])
     assert state.known("war_support")
     assert state.war_support == pytest.approx(logged / 100.0)
 
 
-@pytest.mark.xfail(strict=True, reason="telemetry logged war support as 0 (bare war_support reads 0 "
-                   "on 1.20); fixed in the mod, needs a new save after the fix is live-verified "
-                   "(issue #97)")
-def test_war_support_matches_the_top_bar(state):
+def test_97_war_support_matches_the_top_bar(state):
     assert state.war_support == pytest.approx(0.35, abs=0.005)
 
 
