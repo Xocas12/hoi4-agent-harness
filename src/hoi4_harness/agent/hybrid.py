@@ -72,12 +72,50 @@ def actions_for_mode(allowed: set[str], mode: str) -> set[str]:
     return allowed - DIRECTIVE_ACTIONS
 
 
-def describe(mode: str, campaign: bool = False) -> str:
+#: The mouse tools an independent campaign may have (adapters/hands.py); named here so the
+#: prompt does not import the adapters.
+_ORDERS = ("move_division", "attack_province")
+
+
+def hands_summary(offered) -> dict:
+    """The mouse tools of ``offered`` the prompt talks about."""
+    offered = set(offered)
+    return {"research": "start_research" in offered,
+            "orders": bool(offered & set(_ORDERS)),
+            "delegate": "delegate_army_to_ai" in offered}
+
+
+def describe(mode: str, campaign: bool = False, hands=None) -> str:
     """One paragraph for the prompt, so the model knows what it is not doing.
 
     ``campaign`` is the independent campaign (``campaign_control = "llm"``): the model
     plays the country itself, but a headless run has no way to move a unit, so "you
-    command directly" would promise what the tool list cannot do."""
+    command directly" would promise what the tool list cannot do. ``hands`` is the set of
+    mouse tools the run offers (``start_research``, ``move_division``, ``attack_province``,
+    ``delegate_army_to_ai``); empty or None is the keyboard-and-console run."""
+    got = hands_summary(hands or ())
+    if campaign and mode == "llm" and any(got.values()):
+        if got["orders"] and got["delegate"]:
+            armies = ("You can order your divisions yourself and hand a whole army to the "
+                      "game's own AI")
+        elif got["orders"]:
+            armies = ("You can order your divisions yourself; the ones you do not order stand "
+                      "where they are")
+        elif got["delegate"]:
+            armies = ("No tool here moves a division yourself: they move only when the game's own "
+                      "AI moves them, and you can hand an army to it")
+        else:
+            armies = "No tool here moves a division, so your armies stand where they are"
+        return (
+            "You are playing the country yourself: the game's own AI is NOT running it, so "
+            "the national focus, the research, construction and production are yours to "
+            "fill, and they stay empty until you do. You have only the tools in your tool "
+            "list" + (", including the ones the harness performs with the mouse: "
+                      + ", ".join(n for n, on in (
+                          ("research", got["research"]),
+                          ("division orders", got["orders"]),
+                          ("handing an army to the AI", got["delegate"])) if on)) + ". " + armies + "."
+        )
     if campaign and mode == "llm":
         return (
             "You are playing the country yourself: the game's own AI is NOT running it, so "

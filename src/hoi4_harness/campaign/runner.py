@@ -358,6 +358,12 @@ def begin(env: HOI4Env, config: HarnessConfig, log: CampaignLog,
                 "send it here; toggle it off in the game's console yourself, or load a save from "
                 "before, then run again")
         log.line(f"independent mode: the model plays {tag} itself; human_ai is not sent")
+        hands = getattr(adapter, "hands", None)
+        if hands is not None:
+            # Which mouse tools are live and which were refused, and why: the camera record and
+            # the recorded points are things a person provides, so say it where it is read.
+            for line in hands.lines(env.allowed_actions):
+                log.line(line)
         return state
     if not config.campaign_human_ai:
         log.line("human_ai is off by configuration: the game is not handed to the AI")

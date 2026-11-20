@@ -861,3 +861,79 @@ only its own country.
 the window is one file): #91. Steps 3, 4, 6 and 7 (the idle clock, the pause signal, the abort,
 the console line): #31 and #33; they decide whether `paused` is safe enough to be the default
 or `handover` should be. Step 9: #91.
+
+## 14. Independent campaign with the mouse: research, an order, a delegation (`--control llm`)
+
+Do this on a spare non-ironman 1936 game as one country (these steps say GER), after steps 1 to 5
+and 10 hold. The harness takes the mouse and the keyboard for the whole run: **do not touch either
+while it runs**, keep the window in front, and do not zoom or scroll the map. Everything here
+except research through the input driver (run live 2026-11-19: `y` then `w`, a second Return for
+the military-industrial-organisation chooser, rotated tabs +40 GUI y) is new and unverified.
+Paste each step's output into the PR that added this (campaign-hands) and the issue it names.
+
+**0. Install the mod again.** The state line gained `rslots=` (the research slot count, which the
+idle-slot wake needs). `hoi4-harness campaign-check --profile profiles/campaign-ger-world.json`
+must pass the mod check (byte for byte), and after loading, `grep "LLMB|v5|state" "$HOI4_LOG_PATH" |
+tail -1` should end `...|rslots=N`. **If `rslots=` is empty or 0, say so: the expression
+`amount_research_slots` did not expand, and research will never wake on an idle slot.**
+
+**1. Record what a person has to record.** In a paused game with a war on a front (or any
+contact you can see), once, with the current scripts:
+
+```bash
+# the camera, steps 11-12 above, with the CURRENT scripts/record_camera.py: it writes the display
+# fingerprint an unattended run accepts at any age
+PYTHONPATH=src python scripts/record_camera.py --game-dir "$HOI4_GAME_DIR" --fit-province <p> ... --out runs/camera.json
+# the army list and the AI toggle: aim the mouse at each and press Enter (names with spaces quoted)
+hoi4-harness calibrate army.ai_control_toggle army.all "army.<name of one of your armies>"
+```
+
+Open the army list so those controls are visible when you aim. If you cannot find an AI toggle for
+an army, stop here and say so: the delegation path is a guess (a click on the army, a click on its
+toggle) and the first thing the live run decides is whether that guess is right.
+
+**2. Start, and read the start log.** `hoi4-harness campaign-check ...` first (WARN lines say what
+is missing), then
+
+```bash
+hoi4-harness play --campaign --control llm --live --profile profiles/campaign-ger-world.json \
+    --max-usd 3 --until 1936-03-01 --run-dir runs/hands-1 --game-dir "$HOI4_GAME_DIR"
+tail -f runs/hands-1/campaign.log
+```
+
+Expected in the first lines: `independent mode: ... human_ai is not sent`, then `mouse tools live:
+...` and one `mouse tool refused: <tool>: <why>` for each tool that is off. Note which. A refused
+tool is the harness doing its job, not a failure: fix what it names and start again.
+
+**3. Research is picked and verified.** In the first wake (`no national focus` or `research slot(s)
+idle`) the model should call `start_research`. Watch the game: the research panel opens, a free slot
+is clicked, the tab, the technology, Return twice. Then check, in `transcript.jsonl`, the result:
+`done and verified` means the technology shows in a slot through the telemetry; `unverified` means
+the click went in and the log did not show it (say whether the game did); `rejected` means the
+game did not change. Confirm in the game that the slot is really busy. Also: with another slot
+still free, the log should show `wake: N research slot(s) idle` a week or two later, and not when
+none is free.
+
+**4. One attack order.** Needs a war with a contact (start one however you normally would, a
+focus or a decision, and let the armies meet). Check the
+brief names a state with your divisions and the enemy's, then let the model order or order for it:
+`attack_province` between those states. Watch the cursor: one box or click on the counter, one
+right-click on the target. Then `Order: #1 ...` in the next brief should read `underway` or
+`arrived`. Say which units moved, and if the wrong stack was selected, which point was off (the
+camera fit is the first suspect, then the unit counter offset).
+
+**5. One army delegated.** The model calls `delegate_army_to_ai` for the army you recorded. Watch:
+the army is selected and its AI toggle pressed. Check in the game that the army shows AI control.
+The result is `unverified` by design (nothing reads the toggle), so the game is the only evidence:
+report whether it took, and whether calling it again took it back (`delegate` false).
+
+**6. Guidance.** While it runs: `hoi4-harness guide --run-dir runs/hands-1 "Hold the east, push the
+west"`. The next wake should name it, and the model should mention it in its note.
+
+**7. The guards.** Click away to another window during a wake: the harness must log `waiting` and
+send nothing (no clicks, no keys in the other window), and continue when you bring the game back.
+Check `runs/hands-1/campaign.log` for `STOP:` lines when you end it, and that the game was left
+paused.
+
+What to report: for each step, what the log said, what the game did, and the transcript result.
+Whatever does not match, with the log line, is the next thing to fix.

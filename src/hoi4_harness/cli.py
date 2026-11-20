@@ -146,6 +146,8 @@ def _config_from_args(args: argparse.Namespace) -> HarnessConfig:
         config.campaign_until = args.until
     if getattr(args, "control", None):
         config.campaign_control = args.control
+    if getattr(args, "campaign_input", None):
+        config.campaign_input = args.campaign_input
     if getattr(args, "no_human_ai", False):
         config.campaign_human_ai = False
     if getattr(args, "no_verify_ai", False):
@@ -1232,6 +1234,10 @@ def build_parser() -> argparse.ArgumentParser:
                            "runs it, the model steers. llm: independent mode, the model plays "
                            "it itself with the hands-on actions (not live-verified; "
                            "docs/campaign.md)")
+    play.add_argument("--campaign-input", dest="campaign_input", choices=["mouse", "none"],
+                      help="campaign --control llm: mouse (default) adds research and army "
+                           "tools the harness performs with the mouse, while the game window is "
+                           "in front; none keeps the keyboard-and-console run")
     play.add_argument("--no-human-ai", dest="no_human_ai", action="store_true",
                       help="campaign: do not hand the country to the game's AI")
     play.add_argument("--no-verify-ai", dest="no_verify_ai", action="store_true",

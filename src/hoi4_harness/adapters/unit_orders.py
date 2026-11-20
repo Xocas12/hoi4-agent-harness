@@ -136,6 +136,10 @@ class CameraRecord:
     #: Where the unit counter is drawn relative to the type-0 anchor, in screen px.
     counter_offset: tuple[int, int] = (0, 0)
     max_age_hours: float = DEFAULT_MAX_AGE_HOURS
+    #: The display the fit was recorded under (``display_fingerprint``): UI scale, window
+    #: mode and resolution from settings.txt. What an unattended run can check of "has
+    #: anything changed since": it cannot see the map's zoom, but it can see these.
+    display: dict | None = None
 
     # --- file ---------------------------------------------------------------
 
@@ -147,7 +151,7 @@ class CameraRecord:
             "pairs": [list(p) for p in self.pairs], "fit_province": self.fit_province,
             "centre_rule": self.centre_rule, "validated": self.validated,
             "recorded": self.recorded, "counter_offset": list(self.counter_offset),
-            "max_age_hours": self.max_age_hours,
+            "max_age_hours": self.max_age_hours, "display": self.display,
         }
 
     def save(self, path: Path) -> Path:
@@ -183,16 +187,35 @@ class CameraRecord:
                 recorded=str(data.get("recorded", "")),
                 counter_offset=tuple(int(v) for v in data.get("counter_offset", (0, 0))),
                 max_age_hours=float(data.get("max_age_hours", DEFAULT_MAX_AGE_HOURS)),
+                display=data.get("display") if isinstance(data.get("display"), dict) else None,
             )
         except (KeyError, TypeError, ValueError) as exc:
             raise CameraRefused(f"{path} is incomplete or malformed ({exc!r})") from None
 
     # --- use ----------------------------------------------------------------
 
+    def check_display(self, display: dict | None) -> str | None:
+        """Why the display now is not the one the fit was recorded under, or None. Needs a
+        recorded fingerprint and a reading of the current one; without either it says nothing
+        (the age limit then stands)."""
+        if self.display is None or display is None:
+            return None
+        changed = [f"{key} {self.display[key]} -> {display.get(key)}" for key in sorted(self.display)
+                   if display.get(key) is not None and self.display[key] != display.get(key)]
+        return ", ".join(changed) or None
+
     def camera_for(self, layer: MapLayer, province: int, *, screen: tuple[int, int] | None = None,
-                   now: datetime | None = None) -> ShiftedCamera:
+                   now: datetime | None = None, display: dict | None = None,
+                   unattended: bool = False) -> ShiftedCamera:
         """The camera after the game centres on ``province``. Refuses, saying why,
-        when the fit cannot be trusted."""
+        when the fit cannot be trusted.
+
+        ``unattended`` (an independent campaign, which owns the PC) lifts the age limit
+        for a fit that carries a display fingerprint matching ``display``: the age limit
+        stood in for "the UI scale may have changed", and that is now checked directly. The
+        zoom of the map cannot be read, so it is assumed unchanged (the harness never scrolls
+        the map; a person who does breaks it, and the ledger's 'no change' line is the
+        symptom)."""
         if screen is not None and tuple(screen) != tuple(self.screen):
             raise CameraRefused(
                 f"the camera was fitted at {self.screen[0]}x{self.screen[1]} but the screen is "
@@ -203,10 +226,18 @@ class CameraRecord:
             age = (now or datetime.now()) - datetime.fromisoformat(self.recorded)
         except ValueError:
             raise CameraRefused(f"the camera fit's time {self.recorded!r} is not ISO") from None
-        if age > timedelta(hours=self.max_age_hours):
+        moved = self.check_display(display)
+        if moved:
+            raise CameraRefused(f"the display changed since the camera was recorded ({moved}): "
+                                "record it again")
+        lifted = unattended and self.display is not None and display is not None
+        if age > timedelta(hours=self.max_age_hours) and not lifted:
             raise CameraRefused(
                 f"the camera fit is {age.total_seconds() / 3600:.0f} h old (limit "
-                f"{self.max_age_hours:g} h): zoom or UI scale may have changed; record it again")
+                f"{self.max_age_hours:g} h): zoom or UI scale may have changed; record it again"
+                + ("" if self.display is not None or not unattended else
+                   " (a record made by the current scripts/record_camera.py carries the display "
+                   "fingerprint an unattended run accepts at any age)"))
         try:
             fit = fit_camera([((p[0], p[1]), (p[2], p[3])) for p in self.pairs], self.viewport)
         except CameraModelError as exc:
@@ -222,6 +253,22 @@ class CameraRecord:
         except MapError as exc:
             raise CameraRefused(str(exc)) from None
         return ShiftedCamera(fit.camera, there[0] - here[0], there[1] - here[1])
+
+
+def display_fingerprint(driver) -> dict | None:
+    """What the driver can read of the display the clicks are placed in: the UI scale, the
+    window mode and the resolution. None when it cannot be read (a window or settings file
+    that does not resolve), in which case nothing is compared."""
+    from ..uilayout import LayoutRefused
+
+    try:
+        geometry = driver.geometry()
+        settings = driver._display_settings()
+    except (LayoutRefused, OSError):
+        return None
+    return {"gui_scale": round(float(geometry.gui_scale), 4),
+            "mode": settings.mode if settings else None,
+            "resolution": [int(geometry.width), int(geometry.height)]}
 
 
 def stamp_now(now: datetime | None = None) -> str:
@@ -610,6 +657,7 @@ class UnitOrderExecutor:
         sleep: Callable[[float], None] | None = None,
         now: Callable[[], datetime] = datetime.now,
         settle: float = 0.8,
+        unattended: bool = False,
     ):
         self.driver = driver
         self.layer = layer
@@ -619,6 +667,8 @@ class UnitOrderExecutor:
         self._sleep = sleep or driver._sleep
         self._now = now
         self.settle = settle
+        #: An independent campaign: the camera's age limit is replaced by the display check.
+        self.unattended = unattended
         self.last_gestures: list[Gesture] = []
 
     def record(self) -> CameraRecord:
@@ -632,8 +682,10 @@ class UnitOrderExecutor:
         try:
             plan = plan_order(self.layer, call, state)
             record = self.record()
-            camera = record.camera_for(self.layer, plan.centre_province, screen=driver.config.screen,
-                                       now=self._now())
+            display = display_fingerprint(driver)
+            screen = driver.config.screen or (tuple(display["resolution"]) if display else None)
+            camera = record.camera_for(self.layer, plan.centre_province, screen=screen,
+                                       now=self._now(), display=display, unattended=self.unattended)
             gestures = plan_gestures(self.layer, camera, plan, state, record.counter_offset)
         except OrderRefused as exc:
             return self._result(call, False, "rejected", f"refused before any input: {exc}; nothing was sent")
@@ -718,7 +770,8 @@ def enable_from_config(driver, console, config) -> UnitOrderExecutor:
         raise ValueError("division orders need the map: pass --game-dir")
     layer = MapLayer.load(Playset.from_paths(config.game_dir, config.mod_dirs))
     path = Path(config.camera_path or Path(config.run_dir) / DEFAULT_FILENAME)
-    executor = UnitOrderExecutor(driver, layer, lambda: CameraRecord.load(path), console_centre(console))
+    executor = UnitOrderExecutor(driver, layer, lambda: CameraRecord.load(path), console_centre(console),
+                                 unattended=bool(config.campaign))
     driver.enable_unit_orders(executor)
     driver.order_ledger = executor.ledger
     driver.order_layer = layer
