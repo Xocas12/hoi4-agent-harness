@@ -67,6 +67,11 @@ llm_bridge_emit_state = {
 
 	llm_bridge_emit_army = yes
 
+	# One war line per enemy, inside the day's tick so the reader closes the day with
+	# them. Defined in schema v4 and never called until now: a 1936 Germany campaign
+	# logged no war line in four game years while its weekly camp line counted 9 enemies.
+	llm_bridge_emit_wars = yes
+
 	# Which focus and technologies are running (generated; see llm_bridge_probe.txt).
 	llm_bridge_emit_probe = yes
 }
