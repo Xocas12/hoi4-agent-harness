@@ -35,12 +35,13 @@ def run_scenario(
         scenario = SCENARIOS[scenario]
 
     config = config or HarnessConfig()
-    if config.handover or config.advisor:
+    if config.handover or config.advisor or config.human_domains or config.multiplayer:
         # Once a person acts too, a score says nothing about the model: outcome
         # attribution is gone. Refuse rather than produce a number that means
         # nothing.
         raise ValueError(
-            "co-op runs (handover or advisor) are for playing, not scoring: "
+            "co-op runs (handover, advisor, a domain held by a person, multiplayer) are for "
+            "playing, not scoring: "
             "a person's actions are in the outcome"
         )
     index = config.build_index()

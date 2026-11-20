@@ -19,6 +19,7 @@ from .adapters.base import GameAdapter
 from .adapters.input_driver import InputInterrupted
 from .config import HarnessConfig
 from .confirm import Confirmation
+from .coop import coop_lines, refusal
 from .handover import PASS_THROUGH, HandoverQueue, HandoverReport
 from .identifiers import IdentifierIndex
 from .observation import ObservationBuilder
@@ -148,6 +149,7 @@ class HOI4Env:
             self._last_handover = None
         if self.handover is not None:
             extra += self.handover.describe()
+        extra += coop_lines(self.config)
         for hook in self.brief_hooks:
             extra += hook(state)
         if self.index is not None:
@@ -206,7 +208,9 @@ class HOI4Env:
                 error_kind="not_executed",
             )
 
-        problem = registry.check(call, self.script_actions if auto else self.allowed_actions)
+        problem = self._refused(call)
+        if problem is None:
+            problem = registry.check(call, self.script_actions if auto else self.allowed_actions)
         if problem is None and self.index is not None:
             # An invented id never reaches the game, where it would do nothing
             # silently; the model gets the nearest real ones instead.
@@ -226,7 +230,10 @@ class HOI4Env:
                     ),
                     error_kind="rejected",
                 )
-            if self.confirm_hook and not self.confirm_hook(
+            # Approve-mode handover asks at execution time, where the player is at the screen; a
+            # second ask here, when the model queues it, would be the same question twice.
+            queued_for_approval = self.handover is not None and self.handover.approver is not None
+            if not queued_for_approval and self.confirm_hook and not self.confirm_hook(
                 Confirmation(call=call, date=date, turn=self.turn)
             ):
                 return ActionResult(
@@ -243,9 +250,20 @@ class HOI4Env:
             return self.handover.enqueue(call, state.date, self.turn)
         return self._apply(call)
 
+    def _refused(self, call: ActionCall) -> ActionResult | None:
+        """The co-op and multiplayer refusals (coop.py): a domain the player holds, a country
+        another person plays. Checked at queue time and again when a queued call runs."""
+        why = refusal(self.config, call)
+        if why is None:
+            return None
+        return ActionResult(ok=False, action=call.name, call_id=call.call_id, message=why,
+                            error_kind="rejected")
+
     def _apply(self, call: ActionCall) -> ActionResult:
         try:
             result = self.adapter.apply(call)
+        except InputInterrupted:
+            raise          # a guard stopped the keys: the queue keeps the action for the next window
         except Exception as exc:  # noqa: BLE001 - an adapter fault must not end the run
             return ActionResult(
                 ok=False,
@@ -269,7 +287,7 @@ class HOI4Env:
             return None
 
         def apply(call: ActionCall) -> ActionResult:
-            problem = registry.check(call, self._acceptable())
+            problem = self._refused(call) or registry.check(call, self._acceptable())
             if problem is None and self.index is not None:
                 problem = self.index.check(call, self.adapter.read_state().country)
             return problem if problem is not None else self._apply(call)
@@ -279,7 +297,7 @@ class HOI4Env:
             out: dict[int, ActionResult] = {}
             valid: list[ActionCall] = []
             for call in calls:
-                problem = registry.check(call, self._acceptable())
+                problem = self._refused(call) or registry.check(call, self._acceptable())
                 if problem is None and self.index is not None:
                     problem = self.index.check(call, self.adapter.read_state().country)
                 if problem is not None:

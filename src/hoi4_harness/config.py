@@ -405,6 +405,23 @@ class HarnessConfig:
     # grants a window (handover.py). For playing alongside a person, not for
     # scoring -- the eval runner refuses a handover run.
     handover: bool = False
+    #: When the queue may run (coop.py): ``hotkey`` (the player runs `hoi4-harness handover`, or
+    #: presses ``handover_hotkey`` when that is set), ``idle`` (the game is paused, the player
+    #: has been quiet for ``handover_idle_seconds`` and the game is in front) or ``approve``
+    #: (each action is shown to the player and runs only on a yes, via ``confirm_hook``).
+    handover_mode: str = "hotkey"
+    handover_idle_seconds: float = 5.0
+    handover_paused_seconds: float = 10.0
+    #: A global hotkey that grants the window, e.g. ``ctrl+alt+h``. Empty (the default): no
+    #: listener, the grant file is the only trigger. Windows only.
+    handover_hotkey: str = ""
+    #: Co-op by domain (docs/co-op.md): these domains are the player's, the model never acts in
+    #: them. Folded into the control map as ``domain=human``.
+    human_domains: list[str] = field(default_factory=list)
+    #: Multiplayer (docs/multiplayer.md): the harness plays ``country`` while the people in
+    #: ``mp_human_tags`` play theirs. An action aimed at one of those countries is refused.
+    multiplayer: bool = False
+    mp_human_tags: list[str] = field(default_factory=list)
     # The player's tag. Unset, the mock plays Sweden and the log reader follows
     # whichever human country the game reports; set, the reader keeps to it.
     country: str | None = None
@@ -537,11 +554,18 @@ class HarnessConfig:
         """The control map this configuration means: ``control`` when it is set, else the old
         ``operational_control`` as the preset it stands for. Raises ``control.ControlError``
         for a map that cannot be honoured."""
-        from .control import preset, resolve
+        from .control import ControlError, parse_spec, preset, resolve
 
-        if self.control:
+        control = self.control
+        if self.human_domains:
+            spec = parse_spec(control) if control else {}
+            if "preset" in spec:
+                raise ControlError("human_domains cannot be combined with a control preset; "
+                                   "write the map as domain=controller pairs")
+            control = {**spec, **{d.strip(): "human" for d in self.human_domains}}
+        if control:
             cmap = resolve(
-                self.control, steer=None if self.steer == "auto" else self.steer,
+                control, steer=None if self.steer == "auto" else self.steer,
                 army_controller=self.army_controller, planner_enabled=self.planner_enabled,
                 allow_contested=self.allow_contested)
             if cmap.human_ai and not self.campaign:

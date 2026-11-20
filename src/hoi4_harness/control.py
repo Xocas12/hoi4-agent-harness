@@ -10,6 +10,9 @@ Control used to be a ladder of levels (``operational_control`` llm / ai / game_a
              no tools for it and is not woken for it, the brief reports what the script did
     game     HOI4's own AI (see "The hard constraint" below)
     off      nobody: the domain is left alone and its actions are not offered
+    human    a person playing alongside the model (co-op, docs/co-op.md): like ``off`` for the
+             model, but the brief and prompt say a person holds it, and a call into it is
+             refused even if something else asks for it
 
 The steering layer (``set_ai_directive``, ``set_ai_posture``, ``clear_ai_directives``, and
 ``delegate_army_to_ai``) is its own switch, ``steer``: ``llm`` or ``off``, and it exists only
@@ -49,7 +52,7 @@ from dataclasses import dataclass, field
 
 DOMAINS = ("focus", "research", "construction", "production", "politics", "diplomacy",
            "army", "navy", "air")
-CONTROLLERS = ("llm", "script", "game", "off")
+CONTROLLERS = ("llm", "script", "game", "off", "human")
 STEER_MODES = ("llm", "off")
 
 #: The catalog actions of each domain (``actions/catalog.py``). ``production`` is everything
@@ -170,6 +173,24 @@ class ControlMap:
             out.discard(CLOCK_ACTION)       # the clock is the harness's under human_ai
         return out
 
+    def human_domains(self) -> list[str]:
+        """The domains a person holds (co-op): the model never acts in them."""
+        return self.owned_by("human")
+
+    def domain_of(self, action: str) -> str | None:
+        for domain, names in DOMAIN_ACTIONS.items():
+            if action in names:
+                return domain
+        return None
+
+    def human_refusal(self, action: str) -> str | None:
+        """Why ``action`` may not be done, when it belongs to a domain a person holds."""
+        domain = self.domain_of(action)
+        if domain is not None and self.domains[domain] == "human":
+            return (f"{action} is in {domain}, which the player holds in this co-op game: the "
+                    "harness does not act there")
+        return None
+
     def script_domains(self) -> list[str]:
         return self.owned_by("script")
 
@@ -262,6 +283,14 @@ def resolve(value, *, steer: str | None = None, army_controller: str = "scripted
     if human_ai:
         for domain in DOMAINS:
             if domains[domain] in ("game", "off"):
+                continue
+            if domains[domain] == "human":
+                message = (f"{domain}=human with the whole country under the game's AI "
+                           "(human_ai): the AI acts in the person's domain too")
+                if not allow_contested:
+                    raise ControlError(message + "; allow_contested=true downgrades this to a "
+                                       "warning")
+                warnings.append(message + " (allowed by allow_contested)")
                 continue
             kind, why = UNDER_HUMAN_AI[domain]
             who = domains[domain]

@@ -203,6 +203,13 @@ def describe_map(cmap, hands=None) -> str:
     off = cmap.owned_by("off")
     if off:
         parts.append(f"Nobody runs {_words(off)}: there is nothing to do there and no tool for it.")
+    human = cmap.owned_by("human")
+    if human:
+        parts.append(
+            f"A person is playing this country with you and holds: {_words(human)}. You have "
+            "no tools there and must not try to do it by another route, and nothing there "
+            "is yours to fix. Leave it alone even when you think you could do it better; "
+            "advice goes in a note, and the person can leave you guidance that you weigh.")
     if cmap.steer == "llm":
         parts.append(
             "You steer the game's AI with set_ai_directive, clear_ai_directives and set_ai_posture "

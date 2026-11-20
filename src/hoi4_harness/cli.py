@@ -104,6 +104,21 @@ def _config_from_args(args: argparse.Namespace) -> HarnessConfig:
         config.advisor = True
     if getattr(args, "handover", False):
         config.handover = True
+    if getattr(args, "handover_mode", None):
+        config.handover_mode = args.handover_mode
+        config.handover = True
+    if getattr(args, "handover_hotkey", None):
+        config.handover_hotkey = args.handover_hotkey
+    if getattr(args, "handover_idle_seconds", None) is not None:
+        config.handover_idle_seconds = args.handover_idle_seconds
+    if getattr(args, "human", None):
+        config.human_domains = [d.strip() for d in args.human.split(",") if d.strip()]
+    if getattr(args, "mp_human", None):
+        config.mp_human_tags = [t.strip().upper() for t in args.mp_human.split(",") if t.strip()]
+        config.multiplayer = True
+    if getattr(args, "mp_client", False):
+        config.multiplayer = True
+        config.clock_owner = "player"
     if getattr(args, "run_dir", None):
         config.run_dir = Path(args.run_dir)
     if getattr(args, "guidance", None):
@@ -453,6 +468,11 @@ def cmd_play(args: argparse.Namespace) -> int:
         print("play: --advisor never acts, so there is nothing to hand over; pick one",
               file=sys.stderr)
         return 2
+    from .coop import validate as validate_coop
+
+    if problems := validate_coop(config):
+        print("play: " + "; ".join(problems), file=sys.stderr)
+        return 2
     try:
         env = _env_from_config(config)
         env.reset()
@@ -485,6 +505,26 @@ def cmd_play(args: argparse.Namespace) -> int:
             print(f"handover: {restored} queued action(s) restored", file=sys.stderr)
         elif not resume:
             env.handover.clear()
+    from .coop import CoopGuidance, wants_guidance
+
+    if wants_guidance(config) and loop.supervisor is None:
+        loop.supervisor = CoopGuidance(run_dir, loop)
+    listener = None
+    if env.handover is not None:
+        from .coop import build_hotkey_listener, wire_handover
+
+        if wire_handover(env, config) is not None and config.handover_mode == "approve" \
+                and env.confirm_hook is None:
+            # Approve mode IS the confirmation: ask in the terminal even without --confirm.
+            env.confirm_hook = TerminalConfirmer(loop.transcript)
+        try:
+            listener = build_hotkey_listener(config)
+            if listener is not None:
+                listener.start(env.handover.grant)
+                echo(f"handover: hotkey {config.handover_hotkey} grants a window")
+        except RuntimeError as exc:
+            print(f"play: {exc}", file=sys.stderr)
+            return 2
     if getattr(args, "confirm", False):
         # The hook is the gate's only UI; without this flag a live gated action
         # runs unanswered, which is what keeps unattended runs working.
@@ -496,8 +536,12 @@ def cmd_play(args: argparse.Namespace) -> int:
     # Only a headless run types into the game; keep the PC awake for it (no-op when not live).
     awake = (keep_awake_for(config, lambda line: print(line, file=sys.stderr))
              if config.adapter == "headless" else nullcontext())
-    with awake:
-        report = loop.run(config.turns)
+    try:
+        with awake:
+            report = loop.run(config.turns)
+    finally:
+        if listener is not None:
+            listener.stop()
     loop.memory.save(run_dir / "memory.json")
     print(json.dumps(report.to_dict(), indent=2, default=str))
     return 0
@@ -1290,6 +1334,24 @@ def build_parser() -> argparse.ArgumentParser:
                       help="recommend, never act: every tool call is shown to the player instead")
     play.add_argument("--handover", action="store_true",
                       help="co-op: queue every action until the player runs `hoi4-harness handover`")
+    play.add_argument("--handover-mode", dest="handover_mode",
+                      choices=["hotkey", "idle", "approve"],
+                      help="what opens a handover window (implies --handover): hotkey (you grant "
+                           "it), idle (game paused and you are quiet), approve (you say yes to "
+                           "each action)")
+    play.add_argument("--handover-hotkey", dest="handover_hotkey", metavar="KEYS",
+                      help="a global hotkey that grants a window, e.g. ctrl+alt+h (Windows; "
+                           "off by default)")
+    play.add_argument("--handover-idle-seconds", dest="handover_idle_seconds", type=float,
+                      help="idle mode: seconds without keyboard or mouse before it may act")
+    play.add_argument("--human", metavar="DOMAINS",
+                      help="co-op: the domains you keep (focus,research,construction,production,"
+                           "politics,diplomacy,army,navy,air); the model never acts in them")
+    play.add_argument("--mp-human", dest="mp_human", metavar="TAGS",
+                      help="multiplayer: the countries people play (GER,SOV); --country is the "
+                           "one the harness plays. Actions aimed at them are refused")
+    play.add_argument("--mp-client", dest="mp_client", action="store_true",
+                      help="multiplayer client: player clock, the model never pauses the game")
     play.add_argument("--days", type=int, help="in-game days per turn")
     play.add_argument(
         "--resume",
