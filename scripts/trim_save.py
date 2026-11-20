@@ -8,7 +8,8 @@ exactly those, in the layout the game wrote them in, and scrubs what identifies
 a person or a game: the account name becomes "player", and seeds, unique ids and
 session numbers are dropped. Kept:
 
-* the header (player, date, version, mods) and ``start_date``;
+* the header (player, date, version, mods), ``gameplaysettings`` (it holds
+  ``historical=``, the Historical AI Focuses rule) and ``start_date``;
 * the ``states`` the player owns, plus two foreign ones;
 * only the ``equipments`` the player's production lines refer to;
 * the player's ``division_templates``;
@@ -88,6 +89,8 @@ def trim(text: str) -> str:
     head = text[: text.index("save_version=")]
     head = re.sub(r'user="[^"]*"', 'user="player"', head)
     out = [head, "save_version=33\nmods={\n\t\"LLM Bridge\"\n}\n",
+           # "Historical AI Focuses" lives in this header block, before start_date.
+           re.search(r"^gameplaysettings=\{.*?^\}\n", text, re.M | re.S).group(0),
            re.search(r"^start_date=.*\n", text, re.M).group(0)]
 
     country = re.search(rf"^\t{player}=\{{", text[text.index("\ncountries={"):], re.M)

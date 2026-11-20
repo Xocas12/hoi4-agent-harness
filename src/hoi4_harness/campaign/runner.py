@@ -29,6 +29,7 @@ from pathlib import Path
 
 from ..adapters.base import GameLost
 from ..adapters.clock import days_between
+from ..adapters.savegame import read_historical_ai
 from ..agent.llm.base import LLMClient
 from ..agent.loop import AgentLoop, RunReport, Supervisor
 from ..agent.memory import Memory
@@ -95,6 +96,23 @@ def _save_dir(config: HarnessConfig) -> Path | None:
     return find_save_dir()
 
 
+RULE_TRIES = 3
+
+
+def historical_rule_lines(value: bool | None, wanted: str = "any") -> list[str]:
+    """The campaign.log lines for the Historical AI Focuses rule: what the save says, and
+    a warning when that is not what the profile's ``campaign_historical_ai`` asks for."""
+    shown = "unknown (the save does not say)" if value is None else "on" if value else "off"
+    lines = [f"historical AI focuses: {shown}"]
+    wanted = (wanted or "any").lower()
+    if (value is False and wanted == "on") or (value is True and wanted == "off"):
+        lines.append(
+            f"WARNING: historical AI focuses is {shown} but this profile says "
+            f"campaign_historical_ai={wanted}. The AI picks the country's focuses, so this rule "
+            "decides the political path and runs are not comparable across it; the run goes on")
+    return lines
+
+
 def _months_between(earlier: str, later: str) -> int:
     try:
         a, b = date.fromisoformat(earlier), date.fromisoformat(later)
@@ -111,6 +129,7 @@ class CampaignSupervisor(Supervisor):
         self.config, self.env, self.tracker, self.log = config, env, tracker, log
         self.run_dir, self.watchdog = run_dir, watchdog
         self.loop: AgentLoop | None = None
+        self._rule_misses = 0
         self.last_save: str | None = None
         self.saves_taken = 0
         self.saves = SaveTracker(run_dir, _save_dir(config), config.campaign_keep_saves,
@@ -142,6 +161,7 @@ class CampaignSupervisor(Supervisor):
         self._recovery_save(state)
         if self.saves is not None:
             self.saves.prune()
+            self.note_rule()
         return None
 
     def _player_capitulated(self, state: GameState) -> str | None:
@@ -219,6 +239,23 @@ class CampaignSupervisor(Supervisor):
             return
         self.last_save, self.saves_taken = state.date, self.saves_taken + 1
         self.log.line(f"recovery save asked for at {state.date} (#{self.saves_taken})")
+
+    def note_rule(self) -> None:
+        """Once the first recovery save is on disk, read the Historical AI Focuses rule
+        from its header, log it, and keep it in the run state. A warning, never a stop."""
+        if self.saves is None or "historical_ai" in load_state(self.run_dir):
+            return
+        saves = self.saves.data["saves"]
+        if not saves or self.saves.save_dir is None:
+            return
+        value = read_historical_ai(self.saves.save_dir / saves[0]["name"])
+        if value is None:
+            self._rule_misses += 1
+            if self._rule_misses < RULE_TRIES:
+                return                      # the file may still be growing: look again next turn
+        save_state(self.run_dir, historical_ai=value)
+        for line in historical_rule_lines(value, self.config.campaign_historical_ai):
+            self.log.line(line)
 
     def _write_state(self, state: GameState) -> None:
         save_state(self.run_dir, last_recovery_save=self.last_save,
@@ -409,6 +446,7 @@ def _run(config: HarnessConfig, planner: LLMClient | None, resume: bool, env: HO
         if supervisor.saves is not None:
             try:
                 supervisor.saves.prune()     # the last save is on disk by now: claim it, trim
+                supervisor.note_rule()
             except OSError:
                 pass
     try:

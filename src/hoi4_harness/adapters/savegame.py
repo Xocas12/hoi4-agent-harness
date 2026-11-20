@@ -250,6 +250,7 @@ def read_save(path: Path) -> dict:
     if not isinstance(player, str):
         return raw
     raw["country"] = country_block(text, player)
+    raw["historical"] = historical_ai(text)
     states = top_block(text, "states") or {}
     raw["owned_states"] = {
         sid: state for sid, state in states.items()
@@ -263,6 +264,35 @@ def read_save(path: Path) -> dict:
     raw["equipment_names"] = _equipment_names_fast(text) or _equipment_names(
         top_block(text, "equipments") or {})
     return raw
+
+
+#: The new-game screen's "Historical AI Focuses" box, as a save writes it: ``historical=0``
+#: or ``=1`` one tab deep in the top-level ``gameplaysettings`` block of the header. (A
+#: ``historical={`` block further down, in ``character_manager``, is something else.)
+GAMEPLAY_SETTINGS = re.compile(r"^gameplaysettings[ \t]*=[ \t]*\{(.*?)^\}", re.M | re.S)
+HISTORICAL = re.compile(r"^[ \t]*historical[ \t]*=[ \t]*(0|1|yes|no)\b", re.M)
+
+
+def historical_ai(text: str) -> bool | None:
+    """The Historical AI Focuses rule from a save's text: True (on), False (off), or
+    None when the save does not say (an older layout, or a trimmed fixture)."""
+    block = GAMEPLAY_SETTINGS.search(text)
+    found = HISTORICAL.search(block.group(1)) if block else None
+    return None if found is None else found.group(1) in ("1", "yes")
+
+
+def read_historical_ai(path: Path, head_bytes: int = 262144) -> bool | None:
+    """:func:`historical_ai` for a save file, reading only its first ``head_bytes``: the
+    setting sits in the header (line ~95 of 157k), so a 66 MB save is not read whole.
+    A binary save, or one that cannot be opened, reads as None."""
+    try:
+        with Path(path).open("rb") as handle:
+            data = handle.read(head_bytes)
+    except OSError:
+        return None
+    if data.startswith(b"HOI4bin") or bytes(1) in data[:8]:
+        return None
+    return historical_ai(data.decode("utf-8", errors="replace"))
 
 
 def _head(text: str) -> dict:

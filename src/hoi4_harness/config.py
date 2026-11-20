@@ -319,6 +319,11 @@ class HarnessConfig:
     campaign_human_ai: bool = True
     #: Stop unless the state line's ``ai=`` reads 1 after the toggle.
     campaign_verify_ai: bool = True
+    #: The new-game screen's "Historical AI Focuses" rule, as this profile wants it:
+    #: ``on``, ``off`` or ``any``. The run always logs what its saves say; ``on`` warns
+    #: when a save reads ``historical=0`` (and ``off`` when it reads 1). ``any`` only logs.
+    #: It never stops the run: whether to run with the rule on is the person's call.
+    campaign_historical_ai: str = "any"
 
     # --- rival mode (rival/, docs/rival.md) -----------------------------------------
     # One human, one single-player game: the harness steers an AI country (``rival``,

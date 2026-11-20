@@ -241,6 +241,15 @@ def _where_to_resume(data: RunData) -> list[str]:
     return out
 
 
+def _rule_label(data: RunData) -> str:
+    """The Historical AI Focuses rule the run's first recovery save read."""
+    state = load_state(data.run_dir)
+    if "historical_ai" not in state:
+        return "not recorded (no recovery save was read)"
+    value = state["historical_ai"]
+    return "unknown (the save does not say)" if value is None else "on" if value else "off"
+
+
 def _summary(data: RunData) -> list[str]:
     rows = data.progress
     first, last = _first_with(rows, "owned_states"), _last_with(rows, "owned_states")
@@ -260,6 +269,7 @@ def _summary(data: RunData) -> list[str]:
                         f" ({_share(first)} to {_share(last)} of the world)"],
         ["Independent countries", f"{_num(first and first.get('countries_independent'))} to "
                                   f"{_num(last and last.get('countries_independent'))}"],
+        ["Historical AI focuses", _rule_label(data)],
         ["Wars declared", str(len(declared))],
         ["Capitulations", str(len(caps))],
         ["Model wakes (calls)", _num(usage.get("calls"))],

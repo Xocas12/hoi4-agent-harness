@@ -362,6 +362,8 @@ class FakeGame:
         #: A test's way to make the next saves fail like a misconfigured game:
         #: ``binary`` writes what ``save_as_binary=yes`` would, ``none`` writes nothing.
         self.save_mode = "text"
+        #: The "Historical AI Focuses" box on the new-game screen (the save's ``historical=``).
+        self.historical = 0
         self.saves_written: list[Path] = []
         self._wall = 0.0
         self._pending_saves: list[tuple[float, str]] = []

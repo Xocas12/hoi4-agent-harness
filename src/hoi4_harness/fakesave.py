@@ -55,7 +55,10 @@ def render_save(game, hour: int) -> str:
         f'date="{date.year}.{date.month}.{date.day}.{hour}"\n',
         'difficulty="normal"\nversion="Fake HOI4 (hoi4-harness fakegame)"\ntutorial=no\n',
         f'player_countries={{\n\t{tag}={{\n\t\tuser="player"\n\t\tcountry_leader=yes\n\t\tid=1\n\t}}\n}}\n',
-        'save_version=33\nmods={\n\t"LLM Bridge"\n}\nstart_date="1936.1.1.12"\n',
+        'save_version=33\nmods={\n\t"LLM Bridge"\n}\n',
+        'gameplaysettings={\n\tdifficulty="normal"\n\tironman=0\n'
+        f'\thistorical={int(getattr(game, "historical", 0))}\n}}\n',
+        'start_date="1936.1.1.12"\n',
     ]
 
     # --- states -------------------------------------------------------------
