@@ -13,6 +13,7 @@ DEFAULT_MODELS = {
     "openai": "gpt-5",
     "google": "gemini-2.5-pro",
     "scripted": "scripted",
+    "mailbox": "mailbox",
 }
 
 def mod_dirs_from_env(raw: str | None) -> list[Path]:
