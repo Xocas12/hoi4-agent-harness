@@ -241,3 +241,18 @@ def test_the_ai_already_running_the_country_refuses_a_map_that_gives_it_domains_
     env.adapter.fake_game.emit_state()
     with pytest.raises(CampaignStartError, match="ai=1.*focus"):
         run_campaign(config, planner=Recorder(), env=env)
+
+
+# --- Expert AI's strong weights follow the map: steer on and human_ai on --------------------------
+
+
+def test_the_strong_weights_go_out_iff_the_map_steers_a_country_the_ai_runs(tmp_path):
+    from test_expert_ai_base import EAI_ENTRY, start
+
+    fake, log, _ = start(tmp_path / "a", EAI_ENTRY, control={"default": "game", "politics": "llm"})
+    assert "llmb_strong_directives" in fake.global_flags and "strong directive weights on" in log
+    fake, log, _ = start(tmp_path / "b", EAI_ENTRY, control={"army": "game", "default": "llm"})
+    assert "llmb_strong_directives" not in fake.global_flags      # armies only: no human_ai
+    fake, log, _ = start(tmp_path / "c", EAI_ENTRY,
+                         control={"default": "game", "politics": "llm"}, steer="off")
+    assert "llmb_strong_directives" not in fake.global_flags      # nobody steers
