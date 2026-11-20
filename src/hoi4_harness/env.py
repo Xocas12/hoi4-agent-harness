@@ -75,6 +75,20 @@ class HOI4Env:
         return self.config.allowed_actions(supported)
 
     @property
+    def script_actions(self) -> set[str]:
+        """What the script controllers (auto/) may do: everything the adapter offers that the
+        operator has not blocked. Unlike ``allowed_actions`` it is not narrowed by the control
+        map, because a script's domain is one the model has no tools for."""
+        return self.config.script_offered(set(self.adapter.supported_actions))
+
+    def _acceptable(self) -> set[str]:
+        """What a queued call is re-checked against when it finally runs (handover mode)."""
+        allowed = self.allowed_actions
+        if self.config.control_map().script_domains():
+            allowed = allowed | self.script_actions
+        return allowed
+
+    @property
     def queries_enabled(self) -> bool:
         """The read-only decision tools exist when the run asked for mod context
         and has the playset's files to answer from."""
@@ -170,7 +184,7 @@ class HOI4Env:
 
     # --- acting --------------------------------------------------------------
 
-    def act(self, call: ActionCall, date: str = "") -> ActionResult:
+    def act(self, call: ActionCall, date: str = "", *, auto: bool = False) -> ActionResult:
         """Validate, gate, then apply one action.
 
         ``date`` is the game date the caller is acting against. It is only used
@@ -192,7 +206,7 @@ class HOI4Env:
                 error_kind="not_executed",
             )
 
-        problem = registry.check(call, self.allowed_actions)
+        problem = registry.check(call, self.script_actions if auto else self.allowed_actions)
         if problem is None and self.index is not None:
             # An invented id never reaches the game, where it would do nothing
             # silently; the model gets the nearest real ones instead.
@@ -255,7 +269,7 @@ class HOI4Env:
             return None
 
         def apply(call: ActionCall) -> ActionResult:
-            problem = registry.check(call, self.allowed_actions)
+            problem = registry.check(call, self._acceptable())
             if problem is None and self.index is not None:
                 problem = self.index.check(call, self.adapter.read_state().country)
             return problem if problem is not None else self._apply(call)
@@ -265,7 +279,7 @@ class HOI4Env:
             out: dict[int, ActionResult] = {}
             valid: list[ActionCall] = []
             for call in calls:
-                problem = registry.check(call, self.allowed_actions)
+                problem = registry.check(call, self._acceptable())
                 if problem is None and self.index is not None:
                     problem = self.index.check(call, self.adapter.read_state().country)
                 if problem is not None:
@@ -323,10 +337,11 @@ class HOI4Env:
             error_kind="budget",
         )
 
-    def act_many(self, calls: list[ActionCall], date: str = "") -> list[ActionResult]:
+    def act_many(self, calls: list[ActionCall], date: str = "", *,
+                 auto: bool = False) -> list[ActionResult]:
         results: list[ActionResult] = []
         for call in calls[: self.config.max_actions_per_turn]:
-            results.append(self.act(call, date))
+            results.append(self.act(call, date, auto=auto))
         if len(calls) > self.config.max_actions_per_turn:
             results.append(
                 ActionResult(

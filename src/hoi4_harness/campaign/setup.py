@@ -35,6 +35,14 @@ def apply_defaults(config: HarnessConfig) -> HarnessConfig:
     """Make ``config`` a campaign's. Idempotent; operator settings that are not part of
     what a campaign requires (the model, the budget, the speed, the review intervals) are
     left as they are."""
+    config.campaign = True
+    cmap = config.control_map()
+    if cmap.explicit:
+        # A control map the operator wrote decides who plays: the game's AI owns the country
+        # (``human_ai`` is sent) iff some domain but the army is ``game``; otherwise it is the
+        # independent kind, where nothing is handed to the AI but possibly armies one by one.
+        config.campaign_control = "game_ai" if cmap.human_ai else "llm"
+        config.campaign_human_ai = cmap.human_ai
     if config.campaign_control not in CONTROLS:
         raise ValueError(f"campaign_control must be one of {', '.join(CONTROLS)}, "
                          f"not {config.campaign_control!r}")
@@ -48,7 +56,8 @@ def apply_defaults(config: HarnessConfig) -> HarnessConfig:
         # game's AI is not handed the country (no human_ai), so the things it would have done
         # (a focus to pick, a research slot to fill, a production line to keep full) come
         # back as reflexes and as wakes; Policy gates the wakes on the action being offered.
-        config.operational_control = "llm"
+        if not cmap.explicit:
+            config.operational_control = "llm"
         config.campaign_human_ai = False
         config.reflex_enabled = True
         config.wake_on_no_focus = True
@@ -62,7 +71,8 @@ def apply_defaults(config: HarnessConfig) -> HarnessConfig:
         if "set_game_speed" not in config.disabled_actions:
             config.disabled_actions = [*config.disabled_actions, "set_game_speed"]
     else:
-        config.operational_control = "game_ai"
+        if not cmap.explicit:
+            config.operational_control = "game_ai"
         config.reflex_enabled = False
         # The AI picks the focus and the research and runs the fronts: none of those is news
         # for the model, and each would wake it for nothing.
@@ -72,7 +82,7 @@ def apply_defaults(config: HarnessConfig) -> HarnessConfig:
         config.wake_on_losing_ground = False
     config.require_confirmation = False
     config.headless_save_days = 0
-    if config.guidance == "doctrine":
+    if config.guidance == "doctrine" and not cmap.explicit:
         config.guidance = (
             (GUIDANCE_LLM_HANDS if config.hands_mouse else GUIDANCE_LLM)
             if config.campaign_control == "llm" else "world-conquest")

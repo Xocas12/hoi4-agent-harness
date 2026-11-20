@@ -1,0 +1,25 @@
+{
+  "_note": "Starting priority lists, by role or doctrine. The ids are common vanilla technology ids but are NOT verified against a live playset: the game or the playset index refuses an unknown one and the script moves on to the next.",
+  "default": "balanced",
+  "lists": {
+    "balanced": [
+      "infantry_weapons", "tech_support", "construction1", "basic_machine_tools",
+      "infantry_weapons1", "tech_engineers", "interwar_artillery", "interwar_antiair",
+      "tech_recon", "construction2", "motorised_infantry", "improved_machine_tools",
+      "infantry_weapons2", "mass_assault", "gw_artillery", "artillery1"
+    ],
+    "industry": [
+      "basic_machine_tools", "construction1", "construction2", "improved_machine_tools",
+      "fuel_silos", "excavation1", "electronic_mechanical_engineering", "infantry_weapons",
+      "infantry_weapons1"
+    ],
+    "land_mass_assault": [
+      "infantry_weapons", "infantry_weapons1", "tech_support", "mass_assault", "tech_engineers",
+      "infantry_weapons2", "interwar_artillery", "interwar_antiair", "tech_recon"
+    ],
+    "land_superior_firepower": [
+      "infantry_weapons", "tech_support", "interwar_artillery", "superior_firepower",
+      "infantry_weapons1", "gw_artillery", "artillery1", "interwar_antiair", "tech_engineers"
+    ]
+  }
+}

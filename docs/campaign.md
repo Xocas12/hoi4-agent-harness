@@ -150,6 +150,30 @@ path itself was run live 2026-11-19); division orders; the camera fingerprint an
 age rule; delegation (the whole click path); the wartime wake rules; the guidance and prompt
 text; the mod-side `rslots`; any of it over a full overnight run.
 
+## Any control map (`control`)
+
+`campaign_control` is one of the presets of a per-domain control map
+([modular-control.md](modular-control.md)): `game_ai` is every domain on the game's AI with the model
+taking politics and steering, `llm` is every domain on the model. A campaign accepts any map
+(`"control": {...}` in the profile, or `--control focus=llm,research=script,...`):
+
+- `human_ai` is sent **iff** some domain other than `army` is `game`; the map decides
+  `campaign_human_ai` and `campaign_control` follows (`game_ai` with `human_ai`, the independent
+  kind without). `army: game` alone is per-army delegation and never sends it.
+- A map that gives the model or a script a domain the AI overwrites under `human_ai` (the focus,
+  research, construction, production, diplomacy, the army) is refused before anything starts; see
+  the contested rule there.
+- The safety check of the independent kind stays: a state line that already reads `ai=1` refuses
+  the start, naming the domains the map gives to the model or a script.
+- Domains set to `script` run every turn from `auto/` and the model is not woken for them; with no
+  `llm` domain and no steering the campaign runs with **no model and no budget**
+  (`hoi4-harness play --campaign --profile profiles/campaign-fake.json
+  --control default=script,diplomacy=off,navy=off,air=off,army=off`).
+- With a map, the system prompt paragraph is generated from it and the guidance pack is left as the
+  operator set it (`doctrine` is not swapped for a world-conquest one).
+
+Tested on the fake game only, like the independent mode.
+
 ## Telemetry under `human_ai`
 
 The mod used to emit only for `is_ai = no`, so `human_ai` would have silenced the log.
