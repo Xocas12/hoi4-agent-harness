@@ -136,3 +136,9 @@ def test_6_trim_decoys_never_duplicate_the_players_tag(player):
     text = trim_save.decoys(player)
     assert len(re.findall(rf"^\t{player}=\{{", text, re.M)) == 0
     assert f"\t\t{player}={{" in text      # the nested opinion decoy still names the player
+
+
+def test_6_the_brief_says_when_it_leaves_production_lines_out(state):
+    brief = render_full(state)
+    line = next(ln for ln in brief.splitlines() if ln.startswith("Production:"))
+    assert "+2 more line(s), 2 factories" in line and "8 MIL FACTORIES IDLE" in line
