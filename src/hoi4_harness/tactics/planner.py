@@ -62,10 +62,19 @@ def scaled_patience(n_regions: int, base: int = PATIENCE, ref: int = PATIENCE_RE
 
 class Planner:
     """``patience`` is how many hours a drawn attack axis is kept (an int; 0 re-decides at every
-    re-plan) or ``"scaled"``, which applies `scaled_patience` to the number of regions of the map."""
+    re-plan) or ``"scaled"``, which applies `scaled_patience` to the number of regions of the map.
+
+    Two options reproduce habits of the plan chooser (learned_plans.py), both off by default (#117):
+    ``reset_idle_commit`` forgets the committed axis when no axis is drawn (otherwise a finished
+    commitment fires the "axis completed" event at every step and the idle planner re-plans every
+    step instead of every ``cadence``); ``sort_axes`` hands the axes on in region-id order instead
+    of best-first, which is the order of the plans and so who gets the nearest divisions first.
+    The second has no reason except that id order is what the chooser did: on the France map it
+    swings the result from 0/30 to 20/30 depending on which fixed order is used (docs/tactics.md)."""
 
     def __init__(
-        self, observe: str = "aggregated", cadence: int = 24, patience: int | str = PATIENCE
+        self, observe: str = "aggregated", cadence: int = 24, patience: int | str = PATIENCE,
+        reset_idle_commit: bool = False, sort_axes: bool = False,
     ) -> None:
         if isinstance(patience, str) and patience != "scaled":
             raise ValueError(f"patience must be hours or 'scaled', not {patience!r}")
@@ -74,6 +83,8 @@ class Planner:
         self.observe = observe
         self.cadence = cadence
         self.patience = patience
+        self.reset_idle_commit = reset_idle_commit
+        self.sort_axes = sort_axes
         self._last_hour = -(10**9)
         self._last_control: dict[str, str] | None = None
         self._last_own = 0
@@ -150,6 +161,10 @@ class Planner:
         axis_specs: list[dict] = []
         if offense:
             axes = self._choose_axes(pic)
+            if self.reset_idle_commit and not axes:
+                self._commit = None
+            if self.sort_axes:
+                axes = sorted(axes)
             axis_specs = [self._axis_spec(pic, tgt, f"axis{i + 1}", extend=True)
                           for i, tgt in enumerate(axes)]
             specs.extend(axis_specs)
