@@ -1,9 +1,10 @@
 """What ``campaign = true`` implies for the rest of the configuration.
 
-A campaign is headless (an independent one may add the mouse, adapters/hands.py), runs the game's AI under ``operational_control = "game_ai"``
-and wakes the model on its own rules, so the wake rules the other modes use for things
-the AI now does (a focus to pick, a research slot to fill, a front that went quiet) are
-turned off here, in one place, and the reflex layer that would fight the AI is off.
+A campaign is headless (an independent one may add the mouse, adapters/hands.py), runs the
+game's AI under ``operational_control = "game_ai"`` and wakes the model on its own rules, so
+the wake rules the other modes use for things the AI now does (a focus to pick, a research
+slot to fill, a front that went quiet) are turned off here, in one place, and the reflex layer
+that would fight the AI is off.
 """
 
 from __future__ import annotations

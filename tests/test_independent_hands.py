@@ -14,9 +14,8 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 import pytest
-from campaign_helpers import LazyClient, build_env, campaign_config, say
-from orders_helpers import camera_record, load_layer, true_view, write_grid_game
 
+from campaign_helpers import LazyClient, build_env, campaign_config, say
 from hoi4_harness.adapters.base import GameLost
 from hoi4_harness.adapters.hands import ARMY_ACTIONS, HAND_ACTIONS
 from hoi4_harness.adapters.headless import excluded_actions
@@ -29,7 +28,8 @@ from hoi4_harness.campaign.runner import run_campaign
 from hoi4_harness.campaign.setup import GUIDANCE_LLM, GUIDANCE_LLM_HANDS
 from hoi4_harness.fakearmy import FakeArmy, true_camera_factory
 from hoi4_harness.fakegame import DEMO_FILES
-from hoi4_harness.types import ActionCall, GameState, ResearchSlot, StateForces, War
+from hoi4_harness.types import ActionCall, GameState, StateForces, War
+from orders_helpers import camera_record, load_layer, true_view, write_grid_game
 
 TECHTREE = Path(__file__).parent / "fixtures" / "techtree"
 #: Where the fake puts the controls (the test's own numbers: tests/test_ui_resolve.py computes the
@@ -449,8 +449,6 @@ def test_the_prompt_names_what_is_offered_and_the_old_text_stays_when_the_mouse_
 
 
 def test_a_run_that_could_wire_nothing_gets_the_old_text_and_the_old_guidance(tmp_path):
-    world = make_world(tmp_path, camera="missing", army_points=False)
-    world.config.campaign_hands  # populated at the build
     game = tmp_path / "bare"
     game.mkdir()
     config = campaign_config(game, campaign_control="llm")          # demo playset: no techs, no map

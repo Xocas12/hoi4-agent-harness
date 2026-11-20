@@ -35,7 +35,6 @@ from .base import AdapterInfo, GameAdapter
 from .channels import ChannelRouter, resolve_channels
 from .composite import CompositeAdapter
 from .console import CONSOLE_ACTIONS, ConsoleChannel, ConsoleConfig
-from .input_driver import ClockUnobservable, InputConfig, InputDriverAdapter
 from .hands import (
     DELEGATE_TOGGLE,
     HAND_ACTIONS,
@@ -44,9 +43,10 @@ from .hands import (
     delegate_steps,
     research_steps,
 )
+from .input_driver import ClockUnobservable, InputConfig, InputDriverAdapter
 from .keys import ScanCodeKeys
-from .unit_orders import OrdersComposite
 from .ui_scripts import DEFAULT_FILENAME, Step, load_scripts, parse_steps
+from .unit_orders import OrdersComposite
 from .window import FocusCheck
 
 #: Actions with no path that avoids the mouse. Removed from the tool list.
