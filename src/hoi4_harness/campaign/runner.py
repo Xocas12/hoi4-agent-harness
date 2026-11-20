@@ -319,6 +319,47 @@ class CampaignSupervisor(Supervisor):
 # --- the start ----------------------------------------------------------------
 
 
+def user_dir_for(config: HarnessConfig) -> Path | None:
+    """The game's user folder (the one holding ``dlc_load.json``) for ``base_ai = auto``.
+
+    The fake game has none unless its save folder sits in one, so a test never reads the real
+    playset of the machine it runs on."""
+    if config.save_dir:
+        parent = Path(config.save_dir).parent
+        return parent if (parent / "dlc_load.json").is_file() else None
+    if config.fake_game:
+        return None
+    found = _save_dir(config)
+    return found.parent if found is not None else None
+
+
+def _base_ai(config: HarnessConfig, log: CampaignLog, console, tag: str,
+             run_dir: Path | None) -> str:
+    """Resolve the AI underneath (docs/expert-ai.md), log it, and under Expert AI turn on the
+    strong directive weights, so its own country plans (500-5000) do not drown the model's
+    directives (150). The independent mode does not steer the game's AI, so it only logs."""
+    from ..baseai import resolve
+
+    base, why = resolve(config.base_ai, user_dir_for(config))
+    log.line(f"base AI: {base} ({why})")
+    if run_dir is not None:
+        save_state(run_dir, base_ai=base)
+    if base != "expert_ai":
+        return base
+    if config.campaign_control == "llm":
+        log.line(f"Expert AI runs only the countries where is_ai = yes: here the opponents, not "
+                 f"{tag.upper()}; the strong directive weights are not needed")
+        return base
+    if console is None:
+        log.line("WARNING: Expert AI is the base AI but this adapter has no console: the "
+                 "directives keep their normal weights, which its own plans drown out")
+        return base
+    console.send_lines([f"effect {tag.upper()} llm_bridge_strong_directives"])
+    log.line("strong directive weights on (llmb_strong_directives): the directives add "
+             "10000 per strategy on top of their normal weight")
+    return base
+
+
 def begin(env: HOI4Env, config: HarnessConfig, log: CampaignLog,
           sleep: Callable[[float], None] = time.sleep, run_dir: Path | None = None) -> GameState:
     """Put the game in the state a campaign needs, and return what the log then says.
@@ -349,6 +390,7 @@ def begin(env: HOI4Env, config: HarnessConfig, log: CampaignLog,
     tag = (state.country if state.country and state.country != "___" else config.country) or ""
     if not tag:
         raise CampaignStartError("the player's country tag is not known; pass --country")
+    _base_ai(config, log, console, tag, run_dir)
     if config.campaign_control == "llm":
         if state.ai_controlled is True:
             raise CampaignStartError(

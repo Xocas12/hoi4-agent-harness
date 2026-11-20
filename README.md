@@ -148,6 +148,10 @@ response to them has not been observed. See
 [docs/results/10-hybrid-experiment.md](docs/results/10-hybrid-experiment.md) and
 [docs/hybrid-control.md](docs/hybrid-control.md).
 
+The AI underneath can be Expert AI (a Workshop mod) instead of vanilla's; the campaign
+detects it and raises the directive weights so its own plans do not drown them out. See
+[docs/expert-ai.md](docs/expert-ai.md).
+
 ## The mod
 
 [`mod/llm_bridge/`](mod/llm_bridge/) is a small HOI4 mod that gives the harness a

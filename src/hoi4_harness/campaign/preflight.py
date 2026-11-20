@@ -383,6 +383,48 @@ def check_hands(config: HarnessConfig, now: Callable[[], datetime] = datetime.no
 # --- the whole thing -------------------------------------------------------------
 
 
+def check_base_ai(config: HarnessConfig, user_dir: Path | None) -> list[Check]:
+    """Which AI the game runs underneath (docs/expert-ai.md), and whether it fits this install."""
+    from .. import baseai
+
+    found = baseai.ai_mods(user_dir)
+    if found is None:
+        return [Check(INFO, "base AI", "dlc_load.json not read; base_ai = "
+                      f"{config.base_ai} (auto falls back to vanilla)")]
+    out: list[Check] = []
+    if len(found) > 1:
+        out.append(Check(WARN, "base AI", "more than one AI mod is enabled ("
+                         + ", ".join(m.name for m in found) + "): they overwrite each other's AI "
+                         "files, so which one plays is whichever loads last"))
+    eai = next((m for m in found if m.workshop_id == baseai.EXPERT_AI), None)
+    version = baseai.game_version(config.game_dir)
+    if eai is None:
+        if config.base_ai == "expert_ai":
+            out.append(Check(FAIL, "base AI", "base_ai = expert_ai but Expert AI (Workshop "
+                             "741805475) is not enabled in dlc_load.json"))
+        else:
+            others = ", ".join(m.name for m in found)
+            out.append(Check(PASS, "base AI", "vanilla HOI4 AI" + (f" plus {others}" if others
+                                                                   else "")))
+        return out
+    if config.base_ai == "vanilla":
+        out.append(Check(WARN, "base AI", "Expert AI is enabled but base_ai = vanilla: the "
+                         "directives keep their normal weights (150), which its own plans "
+                         "(500-5000) drown out; use auto or expert_ai"))
+    else:
+        out.append(Check(PASS, "base AI", f"{eai.name} (Workshop 741805475): the campaign turns on "
+                         "the strong directive weights"))
+    if version and eai.supported_version and not baseai.same_minor(eai.supported_version,
+                                                                   version):
+        out.append(Check(WARN, "base AI version", f"{eai.name} is made for "
+                         f"{eai.supported_version}, the game is {version}: check error.log for "
+                         "its files after a first start"))
+    out.append(Check(INFO, "base AI bonuses", "Expert AI's difficulty bonuses are off unless set "
+                     "in its in-game configuration menu; leave them off (a result bought with "
+                     "bonuses says nothing about the AI)"))
+    return out
+
+
 def resolve_user_dir(config: HarnessConfig, explicit: Path | None) -> Path | None:
     if explicit is not None:
         return explicit if explicit.is_dir() else None
@@ -403,5 +445,5 @@ def run_checks(config: HarnessConfig, *, user_dir: Path | None = None, max_usd: 
         *check_mod(root, repo_mod), *check_playset(root), *check_paths(config, save_dir),
         *check_disk(config, save_dir, disk_usage), *check_key(config, env),
         *check_budget(config, max_usd), *check_power(platform, query), *check_focus_policy(config),
-        *check_hands(config),
+        *check_hands(config), *check_base_ai(config, root),
     ]
