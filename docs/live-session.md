@@ -45,6 +45,45 @@ names ("Directive: hold the line", "Target: GER"). Raw keys like
 `llmb_posture_defensive` mean the localisation did not load — the BOM question
 in #59; say so in #1.
 
+### Doing steps 2 and 5's file changes with a script
+
+`scripts/live_setup.py` makes the file changes a live session needs and puts them back
+afterwards. Close HOI4 and the launcher first; it refuses while `hoi4.exe` is in the
+process list (a read-only look by image name) or when it cannot read the list.
+
+```bash
+python scripts/live_setup.py prepare --expert-ai            # dry run: prints what would change
+python scripts/live_setup.py prepare --expert-ai --apply    # drop --expert-ai for vanilla AI
+# ... play the session ...
+python scripts/live_setup.py restore                        # dry run
+python scripts/live_setup.py restore --apply
+```
+
+`prepare` (after backing up everything it will touch):
+
+- makes `mod/llm_bridge` and `mod/llm_bridge.mod` in the user folder identical to the repo's
+  `mod/llm_bridge` (changed and new files copied; files the repo no longer has removed from the
+  installed copy, which the backup keeps);
+- writes `dlc_load.json` with `llm_bridge` enabled **last**, and with `--expert-ai` Expert AI
+  (Workshop 741805475, [expert-ai.md](expert-ai.md)) just before it. Other enabled mods and keys keep
+  their order. `--expert-ai` needs `mod/ugc_741805475.mod` to exist, i.e. the Workshop item
+  subscribed and the launcher started once; it refuses otherwise;
+- sets `save_as_binary=no` in `settings.txt`, keeping the BOM, line endings and every other line.
+
+`restore` puts back exactly the `dlc_load.json` and `settings.txt` of the newest `prepare` backup
+(`--backup NAME` for another), verified against the hashes the backup recorded. The mod files stay
+(the mod does nothing unless the playset enables it). A file that did not exist before `prepare`
+is renamed `<name>.removed-by-restore-<stamp>`, not deleted.
+
+Both are a **dry run unless `--apply`**, and a dry run writes nothing. Every apply creates a new
+folder `live_setup_backups/<YYYYmmdd-HHMMSS>/` in the user folder (the same one the harness
+finds: Documents, OneDrive-redirected Documents, or `--user-dir PATH`). Backups are never deleted
+or overwritten by the script, and `restore` first saves whatever it is about to replace into a
+`pre-restore` backup of its own. Afterwards run `hoi4-harness campaign-check`.
+
+The tests (`tests/test_live_setup.py`) run against temp folders only; the real user folder and
+the real process list are walled off in them.
+
 ## 3. Telemetry (#1)
 
 Unpause for a few days, take the *Emit telemetry now* decision once, pause.
