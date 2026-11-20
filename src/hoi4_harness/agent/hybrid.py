@@ -72,8 +72,20 @@ def actions_for_mode(allowed: set[str], mode: str) -> set[str]:
     return allowed - DIRECTIVE_ACTIONS
 
 
-def describe(mode: str) -> str:
-    """One paragraph for the prompt, so the model knows what it is not doing."""
+def describe(mode: str, campaign: bool = False) -> str:
+    """One paragraph for the prompt, so the model knows what it is not doing.
+
+    ``campaign`` is the independent campaign (``campaign_control = "llm"``): the model
+    plays the country itself, but a headless run has no way to move a unit, so "you
+    command directly" would promise what the tool list cannot do."""
+    if campaign and mode == "llm":
+        return (
+            "You are playing the country yourself: the game's own AI is NOT running it, so "
+            "the national focus, the research, construction and production are yours to "
+            "fill, and they stay empty until you do. You have only the tools in your tool "
+            "list. In this run none of them moves a unit, and nothing else does either, so "
+            "your armies stand where they are."
+        )
     if mode == "game_ai":
         return (
             "The game's own AI is running your country: it picks the national focus and "

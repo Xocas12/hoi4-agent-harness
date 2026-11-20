@@ -317,6 +317,11 @@ class HarnessConfig:
     #: model with the news and goes on; it ends only when the country holds no states
     #: (see ``CampaignSupervisor._no_states_left``).
     campaign_stop_on_capitulation: bool = False
+    #: Who plays the country: ``game_ai`` (the game's own AI runs it through ``human_ai``, the
+    #: model steers with directives; the default) or ``llm`` (independent: ``human_ai`` is
+    #: not sent, the model plays the country itself with the hands-on actions the headless
+    #: adapter offers; not yet verified against the live game, docs/campaign.md).
+    campaign_control: str = "game_ai"
     #: Toggle ``human_ai`` at the start (the one step that needs the game).
     campaign_human_ai: bool = True
     #: Stop unless the state line's ``ai=`` reads 1 after the toggle.

@@ -144,6 +144,8 @@ def _config_from_args(args: argparse.Namespace) -> HarnessConfig:
         config.campaign = True
     if getattr(args, "until", None):
         config.campaign_until = args.until
+    if getattr(args, "control", None):
+        config.campaign_control = args.control
     if getattr(args, "no_human_ai", False):
         config.campaign_human_ai = False
     if getattr(args, "no_verify_ai", False):
@@ -361,6 +363,45 @@ def cmd_campaign_report(args: argparse.Namespace) -> int:
         print(text)
     else:
         print(f"wrote {path}")
+    return 0
+
+
+def cmd_guide(args: argparse.Namespace) -> int:
+    """``guide``: leave advice for a running campaign, or list / clear what stands."""
+    from .campaign import inbox
+
+    run_dir = Path(args.run_dir)
+    if not run_dir.is_dir():
+        print(f"guide: {run_dir} is not a run directory", file=sys.stderr)
+        return 1
+    text = " ".join(args.text).strip()
+    did = False
+    if args.expire is not None:
+        gone = inbox.expire(run_dir, args.expire)
+        print(f"expired {len(gone)} item(s) older than {args.expire:g} day(s)")
+        did = True
+    if args.remove:
+        gone = inbox.clear(run_dir, args.remove)
+        print(f"removed {len(gone)} item(s): {', '.join(f'#{i}' for i in gone) or 'none matched'}")
+        did = True
+    if args.clear:
+        gone = inbox.clear(run_dir)
+        print(f"cleared {len(gone)} item(s)")
+        did = True
+    if text:
+        try:
+            item = inbox.add(run_dir, text)
+        except ValueError as exc:
+            print(f"guide: {exc}", file=sys.stderr)
+            return 1
+        print(f"added #{item.id}: the run reads it at its next turn and wakes the model for it")
+        did = True
+    if args.list or not did:
+        items = inbox.active(run_dir)
+        if not items:
+            print("no standing guidance")
+        for item in items:
+            print(f"#{item.id} [{item.ts}] {item.text}")
     return 0
 
 
@@ -1186,6 +1227,11 @@ def build_parser() -> argparse.ArgumentParser:
                            "the model steers it; see docs/campaign.md")
     play.add_argument("--until", metavar="YYYY-MM-DD",
                       help="stop when the game reaches this date (campaign default 1948-12-31)")
+    play.add_argument("--control", choices=["game_ai", "llm"],
+                      help="campaign: who plays the country. game_ai (default): the game's AI "
+                           "runs it, the model steers. llm: independent mode, the model plays "
+                           "it itself with the hands-on actions (not live-verified; "
+                           "docs/campaign.md)")
     play.add_argument("--no-human-ai", dest="no_human_ai", action="store_true",
                       help="campaign: do not hand the country to the game's AI")
     play.add_argument("--no-verify-ai", dest="no_verify_ai", action="store_true",
@@ -1235,6 +1281,21 @@ def build_parser() -> argparse.ArgumentParser:
                                 help="the Hearts of Iron IV user directory (default: found next to "
                                      "HOI4_SAVE_DIR, else searched for)")
     campaign_check.set_defaults(func=cmd_campaign_check)
+
+    guide = sub.add_parser(
+        "guide",
+        help="give a running campaign guidance (advice the model weighs; it is woken for it and "
+             "sees it in every brief until cleared), or --list / --clear / --expire it")
+    guide.add_argument("--run-dir", dest="run_dir", required=True, metavar="PATH",
+                       help="the campaign's run directory")
+    guide.add_argument("text", nargs="*", help="the guidance, e.g. \"Take Poland before France\"")
+    guide.add_argument("--list", action="store_true", help="show the standing guidance")
+    guide.add_argument("--clear", action="store_true", help="remove all standing guidance")
+    guide.add_argument("--remove", type=int, action="append", metavar="ID",
+                       help="remove one item by its number (repeatable)")
+    guide.add_argument("--expire", type=float, metavar="DAYS",
+                       help="remove items older than DAYS days")
+    guide.set_defaults(func=cmd_guide)
 
     report = sub.add_parser(
         "campaign-report", help="write the markdown report of a campaign run directory")
