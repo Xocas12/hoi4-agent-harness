@@ -95,6 +95,7 @@ class MockAdapter(GameAdapter):
             "start_research",
             "queue_construction",
             "set_production",
+            "change_production_equipment",
             "set_trade",
             "design_division_template",
             "deploy_divisions",
@@ -683,6 +684,18 @@ class MockAdapter(GameAdapter):
         else:
             self.state.production.append(ProductionLine(equipment=equipment, factories=factories))
         return self._ok(call, f"{equipment}: {factories} factories.", equipment=equipment)
+
+    def _do_change_production_equipment(self, call: ActionCall) -> ActionResult:
+        source = call.arguments["from_equipment"]
+        dest = call.arguments["to_equipment"]
+        line = next((x for x in self.state.production if x.equipment == source), None)
+        if line is None:
+            return self._fail(call, f"There is no {source} line to change.")
+        if source == dest or any(x.equipment == dest for x in self.state.production):
+            return self._fail(call, f"A {dest} line already exists; edit it with set_production.")
+        line.equipment = dest
+        return self._ok(call, f"{source} line now makes {dest} ({line.factories} factories).",
+                        equipment=dest)
 
     def _do_set_trade(self, call: ActionCall) -> ActionResult:
         """The crudest possible trade: each civilian factory committed buys a

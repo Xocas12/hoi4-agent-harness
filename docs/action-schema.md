@@ -1,6 +1,6 @@
 # The action catalog
 
-The catalog is the agent's entire vocabulary. It is small on purpose: 27 verbs,
+The catalog is the agent's entire vocabulary. It is small on purpose: 28 verbs,
 listed by `hoi4-harness actions` (add `--json` for schemas).
 
 | Action | Category | Notes |
@@ -8,7 +8,8 @@ listed by `hoi4-harness actions` (add `--json` for schemas).
 | `set_national_focus` | politics | One at a time |
 | `start_research` | research | Fails when no slot is free |
 | `queue_construction` | economy | Enum of buildings |
-| `set_production` | economy | Declarative: total factories on a line |
+| `set_production` | economy | Declarative: total factories on a line. Edits a line that exists (by click, section 14b of `docs/live-session.md`), opens one only when none exists |
+| `change_production_equipment` | economy | Change the equipment of an existing line without duplicating it; by click, NOT live-verified |
 | `design_division_template` | army | Nested battalion list |
 | `deploy_divisions` | army | Consumes equipment |
 | `set_army_order` | army | Confirmation-gated |

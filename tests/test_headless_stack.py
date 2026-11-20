@@ -318,7 +318,7 @@ def test_the_mouse_actions_are_not_offered_and_the_prompt_says_why(tmp_path):
     config, adapter, fake, env = stack(tmp_path)
     assert MOUSE_ACTIONS == {"start_research", "delegate_army_to_ai", "move_division",
                              "attack_province", "draw_front_line", "draw_offensive",
-                             "assign_battle_plan"}
+                             "assign_battle_plan", "change_production_equipment"}
     assert not env.allowed_actions & MOUSE_ACTIONS
     assert "set_national_focus" in env.allowed_actions
     prompt = system_for(config, env.index)
