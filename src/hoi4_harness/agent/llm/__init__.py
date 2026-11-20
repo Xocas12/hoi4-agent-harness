@@ -20,7 +20,7 @@ __all__ = [
     "build_llm",
 ]
 
-PROVIDERS = ("anthropic", "openai", "google", "scripted")
+PROVIDERS = ("anthropic", "openai", "google", "scripted", "mailbox")
 
 
 def build_llm(config: LLMConfig) -> LLMClient:
@@ -47,6 +47,13 @@ def build_llm(config: LLMConfig) -> LLMClient:
         if script:
             return ScriptedClient.from_file(script, model=config.model or "scripted")
         return ScriptedClient(model=config.model or "scripted")
+    if provider == "mailbox":
+        from .mailbox import MailboxClient
+
+        directory = config.extra.get("mailbox_dir") or "mailbox"
+        timeout = config.extra.get("mailbox_timeout_minutes")
+        return MailboxClient(directory, model=config.model or "mailbox",
+                             timeout_seconds=float(timeout) * 60 if timeout else None)
     if provider == "anthropic":
         from .anthropic_provider import AnthropicClient
 

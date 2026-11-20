@@ -549,10 +549,20 @@ def run_rivals(
     from ..adapters.headless import build_fake
     from ..agent.llm import build_llm
 
+    def _planner_for(planner_config, tag):
+        """A mailbox is one conversation: each country gets its own folder under the base."""
+        if planner_config.provider != "mailbox":
+            return planner_config
+        import copy
+        own = copy.deepcopy(planner_config)
+        base = Path(own.extra.get("mailbox_dir") or Path(config.run_dir) / "mailbox")
+        own.extra["mailbox_dir"] = str(base / tag)
+        return own
+
     tags = config.rivals
     got = {**{t: planner for t in tags}, **(planners or {})} if (planner or planners) else {}
     if not got and config.planner_enabled:
-        got = {t: build_llm(config.planner) for t in tags}      # all of them, before any key
+        got = {t: build_llm(_planner_for(config.planner, t)) for t in tags}   # all, before any key
     run_dir = Path(config.run_dir)
     run_dir.mkdir(parents=True, exist_ok=True)
     out = echo or (lambda line: None)

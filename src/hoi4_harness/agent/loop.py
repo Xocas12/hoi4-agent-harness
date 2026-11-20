@@ -206,6 +206,19 @@ class AgentLoop:
     # --- public --------------------------------------------------------------
 
     def run(self, turns: int | None = None, until: str | None = None) -> RunReport:
+        """Play the run (see ``_run``), then let the planner release what it holds: a
+        mailbox planner tells whoever answers it that no more requests are coming."""
+        try:
+            return self._run(turns, until)
+        finally:
+            close = getattr(self.planner, "close", None)
+            if callable(close):
+                try:
+                    close()
+                except Exception:  # noqa: BLE001 - closing must never mask the run's own end
+                    pass
+
+    def _run(self, turns: int | None = None, until: str | None = None) -> RunReport:
         """Play up to ``turns`` turns, or until the game reaches ``until``.
 
         With a date, ``turns`` is a backstop: a model that never advances the

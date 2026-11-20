@@ -182,6 +182,14 @@ def _config_from_args(args: argparse.Namespace) -> HarnessConfig:
             apply_rival(config)
         except RivalConfigError as exc:
             raise SystemExit(f"play: {exc}") from exc
+    if getattr(args, "mailbox", None) is not None:
+        config.planner.switch_provider("mailbox")
+        if args.mailbox:
+            config.planner.extra["mailbox_dir"] = args.mailbox
+    if config.planner.provider == "mailbox" and not config.planner.extra.get("mailbox_dir"):
+        config.planner.extra["mailbox_dir"] = str(Path(config.run_dir) / "mailbox")
+    if getattr(args, "mailbox_timeout", None):
+        config.planner.extra["mailbox_timeout_minutes"] = args.mailbox_timeout
     if config.fake_game or config.fake_game_files:
         # A fake game has no window to focus and nothing a keystroke can hurt, so
         # it is the one target where --live is the point, not a risk.
@@ -585,6 +593,47 @@ def cmd_measure(args: argparse.Namespace) -> int:
             print(f"measure: no such transcript {path}", file=sys.stderr)
             return 1
     print(measure(path).render())
+    return 0
+
+
+def cmd_mailbox(args: argparse.Namespace) -> int:
+    """The answering side of ``--mailbox``: wait for a request, show it, answer it."""
+    import json as _json
+
+    from .agent.llm import mailbox as mb
+
+    directory = Path(args.dir)
+    if args.verb == "wait":
+        state, req = mb.wait_for_request(directory, args.timeout)
+        if state == "closed":
+            print("CLOSED: the run has ended; no more requests")
+            return 3
+        if state == "timeout":
+            print(f"TIMEOUT: no request in {args.timeout:.0f} s; wait again")
+            return 2
+        print((directory / mb.REQUEST_MD).read_text(encoding="utf-8"))
+        return 0
+    if args.verb == "show":
+        req = mb.pending(directory)
+        print((directory / mb.REQUEST_MD).read_text(encoding="utf-8") if req else "no request waiting")
+        return 0 if req else 2
+    if args.verb == "system":
+        print((directory / mb.SYSTEM_MD).read_text(encoding="utf-8"))
+        return 0
+    raw = Path(args.file).read_text(encoding="utf-8") if args.file else args.json
+    if not raw:
+        print("answer: give --file PATH or --json TEXT", file=sys.stderr)
+        return 2
+    try:
+        answer = _json.loads(raw)
+    except ValueError as exc:
+        print(f"REFUSED: not JSON: {exc}")
+        return 1
+    seq, problems = mb.write_answer(directory, answer)
+    if problems:
+        print("REFUSED: " + "; ".join(problems))
+        return 1
+    print(f"answered request {seq}")
     return 0
 
 
@@ -1126,6 +1175,12 @@ def build_parser() -> argparse.ArgumentParser:
     play.add_argument("--script", metavar="PATH",
                       help="scripted provider: replay these responses (JSON), then fall back "
                            "to the keyword policy; offline, no model call")
+    play.add_argument("--mailbox", nargs="?", const="", metavar="DIR",
+                      help="no model call: write each request into DIR (default <run-dir>/mailbox) "
+                           "and wait for an answer from outside, e.g. a Claude Code agent running "
+                           "'hoi4-harness mailbox wait/answer'; see docs/mailbox.md")
+    play.add_argument("--mailbox-timeout", dest="mailbox_timeout", type=float, metavar="MIN",
+                      help="mailbox: give up (the run stops) after MIN minutes without an answer")
     play.add_argument("--campaign", dest="campaign_mode", action="store_true",
                       help="the unattended campaign: the game's AI runs the country (human_ai), "
                            "the model steers it; see docs/campaign.md")
@@ -1216,6 +1271,14 @@ def build_parser() -> argparse.ArgumentParser:
                         help="show the turns in the transcript, then exit")
     common(replay)
     replay.set_defaults(func=cmd_replay)
+
+    mailbox = sub.add_parser("mailbox", help="answer a --mailbox run's requests (the agent side)")
+    mailbox.add_argument("verb", choices=["wait", "show", "system", "answer"])
+    mailbox.add_argument("--dir", required=True, help="the run's mailbox folder")
+    mailbox.add_argument("--timeout", type=float, default=None, help="wait: seconds before giving up")
+    mailbox.add_argument("--file", help="answer: a JSON file {text, calls: [{name, arguments}]}")
+    mailbox.add_argument("--json", help="answer: the same JSON inline")
+    mailbox.set_defaults(func=cmd_mailbox)
 
     evaluate = sub.add_parser("eval", help="run a scenario and score it")
     common(evaluate)
