@@ -346,7 +346,10 @@ def _base_ai(config: HarnessConfig, log: CampaignLog, console, tag: str,
         save_state(run_dir, base_ai=base)
     if base != "expert_ai":
         return base
-    if config.campaign_control == "llm":
+    cmap = config.control_map()
+    if not (cmap.steer == "llm" and cmap.human_ai):
+        # The weights matter only when the model steers a game AI that runs the country
+        # (control map: steer on and human_ai on); otherwise there is nothing to out-shout.
         log.line(f"Expert AI runs only the countries where is_ai = yes: here the opponents, not "
                  f"{tag.upper()}; the strong directive weights are not needed")
         return base
@@ -392,13 +395,17 @@ def begin(env: HOI4Env, config: HarnessConfig, log: CampaignLog,
         raise CampaignStartError("the player's country tag is not known; pass --country")
     _base_ai(config, log, console, tag, run_dir)
     if config.campaign_control == "llm":
+        cmap = config.control_map()
+        not_game = {d for d, c in cmap.domains.items() if c in ("llm", "script")}
         if state.ai_controlled is True:
             raise CampaignStartError(
                 f"independent mode (campaign_control=llm) needs {tag} to be a human country, but "
                 "the state line reads ai=1: the game's AI is running it (an earlier game_ai run, "
                 "or a save taken under human_ai). human_ai is a toggle and the harness will not "
                 "send it here; toggle it off in the game's console yourself, or load a save from "
-                "before, then run again")
+                "before, then run again"
+                + (f" (the control map gives {', '.join(sorted(not_game))} to the model or a "
+                   "script, not to the game's AI)" if not_game else ""))
         log.line(f"independent mode: the model plays {tag} itself; human_ai is not sent")
         hands = getattr(adapter, "hands", None)
         if hands is not None:
@@ -462,7 +469,7 @@ def _check_ready(config: HarnessConfig, planner: LLMClient | None) -> None:
         raise CampaignStartError(
             "a campaign sends keys: pass --live (against the real game, with it loaded, paused "
             "and in front) or use --fake-game")
-    priced = config.planner_enabled and config.planner.provider != "scripted"
+    priced = config.planner_active and config.planner.provider != "scripted"
     if priced and config.budget.max_usd is None:
         raise CampaignStartError(
             "a campaign spends money unattended: give it a hard cap with --max-usd N")
@@ -534,7 +541,7 @@ def _run(config: HarnessConfig, planner: LLMClient | None, resume: bool, env: HO
     loop = AgentLoop(
         env=env,
         planner=planner if planner is not None
-        else (build_llm(config.planner) if config.planner_enabled else None),
+        else (build_llm(config.planner) if config.planner_active else None),
         config=config,
         memory=Memory.load(run_dir / "memory.json") if resume else Memory(),
         transcript_path=run_dir / "transcript.jsonl",

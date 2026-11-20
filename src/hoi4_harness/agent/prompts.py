@@ -114,6 +114,19 @@ next report before repeating it). The brief reports the conquest: states held an
 world, the wars, the independent countries left, and what the run has spent."""
 
 
+CAMPAIGN_MODULAR = """This is an unattended campaign. The game is running headless: the harness reads
+it from the mod's log and acts through the game's console (and, where the run has it, the mouse).
+Who runs what is in the paragraph above; this is how the run works.
+- note keeps a plan across wakes. You are woken on a scheduled review (weeks apart), when a war
+  starts or ends, and for the events of the domains you run; the game runs between wakes without
+  you. advance_time days sets how long the clock runs until your next scheduled review (7 to 90
+  days). Every wake spends from a fixed money budget, so sleep long when nothing needs you.
+- A change you make reaches the game when the harness types it in, and the result says whether
+  the game took it ("unverified" means the harness could not see it yet, not that it failed: check
+  the next report before repeating it). The brief reports the conquest: states held and the share
+  of the world, the wars, the independent countries left, and what the run has spent."""
+
+
 def campaign_llm(hands=None) -> str:
     """The independent campaign's note. ``hands`` is what the run offers of the mouse tools
     (``HarnessConfig.campaign_hands``: ``offered``, ``armies``); with none offered it is
@@ -236,6 +249,7 @@ def build_system(
     rival_when: str = "paused",
     campaign_control: str = "game_ai",
     campaign_hands: dict | None = None,
+    control_map=None,
 ) -> str:
     """Assemble the system prompt.
 
@@ -245,11 +259,14 @@ def build_system(
     if system_prompt_path:
         return Path(system_prompt_path).read_text(encoding="utf-8").strip()
 
-    from .hybrid import describe
+    from .hybrid import describe, describe_map
 
     independent = bool(campaign) and campaign_control == "llm" and not rival
     hands = (campaign_hands or {}).get("offered") if independent else None
-    parts = [MECHANICS, describe(operational_control, campaign=independent, hands=hands)]
+    modular = control_map is not None and control_map.explicit
+    parts = [MECHANICS,
+             describe_map(control_map, hands) if modular
+             else describe(operational_control, campaign=independent, hands=hands)]
     if advisor:
         # Sits with the mechanics, before any guidance: it corrects the fiction
         # that the harness executes what the model calls.
@@ -259,7 +276,8 @@ def build_system(
     elif campaign:
         # Instead of the headless note: it lists what the mouse-only actions cannot do, and
         # a campaign's tool list is narrower than that for a different reason.
-        parts.append(campaign_llm(campaign_hands) if independent else CAMPAIGN)
+        parts.append(CAMPAIGN_MODULAR if modular
+                     else campaign_llm(campaign_hands) if independent else CAMPAIGN)
     elif headless:
         from ..adapters.headless import unavailable_actions
 
@@ -329,6 +347,7 @@ def system_for(config, index=None) -> str:
         rival_when=getattr(config, "rival_act_when", "paused"),
         campaign_control=getattr(config, "campaign_control", "game_ai"),
         campaign_hands=_hands_for(config),
+        control_map=config.control_map() if hasattr(config, "control_map") else None,
     )
 
 

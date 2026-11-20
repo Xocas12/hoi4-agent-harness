@@ -211,6 +211,22 @@ class HarnessConfig:
     # Which layer owns operations. "llm" = the model moves every army;
     # "ai" = the native AI runs fronts and the model sets intent (hybrid).
     operational_control: str = "llm"
+    # --- modular control (control.py, docs/modular-control.md) -------------------------
+    #: Who runs each part of the country: a table ``{"focus": "llm", "research": "script",
+    #: "production": "game", ...}`` (controllers llm | script | game | off; ``default`` names the
+    #: controller of every domain not listed), a ``"focus=llm,research=script"`` string or a
+    #: preset name. Unset, the old settings (``operational_control``) are the control map.
+    control: dict | str | None = None
+    #: The steering layer (set_ai_directive, set_ai_posture, delegate_army_to_ai): ``llm``,
+    #: ``off`` or ``auto`` (llm when the game's AI owns something). Only read with ``control``.
+    steer: str = "auto"
+    #: The tactical controller the ``army: script`` domain runs (tactics/registry.py).
+    army_controller: str = "scripted"
+    #: Turn the refusal of a contested map (control.py) into a warning.
+    allow_contested: bool = False
+    #: Options of the script controllers (auto/): ``research_list``, ``focus_path``,
+    #: ``construction``, ``production``, ``politics_rules``, ``army_cooldown_days``.
+    auto_options: dict = field(default_factory=dict)
     # Who owns the game clock. "harness" pauses, decides, and runs the game
     # forward itself. "player" never touches it -- required when a person is
     # playing the same campaign, since being paused mid-battle by your own
@@ -514,6 +530,32 @@ class HarnessConfig:
         return bool(self.campaign and self.campaign_control == "llm"
                     and self.campaign_input == "mouse")
 
+    def control_map(self):
+        """The control map this configuration means: ``control`` when it is set, else the old
+        ``operational_control`` as the preset it stands for. Raises ``control.ControlError``
+        for a map that cannot be honoured."""
+        from .control import preset, resolve
+
+        if self.control:
+            cmap = resolve(
+                self.control, steer=None if self.steer == "auto" else self.steer,
+                army_controller=self.army_controller, planner_enabled=self.planner_enabled,
+                allow_contested=self.allow_contested)
+            if cmap.human_ai and not self.campaign:
+                from dataclasses import replace
+
+                cmap = replace(cmap, warnings=(*cmap.warnings,
+                    "a domain is set to game outside a campaign: only a campaign sends human_ai, "
+                    "so the game's AI must already be running the country"))
+            return cmap
+        return preset(self.operational_control, self.army_controller)
+
+    @property
+    def planner_active(self) -> bool:
+        """Whether a model is ever woken: the planner is on and the control map gives it
+        something to run (an llm domain, or steering). A map with none is a no-model run."""
+        return bool(self.planner_enabled and self.control_map().uses_model)
+
     @property
     def paced(self) -> bool:
         """Whether the model is woken on the campaign's review schedule (a campaign, or
@@ -536,8 +578,13 @@ class HarnessConfig:
         """
         from .agent.hybrid import actions_for_mode
 
-        allowed = actions_for_mode(set(adapter_supports), self.operational_control)
-        if self.hands_mouse and "delegate_army_to_ai" in adapter_supports:
+        cmap = self.control_map()
+        if cmap.explicit:
+            allowed = cmap.actions_for_model(set(adapter_supports))
+        else:
+            allowed = actions_for_mode(set(adapter_supports), self.operational_control)
+        if (self.hands_mouse and cmap.controller("army") == "llm"
+                and "delegate_army_to_ai" in adapter_supports):
             # The one standing-order verb an independent campaign keeps: the directives and the
             # posture stay out (the game's AI is not running the country), but handing an army
             # to the AI is what lets the model hold a front it is not ordering (adapters/hands.py).
@@ -545,6 +592,17 @@ class HarnessConfig:
         if self.clock_owner != "harness":
             # The player owns the clock, so the model may not take it either --
             # structurally, not by asking it nicely in the prompt.
+            allowed -= {"set_game_speed"}
+        if self.enabled_actions is not None:
+            allowed &= set(self.enabled_actions)
+        return allowed - set(self.disabled_actions)
+
+    def script_offered(self, adapter_supports: set[str]) -> set[str]:
+        """What the script controllers may use: what the adapter offers, the operator's lists
+        and the clock rule, but NOT the control narrowing (a script's domain is, by
+        definition, one the model has no tools for)."""
+        allowed = set(adapter_supports)
+        if self.clock_owner != "harness":
             allowed -= {"set_game_speed"}
         if self.enabled_actions is not None:
             allowed &= set(self.enabled_actions)

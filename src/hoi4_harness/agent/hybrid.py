@@ -145,3 +145,69 @@ def describe(mode: str, campaign: bool = False, hands=None) -> str:
         "You command directly. No layer beneath you is making operational "
         "decisions, so front assignment and army orders are yours."
     )
+
+
+#: What each domain is, in the words of the prompt.
+_DOMAIN_WORDS = {
+    "focus": "the national focus",
+    "research": "research",
+    "construction": "construction",
+    "production": "production, trade and division templates",
+    "politics": "advisors and decisions",
+    "diplomacy": "diplomacy",
+    "army": "army orders",
+    "navy": "fleet missions",
+    "air": "air missions",
+}
+_SCRIPT_WORDS = {
+    "focus": "follows a focus path", "research": "fills idle slots from a priority list",
+    "construction": "keeps the queue busy by rule", "production": "keeps the lines full in ratio",
+    "politics": "runs a rule table", "army": "moves divisions with a tactical controller",
+}
+
+
+def _words(domains) -> str:
+    return ", ".join(_DOMAIN_WORDS[d] for d in domains)
+
+
+def describe_map(cmap, hands=None) -> str:
+    """The prompt paragraph for a control map the operator wrote (``control.py``): which parts
+    of the country the model owns, which a script runs, which the game's AI runs, and whether it
+    steers. The old settings keep ``describe``'s own text."""
+    owned = cmap.owned_by("llm")
+    parts = ["Control of this country is split by domain. Each part has exactly one controller, "
+             "and nothing else touches it."]
+    if owned:
+        parts.append(f"You run: {_words(owned)}. Your tool list is the whole of what you can do, "
+                     "and you are woken for these.")
+    else:
+        parts.append("You run no domain directly.")
+    scripted = cmap.owned_by("script")
+    if scripted:
+        what = "; ".join(f"{d} {_SCRIPT_WORDS[d]}" for d in scripted)
+        parts.append(
+            f"Deterministic scripts run: {_words(scripted)} ({what}). You have no tools for them "
+            "and are not woken for them; the brief says in one line each what the script did since "
+            "your last wake. Plan around what they do, do not try to redo it.")
+    game = cmap.owned_by("game")
+    if cmap.human_ai:
+        parts.append(
+            "The game's own AI has been handed the whole country (human_ai), so it runs: "
+            f"{_words(game)}, and it also acts in anything not listed as yours. Do not expect an "
+            "order of yours in a domain it runs to stay as you left it.")
+    elif game:
+        parts.append("The game's own AI runs the armies handed to it (they stand under its "
+                     "control, not yours).")
+    off = cmap.owned_by("off")
+    if off:
+        parts.append(f"Nobody runs {_words(off)}: there is nothing to do there and no tool for it.")
+    if cmap.steer == "llm":
+        parts.append(
+            "You steer the game's AI with set_ai_directive, clear_ai_directives and set_ai_posture "
+            "(globally or per theater)"
+            + (", and delegate_army_to_ai hands it an army or takes one back"
+               if cmap.delegated else "")
+            + ". Directives and postures are standing orders.")
+    else:
+        parts.append("You do not steer the game's AI: no directive or posture tools exist here.")
+    return " ".join(parts)

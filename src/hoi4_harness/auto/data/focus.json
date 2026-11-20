@@ -1,0 +1,4 @@
+{
+  "_note": "Focus paths by country tag. None ship: a real playset's focus ids are per country and per mod and are not verified here. Give auto_options.focus_path, or play with game_dir set and let the scored pick choose among the focuses the playset says are available.",
+  "paths": {}
+}

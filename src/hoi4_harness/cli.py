@@ -51,11 +51,29 @@ from .agent.memory import Memory
 from .calibration import DEFAULT_FILENAME, DEFAULT_TARGETS
 from .config import HarnessConfig
 from .confirm import TerminalConfirmer
+from .control import ControlError
 from .env import HOI4Env
 from .eval.runner import PlaysetMismatch
 from .guidance import available as guidance_packs
 from .keepawake import keep_awake_for
 from .replay import ReplayError, list_turns, replay_turn
+
+
+def _read_control_map(value: str):
+    """``--control-map``: a JSON or TOML file, inline JSON, or ``domain=controller,...``."""
+    path = Path(value)
+    if path.suffix.lower() in (".json", ".toml") and path.exists():
+        text = path.read_text(encoding="utf-8")
+        if path.suffix.lower() == ".toml":
+            import tomllib
+
+            data = tomllib.loads(text)
+        else:
+            data = json.loads(text)
+        return data.get("control", data) if isinstance(data, dict) else data
+    if value.lstrip().startswith("{"):
+        return json.loads(value)
+    return value
 
 
 def _config_from_args(args: argparse.Namespace) -> HarnessConfig:
@@ -144,14 +162,30 @@ def _config_from_args(args: argparse.Namespace) -> HarnessConfig:
         config.campaign = True
     if getattr(args, "until", None):
         config.campaign_until = args.until
-    if getattr(args, "control", None):
-        config.campaign_control = args.control
+    spec = getattr(args, "control", None)
+    if spec:
+        if "=" in spec:
+            config.control = spec            # a control map: --control focus=llm,research=script
+        elif spec in ("game_ai", "llm"):
+            config.campaign_control = spec
+        else:
+            raise SystemExit(f"play: --control wants game_ai, llm or domain=controller pairs "
+                             f"(focus=llm,research=script), not {spec!r}")
+    if getattr(args, "control_map", None):
+        config.control = _read_control_map(args.control_map)
+    if getattr(args, "steer", None):
+        config.steer = args.steer
+    if getattr(args, "army_controller", None):
+        config.army_controller = args.army_controller
+    if getattr(args, "allow_contested", False):
+        config.allow_contested = True
     if getattr(args, "campaign_input", None):
         config.campaign_input = args.campaign_input
     if getattr(args, "no_human_ai", False):
         config.campaign_human_ai = False
     if getattr(args, "no_verify_ai", False):
         config.campaign_verify_ai = False
+    config.control_map()        # a map that cannot be honoured stops here, with the reason
     if config.campaign:
         from .campaign.setup import apply_defaults
 
@@ -213,6 +247,7 @@ def cmd_doctor(args: argparse.Namespace) -> int:
     print(f"adapter          {config.adapter}")
     planner = f"{config.planner.provider}:{config.planner.model}"
     print(f"planner          {planner if config.planner_enabled else 'disabled (reflex only)'}")
+    print(f"control          {config.control_map().describe_short()}")
     print(f"dry run          {config.dry_run}")
     print(f"clock owner      {config.clock_owner}")
     print(f"guidance         {config.system_prompt_path or config.guidance}")
@@ -432,7 +467,7 @@ def cmd_play(args: argparse.Namespace) -> int:
 
     loop = AgentLoop(
         env=env,
-        planner=build_llm(config.planner) if config.planner_enabled else None,
+        planner=build_llm(config.planner) if config.planner_active else None,
         config=config,
         # A fresh run starts with no memory, as it starts with an empty
         # transcript; only --resume carries the old one forward.
@@ -1148,6 +1183,21 @@ def build_parser() -> argparse.ArgumentParser:
                        help="llm: the model moves units; ai: the game's AI does, and the model "
                             "sets directives and postures; game_ai: the AI runs the whole "
                             "country (campaign mode)")
+        p.add_argument("--control-map", dest="control_map", metavar="FILE|JSON|PAIRS",
+                       help="who runs each domain (focus, research, construction, production, "
+                            "politics, diplomacy, army, navy, air): llm, script, game or off. A "
+                            "JSON/TOML file, inline JSON or domain=controller pairs; the old "
+                            "--operational-control levels are presets of it "
+                            "(docs/modular-control.md)")
+        p.add_argument("--steer", choices=["llm", "off", "auto"],
+                       help="with a control map: whether the model steers the game's AI "
+                            "(directives, posture, delegation); auto: when the AI owns something")
+        p.add_argument("--army-controller", dest="army_controller", metavar="NAME",
+                       help="with army=script: the tactical controller (scripted, learned, "
+                            "vanilla_like, ...)")
+        p.add_argument("--allow-contested", dest="allow_contested", action="store_true",
+                       help="with a control map: warn instead of refusing where the game's AI "
+                            "(human_ai) would undo what the model or a script does")
         p.add_argument("--player-clock", dest="player_clock", action="store_true",
                        help="a person is playing: never pause, resume or set game speed")
         p.add_argument("--no-llm", dest="no_llm", action="store_true",
@@ -1229,11 +1279,13 @@ def build_parser() -> argparse.ArgumentParser:
                            "the model steers it; see docs/campaign.md")
     play.add_argument("--until", metavar="YYYY-MM-DD",
                       help="stop when the game reaches this date (campaign default 1948-12-31)")
-    play.add_argument("--control", choices=["game_ai", "llm"],
+    play.add_argument("--control", metavar="game_ai|llm|DOMAIN=CONTROLLER,...",
                       help="campaign: who plays the country. game_ai (default): the game's AI "
                            "runs it, the model steers. llm: independent mode, the model plays "
                            "it itself with the hands-on actions (not live-verified; "
-                           "docs/campaign.md)")
+                           "docs/campaign.md). Or a control map, domain=controller pairs "
+                           "(focus=llm,research=script,army=game; controllers llm, script, game, "
+                           "off; docs/modular-control.md)")
     play.add_argument("--campaign-input", dest="campaign_input", choices=["mouse", "none"],
                       help="campaign --control llm: mouse (default) adds research and army "
                            "tools the harness performs with the mouse, while the game window is "
@@ -1507,6 +1559,9 @@ def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     try:
         return args.func(args)
+    except ControlError as exc:
+        print(f"{args.command}: {exc}", file=sys.stderr)
+        return 2
     except PlaysetMismatch as exc:
         # A scenario run against the wrong playset is a usage error, not a crash.
         print(f"{args.command}: {exc}", file=sys.stderr)

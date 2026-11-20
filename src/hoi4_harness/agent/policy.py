@@ -100,7 +100,15 @@ class Policy:
         campaign: CampaignPacing | None = None,
         country: str = "",
         hands_on: frozenset[str] | None = None,
+        owned: frozenset[str] | None = None,
+        steer: bool = True,
     ):
+        #: Domains the model owns (control.py): a domain's wake rules fire only when it is one
+        #: of them. None is the old levels: every rule on its own flag, as it always was.
+        self.owned = owned
+        #: Whether the model steers the game's AI; with the army, one of the two is what lets
+        #: it act on a front, so the front rules need either.
+        self.steer = steer
         #: Independent campaign (``campaign_control = "llm"``): the actions the model has,
         #: and so which idle slots are worth a wake. None is the game-AI campaign.
         self.hands_on = hands_on
@@ -129,6 +137,12 @@ class Policy:
         self.reflex_delegate = reflex_delegate
         self.reflex_enabled = reflex_enabled
         self.planner_enabled = planner_enabled
+
+    def _owns(self, domain: str) -> bool:
+        return self.owned is None or domain in self.owned
+
+    def _acts_on_fronts(self) -> bool:
+        return self.owned is None or "army" in self.owned or self.steer
 
     # --- when to spend a model call -----------------------------------------
 
@@ -165,24 +179,26 @@ class Policy:
             if event.severity == "critical":
                 return WakeDecision(True, f"critical event: {event.text}", "critical")
 
-        if state.wars:
+        if state.wars and self._acts_on_fronts():
             urgent = self._wartime_alarm(state, previous)
             if urgent is not None:
                 return WakeDecision(True, urgent, "critical")
 
-        if self.wake_on_no_focus and not state.national_focus and state.known("national_focus"):
+        if (self.wake_on_no_focus and self._owns("focus") and not state.national_focus
+                and state.known("national_focus")):
             return WakeDecision(True, "no national focus is running", "opportunity")
 
         free_slots = sum(1 for slot in state.research if slot.technology is None)
-        if self.wake_on_free_research_slot and free_slots and state.known("research"):
+        if (self.wake_on_free_research_slot and self._owns("research") and free_slots
+                and state.known("research")):
             return WakeDecision(True, f"{free_slots} research slot(s) idle", "opportunity")
 
-        if self.wake_on_losing_ground:
+        if self.wake_on_losing_ground and self._acts_on_fronts():
             losing = _started_losing(state, previous)
             if losing:
                 return WakeDecision(True, f"losing ground on {losing}", "critical")
 
-        if state.wars and self.wake_on_front_quiet and previous is not None:
+        if state.wars and self.wake_on_front_quiet and self._acts_on_fronts() and previous is not None:
             quiet = _went_quiet(state, previous)
             if quiet:
                 return WakeDecision(True, f"front {quiet} went quiet", "opportunity")
@@ -231,14 +247,15 @@ class Policy:
         can = self.hands_on
         if not can:
             return None
-        if (self.wake_on_no_focus and "set_national_focus" in can
+        if (self.wake_on_no_focus and "set_national_focus" in can and self._owns("focus")
                 and not state.national_focus and state.known("national_focus")):
             return "no national focus is running"
         free = sum(1 for slot in state.research if slot.technology is None)
         if (self.wake_on_free_research_slot and "start_research" in can and free
-                and state.known("research")):
+                and self._owns("research") and state.known("research")):
             return f"{free} research slot(s) idle"
-        if ("set_production" in can and state.known("production") and not state.production
+        if ("set_production" in can and self._owns("production")
+                and state.known("production") and not state.production
                 and state.known("military_factories") and state.military_factories):
             return "no military production line is running"
         return None
@@ -353,28 +370,12 @@ class Policy:
         if self.reflex_delegate:
             actions += self._delegate(state)
 
-        if state.known("construction") and not state.construction and state.civilian_factories:
-            actions.append(
-                ActionCall(
-                    name="queue_construction",
-                    arguments={"building": "civilian_factory", "state": "capital", "count": 2},
-                    rationale="reflex: construction queue was empty",
-                )
-            )
+        # The two reflexes are the script controllers' reflex rules (auto/): one source.
+        from ..auto.construction import ConstructionScript
+        from ..auto.production import ProductionScript
 
-        if state.known("military_factories") and state.production:
-            assigned = sum(line.factories for line in state.production)
-            idle = state.military_factories - assigned
-            if idle > 0:
-                main = max(state.production, key=lambda line: line.factories)
-                actions.append(
-                    ActionCall(
-                        name="set_production",
-                        arguments={"equipment": main.equipment, "factories": main.factories + idle},
-                        rationale=f"reflex: {idle} military factories were idle",
-                    )
-                )
-
+        actions += ConstructionScript().reflex(state)
+        actions += ProductionScript().reflex(state)
         return actions
 
 

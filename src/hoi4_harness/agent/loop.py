@@ -27,6 +27,7 @@ from typing import Any
 from ..actions import catalog, registry
 from ..adapters.base import GameLost
 from ..adapters.clock import days_between
+from ..auto import build_layer
 from ..config import HarnessConfig
 from ..env import UNCAPPED_ACTIONS, HOI4Env
 from ..observation.builder import snapshot as deepcopy_state
@@ -116,7 +117,12 @@ class AgentLoop:
     ):
         self.env = env
         self.config = config or HarnessConfig()
-        if planner is None and self.config.planner_enabled:
+        #: Who runs what (control.py). Old settings are presets; a map the operator wrote also
+        #: switches the reflex layer for the script controllers (auto/) and gates the wake rules
+        #: on the domains the model owns.
+        self.control = self.config.control_map()
+        planner_active = self.config.planner_active
+        if planner is None and planner_active:
             raise ValueError(
                 "planner_enabled is on but no planner was given: pass a client, or set "
                 "planner_enabled=False for a reflex-only run"
@@ -128,8 +134,8 @@ class AgentLoop:
             days_per_turn=self.config.days_per_turn,
             wake_on_no_focus=self.config.wake_on_no_focus,
             wake_on_free_research_slot=self.config.wake_on_free_research_slot,
-            reflex_enabled=self.config.reflex_enabled,
-            planner_enabled=self.config.planner_enabled,
+            reflex_enabled=self.config.reflex_enabled and not self.control.explicit,
+            planner_enabled=planner_active,
             wake_on_encirclement=self.config.wake_on_encirclement,
             wake_on_supply_collapse=self.config.wake_on_supply_collapse,
             wake_on_capital_threat=self.config.wake_on_capital_threat,
@@ -138,6 +144,8 @@ class AgentLoop:
             wake_on_losing_ground=self.config.wake_on_losing_ground,
             reflex_delegate=self.config.reflex_delegate,
             country=self.config.country or "",
+            owned=frozenset(self.control.owned_by("llm")) if self.control.explicit else None,
+            steer=self.control.steer == "llm",
             hands_on=(frozenset(env.allowed_actions)
                       if self.config.campaign and self.config.campaign_control == "llm" else None),
             campaign=(CampaignPacing(
@@ -149,6 +157,10 @@ class AgentLoop:
                 if self.config.paced else None),
         )
         self.supervisor = supervisor
+        #: The script controllers of a control map, run every turn (None: there are none).
+        self.auto = build_layer(self.control, self.config, env) if self.control.explicit else None
+        if self.auto:
+            env.brief_hooks.append(self.auto.brief_lines)
         #: The days the model's last advance_time asked for (campaign: its next review).
         self._advance_request: int | None = None
         self.system = system_for(self.config, env.index)
@@ -316,11 +328,15 @@ class AgentLoop:
             self.transcript.write("budget_downgrade", reason=blocked, date=state.date)
             decision.wake = False
 
+        auto_actions = self._auto_turn(state)
         if decision.wake:
             actions, turn_tokens = self._planner_turn(decision.reason)
             self._days_since_planner = 0
+            if self.auto:
+                self.auto.mark_wake()
         else:
             actions, turn_tokens = self._reflex_turn(decision.reason)
+        actions = auto_actions + actions
 
         handover = self.env.run_handover()
         if handover is not None:
@@ -389,6 +405,20 @@ class AgentLoop:
         """
         elapsed = days_between(before, after)
         return elapsed if elapsed > 0 else self.config.days_per_turn
+
+    def _auto_turn(self, state: GameState) -> list[str]:
+        """Run the script controllers of the control map, every turn whether the model wakes
+        or not. Nothing runs in advisor mode: the human owns every action there."""
+        if not self.auto or self.advisor:
+            return []
+        ran = self.auto.run(self.env, state, self.config.objective, self.memory)
+        if not ran:
+            return []
+        self._tally([result for _, result in ran])
+        self.transcript.write(
+            "auto", date=state.date, actions=[c.to_dict() for c, _ in ran],
+            results=[r.to_dict() for _, r in ran])
+        return [f"{c.name}{'' if r.ok else ' (rejected)'} [auto]" for c, r in ran]
 
     def _reflex_turn(self, reason: str) -> tuple[list[str], int]:
         self.report.reflex_turns += 1

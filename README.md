@@ -152,6 +152,24 @@ The AI underneath can be Expert AI (a Workshop mod) instead of vanilla's; the ca
 detects it and raises the directive weights so its own plans do not drown them out. See
 [docs/expert-ai.md](docs/expert-ai.md).
 
+### Modular control
+
+The levels above are presets of a **control map**: each domain (focus, research,
+construction, production, politics, diplomacy, army, navy, air) is run by the model
+(`llm`), a deterministic script (`script`), the game's own AI (`game`) or nobody
+(`off`), picked independently, with "the model steers the game's AI" as its own
+switch:
+
+```bash
+hoi4-harness play --control focus=llm,research=script,army=script,default=off
+```
+
+The game's AI can only be handed the whole country (`human_ai`) or single armies, so a
+`game` domain other than `army` puts everything else in the map in contest, and the
+map is refused where the docs say the AI would overwrite it. A map with no `llm`
+domain needs no model at all. Built and tested on the simulators only; see
+[docs/modular-control.md](docs/modular-control.md).
+
 ## The mod
 
 [`mod/llm_bridge/`](mod/llm_bridge/) is a small HOI4 mod that gives the harness a
@@ -213,6 +231,7 @@ verification checklist: [docs/mod-bridge.md](docs/mod-bridge.md).
 | Observation briefs + deltas | Working, tested |
 | Mock adapter | Working, tested, deterministic |
 | Log-tail adapter (reads the mod's telemetry) | Working, tested, run against a live 1.19.5 log; `verify-bridge` checks tag consistency and date shapes, and the brief shows focus, research and theater postures |
+| Modular control (domains x llm / script / game / off, script controllers, no-model runs) | Built and tested on the simulators only (mock, fake game, fake army); never run live; the contested rule rests on the docs about `human_ai` ([docs/modular-control.md](docs/modular-control.md)) |
 | Hybrid control vocabulary + mode switch | Working, tested; directives and theater posture raised and read back live; the AI's response to them not verified; mock-only experiment (#10) |
 | LLM Bridge mod | Verified live on 1.19.5.0: loads clean, schema v3 telemetry (daily, player's tick), focus completion seen; schema v4 (`war` lines), research completion and the `owned` field not yet seen live |
 | Eval runner + scenarios | Working, tested (7 scenarios, multi-seed, cross-model) |

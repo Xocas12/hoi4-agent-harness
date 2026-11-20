@@ -154,6 +154,17 @@ Offering both vocabularies at the same time is the failure case: the model gives
 an army a direct order *and* a standing directive, they disagree, and the
 resulting behaviour is attributable to neither.
 
+## The levels are presets now
+
+`operational_control` `llm` / `ai` / `game_ai` (and the campaign's `campaign_control`) are presets
+of a per-domain **control map** (focus, research, construction, production, politics, diplomacy,
+army, navy, air, each `llm`, `script`, `game` or `off`), and the vocabulary above is its
+**steering layer**, `steer = llm | off`, available whenever the game's AI owns something. A run
+that sets none of the new keys behaves exactly as described on this page. What the map adds, the
+hard constraint on handing the game's AI part of the country (`human_ai` or single armies) and the
+rule for contested maps are in [modular-control.md](modular-control.md). Tested on the simulators
+only.
+
 ## What is actually built
 
 Working and tested: the action vocabulary, the control-mode switch, the prompt

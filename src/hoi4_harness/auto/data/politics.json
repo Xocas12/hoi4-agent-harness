@@ -1,0 +1,4 @@
+{
+  "_note": "Rules for the politics script (see auto/politics.py). Empty on purpose: advisor and decision ids are per country and per mod, and the harness has no list of what is available to pick from.",
+  "rules": []
+}
