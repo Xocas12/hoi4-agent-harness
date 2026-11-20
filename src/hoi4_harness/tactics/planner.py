@@ -46,13 +46,31 @@ from .plans import BattlePlan, PlanController
 
 MIN_ODDS = 0.9
 PATIENCE = 96
+#: Map size (regions) up to which the "scaled" patience is the full PATIENCE; beyond it the
+#: patience shrinks in proportion (see `scaled_patience`, #112).
+PATIENCE_REF_REGIONS = 24
 MAX_AXES = 3
 #: Attack modifier of a river between two regions, indexed by the river flag (none, small, large).
 RIVER_PEN = (0.0, -0.3, -0.6)
 
 
+def scaled_patience(n_regions: int, base: int = PATIENCE, ref: int = PATIENCE_REF_REGIONS) -> int:
+    """Axis patience that shrinks with map size: ``base`` on maps of up to ``ref`` regions, then
+    ``base * ref / n_regions`` (a bigger map has more to reconsider per hour)."""
+    return base if n_regions <= ref else max(1, round(base * ref / n_regions))
+
+
 class Planner:
-    def __init__(self, observe: str = "aggregated", cadence: int = 24, patience: int = PATIENCE) -> None:
+    """``patience`` is how many hours a drawn attack axis is kept (an int; 0 re-decides at every
+    re-plan) or ``"scaled"``, which applies `scaled_patience` to the number of regions of the map."""
+
+    def __init__(
+        self, observe: str = "aggregated", cadence: int = 24, patience: int | str = PATIENCE
+    ) -> None:
+        if isinstance(patience, str) and patience != "scaled":
+            raise ValueError(f"patience must be hours or 'scaled', not {patience!r}")
+        if not isinstance(patience, str) and patience < 0:
+            raise ValueError("patience cannot be negative")
         self.observe = observe
         self.cadence = cadence
         self.patience = patience
@@ -62,6 +80,11 @@ class Planner:
         self._last_cut = 0
         self._commit: tuple[tuple[str, ...], int, float] | None = None
         self.last_reason = ""
+
+    def patience_hours(self, pic: Picture) -> int:
+        if self.patience == "scaled":
+            return scaled_patience(len(pic.regions))
+        return int(self.patience)
 
     # ---- entry point -----------------------------------------------------------------------
 
@@ -227,7 +250,7 @@ class Planner:
         if self._commit is not None:
             old, since, old_score = self._commit
             alive = [r for r in old if pic.regions[r].controller == pic.foe or pic.regions[r].foe]
-            if alive and pic.hour - since < self.patience and score < 1.8 * max(old_score, 1e-9):
+            if alive and pic.hour - since < self.patience_hours(pic) and score < 1.8 * max(old_score, 1e-9):
                 return list(old) if len(alive) == len(old) else alive
         self._commit = (tuple(axes), pic.hour, score)
         return axes

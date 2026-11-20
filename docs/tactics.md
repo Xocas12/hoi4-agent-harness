@@ -600,6 +600,94 @@ Against the scripted opponent:
 Retrain with `hoi4-harness tactics train-plans --minutes 16`; the parameters it writes carry their
 own provenance (rounds, selection and validation scores, held-out front, wall time).
 
+## Stage 6: how long the planner keeps an attack axis (#112)
+
+The aggregated planner keeps a drawn attack axis for up to 96 h (`PATIENCE`) unless something scores
+1.8x better. Issue #112 suspected that this hurts on the big real maps, because the #111 ablation (the
+plan chooser with only the planner's own score as its weights) gained 9 wins on Poland and 12 on
+France just by re-deciding. **Simulator results only.**
+
+**What changed in code.** `Planner(patience=...)` was already a constructor argument (and
+`planner_controller(patience=...)` passes it through); it now also accepts `"scaled"`, which uses
+`scaled_patience(n_regions)`: 96 h up to 24 regions, then `96 * 24 / n_regions` (Poland, 34 regions:
+68 h; France, 40: 58 h). The learned chooser honours the same value. The default stays 96.
+
+**Benchmark.** `scripts/tactics_patience_bench.py`, numbers and per-game outcomes in
+`tactics/data/patience_results.json`. Seeds 4000-4029 (fresh: no earlier stage used them), 30 games
+per cell. The cells are the planner at 0, 24, 48, 96 h and scaled, plus the #111 ablation
+(`prior-only`: learned_plans with weights that draw the planner's own pick) and the committed
+`learned_plans`, so the ablation is reproducible from a committed script. **Tuning set:** the four
+small scenarios, Poland and three procedural variants of it (`tactics/variants.py` seeds 7001-7003).
+**Held out: `germany_france_1940`**, which the choice of default did not look at: the sweep and the
+`scaled` rule were fixed on the tuning set and France was run once afterwards.
+
+A mistake worth recording: the first run reused one planner object across the 30 games of a cell.
+The planner keeps its drawn axis between calls, so the commitment of one game leaked into the next
+(`break_line` read 4/30 for a planner that scores 28/30). Every game now gets a fresh controller.
+`evaluate()` has the same hazard when it is handed an instance rather than a registered name.
+
+Against the vanilla opponent (wins of 30; in brackets, games won only by the cell / only by the 96 h planner on the same seed):
+
+| scenario | set | 0 h | 24 h | 48 h | 96 h (default) | scaled | prior-only (#111) | learned_plans |
+|---|---|---|---|---|---|---|---|---|
+| break_line | tuning | 17 (+0/-11) | 22 (+1/-7) | 29 (+1/-0) | 28 | 28 (+0/-0) | 20 (+2/-10) | 20 (+2/-10) |
+| close_encirclement | tuning | 5 (+4/-0) | 2 (+1/-0) | 2 (+1/-0) | 1 | 1 (+0/-0) | 5 (+4/-0) | 5 (+4/-0) |
+| escape_encirclement | tuning | 30 (+0/-0) | 30 (+0/-0) | 30 (+0/-0) | 30 | 30 (+0/-0) | 30 (+0/-0) | 30 (+0/-0) |
+| hold_line | tuning | 30 (+0/-0) | 30 (+0/-0) | 30 (+0/-0) | 30 | 30 (+0/-0) | 30 (+0/-0) | 30 (+0/-0) |
+| germany_poland_1939 | tuning | 30 (+4/-0) | 30 (+4/-0) | 29 (+4/-1) | 26 | 26 (+4/-4) | 30 (+4/-0) | 30 (+4/-0) |
+| germany_poland_1939~v7001 | tuning | 30 (+2/-0) | 27 (+2/-3) | 10 (+0/-18) | 28 | 27 (+1/-2) | 28 (+2/-2) | 28 (+2/-2) |
+| germany_poland_1939~v7002 | tuning | 28 (+9/-1) | 20 (+7/-7) | 24 (+8/-4) | 20 | 28 (+10/-2) | 27 (+9/-2) | 27 (+9/-2) |
+| germany_poland_1939~v7003 | tuning | 27 (+1/-3) | 29 (+1/-1) | 29 (+1/-1) | 29 | 29 (+1/-1) | 30 (+1/-0) | 30 (+1/-0) |
+| germany_france_1940 | heldout | 4 (+2/-10) | 5 (+3/-10) | 15 (+6/-3) | 12 | 14 (+4/-2) | 20 (+13/-5) | 18 (+12/-6) |
+
+Against the scripted opponent (wins of 30; in brackets, games won only by the cell / only by the 96 h planner on the same seed):
+
+| scenario | set | 0 h | 24 h | 48 h | 96 h (default) | scaled | prior-only (#111) | learned_plans |
+|---|---|---|---|---|---|---|---|---|
+| break_line | tuning | 16 (+0/-12) | 19 (+0/-9) | 25 (+0/-3) | 28 | 28 (+0/-0) | 16 (+0/-12) | 16 (+0/-12) |
+| close_encirclement | tuning | 30 (+0/-0) | 30 (+0/-0) | 30 (+0/-0) | 30 | 30 (+0/-0) | 30 (+0/-0) | 30 (+0/-0) |
+| escape_encirclement | tuning | 30 (+0/-0) | 30 (+0/-0) | 30 (+0/-0) | 30 | 30 (+0/-0) | 30 (+0/-0) | 30 (+0/-0) |
+| hold_line | tuning | 30 (+0/-0) | 30 (+0/-0) | 30 (+0/-0) | 30 | 30 (+0/-0) | 30 (+0/-0) | 30 (+0/-0) |
+| germany_poland_1939 | tuning | 7 (+5/-9) | 11 (+3/-3) | 11 (+6/-6) | 11 | 17 (+10/-4) | 10 (+8/-9) | 12 (+7/-6) |
+| germany_poland_1939~v7001 | tuning | 12 (+9/-4) | 9 (+5/-3) | 5 (+2/-4) | 7 | 10 (+6/-3) | 15 (+12/-4) | 15 (+10/-2) |
+| germany_poland_1939~v7002 | tuning | 3 (+3/-2) | 8 (+8/-2) | 3 (+3/-2) | 2 | 4 (+2/-0) | 7 (+7/-2) | 6 (+6/-2) |
+| germany_poland_1939~v7003 | tuning | 12 (+9/-6) | 10 (+9/-8) | 9 (+3/-3) | 9 | 6 (+1/-4) | 12 (+7/-4) | 12 (+8/-5) |
+| germany_france_1940 | heldout | 3 (+3/-1) | 2 (+2/-1) | 0 (+0/-1) | 1 | 0 (+0/-1) | 3 (+2/-0) | 3 (+2/-0) |
+
+**Reading it honestly.**
+
+- **Nothing beats 96 h as a default.** Summed over the tuning set (small maps plus Poland and its
+  variants) the planner wins 192 games at 96 h against the vanilla opponent and 147 against the
+  scripted one; 0 h gives 197 / 140, 24 h 190 / 147, 48 h 183 / 143, scaled 199 / 155. Scaled is
+  ahead by 7 and 8 games on 240 and does not separate from 96 h: on Poland itself it is +4/-4 paired
+  against vanilla, and on `germany_poland_1939~v7003` against the scripted opponent it loses
+  (6 against 9). On the small maps scaled is identical to 96 h by construction (all have 24 regions
+  or fewer), so it cannot cost `hold_line` or `break_line` anything.
+- **Short patience is not what the ablation had.** 0 h and 24 h do reach 30/30 on Poland and 27-30 on
+  two of its variants against the vanilla opponent, but they lose `break_line` badly (17 and 22 of 30
+  against 28; the issue was right that 96 h helps there) and collapse on the held-out France map
+  (4 and 5 against 12). The prior-only chooser, which re-decides too, wins France 20 of 30 (13 won
+  only by it, 5 only by the planner). So the ablation's gain is not "patience = 0". It re-decides
+  with a hysteresis (a drawn set is kept unless another scores 0.6 higher on a log scale) and over a
+  candidate set that includes the empty plan and pairs the planner never draws; the planner's plain
+  re-decision at every re-plan has neither. #112's hypothesis, that the gain comes from the 96 h
+  clock, is **not** supported; where the gain comes from inside the chooser is not isolated here.
+- **Scaled helps France a little, not provably:** 14 against 12 against the vanilla opponent
+  (+4/-2 paired), 0 against 1 against the scripted one. On held-out data the planner with any
+  patience stays below the prior-only chooser (20 of 30).
+- **Where each setting loses.** 0 and 24 h: `break_line` (both opponents) and France. 48 h:
+  `germany_poland_1939~v7001` (10 against 28, 18 games lost). Scaled: Poland and `v7003` against the
+  scripted opponent, one game on France. 96 h: Poland variant `v7002` (20 of 30 against 28 for
+  scaled) and `close_encirclement` against the vanilla opponent (1 of 30; 5 for the prior-only
+  chooser).
+- The numbers here (Poland 26/30 for the planner at 96 h) differ from the 21/30 of the #111 table
+  because the seeds differ (3000 there, 4000 here); a 30-game cell moves by several games between
+  seed ranges, which is the size of most of the differences above.
+
+**Decision.** Default patience stays 96. `"scaled"` is available (and tested) but not adopted: it
+did not separate from 96 on the tuning set and France is a single front. If an axis-keeping rule is
+to change, the ablation points at the chooser's margin and candidate set rather than at the clock.
+
 ## Gap list against the real game
 
 Simplifications, each with the mechanic it stands in for:
