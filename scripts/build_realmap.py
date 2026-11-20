@@ -2,8 +2,10 @@
 
     PYTHONPATH=src python scripts/build_realmap.py --game-dir "<the Hearts of Iron IV folder>"
 
-Writes src/hoi4_harness/tactics/data/realmap/germany_poland_1939.json (the scenario) and
-tests/fixtures/realmap_layer.json (a few dozen provinces: ids, adjacency, terrain)."""
+Writes src/hoi4_harness/tactics/data/realmap/<spec name>.json (the scenario) and a compact test
+fixture (a few dozen provinces: ids, adjacency, terrain): tests/fixtures/realmap_layer.json for the
+Poland spec, realmap_layer_<name>.json for a spec that lists "fixture_states". Another front:
+--spec src/hoi4_harness/tactics/data/realmap/germany_france_1940.spec.json"""
 
 import argparse
 import json
@@ -33,8 +35,10 @@ def main() -> None:
     out.write_text(json.dumps(raw, indent=1) + "\n", encoding="utf-8")
     print(f"{out}: {len(raw['provinces'])} nodes, {len(raw['edges'])} edges, "
           f"{sum(1 for e in raw['edges'] if e[2])} with a river")
-    fixture = AbstractLayer.extract(layer, FIXTURE_STATES)
-    path = ROOT / "tests" / "fixtures" / "realmap_layer.json"
+    keep = spec.get("fixture_states")
+    fixture = AbstractLayer.extract(layer, [int(s) for s in keep] if keep else FIXTURE_STATES)
+    fname = f"realmap_layer_{spec['name']}.json" if keep else "realmap_layer.json"
+    path = ROOT / "tests" / "fixtures" / fname
     path.write_text(json.dumps(fixture, separators=(",", ":")) + "\n", encoding="utf-8")
     print(f"{path}: {len(fixture['provinces'])} provinces")
 

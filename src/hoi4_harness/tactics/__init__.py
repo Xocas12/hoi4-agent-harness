@@ -11,6 +11,7 @@ Pure Python, no dependencies. See docs/tactics.md for what it models and what it
 from .controllers import CONTROLLERS, ScriptedController, VanillaLikeController
 from .env import StepResult, TacticalEnv
 from .learned import LearnedController
+from .learned_plans import learned_plans_controller
 from .model import Order
 from .planner import planner_controller, vanilla_plan_controller
 from .plans import BattlePlan, EngineExecutor, PlanController
@@ -19,6 +20,7 @@ from .scenario import Scenario, list_scenarios, load_scenario
 CONTROLLERS["learned"] = LearnedController
 CONTROLLERS["vanilla_plans"] = vanilla_plan_controller
 CONTROLLERS["planner"] = planner_controller
+CONTROLLERS["learned_plans"] = learned_plans_controller
 CONTROLLERS["planner_full"] = lambda: planner_controller("full")
 
 __all__ = [
