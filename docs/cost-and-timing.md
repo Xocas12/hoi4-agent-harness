@@ -264,6 +264,33 @@ figures. Anthropic's `output_tokens` already includes thinking tokens, which
 the provider does not add again. Comparing that against the Console's usage
 page is still to do (it needs the account owner) and is the remaining half of #23.
 
+## Reconciling against a usage export
+
+`hoi4-harness reconcile TRANSCRIPT EXPORT` (`eval/reconcile.py`) folds the run's `llm`
+records and a provider usage export into the same four numbers per model (input,
+cache read, cache write, output) and prints both, the difference and its percentage of
+the export's figure, flagging anything beyond `--tolerance` (default 0.03). Exit 0 within
+tolerance, 1 outside, 2 for bad input. With `--rate "MODEL:input=5,output=25,cached=0.5,write=6.25"`
+(dollars per million; `*` for every model) it also prices both sides with the harness's
+own `BudgetGuard.price`, and compares against the export's billed amount when the export
+has one. No `--rate`, no cost lines.
+
+The export must cover the run and nothing else, so use a dedicated key or workspace and a
+tight time window. Formats:
+
+| Format | What | Status |
+|---|---|---|
+| `anthropic` | JSON from `GET /v1/organizations/usage_report/messages` (Admin API key; the Console Usage page shows the same data). Reads `uncached_input_tokens`, `cache_read_input_tokens`, `cache_creation.ephemeral_5m/1h_input_tokens`, `output_tokens`, `model` | field names checked against the [reference page](https://platform.claude.com/docs/en/api/beta/organization/usage_report/retrieve_messages); never run on a real export. Group by `model` |
+| `openai` | JSON from `GET /v1/organization/usage/completions`: `input_tokens` (includes cached), `input_cached_tokens`, `output_tokens`, `num_model_requests`, `model` | **not verified**: the docs page refused automated fetches; names are from memory |
+| `csv` | `model,uncached_input_tokens,cache_read_tokens,cache_write_tokens,output_tokens[,requests][,cost_usd]` | this tool's own format, for numbers copied out of a console by hand; I know of no documented CSV export from either console |
+
+A dated export model name (`claude-opus-5-5-20261101`) matches the harness's
+`claude-opus-5-5` when that is the only near match. A model on one side only is reported
+and fails. OpenAI has no cache writes, so an OpenAI run reconciled against a harness
+transcript that recorded writes will flag "cache write"; that is the expected shape, not a
+bug. Tested on fixtures only (`tests/test_reconcile.py`); the real-invoice clause of #23
+is still to do.
+
 ## What would break this
 
 Honest failure modes, since they decide whether the numbers above survive contact:

@@ -272,16 +272,41 @@ and production answers. They go in the UNVERIFIED list in adapters.md as settled
 
 ## 8. With API keys (#22, #23)
 
-```bash
-HOI4_LIVE_TESTS=1 ANTHROPIC_API_KEY=... pytest tests/live -v -rs
+**Conformance (#22).** The suite in `tests/live` runs the same checks on every provider:
+tool schema accepted, a call parsed back into a valid `ActionCall`, a tool result
+accepted for a second round, usage populated, and prefix caching where promised.
+A paid provider runs only when **both** are set: `HOI4_LIVE_PROVIDER_TESTS=1` and that
+provider's key (`ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GOOGLE_API_KEY`; for a local
+OpenAI-compatible server, `HOI4_LIVE_OPENAI_BASE_URL` instead of a key). The `scripted`
+provider runs the same checks for free, so a bare `pytest` never bills anything.
 
-# Set all four rates from the provider's price sheet first:
-# HOI4_USD_PER_M_INPUT, _OUTPUT, _CACHED_INPUT, _CACHE_WRITE
-hoi4-harness play --provider anthropic --turns 20 --run-dir runs/priced
+```bash
+# what it would cost, before anything is sent: set the rates, run with -k nothing
+# selected, or just read the plan line it prints first
+export HOI4_USD_PER_M_INPUT=...  HOI4_USD_PER_M_OUTPUT=...   # from the price sheet
+HOI4_LIVE_PROVIDER_TESTS=1 HOI4_LIVE_MAX_CALLS=8 ANTHROPIC_API_KEY=... pytest tests/live -v -rs
+HOI4_LIVE_PROVIDER_TESTS=1 OPENAI_API_KEY=... pytest tests/live -v -rs
+HOI4_LIVE_PROVIDER_TESTS=1 HOI4_LIVE_OPENAI_BASE_URL=http://localhost:11434/v1   HOI4_LIVE_OPENAI_MODEL=<local model> pytest tests/live -v -rs
 ```
 
-Paste the conformance output into #22. Compare the run's `spend.usd` with the
-provider's usage page for the same window and paste both numbers into #23.
+Before the first call it prints the plan: calls per provider (Anthropic 4, OpenAI and
+Gemini 2 each), a worst-case token and dollar bound (no cache discount, every call at
+`max_tokens`; dollars only when the rates are set), and the hard cap. `HOI4_LIVE_MAX_CALLS`
+(default 12) is counted across every provider in the run; the call past it is refused
+before it is sent. `HOI4_LIVE_<PROVIDER>_MODEL` picks the model. The skip logic, the cap
+and the request shapes of all three clients are tested without a key in
+`tests/test_live_conformance.py`.
+
+**Token accounting (#23).** Run a priced play, then export the provider's usage for the
+same window and reconcile (details and export formats in
+[cost-and-timing.md](cost-and-timing.md#reconciling-against-a-usage-export)):
+
+```bash
+hoi4-harness play --provider anthropic --turns 20 --run-dir runs/priced
+hoi4-harness reconcile runs/priced/transcript.jsonl usage_export.json   --rate "<model>:input=..,output=..,cached=..,write=.."
+```
+
+Paste the output into #22 and #23.
 
 ## 9. The measurements (#10, #14)
 

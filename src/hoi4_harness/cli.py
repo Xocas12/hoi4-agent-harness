@@ -674,6 +674,29 @@ def cmd_measure(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_reconcile(args: argparse.Namespace) -> int:
+    from .eval import reconcile as rc
+
+    try:
+        rates = dict(rc.parse_rate(r) for r in args.rate or [])
+        for path in (args.transcript, args.export):
+            if not Path(path).is_file():
+                print(f"reconcile: no such file {path}", file=sys.stderr)
+                return 2
+        harness = rc.read_transcript(args.transcript)
+        if not harness:
+            print(f"reconcile: {args.transcript} has no llm records (a scripted or empty run?)",
+                  file=sys.stderr)
+            return 2
+        export = rc.read_export(args.export, args.format)
+        report = rc.reconcile(harness, export, rates, args.tolerance)
+    except rc.ReconcileError as exc:
+        print(f"reconcile: {exc}", file=sys.stderr)
+        return 2
+    print(rc.render(report))
+    return 0 if report.ok else 1
+
+
 def cmd_mailbox(args: argparse.Namespace) -> int:
     """The answering side of ``--mailbox``: wait for a request, show it, answer it."""
     import json as _json
@@ -1453,6 +1476,21 @@ def build_parser() -> argparse.ArgumentParser:
                            help="play a long measurement campaign first, then measure it "
                                 "(peacetime_1936_1939, wartime_1939_1941)")
     measure_p.set_defaults(func=cmd_measure)
+
+    reconcile_p = sub.add_parser(
+        "reconcile", help="compare a run's token log with a provider usage export (#23)")
+    reconcile_p.add_argument("transcript", metavar="TRANSCRIPT", help="the run's transcript.jsonl")
+    reconcile_p.add_argument("export", metavar="EXPORT",
+                             help="usage export: Anthropic usage_report JSON, OpenAI usage JSON, or the CSV "
+                                  "documented in eval/reconcile.py")
+    reconcile_p.add_argument("--format", choices=["auto", "csv", "json", "anthropic", "openai"],
+                             default="auto")
+    reconcile_p.add_argument("--tolerance", type=float, default=0.03,
+                             help="allowed relative difference, as a fraction of the export (default 0.03)")
+    reconcile_p.add_argument("--rate", action="append", metavar="MODEL:input=..,output=..",
+                             help="dollars per million tokens for MODEL (or * for all); repeatable. "
+                                  "Without it only tokens are compared")
+    reconcile_p.set_defaults(func=cmd_reconcile)
 
     handover = sub.add_parser("handover", help="hand the keyboard to a --handover session")
     common(handover)
