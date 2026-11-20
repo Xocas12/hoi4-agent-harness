@@ -202,6 +202,7 @@ class InputDriverAdapter(GameAdapter):
         self._window_rect = window_rect or (lambda: client_rect())
         #: Performs the division orders, once ``enable_unit_orders`` has set it.
         self.order_executor = None
+        self.plan_executor = None
         #: Click points computed for the action in flight (see ui_resolve.py).
         self._computed: dict[str, tuple[int, int]] = {}
         #: Whether the game was running when the clock was last seen: True,
@@ -363,6 +364,37 @@ class InputDriverAdapter(GameAdapter):
         finally:
             gui.mouseUp(button="left")
 
+    def drag_path(self, points: list[tuple[int, int]], *, label: str = "") -> None:
+        """Press at the first point, move through the others, release at the last: a line drawn
+        with a battle-plan tool (adapters/battle_plans.py). Same guards as ``drag``."""
+        if not self.config.mouse:
+            raise MouseDisabled(f"drag path {points}: this driver has no mouse (headless)")
+        if len(points) < 2:
+            raise ValueError("a path needs at least two points")
+        checked = [self._checked_point(p) for p in points]
+        self._require_focus()
+        self.log.append(f"drag path {label or 'line'} " + " -> ".join(str(p) for p in checked))
+        if self.dry_run:
+            return
+        gui = self._gui()
+        gui.moveTo(checked[0][0], checked[0][1], duration=self.config.move_duration)
+        gui.mouseDown(button="left")
+        try:
+            for x, y in checked[1:]:
+                gui.moveTo(x, y, duration=self.config.move_duration * 3)
+        finally:
+            gui.mouseUp(button="left")
+
+    def enable_battle_plans(self, executor) -> None:
+        """Offer ``draw_front_line``, ``draw_offensive`` and ``assign_battle_plan``, performed by
+        ``executor`` (adapters/battle_plans.py). UNVERIFIED against the real game."""
+        from .battle_plans import PLAN_ACTIONS
+
+        if not self.config.mouse:
+            raise MouseDisabled("battle plans are drawn with the mouse and this driver has none")
+        self.plan_executor = executor
+        self.supported_actions = self.supported_actions | frozenset(PLAN_ACTIONS)
+
     def enable_unit_orders(self, executor) -> None:
         """Offer ``move_division`` and ``attack_province``, performed by ``executor``
         (adapters/unit_orders.py). Needs a mouse: a headless driver refuses."""
@@ -517,6 +549,9 @@ class InputDriverAdapter(GameAdapter):
                                 message="Clock handed back to the harness.")
         if call.name in self.scripts:
             return self._scripted(call)
+        if (self.plan_executor is not None and call.name in self.plan_executor.actions
+                and call.name in self.supported_actions):
+            return self.plan_executor(call)
         if self.order_executor is not None and call.name in self.supported_actions:
             return self.order_executor(call)
         return self.unsupported(call)

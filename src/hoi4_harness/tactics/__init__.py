@@ -12,12 +12,20 @@ from .controllers import CONTROLLERS, ScriptedController, VanillaLikeController
 from .env import StepResult, TacticalEnv
 from .learned import LearnedController
 from .model import Order
+from .planner import planner_controller, vanilla_plan_controller
+from .plans import BattlePlan, EngineExecutor, PlanController
 from .scenario import Scenario, list_scenarios, load_scenario
 
 CONTROLLERS["learned"] = LearnedController
+CONTROLLERS["vanilla_plans"] = vanilla_plan_controller
+CONTROLLERS["planner"] = planner_controller
+CONTROLLERS["planner_full"] = lambda: planner_controller("full")
 
 __all__ = [
+    "BattlePlan",
     "CONTROLLERS",
+    "EngineExecutor",
+    "PlanController",
     "LearnedController",
     "Order",
     "Scenario",

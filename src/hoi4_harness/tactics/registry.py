@@ -9,11 +9,13 @@ from __future__ import annotations
 
 from .controllers import ScriptedController, VanillaLikeController
 from .learned import LearnedController
+from .planner import planner_controller
 
 REGISTRY = {
     "scripted": ScriptedController,
     "learned": LearnedController,
     "vanilla_like": VanillaLikeController,
+    "planner": planner_controller,
 }
 
 

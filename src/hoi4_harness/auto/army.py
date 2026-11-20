@@ -16,7 +16,10 @@ experiment does.
 
 from __future__ import annotations
 
+import json
+
 from ..adapters.clock import days_between
+from ..adapters.hands import PLAN_ACTIONS
 from ..tactics.bridge import BridgeError, ControllerBridge
 from ..tactics.registry import make
 from ..types import ActionCall, GameState
@@ -46,7 +49,14 @@ class ArmyScript(Script):
             if layer is None:
                 self._why = "no map (set game_dir): the controller cannot be built"
                 return None
-            self._bridge = ControllerBridge(layer, make(self.controller_name))
+            # Battle plans (UNVERIFIED) only when the profile asks: the plans a planner draws then
+            # go out as draw_front_line / draw_offensive / assign_battle_plan for the recorded
+            # army, and as move/attack orders for everything else or when they are not offered.
+            plans = bool(self.ctx.config.battle_plans)
+            army = str(self.ctx.option("army_plan_army", "all"))
+            self._bridge = ControllerBridge(
+                layer, make(self.controller_name),
+                offered=PLAN_ACTIONS if plans else None, armies={"default": army} if plans else None)
         return self._bridge
 
     def decide(self, state: GameState, objective: str, memory) -> list[ActionCall]:
@@ -61,17 +71,20 @@ class ArmyScript(Script):
         self._why = None
         out = []
         for c in calls:
-            key = (c.name, c.arguments["from_state"], c.arguments["to_state"])
+            key = self._key(c)
             sent = self._sent.get(key)
             if sent is not None and days_between(sent, state.date) < self.cooldown:
                 continue
             out.append(call(c.name, c.rationale or self.controller_name, **c.arguments))
         return out
 
+    @staticmethod
+    def _key(c: ActionCall) -> tuple:
+        return (c.name, json.dumps(c.arguments, sort_keys=True))
+
     def feedback(self, call_: ActionCall, result, state: GameState) -> None:
         if result.ok or result.error_kind == "unverified":
-            key = (call_.name, call_.arguments["from_state"], call_.arguments["to_state"])
-            self._sent[key] = state.date
+            self._sent[self._key(call_)] = state.date
 
     def idle_note(self, state: GameState) -> str:
         return self._why or "no order from the controller"

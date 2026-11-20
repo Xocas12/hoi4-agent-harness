@@ -1,0 +1,48 @@
+{
+ "name": "germany_poland_1939",
+ "description": "Germany (A) invades Poland (B), September 1939, at state granularity. Real states, adjacency, terrain and rivers from the 1.19.5 map; the force counts, hubs, objectives and time limit are assumptions of ours.",
+ "granularity": "state",
+ "max_hours": 720,
+ "step_hours": 12,
+ "sides": {
+  "A": [5, 63, 763, 66, 67, 68, 64, 62, 65, 9, 69, 70, 71, 72, 73, 74],
+  "B": [10, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 762, 784, 807]
+ },
+ "hubs": {"A": [64], "B": [10, 91]},
+ "forces": [
+  {"side": "A", "template": "inf_9", "state": 5, "count": 2},
+  {"side": "A", "template": "inf_9", "state": 63, "count": 3},
+  {"side": "A", "template": "inf_9", "state": 66, "count": 3},
+  {"side": "A", "template": "armor_6", "state": 66, "count": 1},
+  {"side": "A", "template": "inf_9", "state": 67, "count": 4},
+  {"side": "A", "template": "armor_6", "state": 67, "count": 2},
+  {"side": "A", "template": "inf_9", "state": 72, "count": 2},
+  {"side": "A", "template": "armor_6", "state": 72, "count": 1},
+  {"side": "A", "template": "inf_9", "state": 70, "count": 2},
+  {"side": "A", "template": "inf_9", "state": 64, "count": 2},
+  {"side": "B", "template": "inf_9", "state": 85, "count": 1},
+  {"side": "B", "template": "inf_9", "state": 807, "count": 1},
+  {"side": "B", "template": "inf_9", "state": 98, "count": 2},
+  {"side": "B", "template": "inf_9", "state": 86, "count": 3},
+  {"side": "B", "template": "inf_9", "state": 87, "count": 3},
+  {"side": "B", "template": "inf_9", "state": 762, "count": 1},
+  {"side": "B", "template": "inf_9", "state": 88, "count": 2},
+  {"side": "B", "template": "inf_9", "state": 10, "count": 2},
+  {"side": "B", "template": "inf_9", "state": 90, "count": 2},
+  {"side": "B", "template": "inf_9", "state": 92, "count": 1},
+  {"side": "B", "template": "inf_9", "state": 91, "count": 1},
+  {"side": "B", "template": "inf_9", "state": 97, "count": 1}
+ ],
+ "goals": {
+  "A": {"kind": "capture", "states": [86, 87, 88, 10]},
+  "B": {"kind": "hold", "states": [86, 87, 88, 10]}
+ },
+ "assumptions": [
+  "Sides: Germany's own states plus the former Czechoslovak states (69-74, 9) are side A; every Polish state is side B. Lithuanian, Latvian, Soviet and Romanian states are left out, so the Soviet invasion and every flank beyond Poland are not modelled.",
+  "Forces are about 40 percent of the historical order of battle (a sim of about 55 against 40 divisions is too slow to benchmark): 22 German divisions (18 infantry, 4 armour) against 20 Polish infantry. The templates are the sim's inf_9 and armor_6; Poland's thinner equipment is not modelled.",
+  "Hubs: Brandenburg for Germany; Warsaw and Lwow for Poland.",
+  "Objectives and limit: take Poznan, Lodz, Krakow and Warsaw within 30 days. The historical campaign took Warsaw in 27 days; the objective set and the limit are ours.",
+  "Rivers come from map/rivers.bmp by a threshold heuristic of ours (realmap.py), not a game rule.",
+  "One simulator province per state, 12 hour steps."
+ ]
+}

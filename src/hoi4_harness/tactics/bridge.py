@@ -36,14 +36,18 @@ None of this is validated against the game; ``docs/tactics.md`` and
 
 from __future__ import annotations
 
-from collections import deque
+from collections import Counter, deque
 
 from ..mapdata import MapLayer
 from ..types import ActionCall, GameState
 from .env import View
 from .model import load_constants
+from .plans import BattlePlan, EngineExecutor
 from .scenario import Scenario
 from .sim import World
+
+#: The battle-plan actions (adapters/battle_plans.py); NOT live-verified.
+PLAN_ACTIONS = frozenset({"draw_front_line", "draw_offensive", "assign_battle_plan"})
 
 WEAK_STRENGTH = 0.4
 DEFAULT_TEMPLATE = "inf_9"
@@ -60,7 +64,7 @@ class BridgeError(ValueError):
 
 class ControllerBridge:
     def __init__(self, layer: MapLayer, controller, *, template: str = DEFAULT_TEMPLATE,
-                 reach: int = 1, seed: int = 0):
+                 reach: int = 1, seed: int = 0, offered=None, armies: dict[str, str] | None = None):
         if template not in load_constants().templates:
             raise ValueError(f"no division template {template!r} in the simulator")
         self.layer = layer
@@ -70,6 +74,11 @@ class ControllerBridge:
         self.seed = seed
         #: Filled by ``build``: simulator division id -> the state it stands in.
         self.home: dict[str, int] = {}
+        #: The actions the run offers. A planner's plans become plan actions only when all three
+        #: are offered; otherwise (and for a plan with no army) they become state-level orders.
+        self.offered = frozenset(offered) if offered is not None else frozenset()
+        #: Plan name -> recorded army name; "default" covers every other plan.
+        self.armies = dict(armies or {})
 
     # --- state -> world --------------------------------------------------------------
 
@@ -118,7 +127,8 @@ class ControllerBridge:
         owner = {p: side_of[self.layer.state_of(p)] for p in land}
         hubs = self._hubs(land, edges, owner)
         provinces = [{"id": str(p), "terrain": TERRAIN.get(self.layer.provinces[p].terrain, "plains"),
-                      "controller": owner[p], **({"hub": hubs[p]} if p in hubs else {})}
+                      "controller": owner[p], "region": f"s{self.layer.state_of(p)}",
+                      **({"hub": hubs[p]} if p in hubs else {})}
                      for p in sorted(land)]
         divisions, self.home = [], {}
         for sid, f in sorted(picture.items()):
@@ -170,8 +180,79 @@ class ControllerBridge:
     def decide(self, state: GameState, seed: int | None = None) -> list[ActionCall]:
         """Run the controller on the world ``state`` stands for; return the actions."""
         world = self.build(state, seed)
+        planner = getattr(self.controller, "planner", None)
+        if planner is not None and hasattr(planner, "replan"):
+            return self.decide_plans(world, state, planner.replan(View(world, "A")))
         orders = self.controller.act(View(world, "A"))
         return self.translate(world, orders)
+
+    # --- plans -> actions ---------------------------------------------------------------
+
+    def decide_plans(self, world: World, state: GameState, plans: list[BattlePlan]) -> list[ActionCall]:
+        """Plan actions for each plan that has an army and the actions to draw it; state-level
+        move/attack orders (the executor's, translated) for every other."""
+        usable = PLAN_ACTIONS <= self.offered
+        enemy = self._enemy(state)
+        calls: list[ActionCall] = []
+        for plan in plans:
+            army = self.armies.get(plan.name, self.armies.get("default"))
+            if usable and army and enemy and plan.kind != "reserve":
+                calls.extend(self.plan_calls(plan, army, enemy))
+            else:
+                executor = EngineExecutor()
+                executor.set_plans([plan])
+                calls.extend(self.translate(world, executor.orders(world)))
+        return calls
+
+    def _enemy(self, state: GameState) -> str | None:
+        own = (state.country or "").upper()
+        tags = Counter(f.controller for f in state.state_forces or [] if f.controller and f.controller != own)
+        return tags.most_common(1)[0][0] if tags else None
+
+    def _states_of(self, provinces) -> list[int]:
+        out: list[int] = []
+        for p in provinces:
+            sid = self.layer.state_of(int(p))
+            if sid is not None and sid not in out:
+                out.append(sid)
+        return out
+
+    def _chain(self, states: list[int]) -> list[list[int]]:
+        """Split `states` into chains whose consecutive members border (a drawn line is a chain)."""
+        def borders(a: int, b: int) -> bool:
+            other = set(self.layer.states[b].provinces)
+            return any(n in other for p in self.layer.states[a].provinces
+                       for n in self.layer.neighbours(p, straits=False))
+
+        left = sorted(states)
+        chains: list[list[int]] = []
+        while left:
+            chain = [left.pop(0)]
+            while True:
+                nxt = next((s for s in left if borders(chain[-1], s)), None)
+                if nxt is None:
+                    break
+                left.remove(nxt)
+                chain.append(nxt)
+            chains.append(chain)
+        return chains
+
+    def plan_calls(self, plan: BattlePlan, army: str, enemy: str) -> list[ActionCall]:
+        why = f"{self.controller.name}: plan {plan.name} ({plan.kind})"
+        calls = []
+        front = self._states_of(plan.front)
+        for chain in self._chain(front):
+            calls.append(ActionCall("draw_front_line", {"army": army, "enemy": enemy, "states": chain},
+                                    rationale=why))
+        for target in self._states_of(plan.offensive):
+            starts = [s for s in front if any(
+                n in set(self.layer.states[target].provinces)
+                for p in self.layer.states[s].provinces for n in self.layer.neighbours(p, straits=False))]
+            if starts:
+                calls.append(ActionCall("draw_offensive", {"army": army, "from_state": starts[0],
+                                                           "target_state": target}, rationale=why))
+        calls.append(ActionCall("assign_battle_plan", {"army": army}, rationale=why))
+        return calls
 
     def translate(self, world: World, orders) -> list[ActionCall]:
         """Simulator orders -> one action per (from state, to state, kind)."""

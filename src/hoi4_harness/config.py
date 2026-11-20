@@ -259,6 +259,9 @@ class HarnessConfig:
     unit_orders: bool | None = None
     #: The recorded camera fit. Default: camera.json in run_dir. HOI4_CAMERA.
     camera_path: Path | None = None
+    #: Offer draw_front_line / draw_offensive / assign_battle_plan (adapters/battle_plans.py).
+    #: NOT live-verified, so off unless asked for; needs what unit_orders needs.
+    battle_plans: bool = False
     # --- headless play (adapters/headless.py) -----------------------------------
     # adapter = "headless": the log for eyes, the console and the keyboard for
     # hands, no mouse and no screen. The fields below only matter there.

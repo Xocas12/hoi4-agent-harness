@@ -451,4 +451,65 @@ ACTIONS += [
     ),
 ]
 
+
+# --- battle plans (#85, stage 4) ----------------------------------------------
+# NOT live-verified: the click path is drawn from interface/battleplantools.gui and
+# recorded points (adapters/battle_plans.py, docs/unit-orders.md section 7).
+
+ACTIONS += [
+    ActionSpec(
+        name="draw_front_line",
+        category="army",
+        description=(
+            "Draw a front line with the battle-plan tool: the player's own states, in "
+            "order, that the army holds against one enemy. Needs a recorded army point "
+            "(army.<name>); refused when a state is not the player's in the front "
+            "picture, the states do not form a chain, or the enemy borders none of them. "
+            "Unverified in the game: the result never says the line exists."
+        ),
+        parameters=_schema(
+            {
+                "army": {"type": "string", "description": "A recorded army name (army.<name> point)."},
+                "enemy": {"type": "string", "description": "Tag of the country the line faces."},
+                "states": {"type": "array", "minItems": 1, "maxItems": 8, "items": _STATE_ID,
+                           "description": "Own states along the line, in order."},
+            },
+            ["army", "enemy", "states"],
+        ),
+    ),
+    ActionSpec(
+        name="draw_offensive",
+        category="army",
+        description=(
+            "Draw an offensive arrow with the battle-plan tool, from an own state across "
+            "the border into an enemy one (optionally through waypoint states). Same "
+            "refusals as attack_province, and the army needs a recorded point. Unverified "
+            "in the game."
+        ),
+        parameters=_schema(
+            {
+                "army": {"type": "string", "description": "A recorded army name (army.<name> point)."},
+                "from_state": {**_STATE_ID, "description": "Own state the arrow starts in."},
+                "target_state": {**_STATE_ID, "description": "Hostile state the arrow ends in."},
+                "via": {"type": "array", "maxItems": 4, "items": _STATE_ID,
+                        "description": "Optional waypoint states."},
+            },
+            ["army", "from_state", "target_state"],
+        ),
+    ),
+    ActionSpec(
+        name="assign_battle_plan",
+        category="army",
+        description=(
+            "Assign an army to the battle plan just drawn: select it by its recorded point, "
+            "press the assign-units button (a recorded point: the interface file gives it no "
+            "shortcut). Unverified in the game."
+        ),
+        parameters=_schema(
+            {"army": {"type": "string", "description": "A recorded army name (army.<name> point)."}},
+            ["army"],
+        ),
+    ),
+]
+
 BY_NAME = {spec.name: spec for spec in ACTIONS}

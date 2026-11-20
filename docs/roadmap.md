@@ -148,6 +148,13 @@ and where the reflex layer is least adequate.
 - Token accounting verified against real invoices
 - Provider conformance tests against live keys
 
+## Tactical control (#85)
+
+- Stages 1-3 (simulator, scripted and learned controllers) and stage 4 (battle-plan planner,
+  engine executor, real-map scenario) are simulator work: see `docs/tactics.md`.
+- Open, needs the live game: the plan click path (`docs/unit-orders.md` section 7), the engine's
+  real plan execution (the executor's rules are assumptions) and the sim-to-real calibration.
+
 ## Non-goals
 
 - Beating good human players. The question is whether an agent can play
