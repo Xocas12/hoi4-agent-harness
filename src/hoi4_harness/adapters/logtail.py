@@ -57,6 +57,9 @@ EVENT_CODES = {
     # Schema v5: the harness marked the player's country (llm_bridge_mark_harness).
     "16": ("harness_marked", "info"),
     "17": ("harness_unmarked", "info"),
+    # The strong directive weights for Expert AI as the base AI (docs/expert-ai.md).
+    "18": ("strong_directives_on", "info"),
+    "19": ("strong_directives_off", "info"),
 }
 
 #: Counters on the state line that only ever go up. The game has no on_action

@@ -340,6 +340,10 @@ class HarnessConfig:
     #: when a save reads ``historical=0`` (and ``off`` when it reads 1). ``any`` only logs.
     #: It never stops the run: whether to run with the rule on is the person's call.
     campaign_historical_ai: str = "any"
+    #: The AI the game runs underneath (docs/expert-ai.md): ``vanilla``, ``expert_ai`` (the
+    #: Workshop mod; the campaign then turns on the strong directive weights, because its own
+    #: plans would drown the normal ones) or ``auto`` (read dlc_load.json at the start).
+    base_ai: str = "auto"
 
     # --- rival mode (rival/, docs/rival.md) -----------------------------------------
     # One human, one single-player game: the harness steers an AI country (``rival``,

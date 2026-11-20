@@ -72,6 +72,17 @@ STRATEGIES: dict[str, tuple[tuple[str, int], ...]] = {
     "ignore": (("ignore", 150),),
 }
 
+#: The extra weight each directive gets while the global flag ``llmb_strong_directives`` is
+#: set (``effect <TAG> llm_bridge_strong_directives``, sent by the harness when the base AI is
+#: Expert AI: docs/expert-ai.md). Expert AI's own country plans weigh 500 to 5000 for the same
+#: types (``antagonize POL 5000`` in its GER_EAI.txt), so a 150 directive would be noise next to
+#: them. The strong block adds to the normal one; it does not replace it. A starting point,
+#: not a measured value: unverified against the live game.
+STRONG_BOOST = 10000
+STRONG_FLAG = "llmb_strong_directives"
+#: The same for a theater posture's front_unit_request.
+STRONG_POSTURE_BOOST = 1000
+
 #: Event codes the generated effects emit; mirrored in adapters/logtail.py.
 EVENT_TARGET_SELECTED = 13
 EVENT_DIRECTIVE_RAISED = 14
@@ -158,6 +169,8 @@ def _strategies(tags: tuple[str, ...]) -> str:
                 f"	ai_strategy = {{ type = front_unit_request tag = {tag} value = {value} }}",
                 "}",
                 "",
+                *_strong_block(flag, [f"type = front_unit_request tag = {tag} "
+                                      f"value = {STRONG_POSTURE_BOOST}"]),
             ]
     for directive in AI_DIRECTIVES:
         for tag in tags:
@@ -169,7 +182,24 @@ def _strategies(tags: tuple[str, ...]) -> str:
                 out.append(f'\tai_strategy = {{ type = {kind} id = "{tag}" value = {value} }}')
             out.append("}")
             out.append("")
+            out += _strong_block(flag, [f'type = {kind} id = "{tag}" value = {STRONG_BOOST}'
+                                        for kind, _ in STRATEGIES[directive]])
     return "\n".join(out)
+
+
+def _strong_block(flag: str, strategies: list[str]) -> list[str]:
+    """The boost a directive gets while ``llmb_strong_directives`` is set (Expert AI as the base
+    AI): on only while both the directive's own flag and the global flag are set. The abort is
+    an OR of two NOTs because ``NOT = { a b }`` is a NOR in this script language."""
+    return [
+        f"{flag}_strong = {{",
+        f"\tenable = {{ has_country_flag = {flag} has_global_flag = {STRONG_FLAG} }}",
+        f"\tabort = {{ OR = {{ NOT = {{ has_country_flag = {flag} }} "
+        f"NOT = {{ has_global_flag = {STRONG_FLAG} }} }} }}",
+        *(f"\tai_strategy = {{ {s} }}" for s in strategies),
+        "}",
+        "",
+    ]
 
 
 def _effects(tags: tuple[str, ...]) -> str:

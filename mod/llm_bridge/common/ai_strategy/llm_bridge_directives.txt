@@ -47,3 +47,44 @@ llmb_offensive_posture = {
 		value = 100
 	}
 }
+
+# Strong variants, on while the global flag llmb_strong_directives is set (the harness sets it
+# when the base AI is Expert AI, whose own plans weigh 500-5000: docs/expert-ai.md). They add to
+# the blocks above. NOT = { a b } is a NOR here, hence the OR of two NOTs in the aborts.
+llmb_defensive_posture_strong = {
+	enable = {
+		has_country_flag = llmb_posture_defensive
+		has_global_flag = llmb_strong_directives
+	}
+	abort = {
+		OR = {
+			NOT = { has_country_flag = llmb_posture_defensive }
+			NOT = { has_global_flag = llmb_strong_directives }
+		}
+	}
+	ai_strategy = {
+		type = front_unit_request
+		value = 500
+	}
+	ai_strategy = {
+		type = garrison
+		value = 300
+	}
+}
+
+llmb_offensive_posture_strong = {
+	enable = {
+		has_country_flag = llmb_posture_offensive
+		has_global_flag = llmb_strong_directives
+	}
+	abort = {
+		OR = {
+			NOT = { has_country_flag = llmb_posture_offensive }
+			NOT = { has_global_flag = llmb_strong_directives }
+		}
+	}
+	ai_strategy = {
+		type = front_unit_request
+		value = 1000
+	}
+}

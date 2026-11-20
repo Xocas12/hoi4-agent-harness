@@ -25,3 +25,17 @@ llm_bridge_clear_directives = {
 	set_variable = { llmb_event_kind = 12 }
 	llm_bridge_emit_event = yes
 }
+
+# The directive weights for Expert AI as the base AI (docs/expert-ai.md): a global flag the
+# generated *_strong ai_strategy blocks key on. `effect <TAG> llm_bridge_strong_directives`.
+llm_bridge_strong_directives = {
+	set_global_flag = llmb_strong_directives
+	set_variable = { llmb_event_kind = 18 }
+	llm_bridge_emit_event = yes
+}
+
+llm_bridge_normal_directives = {
+	clr_global_flag = llmb_strong_directives
+	set_variable = { llmb_event_kind = 19 }
+	llm_bridge_emit_event = yes
+}

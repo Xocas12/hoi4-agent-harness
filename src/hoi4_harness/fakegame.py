@@ -362,6 +362,8 @@ class FakeGame:
         self.human_ai = False
         #: Country flags the console's effects set (``llmb_harness`` is the one that matters).
         self.flags: set[str] = set()
+        #: Global flags set through the console (llm_bridge_strong_directives).
+        self.global_flags: set[str] = set()
         #: A game that is not running writes nothing and ticks no day (``kill``).
         self.alive = True
         #: Whether the game is the focused window, and the wall-clock second it comes
@@ -1166,6 +1168,12 @@ class FakeGame:
         if name == "llm_bridge_unmark_harness":
             self.flags.discard("llmb_harness")
             return self._event(17)
+        if name == "llm_bridge_strong_directives":
+            self.global_flags.add("llmb_strong_directives")
+            return self._event(18)
+        if name == "llm_bridge_normal_directives":
+            self.global_flags.discard("llmb_strong_directives")
+            return self._event(19)
         if name == "llm_bridge_clear_directives":
             self.directives, self.global_posture, self.theater_postures = [], None, {}
             self.target = None
