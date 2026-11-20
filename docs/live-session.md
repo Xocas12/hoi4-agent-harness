@@ -993,3 +993,56 @@ off (do not record the points) and report which assumption failed.
 
 What to report: for each step, what the log said, what the game did, and the transcript result.
 Whatever does not match, with the log line, is the next thing to fix.
+
+## 15. Co-op handover, domains and multiplayer (#31, #33, #91)
+
+Everything here is built and tested against the mock and the fake game. These steps are what
+only the real game settles. Use a spare non-ironman game as one country (say GER), with the
+LLM Bridge mod, `--live`, and **you at the keyboard**: this is the first time the harness types
+while a person is playing. Use `--no-llm` or a scripted planner (`--script`) for steps 1 to 5,
+so no model call is involved.
+
+**1. The idle clock is real.** `hoi4-harness play --adapter logtail+input --live --player-clock
+--handover-mode idle --handover-idle-seconds 5 --run-dir runs/coop-live`. In a Python session
+on the same machine, `from hoi4_harness.rival.safety import system_input_watch; w =
+system_input_watch(); w.supported, w.idle_seconds()`: `True` and a number that restarts at 0
+when you press a key or move the mouse. If it is `False` or does not move, say so in #33.
+
+**2. Idle mode, the happy path.** Queue one action (a focus). Play, then pause and take your
+hands off the mouse and keyboard. After about 15 s (10 s paused, 5 s quiet) the window opens,
+the action runs, and the transcript has a `handover` record with `mode: idle`, `waited_seconds`
+and `window_seconds`. Check the focus in the game. Then unpause and play and queue something:
+it must not run while the date moves or while you click.
+
+**3. You come back mid-queue.** Queue four research or production actions. Pause, go quiet,
+and as soon as the console opens, press a harmless key (Shift) or move the mouse. The window
+must stop at the next key (`stopped_because: the player started using the keyboard or mouse`),
+the grant must be gone and the rest still queued in `handover-queue.json`. **Look at the
+console input line**: empty is what the design assumes; a half-typed `run llmb_...` means the
+abort needs to clear it first (the same open question as rival step 7). Do it three times at
+different points and count how many were caught.
+
+**4. Hotkey.** Add `--handover-hotkey ctrl+alt+h --handover-mode hotkey`. The run must say
+`hotkey ctrl+alt+h grants a window`. Queue an action and press the combination in the game:
+the queue runs and the grant is gone. Press it with nothing queued: nothing happens. Start a
+second run while the first holds the combination: it must refuse to start, naming the clash.
+Confirm the combination reaches nothing else (it is consumed system-wide) and that stopping
+the run frees it.
+
+**5. Approve.** `--handover-mode approve`. Queue two actions, answer yes to one and no to the
+other: only the yes runs, the transcript has two `confirmation` records and the window record
+lists the declined one. End the terminal's input (Ctrl-Z, Enter on Windows): the answer is no.
+
+**6. Domains.** `--human army,navy,diplomacy` with a real model on a short run. The model must
+never propose an army order, and the brief must carry the `Held by the player` line. Leave
+guidance with `hoi4-harness guide --run-dir runs/coop-live "..."` and confirm the model is
+woken for it and the transcript has a `guidance` record.
+
+**7. Multiplayer, stage 0 (#91).** Needs a second machine and licence: fill the table in
+[multiplayer.md](multiplayer.md), one row per channel, each from the non-host client, with the
+log line or a screenshot as evidence. Stage 2 is the acceptance run of #91.
+
+**What to paste where.** Steps 1 to 5 settle the acceptance of #33 (no input until handed
+over, the queue runs, stale is reported, it hands back) and the handover half of #31; step 6
+the domain half of #31; step 7 is #91.
+

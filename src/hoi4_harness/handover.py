@@ -28,10 +28,12 @@ a keyboard hook in this process, which would itself be input contention.
 from __future__ import annotations
 
 import json
+import time
 from collections.abc import Callable
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
+from .adapters.input_driver import InputInterrupted
 from .types import ActionCall, ActionResult, GameState
 
 GRANT_FILENAME = "handover.grant"
@@ -47,6 +49,9 @@ class Pending:
     queued_on: str          # game date
     queued_turn: int
     position: int
+    #: Wall-clock time it was queued (``HandoverQueue.clock``), so the report can say how long
+    #: it waited. 0: not known (an older queue file).
+    queued_at: float = 0.0
 
 
 @dataclass
@@ -59,6 +64,15 @@ class HandoverReport:
     failed: list[dict] = field(default_factory=list)
     aborted: bool = False
     left_queued: int = 0
+    #: The player said no to these (approve mode); a decision, so it is recorded.
+    declined: list[dict] = field(default_factory=list)
+    #: Which trigger opened the window: ``hotkey``, ``idle`` or ``approve``.
+    mode: str = "hotkey"
+    #: Wall-clock time the window opened, and how many seconds it stayed open.
+    granted_at: float = 0.0
+    window_seconds: float = 0.0
+    #: Why an aborted window stopped (the player came back, took the grant away).
+    stopped_because: str = ""
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -71,8 +85,13 @@ class HandoverReport:
         if self.failed:
             bits.append(f"{len(self.failed)} failed: " + "; ".join(
                 f"{f['action']} ({f['reason']})" for f in self.failed[:3]))
+        if self.declined:
+            bits.append(f"{len(self.declined)} declined by the player: " + "; ".join(
+                d["action"] for d in self.declined[:3]))
         if self.aborted:
-            bits.append(f"player took control back, {self.left_queued} still queued")
+            bits.append("player took control back"
+                        + (f" ({self.stopped_because})" if self.stopped_because else "")
+                        + f", {self.left_queued} still queued")
         return f"Handover on {self.granted_on}: " + ", ".join(bits)
 
 
@@ -101,11 +120,27 @@ def stale_reason(call: ActionCall, state: GameState) -> str | None:
 
 
 class HandoverQueue:
-    def __init__(self, run_dir: Path):
+    def __init__(self, run_dir: Path, clock: Callable[[], float] = time.time):
         self.run_dir = Path(run_dir)
         self.pending: list[Pending] = []
         self.reports: list[HandoverReport] = []
         self._next = 1
+        #: Wall clock for "how long did it wait"; injectable so a test needs no real time.
+        self.clock = clock
+        #: A ``WindowPolicy`` (rival/safety.py, coop.py) that decides when the queue may run and
+        #: whether the player has come back mid-queue. None: the grant file alone.
+        self.window = None
+        #: A ``KeyWatch`` that bounds a window for the input driver, when one is wired.
+        self.watch = None
+        #: ``callable(Confirmation) -> bool``: per-action approval (approve mode).
+        self.approver: Callable | None = None
+        self.mode = "hotkey"
+
+    def use_window(self, policy, watch=None, *, mode: str | None = None) -> None:
+        """Run by ``policy`` instead of the grant file alone (see coop.py)."""
+        self.window, self.watch = policy, watch
+        if mode:
+            self.mode = mode
 
     # --- the grant ------------------------------------------------------------
 
@@ -114,6 +149,8 @@ class HandoverQueue:
         return self.run_dir / GRANT_FILENAME
 
     def granted(self) -> bool:
+        if self.window is not None:
+            return self.window.check().ok
         return self.grant_path.exists()
 
     def grant(self) -> None:
@@ -144,7 +181,8 @@ class HandoverQueue:
                     ),
                     changed={"queued": entry.position, "executed": False},
                 )
-        entry = Pending(call=call, queued_on=date, queued_turn=turn, position=self._next)
+        entry = Pending(call=call, queued_on=date, queued_turn=turn, position=self._next,
+                        queued_at=self.clock())
         self._next += 1
         self.pending.append(entry)
         self._publish()
@@ -166,7 +204,7 @@ class HandoverQueue:
         self.run_dir.mkdir(parents=True, exist_ok=True)
         payload = [
             {"position": p.position, "action": p.call.name, "arguments": p.call.arguments,
-             "queued_on": p.queued_on, "queued_turn": p.queued_turn,
+             "queued_on": p.queued_on, "queued_turn": p.queued_turn, "queued_at": p.queued_at,
              "rationale": p.call.rationale}
             for p in self.pending
         ]
@@ -189,6 +227,7 @@ class HandoverQueue:
                 queued_on=item.get("queued_on", ""),
                 queued_turn=int(item.get("queued_turn", 0)),
                 position=int(item["position"]),
+                queued_at=float(item.get("queued_at") or 0.0),
             )
             for item in items
         ]
@@ -219,31 +258,74 @@ class HandoverQueue:
 
         ``apply_batch`` is for queues that send everything at once (rival mode); this one
         runs its actions one at a time and ignores it."""
+        if self.window is not None and not self.pending:
+            self.window.idle()
+            return None
         if not self.granted():
             return None
-        report = HandoverReport(granted_on=read_state().date)
-        while self.pending:
-            if not self.granted():
-                # The player took the keyboard back: stop between actions and
-                # keep the rest, rather than finishing what we started.
-                report.aborted = True
-                break
-            entry = self.pending.pop(0)
-            state = read_state()
-            waited = {"action": entry.call.name, "arguments": entry.call.arguments,
-                      "queued_on": entry.queued_on, "ran_on": state.date}
-            reason = stale_reason(entry.call, state)
-            if reason:
-                report.stale.append({**waited, "reason": reason})
-                continue
-            result = apply(entry.call)
-            if result.ok:
-                report.ran.append(waited)
-            else:
-                report.failed.append({**waited, "reason": result.message})
+        opened = self.clock()
+        report = HandoverReport(granted_on=read_state().date, mode=self.mode, granted_at=opened)
+        guard = self.watch if self.watch is not None else self.window
+        if guard is not None:
+            guard.begin()
+        try:
+            while self.pending:
+                why = self._stop_reason()
+                if why:
+                    # The player took the keyboard back: stop between actions and
+                    # keep the rest, rather than finishing what we started.
+                    report.aborted, report.stopped_because = True, why
+                    break
+                entry = self.pending.pop(0)
+                state = read_state()
+                waited = {"action": entry.call.name, "arguments": entry.call.arguments,
+                          "queued_on": entry.queued_on, "ran_on": state.date}
+                if entry.queued_at:
+                    waited["waited_seconds"] = round(max(0.0, self.clock() - entry.queued_at), 1)
+                reason = stale_reason(entry.call, state)
+                if reason:
+                    report.stale.append({**waited, "reason": reason})
+                    continue
+                if self.approver is not None and not self._approved(entry, state):
+                    report.declined.append(waited)
+                    continue
+                why = self._stop_reason()       # again: approval and the state read take time
+                if why:
+                    self.pending.insert(0, entry)
+                    report.aborted, report.stopped_because = True, why
+                    break
+                try:
+                    result = apply(entry.call)
+                except InputInterrupted as exc:
+                    # A guard stopped the keys: nothing reached the game for this one.
+                    self.pending.insert(0, entry)
+                    report.aborted, report.stopped_because = True, str(exc)
+                    break
+                if self.window is not None:
+                    self.window.note_own_input()
+                if result.ok:
+                    report.ran.append(waited)
+                else:
+                    report.failed.append({**waited, "reason": result.message})
+        finally:
+            if guard is not None:
+                guard.end()
         report.left_queued = len(self.pending)
+        report.window_seconds = round(max(0.0, self.clock() - opened), 1)
         if not report.aborted:
             self._release()
         self._publish()
         self.reports.append(report)
         return report
+
+    def _stop_reason(self) -> str | None:
+        """Why the window must close before the next action, or None."""
+        if self.window is not None:
+            return self.window.interrupted()
+        return None if self.granted() else "the player withdrew the grant"
+
+    def _approved(self, entry: Pending, state: GameState) -> bool:
+        from .confirm import Confirmation
+
+        return bool(self.approver(Confirmation(call=entry.call, date=state.date,
+                                               turn=entry.queued_turn)))

@@ -35,6 +35,7 @@ runs the country.
 | `script` | A deterministic Python controller fills it. The model has no tools for the domain and is not woken for it; the brief carries one line per automated domain saying what the script did since the last wake. |
 | `game` | HOI4's own AI. See the constraint below. |
 | `off` | Nobody. The actions are not offered and nothing acts there. |
+| `human` | A person playing alongside the model ([co-op.md](co-op.md)). Like `off` for the model, plus: the prompt and every brief say the person holds it, and a call into it is refused at queue time and again when a queued call runs, whatever else asks for it. Beside a `game` domain (`human_ai`) it is refused, because the AI would act in the person's domain too (`allow_contested` makes it a warning). `--human army,navy` is the short form. |
 
 ```toml
 # profile (TOML): the top-level keys first, then the control table
