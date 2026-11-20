@@ -92,6 +92,28 @@ with each enemy's divisions and surrender progress, the independent countries le
 run has spent."""
 
 
+CAMPAIGN_LLM = """This is an unattended campaign, and you play the country yourself. The game is
+running headless: the harness reads it from the mod's log and acts through the game's console and
+keyboard. The game's own AI is NOT running your country (human_ai is not on), so nothing fills a
+slot for you: when the national focus ends, a research slot opens or a production line is empty,
+it stays that way until you, or one of the harness's reflexes (an empty construction queue, idle
+factories), fills it. You are woken when that happens, when a war starts or ends, on a scheduled
+review (weeks apart), and when the person running the campaign leaves guidance.
+- Your tool list is the whole of what you can do. The harness offers only what it can do
+  without the mouse and can read back, so some of what a player does is not there (research may
+  not be, and no tool moves a division). Do not plan around a tool you do not have.
+- Armies: the game's AI is not moving your divisions, and no tool here does. They stand where they
+  are; plan for a war you cannot attack in.
+- note keeps a plan across wakes. advance_time days sets how long the clock runs until your next
+  scheduled review (7 to 90 days). Every wake spends from a fixed money budget, so sleep long when
+  nothing needs you.
+
+A change you make reaches the game when the harness types it in, and the result says whether the
+game took it ("unverified" means the harness could not see it yet, not that it failed: check the
+next report before repeating it). The brief reports the conquest: states held and the share of the
+world, the wars, the independent countries left, and what the run has spent."""
+
+
 RIVAL = """You are the grand strategist of {tag}, one country in a single-player game that a
 person is also playing. The person plays a different country, and may well be your enemy. {tag}
 is run by the game's own AI: it chooses the national focus and the research, builds and
@@ -159,6 +181,7 @@ def build_system(
     campaign: bool = False,
     rival: str = "",
     rival_when: str = "paused",
+    campaign_control: str = "game_ai",
 ) -> str:
     """Assemble the system prompt.
 
@@ -170,7 +193,8 @@ def build_system(
 
     from .hybrid import describe
 
-    parts = [MECHANICS, describe(operational_control)]
+    independent = bool(campaign) and campaign_control == "llm" and not rival
+    parts = [MECHANICS, describe(operational_control, campaign=independent)]
     if advisor:
         # Sits with the mechanics, before any guidance: it corrects the fiction
         # that the harness executes what the model calls.
@@ -180,7 +204,7 @@ def build_system(
     elif campaign:
         # Instead of the headless note: it lists what the mouse-only actions cannot do, and
         # a campaign's tool list is narrower than that for a different reason.
-        parts.append(CAMPAIGN)
+        parts.append(CAMPAIGN_LLM if independent else CAMPAIGN)
     elif headless:
         from ..adapters.headless import unavailable_actions
 
@@ -248,6 +272,7 @@ def system_for(config, index=None) -> str:
         campaign=getattr(config, "campaign", False),
         rival=getattr(config, "rival", ""),
         rival_when=getattr(config, "rival_act_when", "paused"),
+        campaign_control=getattr(config, "campaign_control", "game_ai"),
     )
 
 

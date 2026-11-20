@@ -98,7 +98,14 @@ class Policy:
         reflex_delegate: bool = False,
         campaign: CampaignPacing | None = None,
         country: str = "",
+        hands_on: frozenset[str] | None = None,
     ):
+        #: Independent campaign (``campaign_control = "llm"``): the actions the model has,
+        #: and so which idle slots are worth a wake. None is the game-AI campaign.
+        self.hands_on = hands_on
+        #: A reason to wake the model that the supervisor found (guidance from the person);
+        #: set before each decision, ``None`` when there is none.
+        self.pending_wake: str | None = None
         #: The player's tag from the config, for when the state does not carry it.
         self.country = country
         self.days_per_turn = days_per_turn
@@ -137,6 +144,8 @@ class Policy:
 
         # The player's own surrender is the one event no gap or review interval may hold
         # back: the model must hear it the turn it is seen, in every mode.
+        if self.pending_wake:
+            return WakeDecision(True, self.pending_wake, "critical")
         fell = own_capitulation(state, player_tag(state, self.country))
         if fell is not None:
             date, victor = fell
@@ -195,11 +204,34 @@ class Policy:
         critical = next((e for e in state.events if e.severity == "critical"), None)
         if critical is not None and days_since_planner >= pacing.wake_gap_days:
             return WakeDecision(True, f"critical event: {critical.text}", "critical")
+        idle = self._idle_wake(state) if days_since_planner >= pacing.wake_gap_days else None
+        if idle is not None:
+            return WakeDecision(True, idle, "opportunity")
         if days_since_planner >= self.review_days(state):
             return WakeDecision(True, "scheduled review", "scheduled")
         if critical is not None:
             return WakeDecision(False, f"critical event inside the {pacing.wake_gap_days}-day gap")
         return WakeDecision(False, "nothing worth a decision")
+
+    def _idle_wake(self, state: GameState) -> str | None:
+        """Independent campaign only: what the game's AI no longer fills. Each is a wake
+        only when the model has the action that fills it (a headless run has no
+        ``start_research``, and waking it for a slot it cannot use would only spend money),
+        and only once per ``campaign_wake_gap_days``."""
+        can = self.hands_on
+        if not can:
+            return None
+        if (self.wake_on_no_focus and "set_national_focus" in can
+                and not state.national_focus and state.known("national_focus")):
+            return "no national focus is running"
+        free = sum(1 for slot in state.research if slot.technology is None)
+        if (self.wake_on_free_research_slot and "start_research" in can and free
+                and state.known("research")):
+            return f"{free} research slot(s) idle"
+        if ("set_production" in can and state.known("production") and not state.production
+                and state.known("military_factories") and state.military_factories):
+            return "no military production line is running"
+        return None
 
     def _delegate(self, state: GameState) -> list[ActionCall]:
         """The AI-only arm of the hybrid experiment (#10), and nothing else.

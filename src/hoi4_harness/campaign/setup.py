@@ -20,26 +20,47 @@ _DEFAULT_OBJECTIVE = HarnessConfig.objective
 #: Turns are a backstop for a campaign (the end date is the bound): a month a turn for
 #: 13 years is under 200, a week a turn under 700.
 BACKSTOP_TURNS = 5000
+#: Who plays the country (``HarnessConfig.campaign_control``).
+CONTROLS = ("game_ai", "llm")
 
 
 def apply_defaults(config: HarnessConfig) -> HarnessConfig:
     """Make ``config`` a campaign's. Idempotent; operator settings that are not part of
     what a campaign requires (the model, the budget, the speed, the review intervals) are
     left as they are."""
+    if config.campaign_control not in CONTROLS:
+        raise ValueError(f"campaign_control must be one of {', '.join(CONTROLS)}, "
+                         f"not {config.campaign_control!r}")
     config.campaign = True
     config.adapter = "headless"
-    config.operational_control = "game_ai"
-    config.reflex_enabled = False
-    # The AI picks the focus and the research and runs the fronts: none of those is news
-    # for the model, and each would wake it for nothing.
-    config.wake_on_no_focus = False
-    config.wake_on_free_research_slot = False
-    config.wake_on_front_quiet = False
-    config.wake_on_losing_ground = False
+    if config.campaign_control == "llm":
+        # Independent mode: nothing runs the country but the model and the reflex layer. The
+        # game's AI is not handed the country (no human_ai), so the things it would have done
+        # (a focus to pick, a research slot to fill, a production line to keep full) come
+        # back as reflexes and as wakes; Policy gates the wakes on the action being offered.
+        config.operational_control = "llm"
+        config.campaign_human_ai = False
+        config.reflex_enabled = True
+        config.wake_on_no_focus = True
+        config.wake_on_free_research_slot = True
+        config.wake_on_front_quiet = False
+        config.wake_on_losing_ground = False
+        # The clock is the harness's own in a campaign, as in the other mode.
+        if "set_game_speed" not in config.disabled_actions:
+            config.disabled_actions = [*config.disabled_actions, "set_game_speed"]
+    else:
+        config.operational_control = "game_ai"
+        config.reflex_enabled = False
+        # The AI picks the focus and the research and runs the fronts: none of those is news
+        # for the model, and each would wake it for nothing.
+        config.wake_on_no_focus = False
+        config.wake_on_free_research_slot = False
+        config.wake_on_front_quiet = False
+        config.wake_on_losing_ground = False
     config.require_confirmation = False
     config.headless_save_days = 0
     if config.guidance == "doctrine":
-        config.guidance = "world-conquest"
+        config.guidance = "world-conquest-llm" if config.campaign_control == "llm" else "world-conquest"
     if config.objective == _DEFAULT_OBJECTIVE:
         config.objective = OBJECTIVE
     config.turns = max(config.turns, BACKSTOP_TURNS)

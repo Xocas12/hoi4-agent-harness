@@ -39,6 +39,7 @@ from ..env import HOI4Env
 from ..keepawake import keep_awake_for
 from ..observation.render import unnamed_enemies
 from ..types import GameState
+from .inbox import GuidanceBoard
 from .progress import ProgressTracker
 from .saves import SaveTracker
 
@@ -131,6 +132,9 @@ class CampaignSupervisor(Supervisor):
         self.run_dir, self.watchdog = run_dir, watchdog
         self.loop: AgentLoop | None = None
         self._rule_misses = 0
+        #: The person's guidance (``hoi4-harness guide``): the board the brief reads from.
+        self._logged_guidance: set[int] = set(load_state(run_dir).get("guidance_seen") or [])
+        self.guidance = GuidanceBoard(run_dir, load_state(run_dir).get("guidance_seen"))
         #: Weekly camp dates on which the player held 0 states (two in a row end the run).
         self._empty_reads: list[str] = []
         self.last_save: str | None = None
@@ -154,6 +158,7 @@ class CampaignSupervisor(Supervisor):
         spend = self.loop.budget.summary() if self.loop else None
         turn = self.loop.report.turns if self.loop else 0
         self.tracker.events(state.events, state.date)
+        self._read_guidance(state)
         self.tracker.record(state, spend, turn)
         if (self.config.campaign_verify_ai and self.config.campaign_human_ai
                 and state.ai_controlled is False):
@@ -217,9 +222,25 @@ class CampaignSupervisor(Supervisor):
                     f"and {self._empty_reads[1]}): it no longer exists, nothing is left to play")
         return None
 
+    def _read_guidance(self, state: GameState) -> None:
+        """Pick up what the person wrote since the last turn: log and record each new item
+        once, and ask the policy to wake the model for it. The model only ever weighs it."""
+        new = self.guidance.poll()
+        for item in new:
+            if item.id in self._logged_guidance:
+                continue
+            self._logged_guidance.add(item.id)
+            self.log.line(f"guidance #{item.id} from the player: {item.text}")
+            if self.loop is not None:
+                self.loop.transcript.write("guidance", date=state.date, id=item.id,
+                                           ts=item.ts, text=item.text)
+        if self.loop is not None:
+            self.loop.policy.pending_wake = self.guidance.wake_reason()
+
     def after_turn(self, state: GameState, *, woke: bool, reason: str, actions: list[str],
                    tokens: int) -> None:
         if woke:
+            self.guidance.shown()
             self.tracker.reviewed()
         self.log.line(self.turn_line(state, woke, reason, actions, tokens))
         self._write_state(state)
@@ -291,7 +312,8 @@ class CampaignSupervisor(Supervisor):
 
     def _write_state(self, state: GameState) -> None:
         save_state(self.run_dir, last_recovery_save=self.last_save,
-                   recovery_saves=self.saves_taken, date=state.date)
+                   recovery_saves=self.saves_taken, date=state.date,
+                   guidance_seen=sorted(self.guidance.seen))
 
 
 # --- the start ----------------------------------------------------------------
@@ -327,6 +349,16 @@ def begin(env: HOI4Env, config: HarnessConfig, log: CampaignLog,
     tag = (state.country if state.country and state.country != "___" else config.country) or ""
     if not tag:
         raise CampaignStartError("the player's country tag is not known; pass --country")
+    if config.campaign_control == "llm":
+        if state.ai_controlled is True:
+            raise CampaignStartError(
+                f"independent mode (campaign_control=llm) needs {tag} to be a human country, but "
+                "the state line reads ai=1: the game's AI is running it (an earlier game_ai run, "
+                "or a save taken under human_ai). human_ai is a toggle and the harness will not "
+                "send it here; toggle it off in the game's console yourself, or load a save from "
+                "before, then run again")
+        log.line(f"independent mode: the model plays {tag} itself; human_ai is not sent")
+        return state
     if not config.campaign_human_ai:
         log.line("human_ai is off by configuration: the game is not handed to the AI")
         return state
@@ -463,6 +495,9 @@ def _run(config: HarnessConfig, planner: LLMClient | None, resume: bool, env: HO
         supervisor=supervisor,
     )
     supervisor.loop = loop
+    env.brief_hooks.append(supervisor.guidance.brief_lines)
+    if hasattr(adapter, "interrupt"):
+        adapter.interrupt = supervisor.guidance.waiting
     if resume and loop.report.resumed_from:
         log.line(f"resuming: {loop.report.turns} turns already played, "
                  f"${loop.budget.spend.usd:.2f} already spent")

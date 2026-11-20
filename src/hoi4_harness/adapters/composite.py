@@ -34,6 +34,9 @@ class CompositeAdapter(GameAdapter):
         self.poll_seconds = poll_seconds
         #: None: the real clock (wait_for_days' own default).
         self._wait = {} if sleep is None else {"sleep": sleep}
+        #: Asked on every poll of the clock wait; True ends the wait early (a campaign's
+        #: guidance from the person). None: no interruption.
+        self.interrupt = None
         #: Called before every read of a clock wait: a watchdog's check, which raises
         #: ``GameLost`` when the game has died or gone silent (campaign mode).
         self.on_poll: Callable[[], None] | None = None
@@ -112,14 +115,14 @@ class CompositeAdapter(GameAdapter):
             self.on_advance()
         if not self.owns_clock:
             return wait_for_days(self._watched(self.reader.read_state), days, self.poll_seconds,
-                                 **self._wait)
+                                 interrupt=self.interrupt, **self._wait)
 
         try:
             # Peeked, not read: a read can drain events the loop's wake rule needs.
             start = getattr(self.reader, "peek_state", self.reader.read_state)().date
             self.writer.resume()
             return wait_for_days(self._watched(self.reader.read_state), days, self.poll_seconds,
-                                 start=start, **self._wait)
+                                 start=start, interrupt=self.interrupt, **self._wait)
         finally:
             self.writer.pause()
 

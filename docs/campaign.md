@@ -29,6 +29,50 @@ itself and would undo or double the rest (`set_production` opens a second line b
 one the AI keeps), a construction or production order costs two 66 MB saves to verify, and
 the clock is the harness's. `--actions` / `--without` still narrow the list.
 
+## Independent mode: the model plays the country (`--control llm`)
+
+**Not yet verified against the live game.** Everything below is built and tested on the fake
+game only (`tests/test_106_independent_campaign.py`).
+
+```bash
+hoi4-harness play --campaign --control llm --live --profile profiles/campaign-ger-world.json     --max-usd 40 --run-dir runs/campaign-ger-llm      # or "campaign_control": "llm" in the profile
+```
+
+`campaign_control` is `"game_ai"` (default, everything above) or `"llm"`. In `llm` mode:
+
+- `human_ai` is **not** sent (`campaign_human_ai` is off) and the log is read as for any
+  human country. If the state line already reads `ai=1` (an earlier game_ai run, or a save
+  taken under `human_ai`) the run refuses to start: `human_ai` is a toggle and the harness will
+  not guess which way it would flip. Turn it off in the console yourself, then run again.
+- `operational_control` is `llm`, so the directive vocabulary (`set_ai_directive`,
+  `set_ai_posture`, `clear_ai_directives`, `delegate_army_to_ai`) is not offered and the
+  hands-on actions are. Which of those exist is the headless adapter's decision, not this
+  mode's: with the campaign profile's `logtail` reader that is `set_national_focus`,
+  `queue_construction`, `take_decision`, `hire_advisor` and `note` / `advance_time`.
+  `set_production` needs a reader that sees production (`headless_reader` `log+save`, at the
+  price of the verification saves), `set_game_speed` is removed because the clock is the
+  harness's, and `start_research`, `move_division` and `attack_province` are mouse actions that
+  headless refuses (`headless.MOUSE_ACTIONS`).
+- What campaign mode turned off for the game's AI comes back: the **reflex layer** (an empty
+  construction queue, idle military factories) is on, and the wake rules for a focus that ended
+  (`no national focus is running`), an idle research slot and an empty production line are on.
+  A wake is only issued when the model has the action that fills the slot (a headless run has no
+  `start_research`, and waking it for a slot it cannot use would only spend money), and at most
+  once per `campaign_wake_gap_days`. The wartime alarms (encirclement, supply, fronts going
+  quiet) stay off: nothing in the tool list could answer them.
+- The system prompt (`hybrid.describe`, `CAMPAIGN_LLM`) says the game's AI is not running the
+  country and that no tool moves a unit; the guidance pack is `world-conquest-llm`.
+
+**The gap: armies in wartime.** Without `human_ai` nothing moves the player's divisions. The
+two things that could are both off in a headless campaign today: unit orders
+([unit-orders.md](unit-orders.md)) are clicks, need a mouse, a calibrated camera and `unit_orders =
+true`, and the headless driver refuses a mouse; `delegate_army_to_ai` is a mouse action too
+(issue #8, not verified live). So in `llm` mode the model can queue buildings and pick focuses
+and decisions, and if a war reaches it the army stands where it is. Do not read a good result in
+this mode as the model conquering anything by force. What would close the gap is a verified
+console path for delegating armies, or the game's AI taking the armies only; neither exists
+here.
+
 ## Telemetry under `human_ai`
 
 The mod used to emit only for `is_ai = no`, so `human_ai` would have silenced the log.
@@ -60,6 +104,36 @@ The harness keeps them in `GameState` (`ai_controlled`, `campaign`), in the brie
 `CAMPAIGN:` block: states held, share, change since the start and since the last review,
 independent countries left, wars since the last review, spend) and in
 `campaign_progress.jsonl` (one row a turn).
+
+## Guiding a run (`hoi4-harness guide`)
+
+A person can leave a running campaign guidance without stopping it, in either control mode:
+
+```bash
+hoi4-harness guide --run-dir runs/campaign-ger-1936 "Take Poland before France; do not attack the USSR"
+hoi4-harness guide --run-dir runs/campaign-ger-1936 --list
+hoi4-harness guide --run-dir runs/campaign-ger-1936 --remove 2        # one item
+hoi4-harness guide --run-dir runs/campaign-ger-1936 --expire 7        # items older than 7 days
+hoi4-harness guide --run-dir runs/campaign-ger-1936 --clear           # all of it
+```
+
+It appends a JSON line to `<run-dir>/guidance_inbox.jsonl` (`{id, ts, text}`; a removal is a
+`{"clear": [ids]}` line, so a writer in another process never races the reader). The campaign
+reads the file at the top of every turn, and while the clock is running it checks on every poll,
+so guidance is heard within seconds of real time rather than at the next scheduled review.
+
+- **A wake reason.** New guidance wakes the model (`wake: guidance from the player`), past the
+  wake gap, once per item.
+- **A standing block in every brief** under `PLAYER GUIDANCE`, until cleared, with items the model
+  has not yet been shown marked `NEW`. It tells the model it is advice to weigh, not an order, and
+  to say in its note when it declines part of it. The mailbox player reads the same brief text.
+- **Advice, not an instruction.** The harness never executes it; the model's actions are
+  whatever the model chose.
+- **Logged**: each item is a `guidance #N from the player: ...` line in `campaign.log` and a
+  `guidance` record in `transcript.jsonl`; what the model has been shown is kept in
+  `campaign_state.json` (`guidance_seen`) so a resume does not wake it again for old items.
+- An item is cut to 1200 characters. If the budget is spent and the wake is refused, the item stays
+  NEW and is shown on the next wake.
 
 ## Wake rules
 
@@ -130,7 +204,7 @@ never on a resumed run that finds `ai=1`.
 
 Files in the run directory: `transcript.jsonl` (everything), `campaign.log` (a line a turn),
 `campaign_progress.jsonl`, `campaign_events.jsonl`, `campaign_state.json`, `memory.json`,
-`campaign-report.md`.
+`campaign-report.md`, and `guidance_inbox.jsonl` once someone has used `guide`.
 
 ## Before you leave it overnight
 

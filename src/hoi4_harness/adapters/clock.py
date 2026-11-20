@@ -41,6 +41,7 @@ def wait_for_days(
     sleep: Callable[[float], None] = time.sleep,
     now: Callable[[], float] = time.monotonic,
     start: str | None = None,
+    interrupt: Callable[[], bool] | None = None,
 ) -> GameState:
     """Poll ``read_state`` until the in-game date has moved ``days`` forward.
 
@@ -48,6 +49,8 @@ def wait_for_days(
     is that a war declaration does not wait for the schedule. ``sleep`` and
     ``now`` are injectable so tests do not spend real time. ``start`` is the date
     to count from when the game may already have moved before the first read.
+    ``interrupt`` is asked on every poll and ends the wait early when it says True (a
+    campaign's guidance from the person, so it is heard now and not at the next review).
     """
     state = read_state()
     start = start or state.date
@@ -57,6 +60,8 @@ def wait_for_days(
     deadline = now() + max(MIN_DEADLINE_SECONDS, days * seconds_per_day)
     while now() < deadline:
         if has_critical_event(state) or days_between(start, state.date) >= days:
+            return state
+        if interrupt is not None and interrupt():
             return state
         sleep(poll_seconds)
         state = read_state()
