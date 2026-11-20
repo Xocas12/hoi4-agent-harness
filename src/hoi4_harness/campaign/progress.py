@@ -161,7 +161,8 @@ class ProgressTracker:
         cap = self.capitulation
         if not cap:
             return []
-        who = state.country if state.country and state.country != "___" else (cap.get("tag") or "Your country")
+        known = state.country if state.country and state.country != "___" else ""
+        who = known or cap.get("tag") or "Your country"
         held = state.campaign.owned_states if state.campaign is not None else None
         text = f"{who} CAPITULATED on {cap['date']}" + (f" to {cap['to']}" if cap.get("to") else "")
         text += (f"; you are a government in exile holding {held} states" if held is not None
