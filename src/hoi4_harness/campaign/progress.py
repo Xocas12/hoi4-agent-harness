@@ -126,7 +126,9 @@ class ProgressTracker:
                             + (f" of {camp.countries_existing} existing"
                                if camp.countries_existing is not None else ""))
             # The war lines are daily; the weekly report can be a week old.
-            enemies = len(state.wars) if state.known("wars") else camp.enemies
+            # An empty list is not "no wars" when the weekly count says otherwise:
+            # a mod without the daily war lines leaves it empty all game.
+            enemies = len(state.wars) if state.known("wars") and state.wars else camp.enemies
             if enemies is not None:
                 bits.append(f"at war with {enemies}"
                             + (f" ({camp.capitulated} capitulated as of {camp.date})"

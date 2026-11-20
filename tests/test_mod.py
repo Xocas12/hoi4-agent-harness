@@ -196,3 +196,34 @@ def test_telemetry_reads_war_support_through_has_war_support():
                           .read_text(encoding="utf-8"))
     assert re.search(r"set_variable\s*=\s*\{\s*llmb_ws\s*=\s*has_war_support\s*\}", body)
     assert not re.search(r"llmb_ws\s*=\s*war_support\b", body)
+
+
+def _harness_source() -> str:
+    src = Path(__file__).resolve().parents[1] / "src" / "hoi4_harness"
+    return "\n".join(p.read_text(encoding="utf-8") for p in src.rglob("*.py"))
+
+
+def test_every_effect_the_mod_defines_is_called_by_the_mod_or_the_harness():
+    """An effect nobody calls is telemetry that never prints. llm_bridge_emit_wars was
+    defined in schema v4 and called from nowhere, so a live campaign saw no war line in
+    four game years: the brief said "wars: none" while Germany had 9 enemies."""
+    called = set()
+    for path in MOD.rglob("*.txt"):
+        called |= set(re.findall(r"\b(llm_bridge_\w+) = yes",
+                                 strip_comments(path.read_text(encoding="utf-8-sig"))))
+    harness = _harness_source()
+    # The harness builds some names from a prefix (llm_bridge_raise_ + kind), so a
+    # quoted prefix ending in "_" counts for every effect that starts with it.
+    prefixes = set(re.findall(r"[\"'](llm_bridge_\w+_)[\"{]", harness))
+    unreached = sorted(
+        name for name in _defined_effects()
+        if name not in called and name not in harness
+        and not any(name.startswith(p) for p in prefixes))
+    assert not unreached, f"defined but never called: {unreached}"
+
+
+def test_the_daily_tick_prints_the_war_lines():
+    body = strip_comments((MOD / "common" / "scripted_effects" / "llm_bridge_telemetry.txt")
+                          .read_text(encoding="utf-8"))
+    state = body[body.index("llm_bridge_emit_state = {"):body.index("llm_bridge_emit_army = {")]
+    assert "llm_bridge_emit_wars = yes" in state

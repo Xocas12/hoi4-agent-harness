@@ -39,6 +39,25 @@ def _country_label(state: GameState) -> str:
     return f"{name} ({state.country})"
 
 
+def unnamed_enemies(state: GameState) -> int:
+    """Enemies the weekly camp line counts when no daily war line names any.
+
+    The two disagree when the installed mod predates the call that prints the war lines
+    (or a war started this week): the count is then the only sign of the war, and a
+    brief that said "no wars" would be wrong. 0 when the war lines name the enemies.
+    """
+    camp = state.campaign
+    if state.wars or camp is None or not camp.enemies:
+        return 0
+    return camp.enemies
+
+
+def _unnamed_war_line(state: GameState) -> str:
+    camp = state.campaign
+    return (f"AT WAR with {camp.enemies} countries (the weekly count of {camp.date}; no daily "
+            f"war line names them, so who and how strong is unknown: read the front picture)")
+
+
 def _war_line(war) -> str:
     """One war. What a reader could not see is left out, never filled in."""
     since = f" since {war.since}" if war.since else " (already on when telemetry began)"
@@ -149,6 +168,8 @@ def render_full(state: GameState, max_events: int = 6, max_fronts: int = 3) -> s
     if state.wars:
         for war in state.wars:
             lines.append(_war_line(war))
+    elif unnamed_enemies(state):
+        lines.append(_unnamed_war_line(state))
     lines.extend(summarise_fronts(state.fronts, limit=max_fronts))
     lines.extend(forces_lines(state))
     lines.extend(order_lines(state))

@@ -35,6 +35,7 @@ from ..agent.memory import Memory
 from ..config import HarnessConfig
 from ..env import HOI4Env
 from ..keepawake import keep_awake_for
+from ..observation.render import unnamed_enemies
 from ..types import GameState
 from .progress import ProgressTracker
 from .saves import SaveTracker
@@ -156,7 +157,8 @@ class CampaignSupervisor(Supervisor):
         wars = ", ".join(
             f"{w.against}" + (f" {w.surrender_progress * 100:.0f}%"
                               if w.surrender_progress is not None else "")
-            for w in state.wars) or "none"
+            for w in state.wars) or (f"{unnamed_enemies(state)} unnamed"
+                                     if unnamed_enemies(state) else "none")
         held = "?"
         if camp is not None and camp.owned_states is not None:
             held = str(camp.owned_states)
