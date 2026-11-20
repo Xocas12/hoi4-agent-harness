@@ -848,7 +848,7 @@
  },
  "assumptions": [
   "Sides: Germany's own states plus the former Czechoslovak states (69-74, 9) are side A; every Polish state is side B. Lithuanian, Latvian, Soviet and Romanian states are left out, so the Soviet invasion and every flank beyond Poland are not modelled.",
-  "Forces are about 40 percent of the historical order of battle (a sim of 55 against 40 divisions is too slow to benchmark): 22 German divisions (18 infantry, 4 armour) against 22 Polish infantry. The templates are the sim's inf_9 and armor_6; Poland's thinner equipment is not modelled.",
+  "Forces are about 40 percent of the historical order of battle (a sim of about 55 against 40 divisions is too slow to benchmark): 22 German divisions (18 infantry, 4 armour) against 20 Polish infantry. The templates are the sim's inf_9 and armor_6; Poland's thinner equipment is not modelled.",
   "Hubs: Brandenburg for Germany; Warsaw and Lwow for Poland.",
   "Objectives and limit: take Poznan, Lodz, Krakow and Warsaw within 30 days. The historical campaign took Warsaw in 27 days; the objective set and the limit are ours.",
   "Rivers come from map/rivers.bmp by a threshold heuristic of ours (realmap.py), not a game rule.",

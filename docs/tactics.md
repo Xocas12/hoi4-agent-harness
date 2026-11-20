@@ -224,6 +224,189 @@ Against the scripted opponent:
 
 Try it: `hoi4-harness tactics run all --controller all --seeds 30 --first-seed 1000`.
 
+## Stage 4: battle plans and the front planner
+
+HOI4's engine executes a drawn battle plan (a front line, an offensive arrow, an army) reasonably
+well; what its AI does badly is *choosing* where to attack. Mods cannot change that layer. Stage 4
+adds a deterministic, non-LLM planner that chooses plans, and an engine executor that carries
+them out, so the choice can be scored separately from the execution. **Everything below is a
+simulator result**, tuned against this simulator, and none of it has been seen in the game.
+
+**Plans** (`tactics/plans.py`). `BattlePlan(name, side, divisions, front, offensive, aggressiveness,
+kind)`: assigned divisions, a front line (own provinces to hold), an optional offensive arrow
+(enemy provinces to attack), aggressiveness 0..1, and a label (`defend`, `offensive`, `fallback`,
+`reserve`).
+
+**The engine executor** (`EngineExecutor`) turns plans into the sim's per-division orders every
+step. The game's real plan execution is engine code no file describes, so each rule is an
+assumption:
+
+- A1 divisions on a plan stand on its front line, spread evenly by count, nearest province first;
+  one already on (or marching to) a front province with room keeps it.
+- A2 provinces facing the arrow get double weight.
+- A3 a division attacks across the line only next to an arrow province, with organisation at
+  least `0.3 + 0.5 (1 - aggressiveness)` and a local power ratio at least `2 (1 - aggressiveness)`
+  (aggressiveness 1: any odds; 0.25: 1.5x; 0: never). The mapping is ours, not a game setting.
+- A4 an enemy arrow province with no division in it is walked into.
+- A5 a captured arrow province joins the line; divisions advance to it and re-form.
+- A6 divisions in combat keep fighting; retreat on zero organisation is the sim's.
+- A7 divisions on no plan get no order.
+- A8 the executor never chooses where to attack or hold, plans no pocket and never withdraws.
+
+**The planner** (`tactics/planner.py`, `tactics/picture.py`). It sees a `Picture`: by default the
+resolution of the mod's front picture (per region, which is a state on the real map: own and
+enemy counts, how many are under half strength, controller, plus static terrain, rivers, hubs and
+objectives; no per-division strength, organisation, template, supply state or exact province;
+power is estimated from counts alone). `observe="full"` gives it province-level numbers for
+comparison. It scores enemy regions like `ScriptedController` scores provinces (objective, enemy
+divisions its capture would cut off, own divisions it would free, times the force ratio after
+terrain and river, discounted by how far our mass is from the sector); thin sectors score high.
+Pairs of targets whose joint capture cuts off more than the sum of each are pincers. It extends
+an arrow one region deeper when the target is empty or all weak (exploiting a breakthrough),
+garrisons chokes and draws a fallback plan from a forming pocket, shares the remaining
+divisions over threatened sectors half by threat and half evenly, gives up outmatched
+non-objective ground for better ground behind it, counter-attacks all-weak enemy regions on
+defence and keeps about a tenth (a fifth on defence) in reserve. A plan is kept 96 h unless
+something scores 1.8x better. It re-plans every 24 h and at once when a region changes hands, a
+division is lost, more of ours are cut off, or an axis is completed. Registered as `planner` in
+`tactics/registry.py`.
+
+**Baselines.** `vanilla_plans` (the "HOI4 AI" analogue): every day, all divisions on one plan, the
+whole frontier as the line, the arrow straight across at the enemy neighbour nearest its capital,
+attack at any odds on offence. It runs through the same executor, so the gap to `planner`
+measures the *choice* of plans. `vanilla` is the older division-level vanilla-like controller.
+
+### Benchmark
+
+`scripts/tactics_plans_bench.py`; numbers in `tactics/data/plans_results.json` (a test replays two
+rows). Held-out seeds 2000-2029 (the development iterations used 1000-1009, which overlap the
+earlier learned-controller table). Side A is the controller, side B the opponent. The fifth
+scenario is the real-map one below.
+
+Against the vanilla opponent:
+
+| scenario | controller | win rate | casualty ratio | pockets closed |
+|---|---|---|---|---|
+| break_line | vanilla | 24/30 (80%) | 0.87 | 0 |
+| break_line | vanilla_plans | 27/30 (90%) | 1.73 | 0 |
+| break_line | planner | 29/30 (97%) | 2.74 | 0.13 |
+| break_line | planner_full | 29/30 (97%) | 3.06 | 1.73 |
+| break_line | scripted | 30/30 (100%) | 3.70 | 0.07 |
+| break_line | learned | 29/30 (97%) | 2.98 | 0 |
+| close_encirclement | vanilla | 1/30 (3%) | 0.84 | 0.23 |
+| close_encirclement | vanilla_plans | 14/30 (47%) | 2.00 | 2.03 |
+| close_encirclement | planner | 1/30 (3%) | 0.84 | 0.13 |
+| close_encirclement | planner_full | 22/30 (73%) | 3.20 | 2.23 |
+| close_encirclement | scripted | 29/30 (97%) | 4.40 | 2.9 |
+| close_encirclement | learned | 30/30 (100%) | 8.60 | 4.87 |
+| escape_encirclement | vanilla | 8/30 (27%) | 0.19 | 1 |
+| escape_encirclement | vanilla_plans | 30/30 (100%) | 1.27 | 1 |
+| escape_encirclement | planner | 30/30 (100%) | 1.48 | 1.1 |
+| escape_encirclement | planner_full | 30/30 (100%) | 1.49 | 1.1 |
+| escape_encirclement | scripted | 30/30 (100%) | 1.42 | 1 |
+| escape_encirclement | learned | 30/30 (100%) | 1.32 | 2 |
+| hold_line | vanilla | 0/30 (0%) | 1.32 | 0 |
+| hold_line | vanilla_plans | 0/30 (0%) | 1.23 | 0 |
+| hold_line | planner | 30/30 (100%) | 3.48 | 0 |
+| hold_line | planner_full | 30/30 (100%) | 3.48 | 0 |
+| hold_line | scripted | 24/30 (80%) | 1.68 | 0 |
+| hold_line | learned | 22/30 (73%) | 3.14 | 0 |
+| germany_poland_1939 | vanilla | 26/30 (87%) | 1.53 | 0.9 |
+| germany_poland_1939 | vanilla_plans | 26/30 (87%) | 3.12 | 1.9 |
+| germany_poland_1939 | planner | 18/30 (60%) | 2.19 | 3 |
+| germany_poland_1939 | planner_full | 25/30 (83%) | 2.07 | 2.97 |
+| germany_poland_1939 | scripted | 4/30 (13%) | 2.23 | 1.97 |
+| germany_poland_1939 | learned | 3/30 (10%) | 2.19 | 1.37 |
+
+Against the scripted opponent:
+
+| scenario | controller | win rate | casualty ratio | pockets closed |
+|---|---|---|---|---|
+| break_line | vanilla | 26/30 (87%) | 3.36 | 0 |
+| break_line | vanilla_plans | 19/30 (63%) | 2.83 | 0.03 |
+| break_line | planner | 23/30 (77%) | 3.21 | 0 |
+| break_line | planner_full | 27/30 (90%) | 3.58 | 1 |
+| break_line | scripted | 27/30 (90%) | 4.28 | 0.03 |
+| break_line | learned | 20/30 (67%) | 2.96 | 0 |
+| close_encirclement | vanilla | 1/30 (3%) | 0.35 | 0.03 |
+| close_encirclement | vanilla_plans | 9/30 (30%) | 0.81 | 1.33 |
+| close_encirclement | planner | 30/30 (100%) | 0.00 | 1 |
+| close_encirclement | planner_full | 12/30 (40%) | 0.85 | 0.4 |
+| close_encirclement | scripted | 4/30 (13%) | 4.59 | 0.2 |
+| close_encirclement | learned | 0/30 (0%) | 5.83 | 1 |
+| escape_encirclement | vanilla | 0/30 (0%) | 0.18 | 1 |
+| escape_encirclement | vanilla_plans | 30/30 (100%) | 0.58 | 1.73 |
+| escape_encirclement | planner | 30/30 (100%) | 7.24 | 1 |
+| escape_encirclement | planner_full | 30/30 (100%) | 7.24 | 1 |
+| escape_encirclement | scripted | 30/30 (100%) | 3.83 | 1 |
+| escape_encirclement | learned | 30/30 (100%) | 1.94 | 1 |
+| hold_line | vanilla | 30/30 (100%) | 2.53 | 0 |
+| hold_line | vanilla_plans | 0/30 (0%) | 0.75 | 0 |
+| hold_line | planner | 30/30 (100%) | 2.45 | 0 |
+| hold_line | planner_full | 30/30 (100%) | 2.45 | 0 |
+| hold_line | scripted | 30/30 (100%) | 2.50 | 0 |
+| hold_line | learned | 25/30 (83%) | 2.53 | 0 |
+| germany_poland_1939 | vanilla | 27/30 (90%) | 2.38 | 0.37 |
+| germany_poland_1939 | vanilla_plans | 17/30 (57%) | 4.77 | 0.2 |
+| germany_poland_1939 | planner | 14/30 (47%) | 3.26 | 0.27 |
+| germany_poland_1939 | planner_full | 18/30 (60%) | 4.20 | 0.57 |
+| germany_poland_1939 | scripted | 0/30 (0%) | 5.11 | 0.1 |
+| germany_poland_1939 | learned | 0/30 (0%) | 4.33 | 0 |
+
+
+**Reading it honestly.**
+
+- The planner beats what the same executor does with the vanilla-like plans where the choice of
+  sector matters and ground is defensible: `hold_line` (30/30 and casualty ratio 3.5, against 0/30
+  for vanilla plans) and `break_line` against the vanilla opponent (97% vs 90%). With full
+  information it also gets `close_encirclement` 22/30 against vanilla plans' 14/30.
+- It does **not** beat the others everywhere. With the default aggregated observation it
+  fails `close_encirclement` against the vanilla opponent (1/30): the salient's neck and head sit
+  in one two-province region, so the pocket that the full-information planner (22/30) and the
+  scripted controller (29/30) see is invisible. That 21-game gap is the measured cost of the
+  coarse observation on that map; on `break_line` (29 vs 29), `hold_line` and
+  `escape_encirclement` aggregation costs nothing, and on the real-map scenario it costs 18/30
+  against 25/30.
+- Against the vanilla opponent `vanilla_plans` already beats the division-level `vanilla` in
+  most rows (`close_encirclement` 14/30 vs 1/30, `escape_encirclement` 30/30 vs 8/30): a good part
+  of the original vanilla controller's weakness is its execution, which the executor fixes, not
+  its choice of target. The planner's edge over `vanilla_plans` is therefore smaller than its edge
+  over `vanilla`.
+- Scripted and learned (division-level, full information) are ahead of the planner on
+  `close_encirclement` and `break_line`; the planner is ahead of both on `hold_line` against the
+  vanilla opponent (scripted 24/30, learned 22/30).
+- On the real map, `vanilla` and `vanilla_plans` win 26/30 against the vanilla opponent and
+  `planner_full` 25/30, so the scenario does not separate them; the planner's 18/30 with aggregated
+  observation is behind. Against the scripted opponent the scripted and learned controllers win
+  0/30, the planner 14/30 (18/30 with full information) and `vanilla` 27/30. Scripted and learned
+  are tuned to the four small maps and do poorly on a bigger one, so that row is not evidence the
+  planner is strong.
+- `close_encirclement` against the scripted opponent shows the planner at 30/30 with a casualty
+  ratio of 0.00: the scripted defender gives up the pocket without a fight in this scenario, so
+  the win says more about that defender than about the planner.
+- Gaps of one to three games in 30 are within seed noise. The planner and the scenarios were
+  tuned against this simulator; a high win rate says the scenario rewards those ideas, not that
+  the planner is strong in the game.
+
+### A larger scenario from the real map
+
+`tactics/realmap.py` turns a map layer and a spec into the dict `Scenario.from_dict` reads:
+`scenario_from_layer(layer, spec, rivers)`, state or province granularity (province nodes carry
+their state as `region`), terrain the commonest of a state's land provinces, adjacency from
+touching provinces, river flags from `map/rivers.bmp` along each border (`border_rivers`; the
+thresholds are a heuristic of ours). `scripts/build_realmap.py --game-dir ...` reads the install
+read-only and writes `tactics/data/realmap/germany_poland_1939.json` and the compact test
+fixture `tests/fixtures/realmap_layer.json` (35 provinces: ids, adjacency, terrain, no map
+pictures).
+
+`germany_poland_1939` has 34 nodes (one per state, 75 edges, 15 with a river): the 18 Polish
+states against 9 German and 7 former-Czechoslovak states treated as German-held. Assumptions, also
+in the file: Lithuanian, Latvian, Soviet and Romanian states are left out; forces are about 40% of
+the historical order of battle, 22 German divisions (18 `inf_9`, 4 `armor_6`) against 20 Polish
+`inf_9`; hubs Brandenburg for Germany and Warsaw and Lwow for Poland; objectives Poznan, Lodz,
+Krakow and Warsaw in 30 days; 12 h steps. Poland's weaker equipment and the Soviet invasion are not
+modelled.
+
 ## Gap list against the real game
 
 Simplifications, each with the mechanic it stands in for:
@@ -246,7 +429,7 @@ Simplifications, each with the mechanic it stands in for:
    with no way out is only destroyed through retreat or attrition (no surrender mechanic).
 8. **Combat.** One battle per province, no multi-province divisions in motion being pulled into
    combat, no flanking width rules beyond a flat extra-direction bonus, no air, naval,
-   amphibious or paradrops, no night or weather, no battle plans or AI-driven execution
+   amphibious or paradrops, no night or weather, battle plans only as stage 4 assumptions
    (the player-level order is the unit of control). Retreat is instant relocation.
 9. **Movement.** One order per division, divisions not in combat move at full speed, no
    organisation loss while moving, no unit stacking limits on provinces.

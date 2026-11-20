@@ -249,3 +249,13 @@ def test_a_division_level_controller_still_goes_through_the_old_path(s):
 
     calls = ControllerBridge(s.layer, ScriptedController(), offered=set(PLAN_ACTIONS)).decide(s.state())
     assert {c.name for c in calls} <= {"move_division", "attack_province"}
+
+
+def test_the_army_domain_owns_the_plan_actions_and_the_script_uses_them_when_asked():
+    from hoi4_harness.auto.army import ArmyScript
+    from hoi4_harness.auto.base import AutoContext
+    from hoi4_harness.control import DOMAIN_ACTIONS
+
+    assert set(PLAN_ACTIONS) <= DOMAIN_ACTIONS["army"]
+    ctx = AutoContext(HarnessConfig(battle_plans=True, army_controller="planner"), layer=lambda: None)
+    assert ArmyScript(ctx).controller_name == "planner"

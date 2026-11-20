@@ -62,7 +62,8 @@ DOMAIN_ACTIONS: dict[str, frozenset[str]] = {
                              "deploy_divisions"}),
     "politics": frozenset({"hire_advisor", "take_decision"}),
     "diplomacy": frozenset({"diplomacy"}),
-    "army": frozenset({"set_army_order", "move_division", "attack_province"}),
+    "army": frozenset({"set_army_order", "move_division", "attack_province",
+                       "draw_front_line", "draw_offensive", "assign_battle_plan"}),
     "navy": frozenset({"set_naval_mission"}),
     "air": frozenset({"set_air_mission"}),
 }

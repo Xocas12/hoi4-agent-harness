@@ -224,4 +224,37 @@ against the game.
 | `adapters/input_driver.py` | `click_at`, `drag`, `enable_unit_orders` |
 | `fakearmy.py`, `fakegame.py` | divisions, movement, mouse, telemetry |
 | `tactics/bridge.py` | simulator controller <-> actions |
+| `adapters/battle_plans.py` | plan actions by click (section 7) |
 | `scripts/record_camera.py` | fit and write `camera.json` |
+
+## 7. Battle plans (NOT live-verified)
+
+`draw_front_line(army, enemy, states)`, `draw_offensive(army, from_state, target_state, via?)` and
+`assign_battle_plan(army)` (`adapters/battle_plans.py`) are the plan-level counterpart of
+`move_division`: the planner (`tactics/planner.py`) chooses plans, and this draws them. They are off
+unless the profile sets `battle_plans = true`, need what division orders need (map, recorded camera)
+and are in `control.py`'s army domain. Built against the fake game only.
+
+What `interface/battleplantools.gui` (1.19.5) says: the *draw defence* tool is a button with
+`shortcut = "z"` (l.131-134), the *draw offence* tool `shortcut = "x"` (l.148-152), and
+`btn_assign_units` (l.202-207) has no shortcut, so its point is recorded (`plan.assign_units`), like
+the army points (`army.<name>`) of `delegate_army_to_ai`. The file does not say how the tool window
+opens, whether a line is drawn by dragging or by clicking its points, or what "assign units" expects
+selected first. Assumptions, to be checked live: the tools are available when the action is given;
+the shortcut selects the tool; a line is drawn by pressing on its first point, moving through the rest
+and releasing on the last (`InputDriverAdapter.drag_path`); the army is selected by its recorded
+point, then assign is pressed; the line passes through each state's middle (the point unit orders
+click). Points come from the map files and the camera record exactly as in section 3.
+
+Refusals before any input: an army with no recorded point; a line state that is not the player's in
+the front picture, that does not exist, or that does not border the next one; an enemy that is the
+player or borders nothing of the line; an offensive whose target shows nothing hostile or whose
+chain does not border; a missing `plan.assign_units`; a stale, mismatched or unvalidated camera; a
+point outside the viewport or two points under 12 px apart. A dry run lists every gesture. A live
+result is always `unverified`: nothing reads a drawn plan back.
+
+`ControllerBridge(layer, controller, offered=..., armies=...)` turns a planner's plans into these
+actions when all three are offered and the plan has an army (`armies[plan name]` or
+`armies["default"]`), and into the state-level `move_division` / `attack_province` orders of the
+executor otherwise, per plan. `auto/army.py` does this when `battle_plans` is on
+(`army_plan_army`, default `all`, names the recorded army). Reserve plans are never drawn.
