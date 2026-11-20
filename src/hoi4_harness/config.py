@@ -311,6 +311,10 @@ class HarnessConfig:
     #: What an exhausted budget does: ``stop`` (leave the game paused, resumable) or
     #: ``coast`` (the AI plays on to the end date with no model calls).
     campaign_on_budget: str = "stop"
+    #: Stop, with a reason, at the next turn boundary once the PLAYER's own country
+    #: capitulates (the objective says "without losing the country", so the run has
+    #: failed). Off: play on in exile.
+    campaign_stop_on_capitulation: bool = True
     #: Toggle ``human_ai`` at the start (the one step that needs the game).
     campaign_human_ai: bool = True
     #: Stop unless the state line's ``ai=`` reads 1 after the toggle.

@@ -478,6 +478,15 @@ class FakeGame:
         if self.visible:
             self._write(self._llmb("evt", tag=enemy, other=self.country, kind=2, detail=0))
 
+    def player_capitulates(self, to: str = "") -> None:
+        """The player's own country capitulates: the same ``on_capitulation`` line, but in
+        the player's scope (``tag`` is the player; ``other`` the victor, when given)."""
+        if self.visible:
+            fields = {"tag": self.country, "kind": 2, "detail": 0}
+            if to:
+                fields["other"] = to
+            self._write(self._llmb("evt", **fields))
+
     def end_war(self, enemy: str) -> None:
         state = self.world.state
         state.wars = [w for w in state.wars if w.against != enemy]

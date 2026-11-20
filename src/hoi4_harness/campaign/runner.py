@@ -136,9 +136,33 @@ class CampaignSupervisor(Supervisor):
             return ("the game's AI is no longer running the country (the state line says "
                     "ai=0): human_ai was toggled off, or the game was restarted. Not "
                     "playing on as a human country; resume to set it up again")
+        stop = self._player_capitulated(state)
+        if stop:
+            return stop
         self._recovery_save(state)
         if self.saves is not None:
             self.saves.prune()
+        return None
+
+    def _player_capitulated(self, state: GameState) -> str | None:
+        """A stop reason when the player's own country capitulated (not an enemy).
+
+        The mod logs ``capitulation`` in the capitulating country's scope, so the event
+        text reads ``capitulation: GER`` for GER itself and ``capitulation: POL (to GER)``
+        for an enemy that gave in to us. A capitulated country still exists in the game
+        (government in exile), so neither the process nor the log goes away."""
+        if not self.config.campaign_stop_on_capitulation:
+            return None
+        tag = (state.country if state.country and state.country != "___"
+               else self.config.country) or ""
+        if not tag:
+            return None
+        for event in state.events:
+            if event.kind != "capitulation":
+                continue
+            words = event.text.partition(":")[2].split()
+            if words and words[0].upper() == tag.upper():
+                return f"{tag.upper()} capitulated ({event.date or state.date})"
         return None
 
     def after_turn(self, state: GameState, *, woke: bool, reason: str, actions: list[str],
