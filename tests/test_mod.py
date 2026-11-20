@@ -185,3 +185,14 @@ def test_the_mod_can_mark_the_player_and_prints_the_campaign_line():
     hooks = (MOD / "common" / "on_actions" / "llm_bridge_on_actions.txt").read_text(
         encoding="utf-8-sig")
     assert "on_weekly" in hooks and "llm_bridge_emit_campaign = yes" in hooks
+
+
+def test_telemetry_reads_war_support_through_has_war_support():
+    """The bare ``war_support`` variable reads 0 on 1.20 (Germany 1936: top bar 35%, ws=0 logged).
+
+    ``has_war_support`` is the computed 0-1 value (dynamic_variables_documentation.md).
+    """
+    body = strip_comments((MOD / "common" / "scripted_effects" / "llm_bridge_telemetry.txt")
+                          .read_text(encoding="utf-8"))
+    assert re.search(r"set_variable\s*=\s*\{\s*llmb_ws\s*=\s*has_war_support\s*\}", body)
+    assert not re.search(r"llmb_ws\s*=\s*war_support\b", body)

@@ -114,6 +114,9 @@ def render_full(state: GameState, max_events: int = 6, max_fronts: int = 3) -> s
             f"{line.equipment} x{line.factories} ({_pct(line.efficiency)} eff)"
             for line in state.production[:6]
         )
+        if len(state.production) > 6:
+            rest = state.production[6:]
+            detail += f"; +{len(rest)} more line(s), {sum(r.factories for r in rest)} factories"
         idle = (state.military_factories - assigned) if state.known("military_factories") else 0
         lines.append(f"Production: {detail}" + (f" | {idle} MIL FACTORIES IDLE" if idle > 0 else ""))
 
@@ -129,6 +132,8 @@ def render_full(state: GameState, max_events: int = 6, max_fronts: int = 3) -> s
     if state.divisions:
         total = sum(g.count for g in state.divisions)
         by_template = "; ".join(f"{g.count}x {g.template} @ {g.location}" for g in state.divisions[:5])
+        if len(state.divisions) > 5:
+            by_template += f"; +{sum(g.count for g in state.divisions[5:])} more"
         lines.append(f"Army: {total} divisions -- {by_template}")
 
     saved = state.raw.get("save_date") if isinstance(state.raw, dict) else None

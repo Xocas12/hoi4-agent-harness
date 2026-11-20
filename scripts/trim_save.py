@@ -32,23 +32,34 @@ from hoi4_harness.adapters.savegame import matching_brace  # noqa: E402
 KEEP_COUNTRY = ("politics", "variables", "production", "focus", "units", "technology", "fuel_status",
                 "capital", "stability", "war_support", "manpower", "research_slot", "focus_tree",
                 "flags")
-DECOYS = """\tENG={
-\t\tpolitics={
-\t\t\tpolitical_power=12.5
-\t\t}
-CAN={
-\t\tautonomous=yes
-}
-\t\tstability=0.9
-\t}
-\tGER={
-\t\tSWE={
-\t\t\topinion=10
-\t\t}
-\t\tpolitics={
-\t\t\tpolitical_power=999
-\t\t}
-\t}
+
+
+def decoys(player: str) -> str:
+    """The two traps a real save puts in front of naive readers, for any player tag.
+
+    The block that holds a nested ``{player}={ opinion }`` must be a country other
+    than the player: with the player's own tag it becomes a second, wrong player
+    block (this planted ``politics=999`` ahead of the real Germany in a GER save).
+    """
+    host = "GER" if player != "GER" else "FRA"
+    other = "ENG" if player != "ENG" else "ITA"
+    return f"""	{other}={{
+		politics={{
+			political_power=12.5
+		}}
+CAN={{
+		autonomous=yes
+}}
+		stability=0.9
+	}}
+	{host}={{
+		{player}={{
+			opinion=10
+		}}
+		politics={{
+			political_power=999
+		}}
+	}}
 """
 
 
@@ -126,7 +137,7 @@ def trim(text: str) -> str:
     dts = [text[a:b] for k, a, b in blocks(text, d_open, "\t") if f'country="{player}"' in text[a:b]]
     out.append("division_templates={\n" + "\n".join(dts) + "\n}\n")
 
-    out.append("countries={\n" + DECOYS + player_block + "}\n")
+    out.append("countries={\n" + decoys(player) + player_block + "}\n")
     # Seeds identify a game, not a position in it.
     pattern = r"^[ \t]*(?:seed|random|[a-z_]*random_seed|game_unique_\w+)=.*\n"
     return re.sub(pattern, "", "".join(out), flags=re.M)

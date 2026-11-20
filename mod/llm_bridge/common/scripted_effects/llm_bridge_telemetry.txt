@@ -28,7 +28,10 @@ llm_bridge_emit_state = {
 	set_variable = { llmb_pp = political_power }
 	set_variable = { llmb_stab = stability }
 	multiply_variable = { llmb_stab = 100 }
-	set_variable = { llmb_ws = war_support }
+	# has_war_support, not war_support: on 1.20 the bare name reads 0 (Germany, 1 Jan 1936:
+	# top bar 35%, base 0.30 in the save, ws=0 logged). dynamic_variables_documentation.md:446
+	# documents has_war_support as the computed value, 0-1.
+	set_variable = { llmb_ws = has_war_support }
 	multiply_variable = { llmb_ws = 100 }
 	set_variable = { llmb_civ = num_of_civilian_factories }
 	set_variable = { llmb_mil = num_of_military_factories }
