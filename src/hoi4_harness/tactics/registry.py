@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from .controllers import ScriptedController, VanillaLikeController
 from .learned import LearnedController
+from .learned_plans import learned_plans_controller
 from .planner import planner_controller
 
 REGISTRY = {
@@ -16,6 +17,7 @@ REGISTRY = {
     "learned": LearnedController,
     "vanilla_like": VanillaLikeController,
     "planner": planner_controller,
+    "learned_plans": learned_plans_controller,
 }
 
 

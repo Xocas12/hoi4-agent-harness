@@ -1058,6 +1058,14 @@ def cmd_tactics(args: argparse.Namespace) -> int:
         policy.save(args.out or PARAMS_PATH)
         print(f"saved {args.out or PARAMS_PATH}")
         return 0
+    if args.tactics_command == "train-plans":
+        from .tactics.learned_plans import PARAMS_PATH as PLAN_PARAMS
+        from .tactics.train_plans import train as train_plans
+
+        policy = train_plans(args.minutes, args.seed)
+        policy.save(args.out or PLAN_PARAMS)
+        print(f"saved {args.out or PLAN_PARAMS}")
+        return 0
     names = list_scenarios() if args.scenario == "all" else [args.scenario]
     unknown = [n for n in names if n not in list_scenarios()]
     if unknown:
@@ -1526,7 +1534,8 @@ def build_parser() -> argparse.ArgumentParser:
                            ("episode", "play one seeded episode and print its metrics")):
         tp = tsub.add_parser(verb, help=helptext)
         tp.add_argument("scenario", help="scenario name, or 'all' (run only)")
-        tp.add_argument("--controller", choices=["vanilla", "scripted", "learned", "both", "all"],
+        tp.add_argument("--controller", choices=["vanilla", "scripted", "learned", "planner", "planner_full",
+                                 "learned_plans", "vanilla_plans", "both", "all"],
                         default="scripted", help="'both' = vanilla + scripted, 'all' adds learned")
         tp.add_argument("--params", help="learned-controller parameters (default: the committed file)")
         tp.add_argument("--opponent", choices=["vanilla", "scripted"], default="vanilla",
@@ -1543,6 +1552,13 @@ def build_parser() -> argparse.ArgumentParser:
     trp.add_argument("--seed", type=int, default=0)
     trp.add_argument("--out", help="where to write the parameters (default: the committed file)")
     trp.set_defaults(func=cmd_tactics)
+
+    tpp = tsub.add_parser("train-plans", help="train the learned plan chooser (distillation from the "
+                          "full-information planner, then ES)")
+    tpp.add_argument("--minutes", type=float, default=18.0, help="wall-clock budget (default 18)")
+    tpp.add_argument("--seed", type=int, default=0)
+    tpp.add_argument("--out", help="where to write the parameters (default: the committed file)")
+    tpp.set_defaults(func=cmd_tactics)
 
     calibrate = sub.add_parser("calibrate", help="record screen coordinates for the input driver")
     common(calibrate)

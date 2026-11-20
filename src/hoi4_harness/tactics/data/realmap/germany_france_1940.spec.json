@@ -1,0 +1,50 @@
+{
+ "name": "germany_france_1940",
+ "description": "Germany (A) invades the Netherlands, Belgium, Luxembourg and France, May-June 1940, at state granularity. Real states, adjacency, terrain and rivers from the 1.19.5 map; the force counts, hubs, objectives and time limit are assumptions of ours. Held out of every training run of the learned plan chooser.",
+ "granularity": "state",
+ "max_hours": 960,
+ "step_hours": 12,
+ "fixture_states": [42, 51, 980, 8, 34],
+ "sides": {
+  "A": [56, 57, 59, 55, 51, 42, 978, 50, 54, 60],
+  "B": [7, 35, 36, 6, 34, 977, 980, 8, 785, 29, 15, 18, 16, 28, 14, 30, 17, 24, 27, 33, 23, 26, 20, 25, 32, 735, 19, 22, 21, 31]
+ },
+ "hubs": {"A": [55], "B": [16]},
+ "forces": [
+  {"side": "A", "template": "inf_9", "state": 56, "count": 3},
+  {"side": "A", "template": "inf_9", "state": 57, "count": 3},
+  {"side": "A", "template": "inf_9", "state": 51, "count": 4},
+  {"side": "A", "template": "armor_6", "state": 51, "count": 1},
+  {"side": "A", "template": "inf_9", "state": 42, "count": 3},
+  {"side": "A", "template": "armor_6", "state": 42, "count": 4},
+  {"side": "A", "template": "inf_9", "state": 978, "count": 3},
+  {"side": "A", "template": "inf_9", "state": 50, "count": 1},
+  {"side": "A", "template": "inf_9", "state": 55, "count": 1},
+  {"side": "B", "template": "inf_9", "state": 7, "count": 2},
+  {"side": "B", "template": "inf_9", "state": 35, "count": 1},
+  {"side": "B", "template": "inf_9", "state": 6, "count": 2},
+  {"side": "B", "template": "inf_9", "state": 977, "count": 2},
+  {"side": "B", "template": "inf_9", "state": 34, "count": 2},
+  {"side": "B", "template": "inf_9", "state": 980, "count": 1},
+  {"side": "B", "template": "inf_9", "state": 785, "count": 2},
+  {"side": "B", "template": "inf_9", "state": 29, "count": 3},
+  {"side": "B", "template": "inf_9", "state": 18, "count": 2},
+  {"side": "B", "template": "inf_9", "state": 28, "count": 3},
+  {"side": "B", "template": "inf_9", "state": 17, "count": 1},
+  {"side": "B", "template": "inf_9", "state": 16, "count": 2},
+  {"side": "B", "template": "inf_9", "state": 24, "count": 1},
+  {"side": "B", "template": "inf_9", "state": 27, "count": 1}
+ ],
+ "goals": {
+  "A": {"kind": "capture", "states": [977, 785, 18, 16]},
+  "B": {"kind": "hold", "states": [977, 785, 18, 16]}
+ },
+ "assumptions": [
+  "Sides: the ten western German states are side A; the Netherlands, Belgium, Luxembourg and the French states north of the Midi are side B (British and other allied forces are folded into B). Switzerland, Italy, Spain and the coast overseas are left out, so no flank beyond the three countries is modelled.",
+  "Forces are about 40 percent of the historical order of battle: 23 German divisions (18 infantry, 5 armour, the armour in Moselland and Rhineland, facing the Ardennes) against 25 allied infantry. The sim's inf_9 and armor_6 templates; the Maginot Line, French equipment, the BEF and air power are not modelled.",
+  "Hubs: Hessen for Germany; Ile de France for the Allies, so Dutch and Belgian states are in supply only through France.",
+  "Objectives and limit: take Antwerp, Picardy, Champagne and Ile de France within 40 days. The historical campaign took Paris in 36 days; the objective set and the limit are ours.",
+  "Rivers come from map/rivers.bmp by a threshold heuristic of ours (realmap.py), not a game rule.",
+  "One simulator province per state, 12 hour steps."
+ ]
+}

@@ -407,6 +407,199 @@ the historical order of battle, 22 German divisions (18 `inf_9`, 4 `armor_6`) ag
 Krakow and Warsaw in 30 days; 12 h steps. Poland's weaker equipment and the Soviet invasion are not
 modelled.
 
+## Stage 5: a learned plan chooser, distilled from the full-information planner
+
+The benchmark above found that the aggregated planner loses to its full-information twin where the
+coarse picture hides the target (`close_encirclement` 1/30 against 22/30, the real map 18/30 against
+25/30), and the real game only ever gives the aggregated picture. This stage asks whether a learned
+scorer, trained to pick what the full-information planner picks while seeing only the aggregated
+picture, closes that gap. **Everything below is a simulator result.**
+
+**What is learned** (`tactics/learned_plans.py`). One decision: the attack axes of an offensive plan.
+Holds, fallbacks, the reserve and the engine executor (assumptions A1-A8) are the planner's,
+unchanged, so the comparison with `planner` is the scorer against the hand-written axis score and
+nothing else. On an offensive goal each re-plan builds a candidate set from the aggregated picture:
+the empty plan, the best 8 single enemy regions, every pair among the best 6, a triple, and whatever
+the hand-written aggregated planner would draw. A linear scorer (39 features) ranks them. Features:
+counts, weak counts, the planner's own odds and value estimates, the joint cut-off and its gain over
+the two axes taken apart (the pincer signal), static map shape (provinces per region, width,
+neighbours, distance from the enemy hub, rivers), and a `History` of earlier pictures of the same
+game: the change in the enemy count in a region and around it since the last re-plan, a decayed
+running change, and the peak count ever seen there. The history is the part meant to reveal what
+aggregation hides (an enemy that left a region shows up next door). Features are computed from a
+`Picture` with `observe == "aggregated"` and refuse anything else; a test shows that organisation
+and strength above the half-strength line cannot change them. A drawn set is kept while it scores
+within 0.6 (log scale) of the best candidate, for at most 96 h. Defensive goals are not touched, so
+`hold_line` is the planner's own play.
+
+**Training** (`hoi4-harness tactics train-plans`, one process, 16 minutes of wall time, pure Python).
+
+1. Pool: the four small scenarios and the Poland map, each with procedural variants
+   (`tactics/variants.py`: some open terrain swapped, rivers added or dropped, stack sizes nudged by
+   one, the time limit stretched 0.9-1.15x, all by seed). **The France front is never loaded in
+   training.** Training games use seeds 0-299.
+2. Distillation: the teacher (the planner with `observe="full"`) plays 240 episodes and, at every
+   offensive re-plan, the candidates built from the aggregated picture of the same game are recorded
+   with the candidate that is the teacher's axis set. The teacher's choice was among the candidates
+   in 4,511 of 5,192 decisions (87%). Two DAgger rounds follow: the student plays and the teacher is
+   asked what it would have drawn on the states the student reached (4,500 samples in all). Softmax
+   regression over the candidates.
+3. The first run fitted the plain clone (weights from zero). It reached 59-61% top-1 agreement with
+   the teacher and **scored below the hand-written planner on validation games** (0.94 against 0.98
+   mean episode fitness; the full-information planner 1.05). The committed run adds two clones that
+   pull toward a prior that draws the planner's own pick (L2 toward the prior, strengths 0.05 and
+   0.3) and takes the best on selection games (seeds 200-201 on variants 900-901): 0.94 plain,
+   **1.00 at 0.05 (taken)**, 0.98 at 0.3.
+4. ES (antithetic, 5 pairs, sigma 0.1, 14 generations over about 9 minutes, fitness one win plus
+   half the casualty share) on the selected clone, kept only if it beats it on validation games no
+   other stage used (seeds 202-203 on variants 902-903). **It did not**: 1.155 for both, so the clone
+   is kept (the first run: 0.917 after ES against 0.942 for the clone). Validation fitness of the
+   committed run: clone 1.155, hand-written aggregated planner 1.126, full-information planner
+   1.117, on 40 games, which cannot separate them.
+
+The committed weights are the planner prior (`is_default` 2.98) plus small adjustments; `bias_k0`
+0.31, `bias_k1` 0.36 and `enc_cut_gain` -0.68 are the only others above 0.3 in size.
+
+**Benchmark.** `scripts/tactics_learned_plans_bench.py`; numbers in
+`tactics/data/learned_plans_results.json` (per-game outcomes included; a test replays rows). Seeds
+3000-3029, which no earlier development, training or table used. Side A is the controller.
+`germany_poland_1939` was a training front (with variants); **`germany_france_1940` was never seen**.
+It is `tactics/data/realmap/germany_france_1940.json`, built by `scripts/build_realmap.py` from the
+install read-only: 40 state nodes, 93 edges, 29 with a river; 23 German divisions against 25 allied
+(Netherlands, Belgium, Luxembourg and France north of the Midi, folded into one side); Germany takes
+Antwerp, Picardy, Champagne and Ile de France in 40 days; the Allies' only hub is Ile de France.
+Hubs, forces, objectives and the limit are assumptions of ours, listed in the file; the limit was
+raised from 30 to 40 days on development seeds 1000-1009 with baseline controllers only, because 30
+days left every controller near 0. `scripted` and `learned` are the old division-level controllers.
+
+Against the vanilla opponent:
+
+| scenario | controller | win rate | casualty ratio | pockets closed |
+|---|---|---|---|---|
+| break_line | vanilla_plans | 28/30 (93%) | 1.764 | 0 |
+| break_line | planner | 29/30 (97%) | 2.515 | 0.1 |
+| break_line | planner_full | 27/30 (90%) | 3.119 | 1.63 |
+| break_line | learned_plans | 20/30 (67%) | 2.249 | 0.43 |
+| break_line | scripted | 30/30 (100%) | 3.386 | 0.07 |
+| break_line | learned | 29/30 (97%) | 2.808 | 0.07 |
+| close_encirclement | vanilla_plans | 10/30 (33%) | 2 | 1.7 |
+| close_encirclement | planner | 2/30 (7%) | 0.834 | 0.2 |
+| close_encirclement | planner_full | 20/30 (67%) | 2.438 | 2.1 |
+| close_encirclement | learned_plans | 3/30 (10%) | 1.08 | 0.33 |
+| close_encirclement | scripted | 30/30 (100%) | 4.494 | 2.87 |
+| close_encirclement | learned | 30/30 (100%) | 8.616 | 4.97 |
+| escape_encirclement | vanilla_plans | 30/30 (100%) | 1.32 | 1 |
+| escape_encirclement | planner | 30/30 (100%) | 1.499 | 1 |
+| escape_encirclement | planner_full | 30/30 (100%) | 1.507 | 1 |
+| escape_encirclement | learned_plans | 30/30 (100%) | 1.499 | 1 |
+| escape_encirclement | scripted | 30/30 (100%) | 1.411 | 1 |
+| escape_encirclement | learned | 30/30 (100%) | 1.228 | 2 |
+| hold_line | vanilla_plans | 0/30 (0%) | 1.201 | 0 |
+| hold_line | planner | 30/30 (100%) | 3.404 | 0 |
+| hold_line | planner_full | 30/30 (100%) | 3.385 | 0 |
+| hold_line | learned_plans | 30/30 (100%) | 3.404 | 0 |
+| hold_line | scripted | 19/30 (63%) | 1.625 | 0 |
+| hold_line | learned | 23/30 (77%) | 3.21 | 0 |
+| germany_poland_1939 | vanilla_plans | 26/30 (87%) | 2.927 | 1.73 |
+| germany_poland_1939 | planner | 21/30 (70%) | 1.95 | 2.8 |
+| germany_poland_1939 | planner_full | 23/30 (77%) | 2.115 | 3.03 |
+| germany_poland_1939 | learned_plans | 30/30 (100%) | 3.461 | 3.13 |
+| germany_poland_1939 | scripted | 0/30 (0%) | 2.241 | 1.07 |
+| germany_poland_1939 | learned | 0/30 (0%) | 2.594 | 1.27 |
+| germany_france_1940 | vanilla_plans | 15/30 (50%) | 1.861 | 3.9 |
+| germany_france_1940 | planner | 11/30 (37%) | 4.112 | 2.23 |
+| germany_france_1940 | planner_full | 18/30 (60%) | 4.081 | 2.8 |
+| germany_france_1940 | learned_plans | 19/30 (63%) | 2.316 | 1.17 |
+| germany_france_1940 | scripted | 0/30 (0%) | 4.285 | 0 |
+| germany_france_1940 | learned | 0/30 (0%) | 1.183 | 1.33 |
+
+Against the scripted opponent:
+
+| scenario | controller | win rate | casualty ratio | pockets closed |
+|---|---|---|---|---|
+| break_line | vanilla_plans | 19/30 (63%) | 3.18 | 0 |
+| break_line | planner | 27/30 (90%) | 7.049 | 0.03 |
+| break_line | planner_full | 28/30 (93%) | 4.264 | 0.83 |
+| break_line | learned_plans | 22/30 (73%) | 5.295 | 0.27 |
+| break_line | scripted | 29/30 (97%) | 4.129 | 0 |
+| break_line | learned | 24/30 (80%) | 2.74 | 0.13 |
+| close_encirclement | vanilla_plans | 10/30 (33%) | 0.95 | 1.33 |
+| close_encirclement | planner | 30/30 (100%) | 0 | 1 |
+| close_encirclement | planner_full | 15/30 (50%) | 0.86 | 0.73 |
+| close_encirclement | learned_plans | 30/30 (100%) | 0 | 1 |
+| close_encirclement | scripted | 3/30 (10%) | 4.162 | 0.3 |
+| close_encirclement | learned | 0/30 (0%) | 3.557 | 1 |
+| escape_encirclement | vanilla_plans | 30/30 (100%) | 0.529 | 1.73 |
+| escape_encirclement | planner | 30/30 (100%) | 7.441 | 1 |
+| escape_encirclement | planner_full | 30/30 (100%) | 7.441 | 1 |
+| escape_encirclement | learned_plans | 30/30 (100%) | 7.441 | 1 |
+| escape_encirclement | scripted | 30/30 (100%) | 3.906 | 1 |
+| escape_encirclement | learned | 30/30 (100%) | 1.859 | 1 |
+| hold_line | vanilla_plans | 0/30 (0%) | 0.761 | 0 |
+| hold_line | planner | 30/30 (100%) | 2.409 | 0 |
+| hold_line | planner_full | 30/30 (100%) | 2.409 | 0 |
+| hold_line | learned_plans | 30/30 (100%) | 2.409 | 0 |
+| hold_line | scripted | 30/30 (100%) | 2.463 | 0 |
+| hold_line | learned | 23/30 (77%) | 2.51 | 0 |
+| germany_poland_1939 | vanilla_plans | 15/30 (50%) | 5.747 | 0.33 |
+| germany_poland_1939 | planner | 17/30 (57%) | 3.249 | 0.23 |
+| germany_poland_1939 | planner_full | 22/30 (73%) | 4.069 | 0.57 |
+| germany_poland_1939 | learned_plans | 13/30 (43%) | 3.309 | 0.57 |
+| germany_poland_1939 | scripted | 0/30 (0%) | 5.093 | 0.1 |
+| germany_poland_1939 | learned | 0/30 (0%) | 4.577 | 0.03 |
+| germany_france_1940 | vanilla_plans | 6/30 (20%) | 2.569 | 1.37 |
+| germany_france_1940 | planner | 0/30 (0%) | 5.452 | 0 |
+| germany_france_1940 | planner_full | 0/30 (0%) | 5.215 | 0 |
+| germany_france_1940 | learned_plans | 3/30 (10%) | 4.318 | 0.57 |
+| germany_france_1940 | scripted | 8/30 (27%) | 3.87 | 0.93 |
+| germany_france_1940 | learned | 0/30 (0%) | 2.314 | 0.37 |
+
+
+**Reading it honestly.**
+
+- **The gap is not closed.** `close_encirclement` against the vanilla opponent: learned plans 3/30,
+  planner 2/30, planner with full information 20/30. Over all 72 rows the student has 260 wins of
+  360 against the aggregated planner's 257 and the full-information planner's 273. That is a
+  negative result for what the stage was for: the student did not learn to see the pocket the coarse
+  picture hides. Its weights stay at the planner's pick; the clone agrees with the teacher in only
+  about 60% of decisions, and what it agrees on is mostly what the hand-written scorer already picks.
+- **Where it differs from the planner, it is not because of what it learned.** An ablation with only
+  the planner-prior weight (no learned adjustment; same candidates, same keep rule) wins
+  `break_line` 20/30 and 22/30, Poland 30/30 and 14/30, France 23/30 and 4/30 (vanilla / scripted
+  opponent); the learned student wins 20, 22, 30, 13, 19, 3. Identical on `break_line` and on Poland
+  against vanilla, a game or four apart elsewhere, and 4 games worse on France against vanilla for
+  the learned version. So the differences from `planner` come from the candidate machinery and its
+  keep rule (re-deciding every re-plan unless the previous set is still the planner's pick, instead
+  of the planner's 96 h patience), not from training. On the small maps that costs: `break_line`
+  against vanilla 20/30 for the student and 29/30 for the planner (1 game won only by the student,
+  10 only by the planner), against scripted 22 and 27. On the real maps it pays: Poland against
+  vanilla 30/30 against 21/30 (9 games won only by the student, none only by the planner), held-out
+  France against vanilla 19 against 11 (12 against 4) and against scripted 3 against 0, but Poland
+  against scripted is 13 against 17 (6 against 10). A side finding for the planner: its patience
+  rule was tuned on the small maps and may hurt on the big ones.
+- **Held-out front.** On France the student beats the aggregated planner (19 vs 11, 3 vs 0) and even
+  the full-information planner (18, 0), and the old controllers collapse again (scripted and learned
+  0/30 against vanilla). This is not generalisation of anything learned: the same gain appears with
+  the untrained prior. It says a keep rule that re-plans freely suits these two real maps, on one
+  held-out map, 30 seeds, two opponents.
+- Seed noise: 30 games make gaps of a few games indistinguishable; the paired counts above (games won
+  by one controller only) are the better guide. `escape_encirclement` and `hold_line` are identical
+  for the student and the planner in every game (the student does not touch defence, and both escape
+  with the same plan), and the 30/30 against the scripted `close_encirclement` defender carries the
+  0.00 casualty-ratio caveat of the table above.
+- Tuned against the sim: the scenarios, the candidate set, the keep margin and the features were all
+  built and iterated against this simulator, the teacher is the same hand-written planner, and the
+  France front's time limit was set on baseline runs. None of it is evidence about the real game,
+  which has fog of war, real supply and a plan executor we only guess at (A1-A8).
+- What would make learning matter: a teacher worth cloning (the full-information planner itself
+  loses `close_encirclement` to the scripted defender, 15/30, where the aggregated planner wins
+  30/30), features that carry the hidden neck/head split (provinces per region is the only trace of
+  it), or a student that outputs the plans themselves rather than choosing among a fixed candidate
+  set.
+
+Retrain with `hoi4-harness tactics train-plans --minutes 16`; the parameters it writes carry their
+own provenance (rounds, selection and validation scores, held-out front, wall time).
+
 ## Gap list against the real game
 
 Simplifications, each with the mechanic it stands in for:

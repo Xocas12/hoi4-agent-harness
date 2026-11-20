@@ -463,8 +463,9 @@ def test_politics_runs_only_the_rules_it_is_given():
 
 
 def test_the_tactical_registry_names_the_controllers_and_builds_them():
-    assert registry.names() == ["learned", "planner", "scripted", "vanilla_like"]
+    assert registry.names() == ["learned", "learned_plans", "planner", "scripted", "vanilla_like"]
     for name in registry.names():
-        assert registry.make(name).name in ("learned", "planner", "scripted", "vanilla")
+        assert registry.make(name).name in (
+            "learned", "learned_plans", "planner", "scripted", "vanilla")
     with pytest.raises(KeyError, match="no tactical controller 'gambit'"):
         registry.make("gambit")
