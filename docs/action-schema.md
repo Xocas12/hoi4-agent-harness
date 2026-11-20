@@ -1,6 +1,6 @@
 # The action catalog
 
-The catalog is the agent's entire vocabulary. It is small on purpose: 24 verbs,
+The catalog is the agent's entire vocabulary. It is small on purpose: 27 verbs,
 listed by `hoi4-harness actions` (add `--json` for schemas).
 
 | Action | Category | Notes |
@@ -29,6 +29,9 @@ listed by `hoi4-harness actions` (add `--json` for schemas).
 | `clear_ai_directives` | strategy | |
 | `move_division` | army | By click, only with a camera fit and a mouse (`docs/unit-orders.md`); states are the coordinates |
 | `attack_province` | army | As `move_division`; the target must border the attacker and hold the enemy |
+| `draw_front_line` | army | Battle-plan front line through own states, by click; off unless `battle_plans = true`; NOT live-verified (`docs/unit-orders.md` section 7) |
+| `draw_offensive` | army | Battle-plan offensive arrow from an own state into a hostile one; as above |
+| `assign_battle_plan` | army | Select a recorded army and press assign-units (a recorded point); as above |
 
 The four `strategy` verbs are the hybrid vocabulary (`docs/hybrid-control.md`).
 

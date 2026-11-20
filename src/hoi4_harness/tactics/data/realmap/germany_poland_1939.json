@@ -1,0 +1,857 @@
+{
+ "name": "germany_poland_1939",
+ "description": "Germany (A) invades Poland (B), September 1939, at state granularity. Real states, adjacency, terrain and rivers from the 1.19.5 map; the force counts, hubs, objectives and time limit are assumptions of ours.",
+ "scored_side": "A",
+ "max_hours": 720,
+ "step_hours": 12,
+ "provinces": [
+  {
+   "id": "s5",
+   "terrain": "forest",
+   "controller": "A",
+   "region": "s5",
+   "x": 313.0,
+   "y": 44.8,
+   "state": 5
+  },
+  {
+   "id": "s9",
+   "terrain": "plains",
+   "controller": "A",
+   "region": "s9",
+   "x": 303.7,
+   "y": 53.1,
+   "state": 9
+  },
+  {
+   "id": "s10",
+   "terrain": "plains",
+   "controller": "B",
+   "region": "s10",
+   "x": 313.4,
+   "y": 48.9,
+   "state": 10,
+   "hub": "B"
+  },
+  {
+   "id": "s62",
+   "terrain": "plains",
+   "controller": "A",
+   "region": "s62",
+   "x": 301.6,
+   "y": 45.3,
+   "state": 62
+  },
+  {
+   "id": "s63",
+   "terrain": "forest",
+   "controller": "A",
+   "region": "s63",
+   "x": 305.9,
+   "y": 45.0,
+   "state": 63
+  },
+  {
+   "id": "s64",
+   "terrain": "forest",
+   "controller": "A",
+   "region": "s64",
+   "x": 300.7,
+   "y": 47.9,
+   "state": 64,
+   "hub": "A"
+  },
+  {
+   "id": "s65",
+   "terrain": "hills",
+   "controller": "A",
+   "region": "s65",
+   "x": 301.3,
+   "y": 50.3,
+   "state": 65
+  },
+  {
+   "id": "s66",
+   "terrain": "forest",
+   "controller": "A",
+   "region": "s66",
+   "x": 306.1,
+   "y": 50.2,
+   "state": 66
+  },
+  {
+   "id": "s67",
+   "terrain": "plains",
+   "controller": "A",
+   "region": "s67",
+   "x": 308.8,
+   "y": 51.5,
+   "state": 67
+  },
+  {
+   "id": "s68",
+   "terrain": "forest",
+   "controller": "A",
+   "region": "s68",
+   "x": 304.3,
+   "y": 47.7,
+   "state": 68
+  },
+  {
+   "id": "s69",
+   "terrain": "hills",
+   "controller": "A",
+   "region": "s69",
+   "x": 302.2,
+   "y": 51.9,
+   "state": 69
+  },
+  {
+   "id": "s70",
+   "terrain": "forest",
+   "controller": "A",
+   "region": "s70",
+   "x": 309.1,
+   "y": 55.6,
+   "state": 70
+  },
+  {
+   "id": "s71",
+   "terrain": "mountain",
+   "controller": "A",
+   "region": "s71",
+   "x": 312.9,
+   "y": 54.9,
+   "state": 71
+  },
+  {
+   "id": "s72",
+   "terrain": "hills",
+   "controller": "A",
+   "region": "s72",
+   "x": 309.6,
+   "y": 53.7,
+   "state": 72
+  },
+  {
+   "id": "s73",
+   "terrain": "hills",
+   "controller": "A",
+   "region": "s73",
+   "x": 317.0,
+   "y": 56.2,
+   "state": 73
+  },
+  {
+   "id": "s74",
+   "terrain": "hills",
+   "controller": "A",
+   "region": "s74",
+   "x": 307.7,
+   "y": 52.8,
+   "state": 74
+  },
+  {
+   "id": "s85",
+   "terrain": "urban",
+   "controller": "B",
+   "region": "s85",
+   "x": 310.1,
+   "y": 44.0,
+   "state": 85
+  },
+  {
+   "id": "s86",
+   "terrain": "plains",
+   "controller": "B",
+   "region": "s86",
+   "x": 307.2,
+   "y": 48.0,
+   "state": 86
+  },
+  {
+   "id": "s87",
+   "terrain": "plains",
+   "controller": "B",
+   "region": "s87",
+   "x": 310.0,
+   "y": 49.4,
+   "state": 87
+  },
+  {
+   "id": "s88",
+   "terrain": "hills",
+   "controller": "B",
+   "region": "s88",
+   "x": 313.7,
+   "y": 53.1,
+   "state": 88
+  },
+  {
+   "id": "s89",
+   "terrain": "mountain",
+   "controller": "B",
+   "region": "s89",
+   "x": 318.5,
+   "y": 55.3,
+   "state": 89
+  },
+  {
+   "id": "s90",
+   "terrain": "hills",
+   "controller": "B",
+   "region": "s90",
+   "x": 312.8,
+   "y": 51.2,
+   "state": 90
+  },
+  {
+   "id": "s91",
+   "terrain": "plains",
+   "controller": "B",
+   "region": "s91",
+   "x": 319.5,
+   "y": 53.7,
+   "state": 91,
+   "hub": "B"
+  },
+  {
+   "id": "s92",
+   "terrain": "plains",
+   "controller": "B",
+   "region": "s92",
+   "x": 316.3,
+   "y": 50.2,
+   "state": 92
+  },
+  {
+   "id": "s93",
+   "terrain": "plains",
+   "controller": "B",
+   "region": "s93",
+   "x": 320.6,
+   "y": 51.3,
+   "state": 93
+  },
+  {
+   "id": "s94",
+   "terrain": "marsh",
+   "controller": "B",
+   "region": "s94",
+   "x": 320.5,
+   "y": 48.6,
+   "state": 94
+  },
+  {
+   "id": "s95",
+   "terrain": "forest",
+   "controller": "B",
+   "region": "s95",
+   "x": 320.2,
+   "y": 45.7,
+   "state": 95
+  },
+  {
+   "id": "s96",
+   "terrain": "forest",
+   "controller": "B",
+   "region": "s96",
+   "x": 322.7,
+   "y": 42.7,
+   "state": 96
+  },
+  {
+   "id": "s97",
+   "terrain": "forest",
+   "controller": "B",
+   "region": "s97",
+   "x": 316.4,
+   "y": 46.2,
+   "state": 97
+  },
+  {
+   "id": "s98",
+   "terrain": "forest",
+   "controller": "B",
+   "region": "s98",
+   "x": 312.2,
+   "y": 47.1,
+   "state": 98
+  },
+  {
+   "id": "s762",
+   "terrain": "forest",
+   "controller": "B",
+   "region": "s762",
+   "x": 310.0,
+   "y": 52.1,
+   "state": 762
+  },
+  {
+   "id": "s763",
+   "terrain": "plains",
+   "controller": "A",
+   "region": "s763",
+   "x": 314.0,
+   "y": 43.1,
+   "state": 763
+  },
+  {
+   "id": "s784",
+   "terrain": "forest",
+   "controller": "B",
+   "region": "s784",
+   "x": 320.1,
+   "y": 43.2,
+   "state": 784
+  },
+  {
+   "id": "s807",
+   "terrain": "forest",
+   "controller": "B",
+   "region": "s807",
+   "x": 309.4,
+   "y": 45.6,
+   "state": 807
+  }
+ ],
+ "edges": [
+  [
+   "s10",
+   "s87",
+   0
+  ],
+  [
+   "s10",
+   "s90",
+   0
+  ],
+  [
+   "s10",
+   "s92",
+   0
+  ],
+  [
+   "s10",
+   "s97",
+   1
+  ],
+  [
+   "s10",
+   "s98",
+   2
+  ],
+  [
+   "s5",
+   "s763",
+   0
+  ],
+  [
+   "s5",
+   "s807",
+   0
+  ],
+  [
+   "s5",
+   "s85",
+   2
+  ],
+  [
+   "s5",
+   "s97",
+   0
+  ],
+  [
+   "s5",
+   "s98",
+   0
+  ],
+  [
+   "s62",
+   "s63",
+   0
+  ],
+  [
+   "s62",
+   "s64",
+   0
+  ],
+  [
+   "s62",
+   "s68",
+   1
+  ],
+  [
+   "s63",
+   "s68",
+   0
+  ],
+  [
+   "s63",
+   "s807",
+   0
+  ],
+  [
+   "s63",
+   "s86",
+   0
+  ],
+  [
+   "s64",
+   "s65",
+   0
+  ],
+  [
+   "s64",
+   "s68",
+   1
+  ],
+  [
+   "s65",
+   "s66",
+   0
+  ],
+  [
+   "s65",
+   "s68",
+   0
+  ],
+  [
+   "s65",
+   "s69",
+   0
+  ],
+  [
+   "s66",
+   "s67",
+   1
+  ],
+  [
+   "s66",
+   "s68",
+   1
+  ],
+  [
+   "s66",
+   "s69",
+   0
+  ],
+  [
+   "s66",
+   "s74",
+   0
+  ],
+  [
+   "s66",
+   "s86",
+   0
+  ],
+  [
+   "s66",
+   "s9",
+   0
+  ],
+  [
+   "s67",
+   "s72",
+   1
+  ],
+  [
+   "s67",
+   "s74",
+   0
+  ],
+  [
+   "s67",
+   "s762",
+   0
+  ],
+  [
+   "s67",
+   "s86",
+   0
+  ],
+  [
+   "s67",
+   "s87",
+   0
+  ],
+  [
+   "s68",
+   "s86",
+   0
+  ],
+  [
+   "s69",
+   "s9",
+   0
+  ],
+  [
+   "s70",
+   "s71",
+   0
+  ],
+  [
+   "s70",
+   "s72",
+   0
+  ],
+  [
+   "s71",
+   "s72",
+   0
+  ],
+  [
+   "s71",
+   "s73",
+   0
+  ],
+  [
+   "s71",
+   "s88",
+   0
+  ],
+  [
+   "s72",
+   "s74",
+   0
+  ],
+  [
+   "s72",
+   "s762",
+   0
+  ],
+  [
+   "s72",
+   "s88",
+   0
+  ],
+  [
+   "s73",
+   "s88",
+   0
+  ],
+  [
+   "s73",
+   "s89",
+   0
+  ],
+  [
+   "s74",
+   "s9",
+   0
+  ],
+  [
+   "s762",
+   "s87",
+   0
+  ],
+  [
+   "s762",
+   "s88",
+   0
+  ],
+  [
+   "s762",
+   "s90",
+   0
+  ],
+  [
+   "s763",
+   "s97",
+   0
+  ],
+  [
+   "s784",
+   "s95",
+   0
+  ],
+  [
+   "s784",
+   "s96",
+   0
+  ],
+  [
+   "s807",
+   "s85",
+   0
+  ],
+  [
+   "s807",
+   "s86",
+   0
+  ],
+  [
+   "s807",
+   "s87",
+   0
+  ],
+  [
+   "s807",
+   "s98",
+   0
+  ],
+  [
+   "s86",
+   "s87",
+   0
+  ],
+  [
+   "s87",
+   "s90",
+   1
+  ],
+  [
+   "s87",
+   "s98",
+   0
+  ],
+  [
+   "s88",
+   "s89",
+   0
+  ],
+  [
+   "s88",
+   "s90",
+   1
+  ],
+  [
+   "s88",
+   "s91",
+   0
+  ],
+  [
+   "s88",
+   "s92",
+   0
+  ],
+  [
+   "s89",
+   "s91",
+   1
+  ],
+  [
+   "s90",
+   "s92",
+   2
+  ],
+  [
+   "s91",
+   "s92",
+   0
+  ],
+  [
+   "s91",
+   "s93",
+   0
+  ],
+  [
+   "s92",
+   "s93",
+   1
+  ],
+  [
+   "s92",
+   "s94",
+   1
+  ],
+  [
+   "s92",
+   "s97",
+   1
+  ],
+  [
+   "s93",
+   "s94",
+   0
+  ],
+  [
+   "s94",
+   "s95",
+   0
+  ],
+  [
+   "s94",
+   "s97",
+   0
+  ],
+  [
+   "s95",
+   "s96",
+   0
+  ],
+  [
+   "s95",
+   "s97",
+   0
+  ],
+  [
+   "s97",
+   "s98",
+   0
+  ]
+ ],
+ "divisions": [
+  {
+   "side": "A",
+   "template": "inf_9",
+   "province": "s5",
+   "count": 2
+  },
+  {
+   "side": "A",
+   "template": "inf_9",
+   "province": "s63",
+   "count": 3
+  },
+  {
+   "side": "A",
+   "template": "inf_9",
+   "province": "s66",
+   "count": 3
+  },
+  {
+   "side": "A",
+   "template": "armor_6",
+   "province": "s66",
+   "count": 1
+  },
+  {
+   "side": "A",
+   "template": "inf_9",
+   "province": "s67",
+   "count": 4
+  },
+  {
+   "side": "A",
+   "template": "armor_6",
+   "province": "s67",
+   "count": 2
+  },
+  {
+   "side": "A",
+   "template": "inf_9",
+   "province": "s72",
+   "count": 2
+  },
+  {
+   "side": "A",
+   "template": "armor_6",
+   "province": "s72",
+   "count": 1
+  },
+  {
+   "side": "A",
+   "template": "inf_9",
+   "province": "s70",
+   "count": 2
+  },
+  {
+   "side": "A",
+   "template": "inf_9",
+   "province": "s64",
+   "count": 2
+  },
+  {
+   "side": "B",
+   "template": "inf_9",
+   "province": "s85",
+   "count": 1
+  },
+  {
+   "side": "B",
+   "template": "inf_9",
+   "province": "s807",
+   "count": 1
+  },
+  {
+   "side": "B",
+   "template": "inf_9",
+   "province": "s98",
+   "count": 2
+  },
+  {
+   "side": "B",
+   "template": "inf_9",
+   "province": "s86",
+   "count": 3
+  },
+  {
+   "side": "B",
+   "template": "inf_9",
+   "province": "s87",
+   "count": 3
+  },
+  {
+   "side": "B",
+   "template": "inf_9",
+   "province": "s762",
+   "count": 1
+  },
+  {
+   "side": "B",
+   "template": "inf_9",
+   "province": "s88",
+   "count": 2
+  },
+  {
+   "side": "B",
+   "template": "inf_9",
+   "province": "s10",
+   "count": 2
+  },
+  {
+   "side": "B",
+   "template": "inf_9",
+   "province": "s90",
+   "count": 2
+  },
+  {
+   "side": "B",
+   "template": "inf_9",
+   "province": "s92",
+   "count": 1
+  },
+  {
+   "side": "B",
+   "template": "inf_9",
+   "province": "s91",
+   "count": 1
+  },
+  {
+   "side": "B",
+   "template": "inf_9",
+   "province": "s97",
+   "count": 1
+  }
+ ],
+ "goals": {
+  "A": {
+   "kind": "capture",
+   "provinces": [
+    "s86",
+    "s87",
+    "s88",
+    "s10"
+   ]
+  },
+  "B": {
+   "kind": "hold",
+   "provinces": [
+    "s86",
+    "s87",
+    "s88",
+    "s10"
+   ]
+  }
+ },
+ "assumptions": [
+  "Sides: Germany's own states plus the former Czechoslovak states (69-74, 9) are side A; every Polish state is side B. Lithuanian, Latvian, Soviet and Romanian states are left out, so the Soviet invasion and every flank beyond Poland are not modelled.",
+  "Forces are about 40 percent of the historical order of battle (a sim of 55 against 40 divisions is too slow to benchmark): 22 German divisions (18 infantry, 4 armour) against 22 Polish infantry. The templates are the sim's inf_9 and armor_6; Poland's thinner equipment is not modelled.",
+  "Hubs: Brandenburg for Germany; Warsaw and Lwow for Poland.",
+  "Objectives and limit: take Poznan, Lodz, Krakow and Warsaw within 30 days. The historical campaign took Warsaw in 27 days; the objective set and the limit are ours.",
+  "Rivers come from map/rivers.bmp by a threshold heuristic of ours (realmap.py), not a game rule.",
+  "One simulator province per state, 12 hour steps."
+ ]
+}

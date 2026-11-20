@@ -32,6 +32,7 @@ from pathlib import Path
 from ..config import HarnessConfig
 from ..types import ActionCall, ActionResult, GameState
 from .base import AdapterInfo, GameAdapter
+from .battle_plans import PLAN_ACTIONS, enable_battle_plans
 from .channels import ChannelRouter, resolve_channels
 from .composite import CompositeAdapter
 from .console import CONSOLE_ACTIONS, ConsoleChannel, ConsoleConfig
@@ -54,6 +55,8 @@ MOUSE_ACTIONS = frozenset({
     "start_research", "delegate_army_to_ai",
     # Division orders are a selection and a right-click (adapters/unit_orders.py).
     "move_division", "attack_province",
+    # Battle plans are drawn with the mouse too (adapters/battle_plans.py; not live-verified).
+    "draw_front_line", "draw_offensive", "assign_battle_plan",
 })
 #: Actions the log cannot make safe. add_equipment_production adds a second line
 #: for equipment that already has one (seen live on 1.19.5), and only a reader
@@ -543,6 +546,7 @@ def _wire_hands(driver, console, config: HarnessConfig, hands: Hands, fake):
             _drop(driver, "start_research")
     # Division orders: the map, the camera record and the display it was recorded under.
     ledger = None
+    orders_ok = None
     if config.unit_orders is False:
         hands.refuse(("move_division", "attack_province"), "unit_orders is false in the profile")
     else:
@@ -558,11 +562,23 @@ def _wire_hands(driver, console, config: HarnessConfig, hands: Hands, fake):
                                   tuple(display["resolution"]) if display else None),
                               display=display, unattended=True)
             ledger = executor.ledger
+            orders_ok = executor
         except (OrderRefused, MapError, ValueError, OSError, KeyError) as exc:
             hands.refuse(("move_division", "attack_province"), _orders_reason(exc))
             driver.order_executor = None
             driver.supported_actions = driver.supported_actions - {"move_division",
                                                                   "attack_province"}
+    # Battle plans (UNVERIFIED, off unless the profile asks): the same map and camera record.
+    if not config.battle_plans:
+        hands.refuse(PLAN_ACTIONS, "battle_plans is off in the profile (the click path is not "
+                                   "verified in the game)")
+    elif orders_ok is None:
+        hands.refuse(PLAN_ACTIONS, "battle plans need what division orders need (the map and a "
+                                   "recorded camera): "
+                                   + hands.refused.get("move_division", "unit_orders is off"))
+    else:
+        enable_battle_plans(driver, orders_ok.layer, orders_ok._camera, orders_ok.centre,
+                            unattended=bool(config.campaign))
     if "start_research" in driver.scripts:
         config.wake_on_free_research_slot = True
         if not config.dry_run:

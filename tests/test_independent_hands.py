@@ -536,3 +536,26 @@ def test_campaign_check_names_what_a_person_has_to_provide(tmp_path):
     old = make_world(tmp_path / "old", camera="stale")
     detail = {c.name: c for c in check_hands(old.config)}["camera"].detail
     assert "no display fingerprint" in detail and "refused" in detail
+
+
+# --- battle plans (UNVERIFIED, off unless the profile asks) -------------------------------------------
+
+PLAN_TOOLS = {"draw_front_line", "draw_offensive", "assign_battle_plan"}
+
+
+def test_battle_plans_are_off_by_default_and_the_log_says_why(tmp_path):
+    world = make_world(tmp_path)
+    assert not offered_after_start(world) & PLAN_TOOLS
+    assert "battle plans not offered: battle_plans is off in the profile" in world.log
+
+
+def test_battle_plans_are_offered_when_the_profile_asks_and_the_camera_is_good(tmp_path):
+    world = make_world(tmp_path, battle_plans=True)
+    assert PLAN_TOOLS <= offered_after_start(world)
+    assert "battle plans live: assign_battle_plan, draw_front_line, draw_offensive: UNVERIFIED" in world.log
+
+
+def test_battle_plans_need_what_division_orders_need(tmp_path):
+    world = make_world(tmp_path, battle_plans=True, camera="missing")
+    assert not offered_after_start(world) & PLAN_TOOLS
+    assert "battle plans not offered: battle plans need what division orders need" in world.log
