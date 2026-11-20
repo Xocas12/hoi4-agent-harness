@@ -1,164 +1,156 @@
 # Roadmap
 
-Seven milestones, ordered by what unblocks the most. Each one is a claim the repo
-cannot currently make; the issues under it are what it would take to make it.
-Tracked at [github.com/Xocas12/hoi4-agent-harness/milestones](https://github.com/Xocas12/hoi4-agent-harness/milestones).
+Where the project is, what "finished" means, and what is open. Everything here is checked against
+the issue tracker and the docs it links; nothing is claimed beyond what has run. Issues and
+milestones: [github.com/Xocas12/hoi4-agent-harness/issues](https://github.com/Xocas12/hoi4-agent-harness/issues).
+The live checklist is [live-session.md](live-session.md).
 
-## Status after the second live session (2026-11-16)
+## Where it stands (2026-11-20)
 
-A second sitting with HOI4 1.19.5.0 (Sweden, 1936-37) moved v0.2 and v0.3 from
-theory to partly verified. Nothing below is claimed beyond what ran; the live
-checklist is [live-session.md](live-session.md).
+The first plan was a ladder: a mod and telemetry, then input, then hybrid control, then wartime,
+evaluation and harness quality, each milestone a claim the repo could not yet make. The offline half
+of that is built and tested against the mock, the fake game, the fake army and the tactical
+simulator. What changed since is the shape of control and what has been learned about the game's
+own AI.
 
-**Verified live**
+### Control is modular, not a ladder of levels
 
-- #1 mod and telemetry: loads on 1.19.5 and 1.20.0 (`supported_version 1.20.*`) with no
-  errors in `error.log`, including the 2.4 MB generated probe. Schema v3: one state
-  line a day on the player's own tick, real values for political power, stability,
-  war support, factories, manpower, techs and `built_*`; daily probe lines name the
-  running focus and the technologies being researched; focus completion reported
-  (`focus complete: SWE_defense_act`); war and capitulation lines for the
-  player's own wars only.
-- #7 directives and #9 theater posture: raised through decisions and read back
-  (the brief showed `AI control: ETH: offensive | GER: defensive`). A theater is
-  the country a front faces.
-- #3 input: keys sent as hardware scan codes (pyautogui keys do not reach HOI4);
-  real 1.19.5 hotkeys; no Escape in scripts; `set_national_focus` via focus search
-  works end to end through the harness.
-- #6 save adapter: reads a 1.19.5 text save (`save_as_binary=no`) and was checked
-  against a real save. The construction queue is not in the save.
-- #53 playsets: indexed The New Order (512 countries, 15,069 focuses, 897 techs)
-  in ~4 s.
-- #22 provider conformance: Anthropic passes live.
+`operational_control` and `campaign_control` used to be levels (`llm` / `ai` / `game_ai`). They are
+now presets of a **map**: each domain (focus, research, construction, production, politics,
+diplomacy, army, navy, air) is run by exactly one of `llm`, `script`, `game` (the game's own AI)
+or `off`, chosen independently, with the LLM steering layer (directives, postures, delegation) as
+its own switch. The design, the hard constraint on what the game's AI can be handed (the whole
+country under `human_ai`, or individual armies) and the contested-domain rule are in
+[modular-control.md](modular-control.md). Built and tested on simulators only (#109).
 
-**Built and tested, not yet seen live**
+### What the game's AI is, and is not
 
-- Research completion through the `techs` counter, and the schema v3 `owned` field
-  (added after the session).
-- #3 `start_research` (tech-tree points computed from `countrytechtreeview.gui`,
-  within 4 px of 18 measured infantry-tab points), `queue_construction`,
-  `set_production`, `hire_advisor`. Rotated tabs (armour, air, industry,
-  electronics) are refused. Verification reports `unverified`, not `rejected`,
-  until a fresh day of telemetry.
-- #83 console channel: opt-in; open questions in [adapters.md](adapters.md).
+- **Expert AI is the base AI** (#108). It is detected from `dlc_load.json`, checked by
+  `campaign-check`, and when it is on the directive weights go up so the model's steering is not
+  drowned out by its country plans ([expert-ai.md](expert-ai.md)). Whether it changes behaviour
+  under a directive in a real game is not verified.
+- **It does not change how a front is fought.** That is engine code. The harness's answer is the
+  **battle-plan planner** (#110, [tactics.md](tactics.md)). Its results are mostly negative and
+  are reported that way:
+  - the **learned plan chooser** (#111) did not learn to see what the coarse picture hides; where
+    it beats the planner, the gain traces to its keep rule and candidate set, not to training;
+  - the planner's **96 h axis patience** (#112) was tested against alternatives and kept; the gain
+    that motivated the question is not the clock, and where it comes from inside the chooser is
+    not isolated (follow-ups #116 and #117);
+  - all of it is tuned against a simulator, and the plan executor's rules are assumptions about
+    the engine (the gap list in tactics.md).
 
-**Measured on the mock only**
+### Playing without the game's AI
 
-- #14 cost with `claude-opus-5-5` ([cost-and-timing.md](cost-and-timing.md)): the
-  old estimate was low on input by 2.2x in peacetime and 3.2x in wartime.
-- #10 hybrid experiment ([results/10-hybrid-experiment.md](results/10-hybrid-experiment.md),
-  [hybrid-control.md](hybrid-control.md)): a result about the harness against a
-  scripted world.
+- **Independent mode** (`--control llm`, #106): the model plays the country itself, with the mouse
+  for what the console cannot do: **research and armies** (#107) and **production** (#114, editing
+  a line instead of duplicating it). The click paths are drafts until walked in a real game
+  (live-session.md sections 14 and 14b).
+- **Play on after capitulation** (#105): a campaign no longer stops when the player's own country
+  capitulates. It continues as a government in exile, wakes the model the turn it is seen, and
+  records it; `campaign_stop_on_capitulation` restores the old stop.
+- **A guidance inbox** (#106): `hoi4-harness guide` leaves a running campaign advice in
+  `guidance_inbox.jsonl`; the model is woken for it and sees it in every brief until cleared. It is
+  advice the model weighs, never executed by the harness ([campaign.md](campaign.md)).
 
-**Still open**
+### Verified in a real game (HOI4 1.19.5 and 1.20, two sittings)
 
-- Whether the game's AI changes behaviour under a directive: not verified.
-- #22 needs a second provider; #23 needs a comparison with a Console invoice.
+- the mod loads without errors and its telemetry is real: daily state, the running focus and
+  research, focus completion, and war and capitulation lines for the player's own wars (#1);
+- directives and theater posture raised through decisions and read back in the brief (#7 and #9,
+  the read-back half only; #7 itself is open);
+- keys as hardware scan codes, and `set_national_focus` end to end (#3, one of five actions);
+- the save adapter against a real 1.19.5 text save (#6), and playset indexing of a total
+  conversion (#53);
+- Anthropic passes the provider conformance suite (#22, one of the two providers it needs).
 
-## v0.1.1 — Robustness
+### Built and tested, not yet seen in a real game
 
-*Claim: the harness survives an overnight run.*
+- the `start_research`, `queue_construction`, `set_production` and `hire_advisor` click paths (#3);
+- army delegation (#8) and the independent-mode research, army and production click paths;
+- the headless console channel (#83) and rival mode (#31, #33, #91);
+- every control map, the Expert AI directive weights, and the battle-plan executor.
 
-Found by auditing the code rather than the roadmap. None of these show up in a
-30-turn mock run, and all of them show up in a six-hour campaign against a real
-game. None needs a game or an API key to fix.
+### Measured on simulators only
 
-- A transient API error must degrade to the reflex layer, not end the run
-- Resume from a transcript after a crash
-- Wire up the triage model role or delete it
-- Tests for the save parser and provider wire conversion
-- Refuse to send input when the game is not the focused window
-- Per-turn progress output; remove dead config
+- Cost with a real model on the mock (#14): the scripted estimate was 2.2x low on input in peace and
+  3.2x in war ([cost-and-timing.md](cost-and-timing.md)).
+- The hybrid experiment (#10, [results/10-hybrid-experiment.md](results/10-hybrid-experiment.md)):
+  a result about the harness against a scripted world, not about HOI4.
 
-## v0.2 — Live bridge
+## What "finished" means
 
-*Claim: the harness plays a real game of HOI4, not a mock.*
+Finished is a short list of things that have happened in a real game, not a list of features. The
+project is finished when all four are true and written up:
 
-The mod emits telemetry that a real game actually produces, the input driver can
-perform the five actions a peacetime campaign needs, and `advance()` blocks on
-the real clock. Until this lands everything else is theory.
+1. **A live Germany overnight rerun completes.** The unattended campaign (`campaign-ger-world`)
+   passes its pre-flight, plays a night against HOI4, and ends on its end date, its budget or a
+   clean stop with a usable report: not a crash, not a silent hang.
+2. **One live year of independent mode.** `--control llm` with the mouse plays one in-game year of
+   its own country, with research, armies and production through the click paths, and the report
+   says which actions were verified, unverified or rejected.
+3. **#3, #7 and #8 are verified live.** The five peacetime actions change a real game and report
+   failure rather than success when the UI is not as expected (#3); directing `protect FIN` and
+   then `protect POL` visibly changes the AI's behaviour toward the right country (#7);
+   delegating an army is visible in-game and in the next brief, and un-delegating puts it back (#8).
+4. **One real-game comparison of LLM+AI against either alone.** The same scenario in the real game
+   three ways: the model alone, the game's AI alone, and the model steering the AI, with the numbers
+   reported. #10 asked this of the mock; nobody has asked it of the game.
 
-- Verify every script token in the mod against a live game
-- Focus / research / construction completion hooks in `on_actions`
-- UI scripts with verification for focus, research, construction, production, advisor
-- `CompositeAdapter.advance()` blocking on the in-game date
-- A calibration command for screen coordinates
+Not on the list, on purpose: more scenarios, more models, a better learned controller. Those are
+research around the harness, not the harness being finished.
 
-## v0.2.5 — Co-op play
+## Open work, by milestone
 
-*Claim: the model plays alongside a person, in the same campaign.*
+From `gh issue list --state open`, 2026-11-20. The milestones v0.1.1 Robustness, v0.4 Wartime state
+and v0.5 Evaluation worth trusting have nothing open.
 
-The harness was designed as if the agent were the only player: it owns the clock
-and the keyboard. Sharing a campaign with a human breaks both assumptions, and
-the modes that come out of fixing them are the ones most people will actually
-use.
+### v0.2 Live bridge
 
-- Advisor mode — you play, it recommends, it never acts (needs only the read path)
-- Passive mode — never pause, resume, or set speed
-- Action handover — queue actions, execute in a window the player grants
-- Split portfolio — the model takes the economy, you keep the army (already
-  expressible today with `--actions`, once the input driver can act)
+*The harness plays a real game of HOI4, not a mock.*
 
-Co-op runs are for playing, not for measuring: once both parties act, outcome
-attribution is gone and the eval runner should refuse to score the transcript
-rather than produce a number that means nothing.
+- #3 Input driver: UI scripts with verification for the five peacetime actions (one of five
+  verified live; "finished" item 3)
+- #83 Headless action channel: run script effects through the console instead of walking the UI
 
-## v0.3 — Hybrid control
+### v0.2.5 Co-op play
 
-*Claim: the model commands and the game's AI executes.*
+*The model plays alongside a person, in the same campaign.*
 
-The vocabulary and the mode switch exist; the plumbing behind them is example
-code. This milestone makes a directive actually change AI behaviour, and then
-asks the question the whole idea rests on.
+- #31 Co-op: the LLM plays alongside a human, not instead of one
+- #33 Action handover: the harness must not type over the player
+- #91 Multiplayer: the harness plays one country while a person plays another
 
-- Per-target directives (generated blocks, one per directive and tag), verified in-game
-- Army delegation through the real UI
-- Theater-scoped posture
-- **The experiment**: same scenario, three ways — model-only, AI-only, hybrid
+### v0.3 Hybrid control
 
-## v0.4 — Wartime state
+*The model commands and the game's own AI executes.*
 
-*Claim: the compression story survives a war.*
+- #7 Directives must target the country the agent actually named ("finished" item 3)
+- #8 Delegate armies to the AI through the real UI ("finished" item 3)
 
-Everything about brief size and wake rate is measured in peacetime, where
-nothing happens. War is where fronts, combats and encirclements arrive at once,
-and where the reflex layer is least adequate.
+### v0.6 Harness quality
 
-- Front summarisation from army blocks, capped at a handful of lines
-- Wartime wake rules: encirclement risk, supply collapse, capital threatened
-- Measure brief size and wake rate across 1939-1941 and publish both
+*The machinery is boring and trustworthy.*
 
-## v0.5 — Evaluation worth trusting
+- #22 Provider conformance tests against live keys: the opt-in suite passes on Anthropic; a second
+  provider is what is left
+- #23 Verify token accounting against a real invoice: pricing is audited; comparing a run with a
+  real usage export is what is left
 
-*Claim: a score from this harness means something.*
+### No milestone
 
-- A reflex-only baseline. If it scores close to the model, the benchmark is
-  measuring the reflex layer
-- More scenarios: a defensive war, a resource-starved start, a rearmament race
-- The same scenario across models, reporting outcome *and* spend
-- Variance: same model, same scenario, N seeds
-
-## v0.6 — Harness quality
-
-*Claim: the machinery is boring and trustworthy.*
-
-- Structured outputs where the provider supports them
-- A human-in-the-loop UI for `confirm_hook`
-- Transcript replay: re-run a decision against a different model, no game needed
-- Token accounting verified against real invoices
-- Provider conformance tests against live keys
-
-## Tactical control (#85)
-
-- Stages 1-3 (simulator, scripted and learned controllers) and stage 4 (battle-plan planner,
-  engine executor, real-map scenario) are simulator work: see `docs/tactics.md`.
-- Open, needs the live game: the plan click path (`docs/unit-orders.md` section 7), the engine's
-  real plan execution (the executor's rules are assumptions) and the sim-to-real calibration.
+- #113 Independent mode: production by mouse (the code landed in #114; the live clause is open;
+  "finished" item 2)
+- #85 A learned micro controller under the LLM, good enough to beat competitive players (research;
+  not on the "finished" list)
+- #116 `evaluate()` leaks a planner's committed axis between games when given an instance
+- #117 Isolate why the plan chooser beats the planner on France
+- #24 This roadmap
 
 ## Non-goals
 
-- Beating good human players. The question is whether an agent can play
-  coherently for a decade of game time on a budget, not whether it can win.
+- Beating good human players. The question is whether an agent can play coherently for a decade of
+  game time on a budget, not whether it can win.
 - Multiplayer, in any form.
-- Hooking the engine or reading process memory. The bridge stays at the level a
-  player operates at: files the game writes, and input a person could send.
+- Hooking the engine or reading process memory. The bridge stays at the level a player operates at:
+  files the game writes, and input a person could send.
