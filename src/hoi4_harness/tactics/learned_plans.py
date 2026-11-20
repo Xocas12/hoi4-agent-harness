@@ -301,7 +301,7 @@ class LearnedPlanner(Planner):
             old, since, _ = self._commit
             alive = all(pic.regions[r].controller == pic.foe or pic.regions[r].foe for r in old)
             for i, c in enumerate(cands):
-                if c.regions == tuple(old) and alive and pic.hour - since < self.patience \
+                if c.regions == tuple(old) and alive and pic.hour - since < self.patience_hours(pic) \
                         and scores[best] - scores[i] < SWITCH_MARGIN:
                     best = i
         chosen = cands[best].regions
