@@ -66,7 +66,8 @@ independent countries left, wars since the last review, spend) and in
 No reflexes (the AI does that), no wakes for focus, research or quiet fronts. The model
 wakes on a scheduled review (`campaign_review_peace_days` 30, `campaign_review_war_days`
 14, or its own `advance_time`), and on a critical event (a war, a capitulation) at most
-once per `campaign_wake_gap_days` (7). Between wakes the harness runs the clock for the
+once per `campaign_wake_gap_days` (7); the player's own capitulation is the exception and
+wakes it at once. Between wakes the harness runs the clock for the
 days left to the next review; an event cuts the wait short.
 
 ## Commands
@@ -111,6 +112,8 @@ a reason, 2 could not start, 3 crashed.
 | Budget | stops with the game paused and `budget: ...` as the reason; `campaign_on_budget = "coast"` lets the AI play on with no calls |
 | Game process gone (`tasklist`, `campaign_game_process`) or `game.log` silent for `campaign_silence_minutes` (20) while the clock runs | `GameLost`: a clean stop with the reason; also the case of the mod not reporting for the player |
 | Historical AI Focuses off (`historical=0` in the first recovery save's header) | logged as `historical AI focuses: off`, kept in `campaign_state.json` and shown in the report summary; with `campaign_historical_ai = "on"` (`on`, `off` or `any`, default `any`) it is also a `WARNING` line. The run is never stopped for it: the AI picks the focuses, so on and off runs are not comparable |
+| The player's own country capitulates | the run **goes on** (HOI4 keeps a capitulated country alive: government in exile, whatever states it still holds). The model is woken the turn it is seen, bypassing the wake gap (`wake: your own country capitulated on <date> to <tag>`); every brief after that opens its CAMPAIGN block with `GER CAPITULATED on <date> to <tag>; you are a government in exile holding N states`; `campaign_state.json` keeps `player_capitulation` and the report summary has an "Own capitulation" row. `campaign_stop_on_capitulation = true` restores the old stop (`GER capitulated (<date>)`) |
+| The player's country holds no states | stops: `GER holds no states (0 on the weekly reports of <d1> and <d2>): it no longer exists, nothing is left to play`. The game logs no "country gone" line, so the signal is the weekly `camp` line's `ostates` at 0 on two different weekly lines (one 0 is not enough, and the same line read on two turns counts once). A country that stops reporting at all is the watchdog's `GameLost` instead |
 | `ai=0` after the run started | stops: `human_ai` was toggled off or the game restarted; resume sets it up again |
 | Game window not in front | every key is gated on it; the harness waits, retrying every minute (logged), up to `campaign_focus_wait_minutes` (360) in all, then stops. The game keeps running meanwhile. Nothing is typed elsewhere, and the window is not pulled forward unless `campaign_take_focus` is true (default false: it would steal the keyboard from whatever you are doing) |
 | Harness crash | traceback summary in `campaign.log` and a `crash` record; resume with `--resume` |

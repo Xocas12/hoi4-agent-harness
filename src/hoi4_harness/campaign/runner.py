@@ -33,6 +33,7 @@ from ..adapters.savegame import read_historical_ai
 from ..agent.llm.base import LLMClient
 from ..agent.loop import AgentLoop, RunReport, Supervisor
 from ..agent.memory import Memory
+from ..agent.policy import own_capitulation, player_tag
 from ..config import HarnessConfig
 from ..env import HOI4Env
 from ..keepawake import keep_awake_for
@@ -130,12 +131,16 @@ class CampaignSupervisor(Supervisor):
         self.run_dir, self.watchdog = run_dir, watchdog
         self.loop: AgentLoop | None = None
         self._rule_misses = 0
+        #: Weekly camp dates on which the player held 0 states (two in a row end the run).
+        self._empty_reads: list[str] = []
         self.last_save: str | None = None
         self.saves_taken = 0
         self.saves = SaveTracker(run_dir, _save_dir(config), config.campaign_keep_saves,
                                  log=log.line) if not config.dry_run else None
         saved = load_state(run_dir)
         self.last_save = saved.get("last_recovery_save")
+        if isinstance(saved.get("player_capitulation"), dict):
+            tracker.capitulation = saved["player_capitulation"]
         try:
             self.saves_taken = int(saved.get("recovery_saves", 0))
         except (TypeError, ValueError):
@@ -158,6 +163,9 @@ class CampaignSupervisor(Supervisor):
         stop = self._player_capitulated(state)
         if stop:
             return stop
+        stop = self._no_states_left(state)
+        if stop:
+            return stop
         self._recovery_save(state)
         if self.saves is not None:
             self.saves.prune()
@@ -165,24 +173,48 @@ class CampaignSupervisor(Supervisor):
         return None
 
     def _player_capitulated(self, state: GameState) -> str | None:
-        """A stop reason when the player's own country capitulated (not an enemy).
+        """Note the player's own capitulation (the brief, ``campaign_state.json`` and the
+        report keep saying it) and, with ``campaign_stop_on_capitulation`` on, return the
+        stop reason. Off (the default) the run goes on: a capitulated country still exists
+        in HOI4 (government in exile), so neither the process nor the log goes away."""
+        tag = player_tag(state, self.config.country)
+        fell = own_capitulation(state, tag)
+        if fell is None:
+            return None
+        date, victor = fell
+        if self.tracker.capitulation is None:
+            self.tracker.capitulation = {"date": date, "to": victor, "tag": tag.upper()}
+            save_state(self.run_dir, player_capitulation=self.tracker.capitulation)
+            self.log.line(f"{tag.upper()} CAPITULATED on {date}"
+                          + (f" to {victor}" if victor else "")
+                          + (": stopping" if self.config.campaign_stop_on_capitulation
+                             else ": playing on as a government in exile"))
+        if self.config.campaign_stop_on_capitulation:
+            return f"{tag.upper()} capitulated ({date})"
+        return None
 
-        The mod logs ``capitulation`` in the capitulating country's scope, so the event
-        text reads ``capitulation: GER`` for GER itself and ``capitulation: POL (to GER)``
-        for an enemy that gave in to us. A capitulated country still exists in the game
-        (government in exile), so neither the process nor the log goes away."""
-        if not self.config.campaign_stop_on_capitulation:
+    def _no_states_left(self, state: GameState) -> str | None:
+        """A stop reason once the player's country holds no states: it has been annexed
+        and there is nothing left to play.
+
+        The game gives no single "this country is gone" line, so this reads the weekly
+        ``camp`` line's ``ostates``. One 0 is not enough (a line can be mid-transfer), and
+        the same line re-read on the next turn is not a second read, so it takes 0 on two
+        different weekly lines. A country that stops reporting at all is the watchdog's
+        case (``GameLost``), not this one."""
+        camp = state.campaign
+        if camp is None or camp.owned_states is None:
             return None
-        tag = (state.country if state.country and state.country != "___"
-               else self.config.country) or ""
-        if not tag:
+        if camp.owned_states > 0:
+            self._empty_reads = []
             return None
-        for event in state.events:
-            if event.kind != "capitulation":
-                continue
-            words = event.text.partition(":")[2].split()
-            if words and words[0].upper() == tag.upper():
-                return f"{tag.upper()} capitulated ({event.date or state.date})"
+        stamp = camp.date or state.date
+        if stamp not in self._empty_reads:
+            self._empty_reads.append(stamp)
+        if len(self._empty_reads) >= 2:
+            tag = player_tag(state, self.config.country).upper() or "the country"
+            return (f"{tag} holds no states (0 on the weekly reports of {self._empty_reads[0]} "
+                    f"and {self._empty_reads[1]}): it no longer exists, nothing is left to play")
         return None
 
     def after_turn(self, state: GameState, *, woke: bool, reason: str, actions: list[str],

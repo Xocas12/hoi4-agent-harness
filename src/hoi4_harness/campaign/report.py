@@ -272,6 +272,7 @@ def _summary(data: RunData) -> list[str]:
         ["Historical AI focuses", _rule_label(data)],
         ["Wars declared", str(len(declared))],
         ["Capitulations", str(len(caps))],
+        *_own_capitulation_row(data),
         ["Model wakes (calls)", _num(usage.get("calls"))],
         ["Tokens", f"{usage.get('input_tokens', 0):,} in "
                    f"({usage.get('cached_input_tokens', 0):,} cached) / "
@@ -279,6 +280,19 @@ def _summary(data: RunData) -> list[str]:
         ["Spend", _num(usd, "${:.2f}")],
     ]
     return _table(["", ""], rows_out)
+
+
+def _own_capitulation_row(data: RunData) -> list[list[str]]:
+    """A summary row when the player's own country capitulated and the run played on."""
+    cap = load_state(data.run_dir).get("player_capitulation")
+    if not isinstance(cap, dict) or not cap.get("date"):
+        return []
+    held = _last_with(data.progress, "owned_states")
+    text = f"{cap.get('tag') or data.player} capitulated on {cap['date']}" + (
+        f" to {cap['to']}" if cap.get("to") else "")
+    if held is not None:
+        text += f"; {_num(held['owned_states'])} states held at {held['date']}"
+    return [["Own capitulation", text]]
 
 
 def _war_timeline(data: RunData) -> list[str]:
