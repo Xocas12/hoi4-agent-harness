@@ -91,10 +91,17 @@ def main(argv: list[str] | None = None) -> int:
         print(f"warning: {rule} is {distance[rule]:.0f} map px from where the game centred; the "
               "shifted camera for other provinces will be off by about that much")
     offset = tuple(int(v) for v in args.counter_offset.split(","))
+    # What an unattended campaign checks in place of the record's age (UI scale, window mode,
+    # resolution): the display the landmarks were read under.
+    from hoi4_harness.adapters.input_driver import default_display_settings
+
+    settings = default_display_settings()
+    display = {"gui_scale": round(float(settings.gui_scale if settings else 1.0), 4),
+               "mode": settings.mode if settings else None, "resolution": [width, height]}
     record = CameraRecord(
         screen=(width, height), viewport=view, pairs=[(m[0], m[1], s[0], s[1]) for m, s in pairs],
         fit_province=args.fit_province, centre_rule=rule, validated=validated,
-        recorded=stamp_now(), counter_offset=offset)
+        recorded=stamp_now(), counter_offset=offset, display=display)
     print("wrote", record.save(args.out), f"(centre rule {rule}, counter offset {offset})")
     return 0
 

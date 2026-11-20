@@ -17,7 +17,7 @@ import subprocess
 import sys
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, datetime, timedelta
 from pathlib import Path
 
 from .. import paths
@@ -309,6 +309,77 @@ def check_focus_policy(config: HarnessConfig) -> list[Check]:
     return out
 
 
+def check_hands(config: HarnessConfig, now: Callable[[], datetime] = datetime.now) -> list[Check]:
+    """The mouse tools of an independent campaign (adapters/hands.py): what a person has to
+    provide for each, said before the night rather than found in the start log. WARN, never
+    FAIL: a tool whose prerequisite is missing is simply not offered, and the run goes on."""
+    if not config.hands_mouse:
+        return []
+    from ..adapters.hands import DELEGATE_TOGGLE, delegable_armies
+    from ..adapters.unit_orders import CameraRecord, CameraRefused
+
+    out: list[Check] = []
+    index = None
+    if config.game_dir is None or not Path(config.game_dir).is_dir():
+        out.append(Check(WARN, "research and orders", "no game_dir (HOI4_GAME_DIR): start_research "
+                         "and the division orders need the game's files and will not be offered"))
+    else:
+        index = config.build_index()
+        out.append(Check(PASS, "research", f"{len(index.tech_places)} technologies placed on the "
+                         "tree; its click points come from the interface files (clicks the "
+                         "harness makes while the game window is in front)")
+                   if index.tech_places else
+                   Check(WARN, "research", "the playset has no technologies: start_research "
+                         "will not be offered"))
+    path = Path(config.camera_path or Path(config.run_dir) / "camera.json")
+    if config.unit_orders is False:
+        out.append(Check(INFO, "division orders", "unit_orders is false: move_division and "
+                         "attack_province are off"))
+    else:
+        try:
+            record = CameraRecord.load(path)
+        except CameraRefused as exc:
+            out.append(Check(WARN, "camera", f"{exc}. move_division and attack_province will not "
+                             "be offered until a person records it in the live game "
+                             "(scripts/record_camera.py); delegate_army_to_ai does not need it"))
+        else:
+            try:
+                age = now() - datetime.fromisoformat(record.recorded)
+            except ValueError:
+                age = None
+            if record.display is not None:
+                out.append(Check(PASS, "camera", f"{path} carries a display fingerprint "
+                                 f"({record.display}): an unattended run accepts it at any age "
+                                 "while the UI scale, window mode and resolution still match. "
+                                 "It cannot see the map's zoom: do not zoom or scroll the map"))
+            elif age is None or age > timedelta(hours=record.max_age_hours):
+                out.append(Check(WARN, "camera", f"{path} has no display fingerprint and is older "
+                                 f"than {record.max_age_hours:g} h: the orders will be refused at "
+                                 "the start. Record it again with the current "
+                                 "scripts/record_camera.py"))
+            else:
+                out.append(Check(WARN, "camera", f"{path} has no display fingerprint, so it is "
+                                 f"refused once it is {record.max_age_hours:g} h old: an overnight "
+                                 "run will outlive it. Record it again with the current "
+                                 "scripts/record_camera.py"))
+    calibration = Path(config.calibration_path or Path(config.run_dir) / "calibration.json")
+    try:
+        from ..calibration import load_calibration
+
+        recorded = load_calibration(calibration).coordinates
+    except (OSError, ValueError, RuntimeError):
+        recorded = {}
+    if DELEGATE_TOGGLE in recorded and delegable_armies(recorded):
+        out.append(Check(INFO, "delegation", "delegate_army_to_ai can hand over: "
+                         + ", ".join(delegable_armies(recorded)) + " (a DRAFT click path, "
+                         "unverified in the real game)"))
+    else:
+        out.append(Check(WARN, "delegation", f"no recorded points for {DELEGATE_TOGGLE} and "
+                         "army.<name> in calibration.json: delegate_army_to_ai will not be offered "
+                         "(hoi4-harness calibrate ...)"))
+    return out
+
+
 # --- the whole thing -------------------------------------------------------------
 
 
@@ -332,4 +403,5 @@ def run_checks(config: HarnessConfig, *, user_dir: Path | None = None, max_usd: 
         *check_mod(root, repo_mod), *check_playset(root), *check_paths(config, save_dir),
         *check_disk(config, save_dir, disk_usage), *check_key(config, env),
         *check_budget(config, max_usd), *check_power(platform, query), *check_focus_policy(config),
+        *check_hands(config),
     ]

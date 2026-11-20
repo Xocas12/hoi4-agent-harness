@@ -239,7 +239,8 @@ class HarnessConfig:
     # --- division orders by click (adapters/unit_orders.py, docs/unit-orders.md) -----
     #: Offer move_division / attack_province. Needs the mouse, a playset (game_dir)
     #: for the map, and a camera fit recorded in the live game.
-    unit_orders: bool = False
+    #: None: off, except in an independent campaign with the mouse, where it is on.
+    unit_orders: bool | None = None
     #: The recorded camera fit. Default: camera.json in run_dir. HOI4_CAMERA.
     camera_path: Path | None = None
     # --- headless play (adapters/headless.py) -----------------------------------
@@ -322,6 +323,14 @@ class HarnessConfig:
     #: not sent, the model plays the country itself with the hands-on actions the headless
     #: adapter offers; not yet verified against the live game, docs/campaign.md).
     campaign_control: str = "game_ai"
+    #: In an independent campaign (``campaign_control = "llm"``): ``mouse`` (the default) adds
+    #: the input driver's mouse to the headless adapter, for the actions the console cannot do
+    #: (research, division orders, handing an army to the game's AI); ``none`` keeps the
+    #: keyboard-and-console-only run. The game-AI campaign ignores it. docs/campaign.md.
+    campaign_input: str = "mouse"
+    #: What the independent campaign found live or refused at its start (set by the adapter and
+    #: ``campaign.runner.begin``, read by the prompt). Not a setting.
+    campaign_hands: dict = field(default_factory=dict, repr=False)
     #: Toggle ``human_ai`` at the start (the one step that needs the game).
     campaign_human_ai: bool = True
     #: Stop unless the state line's ``ai=`` reads 1 after the toggle.
@@ -496,6 +505,12 @@ class HarnessConfig:
         return self
 
     @property
+    def hands_mouse(self) -> bool:
+        """An independent campaign whose adapter has the mouse (``campaign_input = "mouse"``)."""
+        return bool(self.campaign and self.campaign_control == "llm"
+                    and self.campaign_input == "mouse")
+
+    @property
     def paced(self) -> bool:
         """Whether the model is woken on the campaign's review schedule (a campaign, or
         rival mode: both steer a game AI that runs everything else)."""
@@ -518,6 +533,11 @@ class HarnessConfig:
         from .agent.hybrid import actions_for_mode
 
         allowed = actions_for_mode(set(adapter_supports), self.operational_control)
+        if self.hands_mouse and "delegate_army_to_ai" in adapter_supports:
+            # The one standing-order verb an independent campaign keeps: the directives and the
+            # posture stay out (the game's AI is not running the country), but handing an army
+            # to the AI is what lets the model hold a front it is not ordering (adapters/hands.py).
+            allowed.add("delegate_army_to_ai")
         if self.clock_owner != "harness":
             # The player owns the clock, so the model may not take it either --
             # structurally, not by asking it nicely in the prompt.

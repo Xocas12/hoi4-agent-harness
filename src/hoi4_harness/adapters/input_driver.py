@@ -208,6 +208,10 @@ class InputDriverAdapter(GameAdapter):
         #: False, or None for not known. It decides whether to look or to press
         #: first, never whether to look at all (see _drive_clock).
         self._running: bool | None = None
+        #: Called once after a scripted action's input and before it is verified: the
+        #: independent campaign asks the mod for fresh telemetry there, so a paused game can
+        #: still show what the click did. None: nothing (every other mode).
+        self.after_input: Callable[[], None] | None = None
         #: Rival mode's guard (``rival.safety.KeyWatch``): asked before every key and every
         #: typed character, it may raise ``InputInterrupted``. None: no guard.
         self.key_watch = None
@@ -440,6 +444,11 @@ class InputDriverAdapter(GameAdapter):
         for step in steps:
             self._run_step(step)
         self._sleep(self.config.settle_seconds)
+        if self.after_input is not None:
+            try:
+                self.after_input()
+            except (NotFocused, MouseDisabled, ClockUnobservable, OSError, KeyError, ValueError):
+                pass          # the verification below reports what the reader can see
         outcome = verify(call, before, self._read_state, timeout=self.verify_timeout,
                          sleep=self._sleep)
         return self._result(call, outcome.ok, outcome.kind, outcome.message)

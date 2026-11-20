@@ -60,6 +60,10 @@ count (no effect; `add_equipment_production` only adds), unit orders and fronts
 (no per-front data exists in the log, and orders are mouse-only), the hybrid
 fields `delegated_armies` (the mod cannot see the per-army toggle). Research and
 delegation are settled: do not reopen them.
+That is headless with **no mouse**. An independent campaign (`--control llm`) may add the
+input driver's mouse for research, division orders and army delegation; see
+[campaign.md](campaign.md#the-mouse-campaign_input--mouse-the-default-in-llm-mode). Nothing
+above is reopened: those tools are clicks, and they are off wherever the mouse is.
 
 ## The hunt for a no-mouse path
 

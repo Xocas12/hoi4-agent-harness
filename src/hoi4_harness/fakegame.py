@@ -283,6 +283,46 @@ class _World(MockAdapter):
         return result
 
 
+class _Pointer:
+    """Stands in for an army when the fake has no map: it only remembers where the mouse is."""
+
+    def __init__(self) -> None:
+        self.pos = (0, 0)
+
+    def move_to(self, x: float, y: float) -> None:
+        self.pos = (x, y)
+
+    def click(self, button: str, shift: bool) -> None:
+        return None
+
+    def drag(self, start, end) -> None:
+        return None
+
+
+class FakeMouse(FakeGui):
+    """The fake's mouse: a click goes to the screens the fake draws (the research panel, the
+    army list) when one is under it, and to the army's map otherwise."""
+
+    def __init__(self, game: FakeGame):
+        self.game = game
+        self._pointer = _Pointer()
+        self._held = lambda: game._held
+        self.calls: list[tuple] = []
+        self._down = None
+
+    @property
+    def army(self):
+        """The army's map, looked up at each click (a test may give the fake one after the
+        driver was built), or a bare pointer when there is none."""
+        return self.game.army if self.game.army is not None else self._pointer
+
+    def click(self, button="left"):
+        if self.game.ui_click(self.army.pos, button):
+            self.calls.append(("ui-click", button, self.army.pos))
+            return
+        super().click(button)
+
+
 class FakeGame:
     """The game, as far as the harness can tell from its files and its keys."""
 
@@ -337,6 +377,22 @@ class FakeGame:
         self.console_open = False
         self.line = ""
         self.panel: str | None = None
+        #: The screen the fake draws (what the mouse tools place their points in).
+        self.screen = (1920, 1080)
+        #: Where the research panel's controls are, for a test that wants the mouse path:
+        #: ``{"slot": (x, y), "tabs": {folder: (x, y)}, "techs": {tech: (folder, (x, y))}}``,
+        #: with ``tolerance`` px. None: no research clicks do anything. The points are the
+        #: test's own (what the real game would put there), not computed by the harness.
+        self.research_ui: dict | None = None
+        self._research = {"stage": "panel", "tab": None, "tech": None}
+        #: The army list, for delegation: ``{"entries": {name: (x, y)}, "toggle": (x, y)}`` and
+        #: the AI flag per army the toggle flips. A DRAFT model of a click path nobody has
+        #: seen in the real game (docs/campaign.md).
+        self.army_ui: dict | None = None
+        self.ai_armies: dict[str, bool] = {}
+        self._army_selected: str | None = None
+        #: Every click the screens above took or ignored, for a person reading a test.
+        self.ui_log: list[str] = []
         self.search: str | None = None        # the text field that has the keyboard, if any
         self.menu_open = False
         # --- what the mod's flags hold
@@ -441,7 +497,8 @@ class FakeGame:
             pp=f"{s.political_power:.4f}", stab=f"{s.stability * 100:.3f}",
             ws=f"{s.war_support * 100:.0f}", civ=s.civilian_factories, mil=s.military_factories,
             doc=s.dockyards, owned=s.civilian_factories + s.military_factories + s.dockyards,
-            mp=s.manpower, ai=int(self.human_ai), techs=w.techs, **w.built)]
+            mp=s.manpower, ai=int(self.human_ai), techs=w.techs, **w.built,
+            rslots=len(s.research))]
         lines.append(self._llmb("army", tag=tag, divisions=sum(g.count for g in s.divisions),
                                 delegated=0))
         # focus_progress > 0: a focus started today has none yet, as in the game.
@@ -504,11 +561,84 @@ class FakeGame:
         self._write(*lines)
 
     @property
-    def gui(self) -> FakeGui:
-        """The mouse, for a driver built with ``gui=``: clicks land on the army's map."""
-        if self.army is None:
-            raise RuntimeError("this fake game has no army, so it has no map to click on")
-        return FakeGui(self.army, lambda: self._held)
+    def gui(self) -> FakeMouse:
+        """The mouse, for a driver built with ``gui=``: clicks land on the research panel and
+        the army list when they are under it, and on the army's map otherwise."""
+        return FakeMouse(self)
+
+    # --- the screens a click can land on ----------------------------------------
+
+    @staticmethod
+    def _near(point, target, tolerance: float) -> bool:
+        return abs(point[0] - target[0]) <= tolerance and abs(point[1] - target[1]) <= tolerance
+
+    def ui_click(self, pos, button: str) -> bool:
+        """A click at ``pos``: True when a screen of the fake took it (even to ignore it)."""
+        if button != "left":
+            return False
+        ui = self.research_ui
+        if ui is not None and self.panel == "research":
+            tol, stage = ui.get("tolerance", 12), self._research["stage"]
+            if stage == "panel":
+                if self._near(pos, ui["slot"], tol):
+                    self._research.update(stage="tree", tab="infantry_folder")
+                    self.ui_log.append("research: a free slot was clicked, the tech tree opened")
+                else:
+                    self.ui_log.append(f"research: click {pos} hit nothing on the slot list")
+                return True
+            if stage == "tree":
+                for folder, point in ui["tabs"].items():
+                    if self._near(pos, point, tol):
+                        self._research["tab"] = folder
+                        self.ui_log.append(f"research: tab {folder}")
+                        return True
+                for tech, (folder, point) in ui["techs"].items():
+                    if folder == self._research["tab"] and self._near(pos, point, tol):
+                        self._research["tech"] = tech
+                        self.ui_log.append(f"research: {tech} selected")
+                        return True
+                self.ui_log.append(f"research: click {pos} hit nothing on the tree")
+                return True
+            return True
+        army = self.army_ui
+        if army is not None:
+            tol = army.get("tolerance", 12)
+            for name, point in army["entries"].items():
+                if self._near(pos, point, tol):
+                    self._army_selected = name
+                    self.ui_log.append(f"army list: {name} selected")
+                    return True
+            if self._near(pos, army["toggle"], tol):
+                self._toggle_army_ai()
+                return True
+        return False
+
+    def _toggle_army_ai(self) -> None:
+        name = self._army_selected
+        if name is None:
+            self.ui_log.append("army list: the AI toggle was pressed with no army selected")
+            return
+        names = list(self.ai_armies) if name == "all" else [name]
+        flip = (not all(self.ai_armies.get(n) for n in names)) if name == "all" else (
+            not self.ai_armies.get(name, False))
+        for n in names:
+            self.ai_armies[n] = flip
+        self.ui_log.append(f"army list: {name} AI control {'on' if flip else 'off'}")
+
+    def _enter(self) -> None:
+        """Return in the research tree: the first starts the selected technology, the second
+        answers the chooser some technologies raise (a no-op here)."""
+        research = self._research
+        if self.panel != "research" or self.research_ui is None:
+            return
+        if research["stage"] == "tree" and research["tech"]:
+            result = self.world.apply(ActionCall("start_research",
+                                                 {"technology": research["tech"]}))
+            self.ui_log.append(f"research: Return -> {result.message}")
+            research["stage"] = "chooser"
+        elif research["stage"] == "chooser":
+            self.panel = None
+            research.update(stage="panel", tab=None, tech=None)
 
     def _event(self, code: int, detail: str = "0", other: str | None = None) -> None:
         fields = {"tag": self.country}
@@ -696,6 +826,9 @@ class FakeGame:
         if name == "kp_minus":
             self.speed = max(1, self.speed - 1)
             return
+        if name == "enter" and not mods:
+            self._enter()
+            return
         if name == "f" and mods == {"ctrl"}:
             self.search = ""
             return
@@ -709,6 +842,8 @@ class FakeGame:
             return
         if panel:
             self.panel = None if self.panel == panel else panel
+            if self.panel == "research":
+                self._research.update(stage="panel", tab=None, tech=None)
 
     def _console_key(self, name: str, mods: frozenset[str]) -> None:
         if name == "enter":

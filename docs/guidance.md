@@ -30,6 +30,7 @@ hoi4-harness play   --system-prompt ./whole-thing.txt   # replace everything
 | `coach` | A prescriptive numbered checklist, for smaller or weaker models. |
 | `world-conquest` | The unattended campaign ([campaign.md](campaign.md)): the game's AI executes, the model is the grand strategist. Says who does what, how to sequence wars, how to pace the wakes. |
 | `world-conquest-llm` | The independent campaign (`--control llm`, [campaign.md](campaign.md)): the model plays the country itself, nothing moves its divisions, so it says what the tool list gives and what to plan around. |
+| `world-conquest-llm-hands` | The same campaign when the harness has the mouse (`campaign_input = "mouse"`, the default in llm mode): research and armies (orders, delegation) are in the tool list, each when its prerequisites hold. Picked automatically; falls back to `world-conquest-llm` when no mouse tool is live. |
 | `rival` | Rival mode ([rival.md](rival.md)): the game's AI runs a country a person is not playing, the model steers it. Says to set slow standing orders because they run only in the person's pauses, and what the model can and cannot know. |
 
 They live in [`src/hoi4_harness/guidance/`](../src/hoi4_harness/guidance/) as plain

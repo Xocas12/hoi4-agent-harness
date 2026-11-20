@@ -28,6 +28,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from ..adapters.hands import ARMY_ACTIONS
 from ..observation.fronts import LOW_SUPPLY, is_quiet
 from ..types import ActionCall, GameState
 
@@ -103,6 +104,10 @@ class Policy:
         #: Independent campaign (``campaign_control = "llm"``): the actions the model has,
         #: and so which idle slots are worth a wake. None is the game-AI campaign.
         self.hands_on = hands_on
+        if hands_on is not None and not hands_on & ARMY_ACTIONS:
+            # The wartime rules are for a model that can act on a front: with no army tool in
+            # its list a "front went quiet" wake would spend money on news it cannot use.
+            wake_on_front_quiet = wake_on_losing_ground = False
         #: A reason to wake the model that the supervisor found (guidance from the person);
         #: set before each decision, ``None`` when there is none.
         self.pending_wake: str | None = None
@@ -154,7 +159,7 @@ class Policy:
                 "critical")
 
         if self.campaign is not None:
-            return self._campaign_wake(state, days_since_planner)
+            return self._campaign_wake(state, days_since_planner, previous)
 
         for event in state.events:
             if event.severity == "critical":
@@ -196,7 +201,8 @@ class Policy:
             return self.review_override
         return self.campaign.war_days if state.wars else self.campaign.peace_days
 
-    def _campaign_wake(self, state: GameState, days_since_planner: int) -> WakeDecision:
+    def _campaign_wake(self, state: GameState, days_since_planner: int,
+                       previous: GameState | None = None) -> WakeDecision:
         """Wake rules for a campaign, where the game's AI does everything the old
         reflex and wartime rules watched (focus, research, fronts) and a wake is
         money: a scheduled review, and the critical events a war or a surrender is."""
@@ -207,6 +213,10 @@ class Policy:
         idle = self._idle_wake(state) if days_since_planner >= pacing.wake_gap_days else None
         if idle is not None:
             return WakeDecision(True, idle, "opportunity")
+        front = (self._front_wake(state, previous)
+                 if days_since_planner >= pacing.wake_gap_days else None)
+        if front is not None:
+            return WakeDecision(True, front[0], front[1])
         if days_since_planner >= self.review_days(state):
             return WakeDecision(True, "scheduled review", "scheduled")
         if critical is not None:
@@ -231,6 +241,28 @@ class Policy:
         if ("set_production" in can and state.known("production") and not state.production
                 and state.known("military_factories") and state.military_factories):
             return "no military production line is running"
+        return None
+
+    def _front_wake(self, state: GameState, previous: GameState | None) -> tuple[str, str] | None:
+        """Independent campaign with an army tool only: the wartime rules the game-AI campaign
+        leaves to the AI. Each fires on onset (a front that turns to losing ground, one that
+        goes quiet), from the readers that see ``fronts`` and, with the log reader, from the
+        mod's front picture (``state_forces``): a state of yours the enemy now controls, or a
+        contact that is gone while the war goes on."""
+        can = self.hands_on
+        if not can or not can & ARMY_ACTIONS or not state.wars:
+            return None
+        if self.wake_on_losing_ground:
+            losing = _started_losing(state, previous)
+            if losing:
+                return f"losing ground on {losing}", "critical"
+            lost = _lost_state(state, previous, player_tag(state, self.country))
+            if lost:
+                return f"state {lost} is now held by the enemy", "critical"
+        if self.wake_on_front_quiet and previous is not None:
+            quiet = _went_quiet(state, previous) or _contact_ended(state, previous)
+            if quiet:
+                return f"front {quiet} went quiet", "opportunity"
         return None
 
     def _delegate(self, state: GameState) -> list[ActionCall]:
@@ -359,6 +391,31 @@ def _started_losing(state: GameState, previous: GameState | None) -> str | None:
         was = before.get(front.name)
         if front.pressure == "losing_ground" and (was is None or was.pressure != "losing_ground"):
             return front.name
+    return None
+
+
+def _lost_state(state: GameState, previous: GameState | None, own_tag: str) -> str | None:
+    """A state the front picture showed under the player's control last turn and shows under
+    another's now."""
+    if previous is None or not previous.state_forces or state.state_forces is None or not own_tag:
+        return None
+    mine = {f.state for f in previous.state_forces if (f.controller or "").upper() == own_tag.upper()}
+    for f in state.state_forces:
+        if f.state in mine and f.controller and f.controller.upper() != own_tag.upper():
+            return str(f.name or f.state)
+    return None
+
+
+def _contact_ended(state: GameState, previous: GameState) -> str | None:
+    """Both sides stood in a state last turn and not in any now (the picture is fresh and the
+    war goes on): the fighting there stopped."""
+    if state.state_forces is None or not previous.state_forces:
+        return None
+    if any(f.own and f.foe for f in state.state_forces):
+        return None
+    for f in previous.state_forces:
+        if f.own and f.foe:
+            return str(f.name or f.state)
     return None
 
 

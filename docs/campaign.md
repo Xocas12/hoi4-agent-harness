@@ -31,11 +31,14 @@ the clock is the harness's. `--actions` / `--without` still narrow the list.
 
 ## Independent mode: the model plays the country (`--control llm`)
 
-**Not yet verified against the live game.** Everything below is built and tested on the fake
-game only (`tests/test_106_independent_campaign.py`).
+**Not yet verified against the live game, except research through the mouse** (below). Everything
+else here is built and tested on the fake game only (`tests/test_106_independent_campaign.py`,
+`tests/test_independent_hands.py`).
 
 ```bash
-hoi4-harness play --campaign --control llm --live --profile profiles/campaign-ger-world.json     --max-usd 40 --run-dir runs/campaign-ger-llm      # or "campaign_control": "llm" in the profile
+hoi4-harness play --campaign --control llm --live --profile profiles/campaign-ger-world.json \
+    --max-usd 40 --run-dir runs/campaign-ger-llm      # or "campaign_control": "llm" in the profile
+hoi4-harness play --campaign --control llm --campaign-input none ...   # keyboard and console only
 ```
 
 `campaign_control` is `"game_ai"` (default, everything above) or `"llm"`. In `llm` mode:
@@ -45,33 +48,107 @@ hoi4-harness play --campaign --control llm --live --profile profiles/campaign-ge
   taken under `human_ai`) the run refuses to start: `human_ai` is a toggle and the harness will
   not guess which way it would flip. Turn it off in the console yourself, then run again.
 - `operational_control` is `llm`, so the directive vocabulary (`set_ai_directive`,
-  `set_ai_posture`, `clear_ai_directives`, `delegate_army_to_ai`) is not offered and the
-  hands-on actions are. Which of those exist is the headless adapter's decision, not this
-  mode's: with the campaign profile's `logtail` reader that is `set_national_focus`,
-  `queue_construction`, `take_decision`, `hire_advisor` and `note` / `advance_time`.
-  `set_production` needs a reader that sees production (`headless_reader` `log+save`, at the
-  price of the verification saves), `set_game_speed` is removed because the clock is the
-  harness's, and `start_research`, `move_division` and `attack_province` are mouse actions that
-  headless refuses (`headless.MOUSE_ACTIONS`).
+  `set_ai_posture`, `clear_ai_directives`) is not offered and the hands-on actions are. Which of
+  those exist is the headless adapter's decision, not this mode's: with the campaign profile's
+  `logtail` reader the keyboard-and-console set is `set_national_focus`, `queue_construction`,
+  `take_decision`, `hire_advisor` and `note` / `advance_time`. `set_production` needs a reader that
+  sees production (`headless_reader` `log+save`, at the price of the verification saves) and
+  stays out of this mode's mouse work (below); `set_game_speed` is removed because the clock is
+  the harness's.
 - What campaign mode turned off for the game's AI comes back: the **reflex layer** (an empty
   construction queue, idle military factories) is on, and the wake rules for a focus that ended
   (`no national focus is running`), an idle research slot and an empty production line are on.
-  A wake is only issued when the model has the action that fills the slot (a headless run has no
-  `start_research`, and waking it for a slot it cannot use would only spend money), and at most
-  once per `campaign_wake_gap_days`. The wartime alarms (encirclement, supply, fronts going
-  quiet) stay off: nothing in the tool list could answer them.
-- The system prompt (`hybrid.describe`, `CAMPAIGN_LLM`) says the game's AI is not running the
-  country and that no tool moves a unit; the guidance pack is `world-conquest-llm`.
+  A wake is only issued when the model has the action that fills the slot, and at most once per
+  `campaign_wake_gap_days`. The two wartime rules (a front turning against you, a front going
+  quiet) are on only when an army tool is offered (below).
+- The system prompt (`hybrid.describe`, `prompts.campaign_llm`) and the guidance pack are chosen
+  from what is actually offered: with no mouse tool live they are exactly the keyboard-only text
+  (`CAMPAIGN_LLM`, `world-conquest-llm`), otherwise the mouse text and `world-conquest-llm-hands`.
 
-**The gap: armies in wartime.** Without `human_ai` nothing moves the player's divisions. The
-two things that could are both off in a headless campaign today: unit orders
-([unit-orders.md](unit-orders.md)) are clicks, need a mouse, a calibrated camera and `unit_orders =
-true`, and the headless driver refuses a mouse; `delegate_army_to_ai` is a mouse action too
-(issue #8, not verified live). So in `llm` mode the model can queue buildings and pick focuses
-and decisions, and if a war reaches it the army stands where it is. Do not read a good result in
-this mode as the model conquering anything by force. What would close the gap is a verified
-console path for delegating armies, or the game's AI taking the armies only; neither exists
-here.
+### The mouse (`campaign_input = "mouse"`, the default in `llm` mode)
+
+Independent campaigns are meant to run unattended, so the **harness owns the PC**: with
+`campaign_input = "mouse"` the headless adapter gets the input driver's mouse (reusing
+`InputDriverAdapter`, the ui scripts, the unit-order executor and the console channel; no new
+click layer), alongside the log reader and the console writes. `campaign_input = "none"` is
+today's keyboard-and-console run. `game_ai` mode never has the mouse. Every click and key stays
+behind the guards the keys always had: the game window must be in front (the harness waits,
+retrying every minute up to `campaign_focus_wait_minutes`, and types and clicks nowhere else; the
+window is pulled forward only with `campaign_take_focus`, default false), a point off the
+calibrated screen is refused, a dry run only logs (and a campaign refuses to run dry). Do not
+touch the mouse or keyboard while it runs, and do not zoom or scroll the map.
+
+At the start the adapter checks the prerequisites of each mouse tool and **offers only the ones
+that hold**; `campaign.log` says which are live and which were refused, and why:
+
+```
+mouse tools live: attack_province, delegate_army_to_ai, move_division, start_research
+mouse tool refused: move_division: no camera fit at runs/camera.json: unit orders need one recorded ...
+```
+
+`hoi4-harness campaign-check` prints the same prerequisites beforehand (WARN lines).
+
+| Tool | Needs | Verified how | Status |
+|---|---|---|---|
+| `start_research` | `game_dir` (technologies, `interface/countrytechtreeview.gui`, `countrytechnologyview.gui`), a readable display | After the click path, the harness asks the mod for fresh telemetry and the technology must appear in a research slot (the probe lines; the `techs` counter reports completion). A refusal (`nothing was sent`), an unseen change (`rejected`) or an unreadable one (`unverified`) is reported as such, never as success | **Research through the input driver was verified live on 2026-11-19** (`y` then `w` because the hotkeys toggle, a second Return for the military-industrial-organisation chooser, rotated tabs need +40 GUI y). The idle-slot count (`rslots`, below) and the post-click refresh were not run live |
+| `move_division`, `attack_province` | `game_dir` (the map), a camera record (below), `unit_orders` not false | Always `unverified` when given; the brief's `Order:` lines follow the front picture | Fake game only |
+| `delegate_army_to_ai` | recorded points in `calibration.json`: `army.ai_control_toggle`, and `army.<name>` for each army (`army.all` for all) | Never: the mod cannot see the toggle, so the result is `unverified` | **A draft click path, fake game only** (below) |
+
+**Research and the idle-slot wake.** The log's probe lines name only the *busy* research slots, so
+an idle slot could not be seen and the wake could never fire. The mod's state line now carries
+`rslots=<amount_research_slots>` (additive, schema stays 5; `amount_research_slots` is a documented
+dynamic variable, its use here is **not verified live**) and the reader pads the slot list with
+empty slots up to it. An older mod without `rslots` behaves as before (no idle slot is ever seen),
+and the installed mod must match `mod/llm_bridge` byte for byte (`campaign-check`), so **copy the
+mod again** after pulling this change.
+
+**Armies, two tools.**
+
+- *By order* (`move_division` / `attack_province`, [unit-orders.md](unit-orders.md)): hands-on,
+  one state to another, with `plan_order`'s refusals and the `OrderLedger` lines in the next brief.
+  It aims with a **camera record** (`camera.json`, `scripts/record_camera.py`). The record used to
+  be refused when older than 24 h, which an overnight campaign outlives. What the harness can
+  check itself replaces the age limit: the record now carries a **display fingerprint** (UI scale,
+  window mode, resolution, from `settings.txt` and the live window), and an unattended run accepts
+  a fingerprinted record at any age while the fingerprint still matches, and refuses it at once
+  when the display changed. What it cannot see is the map's **zoom** (nothing reads it), so that is
+  assumed unchanged: the harness never scrolls or zooms the map, and a person who does breaks the
+  aim; the ledger's `no change after 4 days` line is the symptom. **Recording is not
+  automatable**: it needs the on-screen position of victory-point markers, which only a person
+  (or a vision model the harness does not have) can read. So a person must record it once, in the
+  live game, with the current `record_camera.py`; **the campaign checks for it at the start**
+  (`campaign-check` WARN, then the start log) and, if it is missing, stale without a fingerprint,
+  from another display or not for this map, does not offer the order tools and says why. A record
+  written by an older script has no fingerprint and keeps the 24 h limit. Attended use
+  (outside a campaign) keeps the 24 h limit unchanged.
+- *By delegation* (`delegate_army_to_ai`, issue #8): hand a whole army to the game's own AI on
+  its front, or take it back, while the model plays the rest itself. The game's interface files do
+  not say where the army list or the AI toggle is, so its click points are **recorded, not
+  computed**: `hoi4-harness calibrate army.ai_control_toggle army.all "army.1st Army"`, one point
+  per army the model may name. The path is: click `army.<name>`, then `army.ai_control_toggle`
+  (`adapters/hands.py`, `DELEGATE_SCRIPT`; a `ui_scripts.json` entry overrides it). Nothing reads
+  the toggle back, so every result is `unverified` and the prompt tells the model to keep a record
+  of what it handed over. Without the recorded points the tool is not offered. It is the only
+  standing-order verb this mode keeps: the directives and the posture stay out.
+
+**Wartime wake rules.** `wake_on_losing_ground` and `wake_on_front_quiet` come back in this mode
+only when at least one army tool is offered (the policy switches them off again otherwise). They
+fire on onset, past the wake gap: a front that turned to losing ground or went quiet (readers that
+report `fronts`), and, from the log reader's front picture, a state you held that the enemy now
+controls, or a contact that ended while the war goes on. The fake game proves the rules on those
+inputs; how often they fire in a real 1941 is unmeasured.
+
+**Production is out.** `set_production`'s click path is a draft nobody has walked, the fake game
+has no production screen to test it against, and the console path (`add_equipment_production`)
+opens a second line beside an existing one, which this change must not use. The mouse tools stay
+research, orders and delegation; the console `set_production` keeps its existing behaviour (only
+with a reader that sees production).
+
+**Not live-verified, in one list:** the `rslots` telemetry and so the idle-slot wake; the
+post-click telemetry refresh while paused; research through the *campaign's* wiring (the click
+path itself was run live 2026-11-19); division orders; the camera fingerprint and its unattended
+age rule; delegation (the whole click path); the wartime wake rules; the guidance and prompt
+text; the mod-side `rslots`; any of it over a full overnight run.
 
 ## Telemetry under `human_ai`
 
@@ -137,7 +214,7 @@ so guidance is heard within seconds of real time rather than at the next schedul
 
 ## Wake rules
 
-No reflexes (the AI does that), no wakes for focus, research or quiet fronts. The model
+(Game-AI campaign; independent mode's are in its section above.) No reflexes (the AI does that), no wakes for focus, research or quiet fronts. The model
 wakes on a scheduled review (`campaign_review_peace_days` 30, `campaign_review_war_days`
 14, or its own `advance_time`), and on a critical event (a war, a capitulation) at most
 once per `campaign_wake_gap_days` (7); the player's own capitulation is the exception and

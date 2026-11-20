@@ -475,8 +475,12 @@ class LogTailAdapter(GameAdapter):
         # The brief keeps showing the last complete day until this one closes.
         # Clearing here would report "no focus" between a state line and the
         # probe lines behind it -- and that wakes the planner for nothing.
+        try:
+            slots = int(fields["rslots"])
+        except (KeyError, ValueError):
+            slots = None          # an older mod: busy slots only, an idle one cannot be seen
         self._ticks[tag] = {"date": fields.get("_engine_date"), "focus": set(), "research": set(),
-                            "war": {}}
+                            "war": {}, "rslots": slots}
 
     def _probe(self, kind: str, fields: dict[str, str]) -> None:
         tag = fields.get("tag", "").strip().upper()
@@ -586,6 +590,10 @@ class LogTailAdapter(GameAdapter):
         state = self._state
         state.national_focus = min(tick["focus"]) if tick["focus"] else None
         state.research = [ResearchSlot(index=i, technology=t) for i, t in enumerate(sorted(tick["research"]))]
+        # The state line's research slot count (``rslots``) is what makes an idle slot visible:
+        # the probe lines name only the busy ones.
+        for index in range(len(state.research), tick.get("rslots") or 0):
+            state.research.append(ResearchSlot(index=index, technology=None))
         wars = [self._war(enemy, fields, self._war_since.get(enemy))
                 for enemy, fields in sorted(tick["war"].items())]
         # A war the mod announced is on the list from the announcement; the day

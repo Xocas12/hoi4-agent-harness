@@ -114,6 +114,59 @@ next report before repeating it). The brief reports the conquest: states held an
 world, the wars, the independent countries left, and what the run has spent."""
 
 
+def campaign_llm(hands=None) -> str:
+    """The independent campaign's note. ``hands`` is what the run offers of the mouse tools
+    (``HarnessConfig.campaign_hands``: ``offered``, ``armies``); with none offered it is
+    exactly the keyboard-and-console text (``CAMPAIGN_LLM``)."""
+    offered = set((hands or {}).get("offered") or ())
+    if not offered:
+        return CAMPAIGN_LLM
+    got = {"research": "start_research" in offered,
+           "orders": bool(offered & {"move_division", "attack_province"}),
+           "delegate": "delegate_army_to_ai" in offered}
+    armies = (hands or {}).get("armies") or []
+    lines = []
+    if got["research"]:
+        lines.append(
+            "- Research: start_research puts a technology into a free research slot. The harness "
+            "clicks the tech tree for you, so it runs only while the game window is in front; "
+            "the result says whether the slot now shows the technology, and you are woken when a "
+            "slot goes idle.")
+    if got["orders"]:
+        lines.append(
+            "- Armies, by order: move_division and attack_province send the divisions standing in "
+            "a state (from the front picture in the brief) to another state, by clicking the map. "
+            "A march takes days, so the result is always 'unverified' and the brief's Order: "
+            "lines say what became of it: do not repeat an order meanwhile. A refusal says why "
+            "and nothing was clicked.")
+    if got["delegate"]:
+        named = (" Armies you can hand over: " + ", ".join(armies) + ".") if armies else ""
+        lines.append(
+            "- Armies, by delegation: delegate_army_to_ai hands an army to the game's own AI (it "
+            "then runs that army on its front) or takes it back (delegate false). The harness "
+            "cannot read the toggle back, so the result is always 'unverified': keep a record of "
+            "what you handed over in your notes." + named)
+    if not got["orders"] and not got["delegate"]:
+        lines.append("- Armies: no tool here moves a division, and the game's AI is not moving "
+                     "them. They stand where they are; plan for a war you cannot attack in.")
+    elif not got["orders"]:
+        lines.append("- No tool here moves a division yourself: a division moves only when the "
+                     "game's AI moves it, so an army you do not delegate stands where it is.")
+    elif not got["delegate"]:
+        lines.append("- Divisions you do not order stand where they are; the game's AI is not "
+                     "moving them.")
+    note_keeps = (
+        "- Still not available: changing a running production line, and anything not in your "
+        "tool list.")
+    return (CAMPAIGN_LLM.split("- Your tool list is the whole")[0]
+            + "- Your tool list is the whole of what you can do. Some of it the harness does with "
+              "the mouse; the rest through the console and the keyboard. Do not plan around a tool "
+              "you do not have.\n"
+            + "\n".join(lines) + "\n" + note_keeps + "\n"
+            + "- note keeps a plan across wakes."
+            + CAMPAIGN_LLM.split("- note keeps a plan across wakes.", 1)[1])
+
+
 RIVAL = """You are the grand strategist of {tag}, one country in a single-player game that a
 person is also playing. The person plays a different country, and may well be your enemy. {tag}
 is run by the game's own AI: it chooses the national focus and the research, builds and
@@ -182,6 +235,7 @@ def build_system(
     rival: str = "",
     rival_when: str = "paused",
     campaign_control: str = "game_ai",
+    campaign_hands: dict | None = None,
 ) -> str:
     """Assemble the system prompt.
 
@@ -194,7 +248,8 @@ def build_system(
     from .hybrid import describe
 
     independent = bool(campaign) and campaign_control == "llm" and not rival
-    parts = [MECHANICS, describe(operational_control, campaign=independent)]
+    hands = (campaign_hands or {}).get("offered") if independent else None
+    parts = [MECHANICS, describe(operational_control, campaign=independent, hands=hands)]
     if advisor:
         # Sits with the mechanics, before any guidance: it corrects the fiction
         # that the harness executes what the model calls.
@@ -204,7 +259,7 @@ def build_system(
     elif campaign:
         # Instead of the headless note: it lists what the mouse-only actions cannot do, and
         # a campaign's tool list is narrower than that for a different reason.
-        parts.append(CAMPAIGN_LLM if independent else CAMPAIGN)
+        parts.append(campaign_llm(campaign_hands) if independent else CAMPAIGN)
     elif headless:
         from ..adapters.headless import unavailable_actions
 
@@ -273,7 +328,21 @@ def system_for(config, index=None) -> str:
         rival=getattr(config, "rival", ""),
         rival_when=getattr(config, "rival_act_when", "paused"),
         campaign_control=getattr(config, "campaign_control", "game_ai"),
+        campaign_hands=_hands_for(config),
     )
+
+
+def _hands_for(config) -> dict | None:
+    """What the prompt is told of the mouse tools: what the adapter found live at the start
+    (``campaign_hands``); for a config no adapter has been built for (``hoi4-harness prompt``)
+    the tools the mouse could offer, since nothing has been refused yet."""
+    if not getattr(config, "hands_mouse", False):
+        return None
+    found = getattr(config, "campaign_hands", None)
+    if found:
+        return found
+    return {"offered": ["start_research", "move_division", "attack_province",
+                        "delegate_army_to_ai"], "armies": []}
 
 
 SYSTEM = build_system("doctrine")

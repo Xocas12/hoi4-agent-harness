@@ -35,9 +35,18 @@ from .base import AdapterInfo, GameAdapter
 from .channels import ChannelRouter, resolve_channels
 from .composite import CompositeAdapter
 from .console import CONSOLE_ACTIONS, ConsoleChannel, ConsoleConfig
+from .hands import (
+    DELEGATE_TOGGLE,
+    HAND_ACTIONS,
+    Hands,
+    delegable_armies,
+    delegate_steps,
+    research_steps,
+)
 from .input_driver import ClockUnobservable, InputConfig, InputDriverAdapter
 from .keys import ScanCodeKeys
 from .ui_scripts import DEFAULT_FILENAME, Step, load_scripts, parse_steps
+from .unit_orders import OrdersComposite
 from .window import FocusCheck
 
 #: Actions with no path that avoids the mouse. Removed from the tool list.
@@ -54,10 +63,12 @@ NEEDS_PRODUCTION_READER = frozenset({"set_production"})
 PRODUCTION_READERS = ("log+save", "savegame")
 
 
-def excluded_actions(reader: str = "log+save") -> frozenset[str]:
-    """What a headless run with this reader does not offer."""
-    return MOUSE_ACTIONS | (NEEDS_PRODUCTION_READER if reader not in PRODUCTION_READERS
-                            else frozenset())
+def excluded_actions(reader: str = "log+save", mouse: bool = False) -> frozenset[str]:
+    """What a headless run with this reader does not offer. With the mouse (an independent
+    campaign, ``adapters/hands.py``) the mouse actions are offered when their own
+    prerequisites hold, so only the production rule remains."""
+    return (frozenset() if mouse else MOUSE_ACTIONS) | (
+        NEEDS_PRODUCTION_READER if reader not in PRODUCTION_READERS else frozenset())
 CLOCK_MODES = ("auto", "console", "keys", "exact")
 #: ``pause_in_hours`` is told this many hours past the days asked for, so the game
 #: cannot stop before the last day's state line whatever hour the daily tick runs at.
@@ -199,13 +210,19 @@ class HeadlessComposite(CompositeAdapter):
             self.writer.clock.hint_days = None
 
 
+class HeadlessOrdersComposite(HeadlessComposite, OrdersComposite):
+    """The headless composite with division orders: the order ledger and state names are
+    added to every read (``OrdersComposite``) and the clock hint and saves stay."""
+
+
 class HeadlessWriter(GameAdapter):
     """The write side: the router's actions, with the clock and speed on top."""
 
-    def __init__(self, router: ChannelRouter, clock: HeadlessClock, reader: str = "logtail"):
+    def __init__(self, router: ChannelRouter, clock: HeadlessClock, reader: str = "logtail",
+                 mouse: bool = False):
         self.router = router
         self.clock = clock
-        self.excluded = excluded_actions(reader)
+        self.excluded = excluded_actions(reader, mouse)
         self.supported_actions = frozenset(router.supported_actions - self.excluded)
 
     def attach_reader(self, read_state: Callable[[], GameState]) -> None:
@@ -353,7 +370,14 @@ def build_headless(config: HarnessConfig, fake=None) -> CompositeAdapter:
         sleep = _scaled_sleep(config.headless_time_scale)
 
     index = config.build_index()
-    # Research cannot be started without the mouse, so an idle slot is not news.
+    # An independent campaign may have the mouse (adapters/hands.py); the fake game in another
+    # process has none, and the real pyautogui must never click for it.
+    hands = Hands(mouse=config.hands_mouse and config.fake_game_files is None)
+    if config.hands_mouse and not hands.mouse:
+        hands.refuse(sorted(HAND_ACTIONS), "the fake game in another process (fake_game_files) "
+                                           "has no mouse")
+    # Research cannot be started without the mouse, so an idle slot is not news (the mouse
+    # branch below turns it back on once start_research is known to be offered).
     config.wake_on_free_research_slot = False
 
     if config.headless_reader == "savegame":
@@ -375,16 +399,37 @@ def build_headless(config: HarnessConfig, fake=None) -> CompositeAdapter:
 
     scripts: dict[str, list[Step]] = {"set_national_focus": parse_steps(FOCUS_SCRIPT)}
     user_scripts = config.ui_scripts_path or Path(config.run_dir) / DEFAULT_FILENAME
-    if Path(user_scripts).exists():
+    if hands.mouse:
+        scripts["start_research"] = research_steps()
+        scripts["delegate_army_to_ai"] = delegate_steps()
+        if Path(user_scripts).exists():
+            recorded = load_scripts(Path(user_scripts))
+            scripts.update({name: steps for name, steps in recorded.items()
+                            if name in ("start_research", "delegate_army_to_ai")})
+        if index is None or not index.tech_places:
+            scripts.pop("start_research")
+            hands.refuse("start_research", "the playset has no technologies to place on the tree "
+                         "(set game_dir / --game-dir to the HOI4 install)")
+    elif Path(user_scripts).exists():
         scripts.update(keyboard_only(load_scripts(Path(user_scripts)))[0])
 
+    input_config = InputConfig(
+        window_title=config.window_title, enforce_focus=config.enforce_window_focus,
+        clock_probe_seconds=config.clock_probe_seconds, mouse=hands.mouse)
+    extra = {}
+    if focus_check is not None:
+        extra["focus_check"] = focus_check
+    if hands.mouse and fake is not None:
+        # The fake game's mouse and screen: no real pointer, and the points are placed in the
+        # screen the fake draws, whatever this machine's settings say.
+        from ..uilayout import Geometry
+
+        input_config.geometry = Geometry(*fake.screen)
+        extra["gui"] = fake.gui
+        extra["display_settings"] = lambda: None
     driver = InputDriverAdapter(
-        InputConfig(window_title=config.window_title, enforce_focus=config.enforce_window_focus,
-                    clock_probe_seconds=config.clock_probe_seconds, mouse=False),
-        dry_run=config.dry_run, scripts=scripts, index=index, sleep=sleep,
-        keys=ScanCodeKeys(send=send, sleep=sleep) if send is not None else None,
-        **({"focus_check": focus_check} if focus_check is not None else {}),
-    )
+        input_config, dry_run=config.dry_run, scripts=scripts, index=index, sleep=sleep,
+        keys=ScanCodeKeys(send=send, sleep=sleep) if send is not None else None, **extra)
     refresh = True if config.console_refresh is None else config.console_refresh
     console = ConsoleChannel(
         driver,
@@ -400,12 +445,25 @@ def build_headless(config: HarnessConfig, fake=None) -> CompositeAdapter:
         reader.take = lambda: console.send_lines(["savegame"])
         reader.enabled = not config.dry_run
         console.saves = reader
+    ledger = None
+    if hands.mouse:
+        ledger = _wire_hands(driver, console, config, hands, fake)
     router = ChannelRouter(driver, console, channels)
     clock = HeadlessClock(driver, console, config.headless_clock, config.headless_game_speed)
-    adapter = HeadlessComposite(reader, HeadlessWriter(router, clock, config.headless_reader),
-                               clock_owner=config.clock_owner,
-                               poll_seconds=config.headless_poll_seconds, sleep=sleep)
+    writer = HeadlessWriter(router, clock, config.headless_reader, mouse=hands.mouse)
+    kwargs = dict(clock_owner=config.clock_owner, poll_seconds=config.headless_poll_seconds,
+                  sleep=sleep)
+    if ledger is not None:
+        from .unit_orders import state_names
+
+        adapter = HeadlessOrdersComposite(
+            reader, writer, ledger, state_names(driver.order_layer, index), **kwargs)
+    else:
+        adapter = HeadlessComposite(reader, writer, **kwargs)
     adapter.fake_game = fake
+    adapter.hands = hands
+    if hands.mouse:
+        _announce_hands(config, hands, adapter)
     adapter.watchdog = adapter.patient_focus = None
     if config.campaign:
         _watch_for_campaign(adapter, config, fake, driver, sleep)
@@ -439,3 +497,107 @@ def _watch_for_campaign(adapter, config: HarnessConfig, fake, driver, sleep) -> 
     driver._focus_check = patient
     adapter.patient_focus = patient
 
+
+
+def _wire_hands(driver, console, config: HarnessConfig, hands: Hands, fake):
+    """Everything the mouse tools need beyond the driver, each prerequisite checked now so a
+    tool that cannot work is not offered. Returns the order ledger, or None without orders."""
+    from ..mapdata import MapError
+    from ..uilayout import LayoutRefused
+    from .unit_orders import OrderRefused, display_fingerprint, enable_from_config
+
+    # The recorded screen points (calibration.json): the army list, the AI toggle, anything the
+    # operator overrode. Research needs none (the interface files give its points).
+    calibration = config.calibration_path or Path(config.run_dir) / "calibration.json"
+    if Path(calibration).exists():
+        try:
+            driver.load_calibration(Path(calibration),
+                                    current_resolution=fake.screen if fake is not None else None)
+        except (OSError, ValueError, RuntimeError) as exc:
+            hands.refuse("delegate_army_to_ai", f"calibration.json unusable ({exc})")
+    coordinates = driver.config.coordinates
+    hands.armies = delegable_armies(coordinates)
+    if DELEGATE_TOGGLE not in coordinates or not hands.armies:
+        hands.refuse("delegate_army_to_ai", (
+            "no recorded click points for the army list and the AI toggle: "
+            f"hoi4-harness calibrate {DELEGATE_TOGGLE} army.all army.<name> ... "
+            "(the game's interface files do not say where they are)"))
+    if "delegate_army_to_ai" in hands.refused:
+        _drop(driver, "delegate_army_to_ai")
+    # The display must be readable for any computed point: settings.txt against the window.
+    # (The fake pins its own.)
+    if fake is None and not config.dry_run:
+        try:
+            driver.geometry()
+        except LayoutRefused as exc:
+            for name in ("start_research", "delegate_army_to_ai"):
+                hands.refuse(name, f"the display could not be read ({exc})")
+                _drop(driver, name)
+    if "start_research" in driver.scripts and fake is None and not config.dry_run:
+        try:
+            driver.index.research_layout()
+        except LayoutRefused as exc:
+            # A recorded research.free_slot would stand in for the slot, but the folder tabs
+            # are computed too: refuse rather than offer a path that fails per folder.
+            hands.refuse("start_research", f"the research panel layout cannot be read ({exc})")
+            _drop(driver, "start_research")
+    # Division orders: the map, the camera record and the display it was recorded under.
+    ledger = None
+    if config.unit_orders is False:
+        hands.refuse(("move_division", "attack_province"), "unit_orders is false in the profile")
+    else:
+        try:
+            executor = enable_from_config(driver, console, config)
+            record = executor.record()
+            if record.fit_province not in executor.layer.provinces:
+                raise OrderRefused(f"the camera's fit province {record.fit_province} is not on "
+                                   "this map")
+            display = display_fingerprint(driver)
+            record.camera_for(executor.layer, record.fit_province,
+                              screen=driver.config.screen or (
+                                  tuple(display["resolution"]) if display else None),
+                              display=display, unattended=True)
+            ledger = executor.ledger
+        except (OrderRefused, MapError, ValueError, OSError, KeyError) as exc:
+            hands.refuse(("move_division", "attack_province"), _orders_reason(exc))
+            driver.order_executor = None
+            driver.supported_actions = driver.supported_actions - {"move_division",
+                                                                  "attack_province"}
+    if "start_research" in driver.scripts:
+        config.wake_on_free_research_slot = True
+        if not config.dry_run:
+            driver.after_input = _refresh_after_input(console, config)
+    return ledger
+
+
+def _drop(driver, name: str) -> None:
+    driver.scripts.pop(name, None)
+    driver.supported_actions = driver.supported_actions - {name}
+
+
+def _orders_reason(exc: Exception) -> str:
+    text = str(exc) or type(exc).__name__
+    if isinstance(exc, KeyError):
+        text = f"missing {text}"
+    return text
+
+
+def _refresh_after_input(console, config: HarnessConfig):
+    """After a scripted click path, ask the mod for fresh telemetry so the result can be
+    verified while the game is paused (research shows in the probe lines)."""
+    def refresh() -> None:
+        if config.country and console.config.refresh:
+            console.send_lines(console.refresh_lines(config.country.upper()))
+    return refresh
+
+
+def _announce_hands(config: HarnessConfig, hands: Hands, adapter) -> None:
+    """Record what is live for the prompt, the guidance pack and the wake rules."""
+    from ..campaign.setup import GUIDANCE_LLM, GUIDANCE_LLM_HANDS
+
+    offered = adapter.supported_actions
+    config.campaign_hands = hands.summary(offered)
+    if "start_research" not in offered:
+        config.wake_on_free_research_slot = False
+    if not hands.live(offered) and config.guidance == GUIDANCE_LLM_HANDS:
+        config.guidance = GUIDANCE_LLM
