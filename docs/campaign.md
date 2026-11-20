@@ -110,6 +110,7 @@ a reason, 2 could not start, 3 crashed.
 | End date (`--until`, default 1948-12-31) | the last turn is cut to the days left; the pause lands at most a day late |
 | Budget | stops with the game paused and `budget: ...` as the reason; `campaign_on_budget = "coast"` lets the AI play on with no calls |
 | Game process gone (`tasklist`, `campaign_game_process`) or `game.log` silent for `campaign_silence_minutes` (20) while the clock runs | `GameLost`: a clean stop with the reason; also the case of the mod not reporting for the player |
+| Historical AI Focuses off (`historical=0` in the first recovery save's header) | logged as `historical AI focuses: off`, kept in `campaign_state.json` and shown in the report summary; with `campaign_historical_ai = "on"` (`on`, `off` or `any`, default `any`) it is also a `WARNING` line. The run is never stopped for it: the AI picks the focuses, so on and off runs are not comparable |
 | `ai=0` after the run started | stops: `human_ai` was toggled off or the game restarted; resume sets it up again |
 | Game window not in front | every key is gated on it; the harness waits, retrying every minute (logged), up to `campaign_focus_wait_minutes` (360) in all, then stops. The game keeps running meanwhile. Nothing is typed elsewhere, and the window is not pulled forward unless `campaign_take_focus` is true (default false: it would steal the keyboard from whatever you are doing) |
 | Harness crash | traceback summary in `campaign.log` and a `crash` record; resume with `--resume` |
