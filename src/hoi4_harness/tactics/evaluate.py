@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import copy
 import time
 from statistics import mean
 from typing import Any
@@ -11,9 +12,27 @@ from .env import TacticalEnv
 from .scenario import Scenario, list_scenarios, load_scenario
 
 
+def fresh_controller(controller: Any) -> Any:
+    """A controller no earlier game has touched, from what the caller handed in.
+
+    A registered name or a zero-argument factory builds a new one. An instance is deep-copied:
+    controllers such as the planner keep state between calls (the attack axis it committed to), and
+    reusing one object across games leaks the last game's commitment into the next (#116: 4/30 wins
+    instead of 28/30 on break_line). The copy also leaves the caller's object as it was given."""
+    if isinstance(controller, str):
+        return CONTROLLERS[controller]()
+    if hasattr(controller, "act"):
+        return copy.deepcopy(controller)
+    if callable(controller):
+        return controller()
+    raise TypeError(f"not a controller, a name or a factory: {controller!r}")
+
+
 def run_episode(
     scenario: str | Scenario, seed: int, controller: Any = "scripted", opponent: str = "vanilla"
 ) -> dict[str, Any]:
+    """One game. A controller instance is played as given (it is mutated, which training and
+    inspection rely on); a name builds a new one. Use `evaluate` for several games."""
     env = TacticalEnv(opponent=CONTROLLERS[opponent]())
     env.reset(scenario, seed=seed)
     ctrl = CONTROLLERS[controller]() if isinstance(controller, str) else controller
@@ -33,7 +52,7 @@ def evaluate(
 ) -> dict[str, Any]:
     sc = load_scenario(scenario) if isinstance(scenario, str) else scenario
     t0 = time.perf_counter()
-    runs = [run_episode(sc, first_seed + i, controller, opponent) for i in range(seeds)]
+    runs = [run_episode(sc, first_seed + i, fresh_controller(controller), opponent) for i in range(seeds)]
     label = controller if isinstance(controller, str) else getattr(controller, "name", "custom")
     elapsed = time.perf_counter() - t0
     wins = sum(r["outcome"] == "win" for r in runs)

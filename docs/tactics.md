@@ -624,7 +624,7 @@ small scenarios, Poland and three procedural variants of it (`tactics/variants.p
 A mistake worth recording: the first run reused one planner object across the 30 games of a cell.
 The planner keeps its drawn axis between calls, so the commitment of one game leaked into the next
 (`break_line` read 4/30 for a planner that scores 28/30). Every game now gets a fresh controller.
-`evaluate()` has the same hazard when it is handed an instance rather than a registered name.
+`evaluate()` had the same hazard when it was handed an instance rather than a registered name; fixed in #116 (an instance is deep-copied per game, a zero-argument factory is called per game, and the caller's object is never touched).
 
 Against the vanilla opponent (wins of 30; in brackets, games won only by the cell / only by the 96 h planner on the same seed):
 
@@ -687,6 +687,87 @@ Against the scripted opponent (wins of 30; in brackets, games won only by the ce
 **Decision.** Default patience stays 96. `"scaled"` is available (and tested) but not adopted: it
 did not separate from 96 on the tuning set and France is a single front. If an axis-keeping rule is
 to change, the ablation points at the chooser's margin and candidate set rather than at the clock.
+
+## Stage 7: where the plan chooser's France edge comes from (#117)
+
+#115 left one claim unexplained: the plan chooser reaches 18-20/30 on the held-out France map against
+the vanilla opponent, where no planner patience gets past 15/30, and it put that down to "the chooser's
+own hysteresis and candidate set". **That was a guess, and it was wrong.** **Simulator results only.**
+
+**What differs.** The prior-only chooser (`learned_plans` with weights that draw the planner's own pick)
+always plays `default_axes`, the planner's own choice with no memory, i.e. `Planner(patience=0)`. Read
+against the planner it differs in two places that are not the candidate set or the hysteresis:
+
+- *Idle commitment.* The chooser sets its commitment to `None` when it draws no axis. The planner leaves
+  the old, finished commitment in place, which raises the "axis completed" event at every step, so an
+  idle planner re-plans every step instead of every 24 h (`Planner(reset_idle_commit=True)` now does what
+  the chooser does).
+- *Axis order.* The chooser returns its axes as a sorted tuple of region ids. The planner returns them
+  best-first. The order is the order of the plans (`axis1`, `axis2`...), and the first plan is handed the
+  divisions standing nearest its anchor first (`Planner(sort_axes=True)`).
+
+**Benchmark.** `scripts/tactics_chooser_ablation.py`, results and per-game outcomes in
+`tactics/data/chooser_ablation_results.json`. Seeds 4000-4029, 30 games per cell, a fresh controller per
+game, both opponents, planner@96 as the paired baseline. Poland, three Poland variants and the four small
+maps are the tuning set; France is held out and nothing was chosen on it (the cells were fixed before
+France was read, and no default changed). Wins of 30 on France and Poland (brackets: games won only by
+the cell / only by the 96 h planner on the same seed):
+
+| cell | France vs vanilla | France vs scripted | Poland vs vanilla | Poland vs scripted |
+|---|---|---|---|---|
+| planner@96 (default) | 12 | 1 | 26 | 11 |
+| planner@0 | 4 (+2/-10) | 3 (+3/-1) | 30 (+4/-0) | 7 (+5/-9) |
+| planner@0 + clear idle commitment | 5 (+3/-10) | 3 (+3/-1) | 30 (+4/-0) | 8 (+5/-8) |
+| planner@0 + sorted axes | 15 (+10/-7) | 4 (+3/-0) | 30 (+4/-0) | 10 (+8/-9) |
+| planner@0 + clear + sorted | 20 (+13/-5) | 3 (+2/-0) | 30 (+4/-0) | 10 (+8/-9) |
+| planner@0 + clear + reversed | 0 (+0/-12) | 0 (+0/-1) | 28 (+4/-2) | 11 (+7/-7) |
+| planner@0 + clear + hash order 1 | 5 (+1/-8) | 4 (+4/-1) | 30 (+4/-0) | 14 (+7/-4) |
+| planner@0 + clear + hash order 2 | 4 (+3/-11) | 2 (+2/-1) | 30 (+4/-0) | 11 (+7/-7) |
+| planner@0 + clear + hash order 3 | 10 (+5/-7) | 6 (+6/-1) | 30 (+4/-0) | 13 (+7/-5) |
+| prior-only chooser | 20 (+13/-5) | 3 (+2/-0) | 30 (+4/-0) | 10 (+8/-9) |
+| prior-only, candidate set cut to the planner's pick | 20 (+13/-5) | 3 (+2/-0) | 30 (+4/-0) | 10 (+8/-9) |
+| prior-only, no hysteresis (margin 0) | 20 (+13/-5) | 3 (+2/-0) | 30 (+4/-0) | 10 (+8/-9) |
+| prior-only, sticky (margin infinite) | 19 (+14/-7) | 2 (+2/-1) | 27 (+4/-3) | 15 (+10/-6) |
+| learned_plans (committed weights) | 18 (+12/-6) | 3 (+2/-0) | 30 (+4/-0) | 12 (+7/-6) |
+| learned_plans, no hysteresis | 17 (+12/-7) | 3 (+2/-0) | 30 (+4/-0) | 12 (+7/-6) |
+
+The full table (small maps and variants, `--small`) is in the JSON and the script's output.
+
+**Reading it honestly.**
+
+- **The France edge is the axis order, and the order is arbitrary.** The planner and the chooser
+  differing in nothing else reproduce the chooser exactly (`planner@0 + clear + sorted` has the same
+  win string as the prior-only chooser, game for game). Region-id order gives 20/30 on France; the
+  reverse order gives 0/30; three other fixed orders (hashes of the region ids) give 5, 4 and 10; the
+  planner's own best-first order gives 5. Six fixed orders, one map, a swing from 0 to 20 with nothing
+  changed but who is served first. Sorted is the best of the six, which is what a chooser written with
+  `sorted(...)` happened to draw. This says nothing about why: whether some real principle
+  (nearest axis first, say) hides inside the lucky order was **not tested**, and the data does not
+  support "sorted is better" as a rule (against the vanilla opponent the orders land within a few games of each other on Poland and its
+  variants; against the scripted opponent they swing there too, 5 to 12 on `germany_poland_1939~v7003`,
+  and the hash orders beat sorted on Poland itself).
+- **Candidate set: no effect.** Cutting the prior-only chooser's candidates to the planner's own pick
+  changes no game in any cell. By construction: with weights that only reward the planner's pick, the
+  other candidates are never chosen.
+- **Hysteresis: no effect on the chooser as shipped.** Margin 0 reproduces the prior-only chooser
+  game for game, and costs the trained chooser one game on France (17 against 18). The other end of the
+  dial, an infinite margin, makes the chooser hold its axis for the whole patience: it is then planner
+  @96 behaviour again (19 on France, `break_line` back to 30/30, Poland 27) and the order effect stays.
+- **Idle commitment: a small, consistent gain at patience 0 and no more.** It is worth 0-3 games per
+  cell (`break_line` 17 to 20, Poland v7001 against scripted 12 to 14, France 4 to 5) and never lost a
+  game in a cell; it is not what makes France.
+- **The trained weights add nothing here.** `learned_plans` is 2 games under prior-only on France
+  (18 against 20), as #115 already measured.
+
+**What was ported.** Both habits are options of `Planner`, default off, with tests
+(`tests/test_117_planner_chooser_options.py`): `reset_idle_commit` and `sort_axes`. Together at patience
+0 they reproduce the prior-only chooser on a recorded France game. **Neither is on by default**:
+`reset_idle_commit` is harmless but the patience-0 planner it belongs to is not a default (`break_line`
+20/30 against 28/30), and `sort_axes` is a coin flip on a map-specific tie-break. Do not read 20/30 on
+France as a result the planner can have: it is the best of six arbitrary orders on one map. A planner
+that serves its axes in an order chosen by something real (nearest first, strongest first) is the
+experiment this suggests; it has not been run and would need a tuning set to be chosen on, with France
+read once afterwards.
 
 ## Gap list against the real game
 
