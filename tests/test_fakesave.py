@@ -71,7 +71,11 @@ def test_the_country_blocks_top_level_keys_are_the_real_ones(block, real):
 
 def test_the_header_and_top_level_blocks_are_the_real_ones(fake):
     text = fake.write_save().read_text(encoding="utf-8")
-    real_top = {line.split("=")[0] for line in REAL.read_text(encoding="utf-8").splitlines()
+    # gameplaysettings (#102) is only in fixtures trimmed after trim_save kept it: the
+    # Germany 1936 one. The Swedish ones predate it, and their value was never recorded.
+    real_top = {line.split("=")[0]
+                for path in (REAL, REAL.with_name("ger_1936_01_01.hoi4"))
+                for line in path.read_text(encoding="utf-8").splitlines()
                 if line and not line[0].isspace() and "=" in line}
     fake_top = {line.split("=")[0] for line in text.splitlines()
                 if line and not line[0].isspace() and "=" in line}

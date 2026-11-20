@@ -16,11 +16,6 @@ save_version=33
 mods={
 	"LLM Bridge"
 }
-gameplaysettings={
-	difficulty="normal"
-	ironman=0
-	historical=0
-}
 start_date="1936.1.1.12"
 states={
 	1={
