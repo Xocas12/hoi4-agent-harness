@@ -60,19 +60,24 @@ from .ui_scripts import verify
 #: skip the time and cost a player pays, which is a different game.
 CONSOLE_ACTIONS = frozenset({
     "queue_construction", "set_production", "hire_advisor",
+    "queue_province_building", "design_division_template",
     "set_ai_directive", "set_ai_posture", "clear_ai_directives", "take_decision",
     "click_gui_button", "set_front_order", "set_region_order",
     "change_law", "set_occupation_law", "diplomacy_act", "fire_advisor",
     "steer_production", "steer_intelligence", "steer_research", "steer_navy", "steer_air",
+    "steer_spending", "steer_market", "steer_army",
 })
 #: The actions whose effect logs a marker inside its guard: the line in the game's log is the
 #: proof the game let it through (``_verify_click``).
 MARKED_ACTIONS = frozenset({
     "click_gui_button", "set_front_order", "set_region_order", "change_law", "set_occupation_law",
-    "diplomacy_act",
+    "diplomacy_act", "hire_advisor", "queue_province_building", "design_division_template",
     "fire_advisor", "steer_production", "steer_intelligence", "steer_research", "steer_navy",
-    "steer_air",
+    "steer_air", "steer_spending", "steer_market", "steer_army",
 })
+#: Marked actions the telemetry can also show: when the marker line cannot be found (keys
+#: transport, no inbox log), the state read-back decides, as before the marker existed.
+STATE_FALLBACK = frozenset({"hire_advisor"})
 #: The console for every action it has a faithful effect for: settled live on
 #: 1.19.5 (run reads the user directory, needs no -debug, and eval_effect takes
 #: an inline effect; construction queued, a production line opened, an advisor
@@ -105,6 +110,23 @@ BUILDING_IDS = {
     "radar": "radar_station",
     "synthetic_refinery": "synthetic_refinery",
 }
+
+#: The province buildings ``queue_province_building`` queues, by the game's building id
+#: (``common/buildings``: the ones with a ``province_max`` that the construction screen builds in a
+#: chosen province). ``rail_way`` is left out on purpose: a railway runs between two provinces and
+#: the screen picks the path, while ``build_railway`` builds it at once, so no faithful effect exists.
+PROVINCE_BUILDING_IDS = {
+    "fortification": "bunker",
+    "coastal_fortification": "coastal_bunker",
+    "naval_base": "naval_base",
+    "supply_hub": "supply_node",
+}
+#: The ones that need a coastal state (``only_costal`` in ``common/buildings``).
+COASTAL_PROVINCE_BUILDINGS = frozenset({"coastal_bunker", "naval_base"})
+
+#: The steering actions (``steering.py``): country flags the mod's ``ai_strategy`` blocks key on.
+STEER_CALLS = frozenset({"steer_production", "steer_intelligence", "steer_research", "steer_navy",
+                        "steer_air", "steer_spending", "steer_market", "steer_army"})
 
 _TAG = re.compile(r"^[A-Z0-9]{3}$")
 _SAFE_ID = re.compile(r"^[A-Za-z0-9_.\-]+$")
@@ -239,6 +261,8 @@ class ConsoleChannel:
         self.front_standing = Standing(getattr(self.config, 'archive_dir', None))
         #: The result line of each marker-verified action, and the steers it leaves standing.
         self.click_done: dict[int, str] = {}
+        #: queue_province_building: the levels each planned call asked for.
+        self.click_levels: dict[int, int] = {}
         self.steer_pending: dict[int, tuple[str, str]] = {}
         from ..steering import Standing as SteerStanding
         self.steer_standing = SteerStanding(getattr(self.config, 'archive_dir', None))
@@ -260,6 +284,10 @@ class ConsoleChannel:
             return self._plan_construction(call, args, country)
         if call.name == "set_production":
             return self._plan_production(call, args, country, state)
+        if call.name == "queue_province_building":
+            return self._plan_province_building(call, args, country)
+        if call.name == "design_division_template":
+            return self._plan_template(call, args, country)
         if call.name == "hire_advisor":
             return self._plan_advisor(call, args, country, state)
         if call.name == "take_decision":
@@ -272,8 +300,7 @@ class ConsoleChannel:
             return self._plan_policy(call, args, country, state)
         if call.name == "fire_advisor":
             return self._plan_fire(call, args, country)
-        if call.name in ("steer_production", "steer_intelligence", "steer_research", "steer_navy",
-                         "steer_air"):
+        if call.name in STEER_CALLS:
             return self._plan_steer(call, args, country)
         if call.name == "set_region_order":
             return self._plan_region(call, args, country)
@@ -302,8 +329,8 @@ class ConsoleChannel:
     def _plan_construction(self, call, args, country) -> Planned:
         building = BUILDING_IDS.get(str(args["building"]))
         if building is None:
-            raise Refused(f"{args['building']} cannot be queued from the console: it is a "
-                          "province building and the action names no province")
+            raise Refused(f"{args['building']} cannot be queued with queue_construction: it is a "
+                          "province building. Use queue_province_building (building and province)")
         index = self._need_index("resolving a state")
         where = str(args["state"]).strip()
         if where.lower() == "capital":
@@ -372,9 +399,135 @@ class ConsoleChannel:
                           f"{len(state.production)} existing line(s))")
         body = (f"add_equipment_production = {{ equipment = {{ type = {equipment} }} "
                 f"requested_factories = {factories} }}")
+        # The production screen lists only what the country has unlocked, and the effect does not
+        # ask: a technology's enable_equipments is tested in the effect's own limit. An equipment
+        # no technology unlocks but whose definition says `active = yes` is there from the start.
+        always, techs = index.equipment_unlock(equipment)
+        if techs:
+            if not all(_SAFE_ID.match(t) for t in techs):
+                raise Refused(f"a technology that unlocks {equipment} has characters the harness "
+                              "will not write into script")
+            tests = [f"has_tech = {t}" for t in techs]
+            limit = tests[0] if len(tests) == 1 else f"OR = {{ {' '.join(tests)} }}"
+            body = f"if = {{ limit = {{ {limit} }} {body} }}"
+        elif not always:
+            raise Refused(f"no technology of this playset unlocks {equipment} and it is not "
+                          "available from the start, so what unlocks it is unknown: the "
+                          "harness cannot tell that the country may build it")
         return Planned(call, [self._inline(country, body)], unchecked)
 
+    def _plan_province_building(self, call, args, country) -> Planned:
+        """Queue a province building (a bunker, a naval base, a supply hub) in a province of a
+        state the country owns, under the game's own slot rule: ``free_building_slots`` with the
+        province, counting what is already queued. The civilian factories then build it."""
+        kind = str(args["building"])
+        building = PROVINCE_BUILDING_IDS.get(kind)
+        if building is None:
+            raise Refused(f"{kind!r} is not a province building the harness queues "
+                          f"({', '.join(PROVINCE_BUILDING_IDS)}); railways run between two "
+                          "provinces on a path the screen picks and the effect that builds one "
+                          "does it at once, so they are not offered")
+        index = self._need_index("finding the province's state")
+        province = str(args["province"]).strip()
+        if not province.isdigit():
+            raise Refused(f"{province!r} is not a province id")
+        holder = next((info for info in index.states.values() if province in info.provinces), None)
+        if holder is None:
+            raise Refused(f"no state of this playset holds province {province}")
+        count = int(args.get("count", 1))
+        if not 1 <= count <= 10:
+            raise Refused("count is the levels to queue: 1 to 10 (a province holds at most 10)")
+        test = (f"is_owned_by = {country} "
+                + ("is_coastal = yes " if building in COASTAL_PROVINCE_BUILDINGS else "")
+                + f"free_building_slots = {{ building = {building} province = {province} "
+                  "size > 0 include_constructions = yes }")
+        nonce = "q" + secrets.token_hex(5)
+        build = (f"add_building_construction = {{ type = {building} level = 1 province = {province} "
+                 f'instant_build = no }} log = "LLMB|v5|click|{nonce}"')
+        # One level per block, each tested against the queue the one before it filled; a marker
+        # is logged inside each, so the log says how many levels the game let through.
+        body = " ".join(f"if = {{ limit = {{ {test} }} {build} }}" for _ in range(count))
+        line = self._inline(country, f"{holder.id} = {{ {body} }}")
+        self.click_markers[id(call)] = nonce
+        self.click_done[id(call)] = (f"{kind} queued in province {province} (state {holder.name}): "
+                                     "the civilian factories build it")
+        self.click_levels[id(call)] = count
+        unchecked = ["that the province can take it (a port province for a naval base; the slot "
+                     "test is the game's own and declines what the province cannot hold)",
+                     "construction speed and cost: the queue and the factories decide, as on the "
+                     "screen"]
+        return Planned(call, [line], unchecked)
+
+    def _plan_template(self, call, args, country) -> Planned:
+        """Create a division template: free in the game, so the guard is the designer's own rules
+        (a new name, every battalion and company unlocked) and a marker. Editing a template is not
+        offered: the designer charges army experience for it, and no effect charges that."""
+        from .. import policy_effects
+        from ..identifiers import BATTALION_GROUPS, SUPPORT_GROUPS
+
+        name = str(args["name"])
+        if not re.fullmatch(r"[A-Za-z0-9_\-]{1,40}", name):
+            raise Refused("a template name is 1 to 40 letters, digits, underscores or hyphens (the "
+                          "console cannot carry a space or '=' inside a quoted name)")
+        index = self._need_index("reading the unit types")
+        units = index.sub_units()
+        if not units:
+            raise Refused("this playset defines no battalion types to check against")
+        layout: list[tuple[str, int, int]] = []
+        column = 0
+        for item in args["battalions"]:
+            kind, count = str(item["type"]), int(item["count"])
+            unit = units.get(kind)
+            if unit is None or unit.group not in BATTALION_GROUPS:
+                raise Refused(f"{kind!r} is not a battalion type of this playset")
+            # One type per column (five rows deep), as a player lays a template out.
+            for n in range(count):
+                layout.append((kind, column + n // 5, n % 5))
+            column += -(-count // 5)
+        if not layout:
+            raise Refused("a template needs at least one battalion")
+        if column > 5 or len(layout) > 25:
+            raise Refused("the designer's grid is five columns of five: this needs "
+                          f"{column} columns and {len(layout)} battalions")
+        support = [str(x) for x in args.get("support") or []]
+        if len(support) > 5 or len(set(support)) != len(support):
+            raise Refused("a template holds up to five support companies, each type once")
+        for kind in support:
+            unit = units.get(kind)
+            if unit is None or unit.group not in SUPPORT_GROUPS:
+                raise Refused(f"{kind!r} is not a support company type of this playset")
+        tests = []
+        for kind in dict.fromkeys([t for t, _x, _y in layout] + support):
+            always, techs = index.subunit_unlock(kind)
+            if techs:
+                if not all(_SAFE_ID.match(t) for t in techs):
+                    raise Refused(f"a technology that unlocks {kind} has characters the harness "
+                                  "will not write into script")
+                have = [f"has_tech = {t}" for t in techs]
+                tests.append(have[0] if len(have) == 1 else f"OR = {{ {' '.join(have)} }}")
+            elif not always:
+                raise Refused(f"nothing in this playset unlocks {kind}, so the harness cannot tell "
+                              "that the country may use it")
+        regiments = " ".join(f"{t} = {{ x = {x} y = {y} }}" for t, x, y in layout)
+        companies = " ".join(f"{t} = {{ x = 0 y = {i} }}" for i, t in enumerate(support))
+        body = (f'division_template = {{ name = "{name}" regiments = {{ {regiments} }} '
+                f"support = {{ {companies} }} }}")
+        guard = " ".join([f'NOT = {{ has_template = "{name}" }}', *tests])
+        plan = policy_effects.finish(
+            country, guard, body, 0.0,
+            ["a template that already holds the name is declined (editing a template costs army "
+             "experience on the screen and is not offered)",
+             "the division names group (the game gives a template made by script its default)"],
+            f"template {name} created: {len(layout)} battalion(s), {len(support)} support "
+            "company(ies); train it from the deployment screen",
+            self.config.effect_command, self.transport != "inbox")
+        if not plan.executable:
+            raise Refused(plan.reason)
+        return self._marked(call, plan.nonce, plan.line, plan.done, plan.unchecked)
+
     def _plan_advisor(self, call, args, country, state) -> Planned:
+        from .. import policy_effects
+
         advisor = str(args["advisor_id"])
         index = self._need_index("looking up the advisor's cost")
         roles = index.advisor_roles(advisor)
@@ -392,17 +545,23 @@ class ConsoleChannel:
             raise Refused(f"{advisor} costs {sorted(costs)} depending on the role; "
                           "pass slot to say which")
         (cost,) = costs
+        char = index.advisor_character(advisor)
+        ctx = index.mod_context()
+        # The role's own allowed/visible/available: the roles must agree, or say which one.
+        by_role = [ctx.advisor_conditions(char, r.slot, r.token) for r in roles]
+        if any(c != by_role[0] for c in by_role[1:]):
+            raise Refused(f"{advisor}'s roles have different conditions; pass slot to say which")
+        role = roles[0]
         if not state.known("political_power"):
             raise Refused("the reader cannot see political power, so affordability is unknown")
         if state.political_power < cost:
             raise Refused(f"{advisor} costs {cost:g} political power, {state.political_power:g} held")
-        char = index.advisor_character(advisor)
-        # The effect charges nothing itself, so the cost is taken here.
-        body = f"activate_advisor = {char} add_political_power = -{cost:g}"
-        if self.config.guards:
-            body = f"if = {{ limit = {{ has_political_power > {cost - 0.01:g} }} {body} }}"
-        return Planned(call, [self._inline(country, body)], ["the advisor's allowed/available "
-                       "conditions", "cost modifiers (the base cost is charged)"])
+        plan = policy_effects.plan_advisor(advisor, char, role.token, cost, by_role[0], country,
+                                           effect_command=self.config.effect_command,
+                                           console=self.transport != "inbox")
+        if not plan.executable:
+            raise Refused(f"{advisor} cannot be hired faithfully: {plan.reason}")
+        return self._marked(call, plan.nonce, plan.line, plan.done, plan.unchecked)
 
     def _plan_decision(self, call, args, country, state) -> Planned:
         decision_id = str(args["decision_id"])
@@ -502,7 +661,14 @@ class ConsoleChannel:
                     raise Refused(f"{law} costs {plan.cost:g} political power, "
                                   f"{state.political_power:g} held")
         else:
-            plan = ctx.plan_occupation_law(law, country, args.get("occupied"), command, console)
+            state_arg = args.get("state")
+            if state_arg is not None and self.index is not None and self.index.states:
+                found = self.index.resolve_state(str(state_arg))
+                if found is None:
+                    raise Refused(f"no state {state_arg!r} in this playset")
+                state_arg = found.id
+            plan = ctx.plan_occupation_law(law, country, args.get("occupied"), command, console,
+                                           state=state_arg)
             if plan is None:
                 raise Refused(f"there is no occupation law {law!r} in this playset")
             if not plan.executable:
@@ -626,6 +792,14 @@ class ConsoleChannel:
             except OSError:
                 tail = ""
             if nonce and f"|click|{nonce}" in tail:
+                levels = self.click_levels.pop(id(call), None)
+                if levels is not None:
+                    got = tail.count(f"|click|{nonce}")
+                    done = self.click_done.pop(id(call), "")
+                    if got < levels:
+                        return True, None, (f"{got} of {levels} level(s) queued: the game's slot "
+                                            f"test declined the rest. {done}")
+                    return True, None, done
                 steer = self.steer_pending.pop(id(call), None)
                 if steer is not None:
                     self.steer_standing.record(*steer)
@@ -915,6 +1089,11 @@ class ConsoleChannel:
                 continue
             if p.call.name in MARKED_ACTIONS:
                 ok, kind, message = console._verify_click(p.call)
+                if not ok and kind == "unverified" and p.call.name in STATE_FALLBACK:
+                    # No log line to find (no inbox): what the telemetry shows is the other proof.
+                    outcome = verify(p.verify_call or p.call, before, console._read_state,
+                                     timeout=console.verify_timeout, sleep=console._sleep)
+                    ok, kind, message = outcome.ok, outcome.kind, outcome.message
                 out[i] = _result(p.call, ok, kind, message, lines=p.lines, unchecked=p.unchecked)
                 continue
             via_save = needs_save and p.call.name in SAVE_VERIFIED

@@ -1,31 +1,35 @@
 # The action catalog
 
-The catalog is the agent's entire vocabulary. It is small on purpose: 45 verbs,
+The catalog is the agent's entire vocabulary. It is small on purpose: 49 verbs,
 listed by `hoi4-harness actions` (add `--json` for schemas).
 
 | Action | Category | Notes |
 |---|---|---|
 | `set_national_focus` | politics | One at a time |
 | `start_research` | research | Fails when no slot is free |
-| `queue_construction` | economy | Enum of buildings |
-| `set_production` | economy | Declarative: total factories on a line. Edits a line that exists (by click, section 14b of `docs/live-session.md`), opens one only when none exists |
+| `queue_construction` | economy | Enum of buildings (state buildings; province buildings are `queue_province_building`) |
+| `queue_province_building` | economy | Fortification, coastal fortification, naval base, supply hub in one province, under the game's own `free_building_slots` rule for that province; one guarded block per level, a marker each (`docs/interaction.md` row 74). Railways are not offered |
+| `set_production` | economy | Declarative: total factories on a line. Edits a line that exists (by click, section 14b of `docs/live-session.md`), opens one only when none exists; a new line is guarded by `has_tech` of the technology that unlocks the equipment |
 | `change_production_equipment` | economy | Change the equipment of an existing line without duplicating it; by click, NOT live-verified |
-| `design_division_template` | army | Nested battalion list |
-| `deploy_divisions` | army | Consumes equipment |
-| `set_army_order` | army | Confirmation-gated |
-| `set_air_mission` | air | |
-| `set_naval_mission` | navy | |
-| `hire_advisor` | politics | Costs political power |
+| `design_division_template` | army | Creates a template (a new name; battalions one type per column, up to five support companies; each unit unlocked); free, guarded, marked. Editing is refused (it costs army experience on the screen). Console/inbox |
+| `deploy_divisions` | army | Consumes equipment. Simulator only: a live game does not offer it (the deployment screen is mouse-only) |
+| `set_army_order` | army | Confirmation-gated. Simulator only |
+| `set_air_mission` | air | Simulator only (live: `steer_air`, `set_region_order`) |
+| `set_naval_mission` | navy | Simulator only (live: `steer_navy`, `set_region_order`) |
+| `hire_advisor` | politics | Costs political power; guarded by the advisor's own allowed, visible and available blocks, marker-verified |
 | `take_decision` | politics | Console path guarded by the decision's own conditions and cost (`docs/mods.md`) |
 | `click_gui_button` | politics | Presses a scripted GUI button: its click effect inside the window's and button's own conditions, through the inbox or the console (`docs/mods.md`) |
 | `list_gui_buttons` | query | Read-only; the custom-window buttons a country can press, with the game AI's weights and refusal reasons. Needs `--mod-context` |
 | `set_front_order` | steer | Steers the front at one state (push, attack, probe, hold, clear) through the game's own `front_control`; inbox or console (`docs/observation.md`) |
 | `change_law` | politics | Economy, trade and conscription laws: the law's own allowed, visible and available blocks, the law you leave being allowed to go, and its political power cost, in one guarded effect; inbox or console (`docs/interaction.md`) |
 | `fire_advisor` | politics | Dismisses a hired advisor whose role can be fired; free; guarded by `has_idea` of the role's token (`docs/interaction.md`) |
-| `set_occupation_law` | politics | The default occupation law, or the override for one occupied country; guarded by the law's visible and available blocks, no cost (`docs/interaction.md`) |
+| `set_occupation_law` | politics | The default occupation law, or the override for one occupied country or one state (`state`); guarded by the law's visible and available blocks, no cost (`docs/interaction.md`) |
 | `diplomacy_act` | politics | `guarantee` and `leave_faction`, the acts that need nobody's answer, each guarded; every act that needs an acceptance or takes time is refused with the reason and the faithful route (`docs/interaction.md`) |
-| `steer_production` | steer | What the game's AI builds: equipment share, ship and plane mix, preferred building, garrison size; `ai_strategy` blocks keyed on a country flag (`docs/interaction.md`) |
-| `steer_intelligence` | steer | How the AI runs its agency: branch order, factories, untargeted operative missions; as above |
+| `steer_production` | steer | What the game's AI builds: equipment share, ship and plane mix, preferred building, garrison size, minimum factories per category, military/civilian and dockyard shares, air balance, stockpile surplus; `ai_strategy` blocks keyed on a country flag (`docs/interaction.md`) |
+| `steer_intelligence` | steer | How the AI runs its agency: branch order, factories, untargeted operative missions, spymaster; as above |
+| `steer_spending` | steer | What the AI spends experience (army, air, navy) and political power on; `ai_strategy` blocks keyed on a country flag (`docs/interaction.md`) |
+| `steer_market` | steer | How the AI buys and sells equipment on the international market (archetype, seller, trade desire, spend); per-playset blocks |
+| `steer_army` | steer | Which division templates and roles the AI builds, how many divisions, fuel stockpiling and supply trucks and trains |
 | `steer_navy` | steer | Where the AI's navy seeks sea control (a sea region) and whose convoys its raiders hunt; per-playset blocks (`docs/interaction.md`) |
 | `steer_air` | steer | Which strategic region's air war the AI weighs most (`docs/interaction.md`) |
 | `steer_research` | steer | Research one technology first when a slot is free; one `research_tech` block per technology |
@@ -36,8 +40,8 @@ listed by `hoi4-harness actions` (add `--json` for schemas).
 | `choose_event_option` | events | Clicks one option of the open event window, as a person does, where the option's text was read; refused with nothing clicked when no window is open, it could not be matched, or the option is not shown to the country; verified by the window closing. NOT live-verified (`docs/events.md`) |
 | `list_decisions` | query | Read-only; answered from the playset's files, never reaches the game. Needs `--mod-context` |
 | `describe_action` | query | Read-only; a decision, focus, new tech or idea in full. Needs `--mod-context` |
-| `diplomacy` | diplomacy | Confirmation-gated; includes `declare_war` |
-| `set_trade` | economy | |
+| `diplomacy` | diplomacy | Confirmation-gated; includes `declare_war`. Simulator only: live, use `diplomacy_act` and `set_ai_directive` |
+| `set_trade` | economy | Simulator only: no faithful effect for a resource trade |
 | `set_game_speed` | clock | The harness normally owns this |
 | `advance_time` | clock | Ends the turn |
 | `note` | memory | Free; writes to the journal |
@@ -51,7 +55,7 @@ listed by `hoi4-harness actions` (add `--json` for schemas).
 | `draw_offensive` | army | Battle-plan offensive arrow from an own state into a hostile one; as above |
 | `assign_battle_plan` | army | Select a recorded army and press assign-units (a recorded point); as above |
 
-The four `strategy` verbs are the hybrid vocabulary (`docs/hybrid-control.md`); the `steer` verbs extend it (`set_front_order`, `steer_production`, `steer_intelligence`, `steer_research`, `steer_navy`, `steer_air`), and `set_ai_directive` also carries diplomacy (`prepare_war`, `declare_war`, `volunteers`, `lend_lease`, `ally`) and intelligence (`spy_on`, `sabotage`, `steal_tech`) intent.
+The four `strategy` verbs are the hybrid vocabulary (`docs/hybrid-control.md`); the `steer` verbs extend it (`set_front_order`, `steer_production`, `steer_intelligence`, `steer_research`, `steer_navy`, `steer_air`, `steer_spending`, `steer_market`, `steer_army`), and `set_ai_directive` also carries diplomacy (`prepare_war`, `declare_war`, `volunteers`, `lend_lease`, `ally`) and intelligence (`spy_on`, `sabotage`, `steal_tech`) intent.
 
 ## Design rules
 

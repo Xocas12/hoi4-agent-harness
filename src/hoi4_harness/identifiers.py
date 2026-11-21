@@ -223,6 +223,25 @@ class StateInfo:
     key: str
     name: str
     owner: str | None
+    #: The province ids of the state (``history/states``' ``provinces = { ... }``).
+    provinces: frozenset[str] = frozenset()
+
+
+@dataclass(frozen=True)
+class SubUnit:
+    """A battalion or support company of ``common/units``: its group and whether it is available
+    from the start (``active = yes``); the rest is unlocked by a technology."""
+
+    id: str
+    group: str
+    active: bool
+
+
+#: ``group`` values of the land sub-units that go in a template's battalion grid, and of the
+#: support companies that go in its support column.
+BATTALION_GROUPS = frozenset({"infantry", "armor", "mobile", "combat_support", "mobile_combat_support",
+                              "armor_combat_support"})
+SUPPORT_GROUPS = frozenset({"support"})
 
 
 @dataclass
@@ -270,10 +289,17 @@ class IdentifierIndex:
     tech_gridboxes: dict[tuple[str, str], Gridbox] = field(default_factory=dict)
     #: technology -> the technologies its ``path = { leads_to_tech }`` blocks name.
     tech_leads: dict[str, list[str]] = field(default_factory=dict)
+    #: equipment id -> the technologies whose ``enable_equipments`` unlock it.
+    equipment_enablers: dict[str, list[str]] = field(default_factory=dict)
+    #: sub-unit (battalion or support company) -> the technologies whose ``enable_subunits`` unlock it.
+    subunit_enablers: dict[str, list[str]] = field(default_factory=dict)
+    _sub_units: dict[str, SubUnit] | None = field(default=None, repr=False)
     _focus_names: dict[str, str] | None = field(default=None, repr=False)
     _research_layout: object = field(default=None, repr=False)
     _advisors: dict[str, list[AdvisorRole]] | None = field(default=None, repr=False)
     _equipment: set[str] | None = field(default=None, repr=False)
+    _equipment_active: set[str] = field(default_factory=set, repr=False)
+    _archetypes: set[str] = field(default_factory=set, repr=False)
     _advisor_tokens: dict[str, str] = field(default_factory=dict, repr=False)
     _mod_context: object | None = field(default=None, repr=False)
 
@@ -299,6 +325,12 @@ class IdentifierIndex:
                         place = _tech_place(value, variables)
                         if place:
                             index.tech_places[key] = place
+                        for group in _as_list(value.get("enable_equipments")):
+                            for equipment in (group.get("_items", []) if isinstance(group, dict) else []):
+                                index.equipment_enablers.setdefault(str(equipment), []).append(key)
+                        for group in _as_list(value.get("enable_subunits")):
+                            for unit in (group.get("_items", []) if isinstance(group, dict) else []):
+                                index.subunit_enablers.setdefault(str(unit), []).append(key)
                         leads[key] = [str(t) for p in _as_list(value.get("path"))
                                       if isinstance(p, dict)
                                       for t in _as_list(p.get("leads_to_tech")) if isinstance(t, str)]
@@ -315,9 +347,13 @@ class IdentifierIndex:
                 key = str(block.get("name", f"STATE_{state_id}"))
                 history = _first(block.get("history")) or {}
                 owner = history.get("owner")
+                provinces = frozenset(
+                    str(p) for group in _as_list(block.get("provinces")) if isinstance(group, dict)
+                    for p in group.get("_items", []))
                 index.states[state_id] = StateInfo(
                     id=state_id, key=key, name=names.get(key, key),
                     owner=str(owner) if isinstance(owner, str) else None,
+                    provinces=provinces,
                 )
         return index
 
@@ -439,13 +475,55 @@ class IdentifierIndex:
         family name, such as ``infantry_equipment``, not something that is built)."""
         if self._equipment is None:
             found: set[str] = set()
+            active: set[str] = set()
+            archetypes: set[str] = set()
             for path in self.playset.layered("common/units/equipment"):
                 for block in _as_list(_parse(path).get("equipments")):
                     for key, body in (block.items() if isinstance(block, dict) else []):
+                        if isinstance(body, dict) and str(_first(body.get("is_archetype"))) == "yes":
+                            archetypes.add(key)
                         if isinstance(body, dict) and str(_first(body.get("is_archetype"))) != "yes":
                             found.add(key)
+                            if str(_first(body.get("active"))) == "yes":
+                                active.add(key)
             self._equipment = found
+            self._equipment_active = active
+            self._archetypes = archetypes
         return self._equipment
+
+    def equipment_archetypes(self) -> set[str]:
+        """The equipment archetypes (families such as ``infantry_equipment``) of the playset."""
+        self.equipment_types()
+        return set(self._archetypes)
+
+    def sub_units(self) -> dict[str, SubUnit]:
+        """The land battalions and support companies of ``common/units``, by id."""
+        if self._sub_units is None:
+            found: dict[str, SubUnit] = {}
+            for path in self.playset.layered("common/units"):
+                if "/equipment/" in path.as_posix():
+                    continue
+                for block in _as_list(_parse(path).get("sub_units")):
+                    for key, body in (block.items() if isinstance(block, dict) else []):
+                        if not isinstance(body, dict):
+                            continue
+                        group = _first(body.get("group"))
+                        if isinstance(group, str):
+                            found[key] = SubUnit(key, group, str(_first(body.get("active"))) == "yes")
+            self._sub_units = found
+        return self._sub_units
+
+    def subunit_unlock(self, unit: str) -> tuple[bool, list[str]]:
+        """``(always, techs)`` for a sub-unit, as ``equipment_unlock`` is for equipment."""
+        found = self.sub_units().get(unit)
+        return bool(found and found.active), list(self.subunit_enablers.get(unit, []))
+
+    def equipment_unlock(self, equipment: str) -> tuple[bool, list[str]]:
+        """``(always, techs)``: whether the equipment is buildable from the start (``active = yes``
+        in its definition) and the technologies whose ``enable_equipments`` unlock it. An equipment
+        with neither is unlocked some way the files do not say (script), which no guard can test."""
+        self.equipment_types()
+        return equipment in self._equipment_active, list(self.equipment_enablers.get(equipment, []))
 
     def mod_context(self):
         """The action surface of this playset (``modcontext``), read on demand."""
@@ -543,7 +621,8 @@ class IdentifierIndex:
             if known and law not in known:
                 return self._reject(call, f"There is no occupation law '{law}' in this playset",
                                     law, known)
-        if call.name in ("steer_production", "steer_intelligence", "steer_navy", "steer_air"):
+        if call.name in ("steer_production", "steer_intelligence", "steer_navy", "steer_air",
+                         "steer_spending", "steer_market", "steer_army"):
             from . import steering
 
             area = call.name.removeprefix("steer_")
@@ -554,6 +633,12 @@ class IdentifierIndex:
             if why:
                 return ActionResult(ok=False, action=call.name, call_id=call.call_id,
                                     message=why + ".", error_kind="invalid_args")
+        if call.name == "queue_province_building":
+            province = str(args.get("province", ""))
+            if self.states and not any(province in info.provinces for info in self.states.values()):
+                return ActionResult(ok=False, action=call.name, call_id=call.call_id,
+                                    message=f"There is no province '{province}' in this playset.",
+                                    error_kind="invalid_args")
         if call.name == "set_front_order" and self.states:
             state = str(args.get("state", ""))
             if self.resolve_state(state) is None:

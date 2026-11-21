@@ -30,6 +30,7 @@ import re
 from dataclasses import dataclass, field
 
 from . import script as S
+from .script import COST_MODIFIER_NOTE
 from .surface import Decision
 
 #: Longest console line the harness will write. A decision whose conditions
@@ -76,7 +77,19 @@ def plan_decision(decision: Decision, country: str, target: str | None = None,
     cost = decision.cost or 0.0
     if cost < 0:
         return _refuse(decision, "a negative cost")
-    unchecked = ["cost modifiers (the base cost is charged)"]
+    unchecked = [COST_MODIFIER_NOTE.format(
+        names="political_power_cost, decision cost factors a focus or idea adds")]
+    if decision.custom_cost or decision.pays:
+        if decision.pays and not decision.custom_cost_trigger:
+            return _refuse(decision, "its own effect takes " + ", ".join(decision.pays)
+                           + " but it names no custom_cost_trigger, so nothing tells the harness "
+                           "the country can pay it: take it on the screen")
+        what = ", ".join(decision.pays) or "something the files do not name"
+        label = f" (text {decision.custom_cost_text})" if decision.custom_cost_text else ""
+        unchecked.append(
+            f"its custom cost{label} is paid by the decision's own effect ({what}); the "
+            "custom_cost_trigger is in the guard, but that activate_decision runs the effect is "
+            "unverified")
     if decision.fire_only_once:
         unchecked.append("fire_only_once (no trigger tells whether it was taken before; the "
                          "harness refuses a second take within one run)")

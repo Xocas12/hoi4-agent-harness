@@ -60,7 +60,7 @@ STEER_MODES = ("llm", "off")
 DOMAIN_ACTIONS: dict[str, frozenset[str]] = {
     "focus": frozenset({"set_national_focus"}),
     "research": frozenset({"start_research"}),
-    "construction": frozenset({"queue_construction"}),
+    "construction": frozenset({"queue_construction", "queue_province_building"}),
     "production": frozenset({"set_production", "change_production_equipment", "set_trade",
                              "design_division_template", "deploy_divisions"}),
     # diplomacy_act is the acts that need nobody's answer (guarantee, leave a faction): a country's
@@ -76,7 +76,8 @@ DOMAIN_ACTIONS: dict[str, frozenset[str]] = {
 #: The steering vocabulary of the game's AI.
 STEER_ACTIONS = frozenset({"set_ai_directive", "set_ai_posture", "clear_ai_directives",
                            "set_front_order", "set_region_order", "steer_production", "steer_intelligence",
-                           "steer_research", "steer_navy", "steer_air"})
+                           "steer_research", "steer_navy", "steer_air", "steer_spending",
+                           "steer_market", "steer_army"})
 DELEGATE_ACTION = "delegate_army_to_ai"
 CLOCK_ACTION = "set_game_speed"
 #: Never narrowed by control: notes, the clock handed back, the read-only playset queries.

@@ -600,7 +600,8 @@ def generate_regions(index: IdentifierIndex) -> GeneratedFile:
     every, sea = steering.regions(index.playset)
     return GeneratedFile(steering.REGIONS_FILE,
                          steering.region_strategies(every, sea,
-                                                         [x for x in index.tags if x in DEFAULT_TAGS]))
+                                                    [x for x in index.tags if x in DEFAULT_TAGS],
+                                                    index.equipment_archetypes()))
 
 
 def generate_reserves(index: IdentifierIndex) -> GeneratedFile:
