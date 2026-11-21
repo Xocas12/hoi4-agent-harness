@@ -63,7 +63,7 @@ def test_every_catalog_action_has_one_owner_or_is_always_available():
     steered = set(STEER_ACTIONS) | {DELEGATE_ACTION}
     free = {"note", "advance_time", "list_decisions", "describe_action", "list_gui_buttons",
             "inspect_world", "send_message", "read_event", "choose_event_option",
-            "set_game_speed"}
+            "set_game_speed", "list_designs", "describe_design_option"}
     assert ALL == set(owned) | steered | free
 
 

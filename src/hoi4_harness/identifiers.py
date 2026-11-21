@@ -314,6 +314,7 @@ class IdentifierIndex:
     _archetypes: set[str] = field(default_factory=set, repr=False)
     _advisor_tokens: dict[str, str] = field(default_factory=dict, repr=False)
     _mod_context: object | None = field(default=None, repr=False)
+    _designers: object | None = field(default=None, repr=False)
     #: The focus files in load order, re-read for the DLC conditions on first use (dlc.py).
     _focus_sources: list[Path] = field(default_factory=list, repr=False)
     _focus_cond: tuple[dict, dict] | None = field(default=None, repr=False)
@@ -541,6 +542,15 @@ class IdentifierIndex:
         with neither is unlocked some way the files do not say (script), which no guard can test."""
         self.equipment_types()
         return equipment in self._equipment_active, list(self.equipment_enablers.get(equipment, []))
+
+    def designers(self):
+        """The tank, ship and plane designers' chassis, modules, upgrades and prices
+        (``designers.DesignerData``), read once from the playset's files."""
+        if self._designers is None:
+            from .designers import DesignerData
+
+            self._designers = DesignerData.load(self.playset)
+        return self._designers
 
     def mod_context(self):
         """The action surface of this playset (``modcontext``), read on demand."""
@@ -785,6 +795,30 @@ class IdentifierIndex:
             if why:
                 return ActionResult(ok=False, action=call.name, call_id=call.call_id,
                                     message=why + ".", error_kind="invalid_args")
+        if call.name == "design_equipment":
+            from .designers import EMPTY, KINDS
+
+            kind = str(args.get("kind", ""))
+            data = self.designers()
+            if kind in KINDS and data.chassis:
+                base = str(args.get("base", ""))
+                chassis = data.chassis.get(base)
+                if chassis is None or chassis.kind != kind:
+                    return self._reject(call, f"There is no {kind} chassis '{base}' in this playset",
+                                        base, [c.id for c in data.types(kind)])
+                for slot, module in (args.get("modules") or {}).items():
+                    if slot not in chassis.slots:
+                        return self._reject(call, f"{base} has no slot '{slot}'", str(slot),
+                                            chassis.slots)
+                    if module != EMPTY and (module not in data.modules
+                                            or data.modules[module].kind != kind):
+                        return self._reject(call, f"There is no {kind} module '{module}' in this "
+                                            "playset", str(module),
+                                            [m for m, x in data.modules.items() if x.kind == kind])
+                for name in (args.get("upgrades") or {}):
+                    if name not in chassis.upgrades:
+                        return self._reject(call, f"{base} has no upgrade '{name}'", str(name),
+                                            chassis.upgrades)
         if call.name == "queue_province_building":
             province = str(args.get("province", ""))
             if self.states and not any(province in info.provinces for info in self.states.values()):

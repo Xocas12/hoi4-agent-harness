@@ -12,6 +12,10 @@ Eight actions use this module:
 
 * ``steer_production``: how many factories the AI gives an equipment category
   (``equipment_production_factor``), how much of a plane or ship type it builds (``unit_ratio``),
+  how much of a chassis family it builds (``equipment_variant_production_factor``: the id is a
+  family such as ``medium_tank_chassis``, as in the game's own ``CHI.txt`` / ``CZE.txt``; a
+  strategy cannot name one design, so the LLM's design is preferred by being the newest non-obsolete
+  one of its family: ``design_equipment obsolete_older``),
   which building it prefers (``build_building``), how many garrison divisions it keeps
   (``garrison``);
 * ``steer_intelligence``: which agency branch it upgrades first
@@ -138,6 +142,14 @@ AREAS: dict[str, dict[str, Spec]] = {
                          what="how strongly the AI picks that building when it chooses what to build"),
         "garrison": Spec("garrison", (), {"less": -50, "more": 50, "much_more": 200},
                          what="how many divisions the AI keeps as garrison in occupied land"),
+        "variant": Spec("equipment_variant_production_factor", (), {"less": -50, "more": 50,
+                                                                    "much_more": 100},
+                        source="archetype",
+                        what="how much of that chassis family the AI builds, in percent (vanilla: "
+                             "-100 to 60 on light_tank_chassis, large_plane_airframe and the like). "
+                             "The id is the family, not one design: the AI builds the newest "
+                             "design of it that is not obsolete, which design_equipment "
+                             "obsolete_older arranges"),
         "min_factories": Spec("equipment_production_min_factories", EQUIPMENT,
                               {"more": 3, "much_more": 10},
                               what="the fewest military factories the AI puts on that equipment "

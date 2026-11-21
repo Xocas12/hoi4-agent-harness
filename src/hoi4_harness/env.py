@@ -84,6 +84,10 @@ class HOI4Env:
         """Give the brief a forces-and-map section and the model the inspect_world tool."""
         self.world = observer
         self.brief_hooks.append(observer.brief_lines)
+        # design_equipment starts from the country's own designs: the console reads them here.
+        console = getattr(self.adapter, "console", None)
+        if console is not None and hasattr(console, "designs"):
+            console.designs = observer
 
     # --- observation ---------------------------------------------------------
 
@@ -102,6 +106,10 @@ class HOI4Env:
             out.add("read_event")
         if self.world is not None:
             out.add("inspect_world")
+            if self.index is not None:
+                out.add("list_designs")
+        if self.index is not None:
+            out.add("describe_design_option")
         if self.chat is not None or self.mp_chat is not None or self.config.multiplayer:
             out.add("send_message")
         return out
@@ -152,6 +160,8 @@ class HOI4Env:
                                 error_kind=None if "error" not in data else "invalid_args")
         if call.name == "read_event":
             return self._read_event(call, fail)
+        if call.name in ("list_designs", "describe_design_option"):
+            return self._designers(call, fail)
         if not self.queries_enabled:
             return fail("this run has no playset files to answer from (mod context is off)")
         problem = registry.check(call, QUERY_ACTIONS)
@@ -176,6 +186,41 @@ class HOI4Env:
                                             "this playset adds.", error_kind="invalid_args")
         return ActionResult(ok=True, action=call.name, call_id=call.call_id,
                             message=json.dumps(data, sort_keys=True, ensure_ascii=False))
+
+    def _designers(self, call: ActionCall, fail) -> ActionResult:
+        """``list_designs`` (the country's designs, from the newest save) and
+        ``describe_design_option`` (a chassis, module, category or upgrade, from the files)."""
+        from . import designers
+
+        if self.index is None:
+            return fail("this run has no playset files to read the designers from (pass --game-dir)")
+        problem = registry.check(call, QUERY_ACTIONS)
+        if problem is not None:
+            return problem
+        kind = str(call.arguments["kind"])
+        active = self.index.playset.dlcs
+        data = self.index.designers()
+        if call.name == "describe_design_option":
+            body = designers.describe_option(data, kind, call.arguments.get("id"), active)
+        else:
+            gap = designers.dlc_mod.feature_refusal(designers.KIND_FEATURE[kind], active)
+            if gap:
+                body = {"kind": kind, "exists": False, "note": gap + ": there is no such designer "
+                        "in this game"}
+            elif self.world is None:
+                return fail("this run has no save observer (observe_world is off): the designs are "
+                            "read from the newest text save")
+            else:
+                variants = self.world.variants(self.adapter.read_state())
+                if variants is None:
+                    body = {"error": "no text save of this campaign yet: the game autosaves "
+                                     "monthly (save_as_binary=no)"}
+                else:
+                    body = designers.designs_view(data, variants, kind)
+        ok = "error" not in body
+        return ActionResult(ok=ok, action=call.name, call_id=call.call_id,
+                            message=json.dumps(body, sort_keys=True, ensure_ascii=False),
+                            error_kind=None if ok else "invalid_args")
 
     def _read_event(self, call: ActionCall, fail) -> ActionResult:
         """``read_event``: the open window as read from the screen, or one event from the files."""

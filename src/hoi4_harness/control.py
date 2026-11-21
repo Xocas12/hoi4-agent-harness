@@ -62,7 +62,8 @@ DOMAIN_ACTIONS: dict[str, frozenset[str]] = {
     "research": frozenset({"start_research"}),
     "construction": frozenset({"queue_construction", "queue_province_building"}),
     "production": frozenset({"set_production", "change_production_equipment", "set_trade",
-                             "design_division_template", "deploy_divisions"}),
+                             "design_division_template", "design_equipment",
+                             "deploy_divisions"}),
     # diplomacy_act is the acts that need nobody's answer (guarantee, leave a faction): a country's
     # own political choices, so they stay with politics when the game's AI holds diplomacy.
     "politics": frozenset({"hire_advisor", "take_decision", "click_gui_button", "change_law",
@@ -83,6 +84,7 @@ CLOCK_ACTION = "set_game_speed"
 #: Never narrowed by control: notes, the clock handed back, the read-only playset queries.
 ALWAYS = frozenset({"note", "advance_time", "list_decisions", "describe_action",
                     "list_gui_buttons", "inspect_world", "send_message", "read_event",
+                    "list_designs", "describe_design_option",
                     "choose_event_option"})
 
 #: Domains with a deterministic controller in ``hoi4_harness.auto``. Diplomacy has none: no

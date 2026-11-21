@@ -127,6 +127,8 @@ class World:
     logistics: dict[int, tuple[int, int]] = field(default_factory=dict)
     full: object | None = None
     full_error: str | None = None
+    #: The observed country's own tank, ship and plane designs (designers.Variant).
+    variants: list = field(default_factory=list)
 
     def owner_of(self, province: int, layer) -> str | None:
         state = layer.state_of(province) if layer is not None else None
@@ -422,6 +424,12 @@ def read_world(path: Path, me: str, *, layer=None, also: tuple[str, ...] = ()) -
         found = shared.faction_of(me)
         members = [m for m in (found["members"] if found else []) if m != me]
     world.enemies = set(enemies)
+    try:
+        from .designers import read_variants
+
+        world.variants = read_variants(text, me)
+    except Exception as exc:  # noqa: BLE001 - designs that cannot be read must not cost the army
+        world.full_error = world.full_error or f"designs: {type(exc).__name__}: {exc}"
     try:
         from .battles import read_combat
 
@@ -911,6 +919,11 @@ class WorldObserver:
         standing = Standing(self.run_dir).line(lambda s: _state_name(self.index, s))
         steers = SteerStanding(self.run_dir).line()
         return lines + [line for line in (standing, steers) if line]
+
+    def variants(self, state: GameState) -> list | None:
+        """The country's own designs from the newest text save; None when there is no save yet."""
+        world = self.refresh(state)
+        return None if world is None else list(world.variants)
 
     def query(self, state: GameState, view: str, ident: str | None, limit: int = 60) -> dict:
         pic = self.picture(state)

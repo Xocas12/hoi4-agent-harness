@@ -55,7 +55,7 @@ def test_a_mixed_map_gives_the_model_only_its_own_domain(tmp_path):
                  ("advance_time", {"days": 30, "reason": "x"}))]
     client = Recorder(focus)
     play(world, client, until="1936-03-15")
-    assert client.offered == {"set_national_focus", "advance_time", "note"}
+    assert client.offered == {"set_national_focus", "advance_time", "note", "describe_design_option"}
     assert world.config.control_map().explicit and not world.config.campaign_human_ai
     assert "human_ai is not sent" in world.log
 
