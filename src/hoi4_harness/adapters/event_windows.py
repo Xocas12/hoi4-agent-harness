@@ -30,9 +30,11 @@ a click. This module is the guard around that:
 * Each click of a tool checks the probe again, so a window that opens in the middle of a click
   path stops the rest of it.
 
-The first option is not always the right answer, and it is the one the harness takes: an event
-that matters to a run cannot be told from one that does not without reading the window. It is a
-choice made to get the mouse tools working, and the record says so.
+The first option is not always the right answer, and it is the one the harness takes when nothing
+better is known. Since ``event_choice.py`` the window CAN be read (OCR matched to the playset's
+events) and the model can choose with ``choose_event_option``; this blind answer is what remains
+for a window the model did not answer or the reader could not identify, and the brief says so
+(docs/events.md). The record names the event when the reader knew it.
 """
 
 from __future__ import annotations
@@ -127,6 +129,9 @@ class EventGuard:
         self.settle = settle
         self._sleep = sleep
         self.log_path = log_path
+        #: Names the open event when the event reader knows it (adapters/event_choice.py), so a
+        #: blind answer says WHICH event it answered. None: the probe's title, if any.
+        self.namer: Callable[[], str] | None = None
         #: Every answer given, in order (also appended to ``log_path`` as JSON lines).
         self.record: list[dict] = []
 
@@ -156,8 +161,9 @@ class EventGuard:
                     f"recorded way to close it (record {', '.join(missing) or sighting.kind}: "
                     f"hoi4-harness calibrate {' '.join(missing)}). Nothing was clicked")
             entry = {"t": round(time.time(), 3), "tool": tool, "kind": sighting.kind,
-                     "title": sighting.title, "attempt": attempt,
-                     "answer": ("first option (event.option1)" if sighting.kind == "country"
+                     "title": sighting.title or (self.namer() if self.namer else ""),
+                     "attempt": attempt,
+                     "answer": ("first option (event.option1), blind" if sighting.kind == "country"
                                 else "closed (event.news_close)")}
             driver.run_event_steps(steps)
             self._sleep(self.settle)

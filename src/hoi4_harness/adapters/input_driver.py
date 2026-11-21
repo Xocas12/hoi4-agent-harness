@@ -226,6 +226,8 @@ class InputDriverAdapter(GameAdapter):
         #: when no probe is configured, in which case nothing here knows a window is open.
         self.event_guard = None
         self._in_event_steps = False
+        #: Chooses an option of the open event window (adapters/event_choice.py); None: off.
+        self.event_executor = None
 
     def geometry(self) -> Geometry:
         """The window computed click points are placed in. Raises LayoutRefused.
@@ -350,6 +352,16 @@ class InputDriverAdapter(GameAdapter):
         finally:
             self._in_event_steps = False
 
+    def click_event_option(self, point: tuple[int, int], label: str) -> None:
+        """Click an option of the open event window. The same guards as ``click_at`` (mouse,
+        focus, bounds, dry run), except the open-window gate: the window being open is the
+        reason for the click."""
+        self._in_event_steps = True
+        try:
+            self.click_at(point, label=label)
+        finally:
+            self._in_event_steps = False
+
     def click(self, target: str) -> None:
         if not self.config.mouse:
             raise MouseDisabled(f"click {target}: this driver has no mouse (headless)")
@@ -441,6 +453,16 @@ class InputDriverAdapter(GameAdapter):
             raise MouseDisabled("battle plans are drawn with the mouse and this driver has none")
         self.plan_executor = executor
         self.supported_actions = self.supported_actions | frozenset(PLAN_ACTIONS)
+
+    def enable_events(self, executor) -> None:
+        """Offer ``choose_event_option``, performed by ``executor`` (adapters/event_choice.py).
+        UNVERIFIED against the real game."""
+        from .event_choice import ACTIONS
+
+        if not self.config.mouse:
+            raise MouseDisabled("choosing an event option is a click and this driver has no mouse")
+        self.event_executor = executor
+        self.supported_actions = self.supported_actions | frozenset(ACTIONS)
 
     def enable_production(self, executor) -> None:
         """Perform ``set_production`` (editing a line that exists) and, when ``offer_equipment``,
@@ -618,6 +640,8 @@ class InputDriverAdapter(GameAdapter):
         return result
 
     def _uses_mouse(self, call: ActionCall) -> bool:
+        if self.event_executor is not None and call.name in self.event_executor.actions:
+            return False          # answering the window is the point: it is not cleared first
         if call.name in self.scripts:
             return any(step.kind == "click" for step in self.scripts[call.name])
         for executor in (self.production_executor, self.plan_executor):
@@ -637,6 +661,9 @@ class InputDriverAdapter(GameAdapter):
         return self.event_guard.clear(self, call.name)
 
     def _dispatch_mouse(self, call: ActionCall) -> ActionResult:
+        if (self.event_executor is not None and call.name in self.event_executor.actions
+                and call.name in self.supported_actions):
+            return self.event_executor(call)
         if call.name in self.scripts:
             return self._scripted(call)
         if (self.production_executor is not None and call.name in self.production_executor.actions
