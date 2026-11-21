@@ -214,6 +214,12 @@ def _config_from_args(args: argparse.Namespace) -> HarnessConfig:
         config.seed = args.seed
     if getattr(args, "game_dir", None):
         config.game_dir = Path(args.game_dir)
+    if getattr(args, "no_dlc", False):
+        config.dlcs = []
+    elif getattr(args, "dlcs", None):
+        config.dlcs = list(args.dlcs)
+    if getattr(args, "user_dir", None):
+        config.user_dir = Path(args.user_dir)
     if getattr(args, "log_path_arg", None):
         config.log_path = Path(args.log_path_arg)
     if getattr(args, "mods", None):
@@ -1230,6 +1236,45 @@ def _print_province(layer, pid: int) -> None:
     print(f"neighbours       {' '.join(shown) or '-'}   (~ = strait, no shared border)")
 
 
+def cmd_dlc(args: argparse.Namespace) -> int:
+    """Which DLCs are installed, disabled and active, and the features each turns on."""
+    from . import dlc
+
+    config = _config_from_args(args)
+    if config.game_dir is None:
+        from . import setup_model
+
+        config.game_dir = setup_model.find_install()
+    if config.game_dir is None:
+        print("dlc: point --game-dir (or HOI4_GAME_DIR) at the HOI4 install", file=sys.stderr)
+        return 2
+    picture = config.dlc_set()
+    print(f"source           {picture.source}")
+    if picture.source == "explicit":
+        print("(an explicit list: the installed and disabled lists are not read)")
+    else:
+        print(f"installed        {len(picture.installed)}: " + ("; ".join(picture.installed) or "-"))
+        print(f"disabled         {len(picture.disabled)}: " + ("; ".join(picture.disabled) or "-"))
+    if picture.active is None:
+        print("active           unknown: nothing is filtered by DLC")
+    else:
+        print(f"active           {len(picture.active)}: " + ("; ".join(sorted(picture.active)) or "-"))
+    for note in picture.notes:
+        print(f"  NOTE           {note}")
+    print()
+    print("features the game files tie to a DLC:")
+    for row in dlc.feature_table(picture.active):
+        state = "unknown" if row["on"] is None else "ON" if row["on"] else "off"
+        print(f"  {state:8s} {row['label']}  (needs {' or '.join(row['needs'])})")
+    print("balance of power bars:")
+    for bar, name in sorted(dlc.BOP_DLC.items()):
+        state = ("unknown" if picture.active is None else "ON" if name in picture.active else "off")
+        print(f"  {state:8s} {bar}  (needs {name})")
+    print("everything else the DLCs add is gated per item (focus, decision, law, project, ...) by "
+          "its own has_dlc conditions, which the harness evaluates; see docs/dlc.md")
+    return 0
+
+
 def cmd_index(args: argparse.Namespace) -> int:
     """What exists in the configured playset: countries, focuses, technologies, states."""
     config = _config_from_args(args)
@@ -1685,6 +1730,13 @@ def build_parser() -> argparse.ArgumentParser:
         p.add_argument("--seed", type=int, help="mock adapter seed")
         p.add_argument("--game-dir", dest="game_dir", metavar="PATH",
                        help="HOI4 install folder: check ids against what the game loads")
+        p.add_argument("--dlc", dest="dlcs", action="append", metavar="NAME",
+                       help="treat exactly these DLCs as active (repeatable), instead of the "
+                            "installed ones minus the launcher's disabled list (docs/dlc.md)")
+        p.add_argument("--no-dlc", dest="no_dlc", action="store_true",
+                       help="treat no DLC as active")
+        p.add_argument("--user-dir", dest="user_dir", metavar="PATH",
+                       help="the game's user folder, where dlc_load.json is (default: found)")
         p.add_argument("--headless", action="store_true",
                        help="read the game's log, act through the console and the keyboard: "
                             "no mouse, no screen (docs/headless.md)")
@@ -2093,6 +2145,11 @@ def build_parser() -> argparse.ArgumentParser:
     mod_actions.add_argument("--offline", action="store_true",
                              help="never fetch a Workshop page: cache and local files only")
     mod_actions.set_defaults(func=cmd_mod_actions)
+
+    dlc_cmd = sub.add_parser("dlc", help="which DLCs are installed, disabled and active, and what "
+                                         "each enables")
+    common(dlc_cmd)
+    dlc_cmd.set_defaults(func=cmd_dlc)
 
     index = sub.add_parser("index", help="list the countries and focuses a playset defines")
     common(index)

@@ -80,6 +80,23 @@ def finish(country: str, guard: str, body: str, cost: float, unchecked: list[str
     return _finish(country, guard, body, cost, unchecked, done, effect_command, console)
 
 
+def _needs_dlc(what: str, dlcs, *blocks) -> PolicyPlan | None:
+    """A refusal when ``has_dlc`` tests in ``blocks`` alone rule the item out for the active
+    ``dlcs`` (None: unknown, nothing is refused). The game evaluates the blocks itself, so this
+    is for saying why, in the DLC's name, before a line is written that could only fail."""
+    if dlcs is None:
+        return None
+    gone: list[str] = []
+    for block in blocks:
+        if block and S.dlc_truth(block, dlcs) is False:
+            gone += [n for n in S.dlc_names(block) if n not in dlcs and n not in gone]
+    if not gone:
+        return None
+    from .dlc import needs_message
+
+    return _refuse(needs_message(what, gone))
+
+
 def _inline(*blocks) -> str:
     return " ".join(S.inline(b) for b in blocks if b)
 
@@ -88,15 +105,20 @@ def _inline(*blocks) -> str:
 
 
 def plan_law(law: dict, siblings: list[dict], country: str, *, effect_command: str = "eval_effect",
-             console: bool = True) -> PolicyPlan:
+             console: bool = True, dlcs=None) -> PolicyPlan:
     """The line that changes ``country``'s ``law.category`` group to ``law``, or why it cannot.
 
     ``law`` and ``siblings`` are ``ModContext.ideas()["laws"]`` records of one group."""
     ident = law["id"]
     if not _SAFE_ID.match(ident):
         return _refuse("its id has characters the console would split on")
-    if S.tag_truth(law["allowed"], country) is False:
-        return _refuse(f"its allowed block rules {country} out: this country never has it")
+    if S.tag_truth(law["allowed"], country, dlcs) is False:
+        return (_needs_dlc(f"law {ident}", dlcs, law["allowed"], law.get("visible") or [],
+                           law.get("available") or [])
+                or _refuse(f"its allowed block rules {country} out: this country never has it"))
+    needs = _needs_dlc(f"law {ident}", dlcs, law.get("visible") or [], law.get("available") or [])
+    if needs is not None:
+        return needs
     cost = law["cost"]
     if cost is None:
         return _refuse("it names no cost: it is not a law a player picks on the politics screen "
@@ -143,7 +165,7 @@ CHARACTER_TRIGGERS = {"has_character_flag", "is_hired_as_advisor", "not_already_
 
 def plan_advisor(advisor: str, character: str, token: str | None, cost: float,
                  conditions: dict[str, list], country: str, *, effect_command: str = "eval_effect",
-                 console: bool = True) -> PolicyPlan:
+                 console: bool = True, dlcs=None) -> PolicyPlan:
     """The line that hires ``character`` as ``country``'s advisor: the role's own ``allowed``,
     ``visible`` and ``available`` blocks in the ``limit`` (the game evaluates them), the political
     power cost tested in it and taken after it, and a marker logged inside it."""
@@ -152,7 +174,10 @@ def plan_advisor(advisor: str, character: str, token: str | None, cost: float,
     if cost < 0:
         return _refuse("a negative cost")
     allowed, visible, available = (conditions.get(k) or [] for k in ("allowed", "visible", "available"))
-    if S.tag_truth(allowed, country) is False:
+    needs = _needs_dlc(f"advisor {advisor}", dlcs, allowed, visible, available)
+    if needs is not None:
+        return needs
+    if S.tag_truth(allowed, country, dlcs) is False:
         return _refuse(f"its allowed block rules {country} out: this country never has this advisor")
     blocks = [allowed, visible, available]
     if any(S.mentions(block, _UNSCOPED) for block in blocks):
@@ -183,7 +208,7 @@ def plan_advisor(advisor: str, character: str, token: str | None, cost: float,
 
 def plan_occupation_law(law: dict, country: str, occupied: str | None = None, *,
                         effect_command: str = "eval_effect", console: bool = True,
-                        state: str | None = None) -> PolicyPlan:
+                        state: str | None = None, dlcs=None) -> PolicyPlan:
     """The line that sets ``country``'s occupation law: the default, the override for ``occupied``
     (a country), or the override for one ``state`` (an id) the country controls and does not own."""
     ident = law["id"]
@@ -192,7 +217,10 @@ def plan_occupation_law(law: dict, country: str, occupied: str | None = None, *,
     if occupied and state:
         return _refuse("name a country or a state, not both")
     visible, available = law.get("visible") or [], law.get("available") or []
-    if S.tag_truth(visible, country) is False:
+    needs = _needs_dlc(f"occupation law {ident}", dlcs, visible, available)
+    if needs is not None:
+        return needs
+    if S.tag_truth(visible, country, dlcs) is False:
         return _refuse("its visible block rules it out (`always = no`, or another tag): the game "
                        "never shows it to this country")
     if S.mentions([*visible, *available], _UNSCOPED):

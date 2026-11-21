@@ -80,6 +80,10 @@ def playset_section(index, country: str | None = None, *, tools: bool = True,
         for brief in playset_briefs(mods, cache_dir=cache_dir, offline=offline, opener=opener,
                                     per_mod_words=110, total_words=300):
             lines.append((1, f"World ({brief.name}): {brief.text}"))
+    if mods or country:
+        from ..dlc import prompt_lines
+
+        lines += [(1, line) for line in prompt_lines(playset.dlcs)]
     start = ctx.start_date()
     lines.append((2, f"The campaign's default start is {start.rsplit('.', 1)[0]}."))
     if country:

@@ -36,6 +36,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from .adapters.savegame import parse_clausewitz
+from .dlc import DlcSet
 from .techtree import Gridbox, parse_gridboxes
 from .types import ActionCall, ActionResult, GameState
 
@@ -110,9 +111,17 @@ class Playset:
 
     game_dir: Path
     mods: list[Mod] = field(default_factory=list)
+    #: Which DLCs are on (dlc.py). ``active`` None means unknown: ``has_dlc`` stays unevaluated.
+    dlc: DlcSet = field(default_factory=DlcSet)
+
+    @property
+    def dlcs(self) -> frozenset[str] | None:
+        """The active DLC names, or None when they are not known."""
+        return self.dlc.active
 
     @classmethod
-    def from_paths(cls, game_dir: Path, mod_dirs: Iterable[Path] = ()) -> Playset:
+    def from_paths(cls, game_dir: Path, mod_dirs: Iterable[Path] = (),
+                   dlc: DlcSet | None = None) -> Playset:
         game_dir = Path(game_dir)
         if not (game_dir / "common").is_dir():
             raise FileNotFoundError(
@@ -125,7 +134,7 @@ class Playset:
             if not Path(mod_dir).is_dir():
                 raise FileNotFoundError(f"mod folder {mod_dir} does not exist")
             mods.append(Mod.load(Path(mod_dir)))
-        return cls(game_dir=game_dir, mods=mods)
+        return cls(game_dir=game_dir, mods=mods, dlc=dlc if dlc is not None else DlcSet())
 
     @property
     def name(self) -> str:
@@ -174,11 +183,14 @@ class Playset:
         return warnings
 
     def describe(self) -> dict:
-        return {
+        out = {
             "name": self.name,
             "game_dir": str(self.game_dir),
             "mods": [{"name": m.name, "version": m.version, "path": str(m.path)} for m in self.mods],
         }
+        if self.dlcs is not None:
+            out["dlcs"] = sorted(self.dlcs)
+        return out
 
 
 def _walk(root: Path, folder: str, pattern: str) -> Iterable[tuple[str, Path]]:
@@ -302,6 +314,10 @@ class IdentifierIndex:
     _archetypes: set[str] = field(default_factory=set, repr=False)
     _advisor_tokens: dict[str, str] = field(default_factory=dict, repr=False)
     _mod_context: object | None = field(default=None, repr=False)
+    #: The focus files in load order, re-read for the DLC conditions on first use (dlc.py).
+    _focus_sources: list[Path] = field(default_factory=list, repr=False)
+    _focus_cond: tuple[dict, dict] | None = field(default=None, repr=False)
+    _hidden: dict[str, list[str]] | None = field(default=None, repr=False)
 
     # --- building -------------------------------------------------------------
 
@@ -314,6 +330,7 @@ class IdentifierIndex:
                 if match:
                     index.tags.add(match.group(1))
         for path in playset.layered("common/national_focus"):
+            index._focus_sources.append(path)
             index._read_focus_file(_parse(path))
         leads: dict[str, list[str]] = {}
         for path in playset.layered("common/technologies"):
@@ -536,12 +553,134 @@ class IdentifierIndex:
     # --- lookups --------------------------------------------------------------
 
     def trees_for(self, tag: str) -> list[FocusTree]:
+        """The focus trees ``tag`` can have. The game gives a country the tree whose
+        ``country = { factor .. modifier = { add = N <conditions> } }`` scores highest; with the
+        DLC set known those scores are worked out (a tree tied to a DLC that is off scores 0 and
+        the generic tree wins), else every tree that names the tag is returned."""
         own = [tree for tree in self.trees if tag in tree.tags]
-        return own or [tree for tree in self.trees if tree.default]
+        dlcs = self.playset.dlcs
+        if dlcs is None:
+            return own or [tree for tree in self.trees if tree.default]
+        return self._scored_trees(tag, dlcs, own)
+
+    def _conditions(self) -> tuple[dict, dict]:
+        """``(trees, focuses)``: tree id -> its ``country`` block; focus id -> ``(allow_branch,
+        available)`` blocks, as ``modcontext.script`` nodes. Read on first use."""
+        if self._focus_cond is None:
+            from .modcontext import script as S
+
+            countries: dict[str, list] = {}
+            focuses: dict[str, tuple[list, list]] = {}
+
+            def add(body: list) -> None:
+                fid = S.text(body, "id")
+                if fid:
+                    focuses[fid] = (S.block(body, "allow_branch") or [], S.block(body, "available") or [])
+
+            for path in self._focus_sources:
+                for key, _op, body in S.parse(path.read_text(encoding="utf-8-sig", errors="replace")):
+                    if not isinstance(body, list):
+                        continue
+                    if key == "focus_tree":
+                        tid = S.text(body, "id")
+                        if tid:
+                            countries[tid] = S.block(body, "country") or []
+                        for entry in S.blocks(body, "focus"):
+                            add(entry)
+                    elif key == "shared_focus":
+                        add(body)
+            self._focus_cond = (countries, focuses)
+        return self._focus_cond
+
+    def _scored_trees(self, tag: str, dlcs: frozenset[str], own: list[FocusTree]) -> list[FocusTree]:
+        """The trees of ``own`` that the active DLCs leave standing. A tree is dropped when its
+        ``country`` score is 0 because a ``has_dlc`` is off (Poland without Poland: United and
+        Ready or No Step Back), or when another tree beats it by a score that only DLC raised
+        (the sea trees of No Compromise, No Surrender over the Waking the Tiger ones). Trees that
+        merely score lower stay: a script can swap a country onto them (Free France)."""
+        from .modcontext import script as S
+
+        countries, _focuses = self._conditions()
+
+        def score(tree: FocusTree, known) -> tuple[float, float]:
+            block = countries.get(tree.id)
+            if block is None:
+                return (10.0, 10.0) if tag in tree.tags else (0.0, 0.0)
+            base = S.number(S.text(block, "factor") or S.text(block, "base") or "0") or 0.0
+            low = high = base
+            for modifier in S.blocks(block, "modifier"):
+                add = S.number(S.text(modifier, "add") or "")
+                if add is None:
+                    continue
+                conditions = [n for n in modifier if n[0] not in ("add", "factor", "base", "multiply")]
+                verdict = S.holds(conditions, tag, known)
+                if verdict is True:
+                    low += add
+                if verdict is not False:
+                    high += add
+            return low, high
+
+        rows = []
+        for tree in own:
+            low, high = score(tree, dlcs)
+            blind_low, blind_high = score(tree, None)
+            if high <= 0 < blind_high:
+                continue                                   # a has_dlc kills its only score
+            rows.append((tree, low, high, blind_low))
+        final = [tree for tree, _low, high, _b in rows
+                 if not any(other_low > high and other_low > other_blind
+                            for other, other_low, _oh, other_blind in rows if other is not tree)]
+        return final or [t for t in self.trees if t.default]
+
+    def hidden_focuses(self) -> dict[str, list[str]]:
+        """Focus id -> the DLCs its ``allow_branch`` needs, for the focuses the active DLC set
+        hides (``allow_branch`` is False), plus every focus that can then never be reached: one of
+        whose prerequisite groups is made only of hidden focuses. Empty when the set is unknown."""
+        dlcs = self.playset.dlcs
+        if dlcs is None:
+            return {}
+        if self._hidden is None:
+            from .modcontext import script as S
+
+            _c, conditions = self._conditions()
+            hidden = {fid: S.dlc_names(allow) for fid, (allow, _a) in conditions.items()
+                      if S.dlc_truth(allow, dlcs) is False}
+            every = {**self.shared_focuses}
+            for tree in self.trees:
+                every.update(tree.focuses)
+            changed = True
+            while changed:
+                changed = False
+                for focus in every.values():
+                    if focus.id in hidden:
+                        continue
+                    for group in focus.prerequisites:
+                        if group and all(f in hidden for f in group):
+                            hidden[focus.id] = hidden[group[0]]
+                            changed = True
+                            break
+            self._hidden = hidden
+        return self._hidden
+
+    def focus_needs(self, focus_id: str) -> list[str]:
+        """The DLCs that would make ``focus_id`` takeable, when the active set keeps it from being:
+        hidden by an ``allow_branch``, or its own ``available`` test of ``has_dlc`` is False."""
+        dlcs = self.playset.dlcs
+        if dlcs is None:
+            return []
+        hidden = self.hidden_focuses()
+        if focus_id in hidden:
+            return hidden[focus_id]
+        from .modcontext import script as S
+
+        _c, conditions = self._conditions()
+        available = conditions.get(focus_id, ([], []))[1]
+        return S.dlc_names(available) if S.dlc_truth(available, dlcs) is False else []
 
     def focuses_for(self, tag: str) -> dict[str, Focus]:
         """The focuses ``tag`` can ever take: its trees, plus the shared focuses
-        those trees pull in and everything that descends from them."""
+        those trees pull in and everything that descends from them. With the DLC set known,
+        focuses the active DLCs hide (``allow_branch``) are left out."""
         focuses: dict[str, Focus] = {}
         roots: list[str] = []
         for tree in self.trees_for(tag):
@@ -559,6 +698,9 @@ class IdentifierIndex:
                     included.add(focus.id)
                     changed = True
         focuses.update({k: self.shared_focuses[k] for k in included if k in self.shared_focuses})
+        hidden = self.hidden_focuses()
+        if hidden:
+            focuses = {k: v for k, v in focuses.items() if k not in hidden}
         return focuses
 
     def available_focuses(self, tag: str, completed: Iterable[str]) -> list[str]:
@@ -568,6 +710,7 @@ class IdentifierIndex:
             focus.id
             for focus in self.focuses_for(tag).values()
             if focus.id not in done and all(set(group) & done for group in focus.prerequisites)
+            and not self.focus_needs(focus.id)
         ]
 
     def resolve_state(self, value: str) -> StateInfo | None:
@@ -589,6 +732,15 @@ class IdentifierIndex:
         if call.name == "set_national_focus" and self.trees:
             focus = str(args.get("focus_id", ""))
             mine = self.focuses_for(country)
+            needs = self.focus_needs(focus)
+            in_tree = focus in mine or focus in self.shared_focuses or any(
+                focus in t.focuses for t in self.trees_for(country))
+            if needs and in_tree:
+                from .dlc import needs_message
+
+                return ActionResult(ok=False, action=call.name, call_id=call.call_id,
+                                    message=needs_message(f"Focus '{focus}'", needs) + ".",
+                                    error_kind="invalid_args")
             if focus not in mine:
                 anywhere = focus in self.shared_focuses or any(focus in t.focuses for t in self.trees)
                 why = (f"'{focus}' is not in {country}'s focus tree" if anywhere
@@ -665,7 +817,9 @@ class IdentifierIndex:
     def brief_lines(self, state: GameState, limit: int = 12) -> list[str]:
         """Balance of power bars, every brief; the focuses this country can start now,
         only when it needs one."""
-        lines: list[str] = []
+        from .dlc import brief_line
+
+        lines: list[str] = [line for line in (brief_line(self.playset.dlcs),) if line]
         if state.power_balances:
             lines += self.mod_context().balance_lines(state.power_balances)
         return lines + self._focus_lines(state, limit)

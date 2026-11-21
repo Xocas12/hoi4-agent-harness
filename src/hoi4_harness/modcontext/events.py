@@ -153,6 +153,9 @@ class EventInfo:
     desc_raw: tuple[str, ...] = ()
     #: Per description variant: the condition that picks it, readable ("" when none).
     desc_when: tuple[str, ...] = ()
+    #: The inactive DLCs whose ``has_dlc`` tests rule the event's own ``trigger`` out: it cannot
+    #: fire in this game, so a window is never matched to it.
+    needs: tuple[str, ...] = ()
 
     @property
     def title(self) -> str:
@@ -166,6 +169,10 @@ class EventInfo:
         if len(self.desc_raw) > 1:
             out["description_when"] = [w or "otherwise" for w in self.desc_when]
         out["options"] = [o.describe() for o in self.options]
+        if self.needs:
+            from ..dlc import needs_message
+
+            out["unavailable"] = needs_message("this event", self.needs)
         return out
 
 
@@ -274,7 +281,8 @@ class EventCatalog:
                 effects = [n for n in block if n[0] not in _OPTION_META]
                 chance = S.block(block, "ai_chance")
                 tag = self.ctx_tag
-                shown = None if not trigger else (S.tag_truth(trigger, tag) if tag else None)
+                shown = None if not trigger else (S.tag_truth(trigger, tag, self.ctx.dlcs) if tag
+                                                         else self._off(trigger))
                 opts.append(EventOption(
                     index=number, key=name, text_raw=raw.get(name, ""),
                     text=display(raw.get(name, "")), trigger=trigger, effects=effects,
@@ -287,11 +295,17 @@ class EventCatalog:
                 triggered_only=S.text(body, "is_triggered_only") == "yes",
                 major=S.text(body, "major") == "yes", hidden=S.text(body, "hidden") == "yes",
                 fire_once=S.text(body, "fire_only_once") == "yes",
+                needs=tuple(self.ctx.needs(S.block(body, "trigger") or [])),
                 title_raw=tuple(raw[k] for k, _c in titles if k in raw),
                 desc_raw=tuple(raw[k] for k, _c in descs if k in raw),
                 desc_when=tuple(S.readable(c, limit=4, width=160) if c else ""
                                 for k, c in descs if k in raw))
         return events
+
+    def _off(self, trigger: list) -> bool | None:
+        """False when ``has_dlc`` tests alone rule a trigger out (no country needed), else None."""
+        dlcs = self.ctx.dlcs
+        return False if dlcs is not None and S.dlc_truth(trigger, dlcs) is False else None
 
     #: The country whose option triggers are tested for a tag mismatch; set by ``for_country``.
     ctx_tag: str | None = None
@@ -320,7 +334,7 @@ class EventCatalog:
         if self._index is None:
             index: dict[str, set[str]] = {}
             for ident, info in self.events().items():
-                if info.hidden:
+                if info.hidden or info.needs:
                     continue
                 for word in self._words(info):
                     index.setdefault(word, set()).add(ident)

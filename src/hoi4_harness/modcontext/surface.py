@@ -24,6 +24,13 @@ from . import script as S
 #: Folders deliberately not read (none since #136 read the custom GUIs).
 EXCLUDED_FOLDERS: tuple[str, ...] = ()
 
+#: Features the game gates item by item, not as a whole: ``(label, folder)``. Each item carries its
+#: own ``allowed``/``visible`` with ``has_dlc`` (docs/dlc.md), so what a country has is counted.
+ITEM_FEATURES: dict[str, tuple[str, str]] = {
+    "special_projects": ("Special projects", "common/special_projects/projects"),
+    "mios": ("Military industrial organizations", "common/military_industrial_organization/organizations"),
+}
+
 _TARGET_KEYS = {"target_trigger", "targets", "targets_dynamic", "target_array",
                 "target_root_trigger", "target_start_state"}
 
@@ -193,6 +200,8 @@ class ModContext:
     def __init__(self, index: IdentifierIndex):
         self.index = index
         self.playset = index.playset
+        #: The active DLC names, or None when unknown (dlc.py): ``has_dlc`` is then left alone.
+        self.dlcs = self.playset.dlcs
         self._cache: dict[str, object] = {}
         self._roots = [(str(self.playset.game_dir).replace("\\", "/"), "vanilla")] + [
             (str(m.path).replace("\\", "/"), m.name) for m in self.playset.mods]
@@ -315,9 +324,11 @@ class ModContext:
             blocks = [decision.allowed, decision.visible]
             if category is not None:
                 blocks += [category.allowed, category.visible]
-            verdicts = [S.tag_truth(b, tag) for b in blocks]
+            verdicts = [S.tag_truth(b, tag, self.dlcs) for b in blocks]
             if False in verdicts:
                 continue
+            if self.decision_needs(decision):
+                continue                       # its own available test needs a DLC that is off
             if any(k == "is_debug" and v == "yes" for b in (decision.visible, *blocks[2:])
                    for k, _o, v in b):
                 continue                       # drawn only in debug mode
@@ -345,8 +356,28 @@ class ModContext:
         blocks = [decision.allowed, decision.visible]
         if category is not None:
             blocks += [category.allowed, category.visible]
-        return any(S.mentions(b, {"tag", "original_tag"}) and S.tag_truth(b, tag) is True
+        return any(S.mentions(b, {"tag", "original_tag"}) and S.tag_truth(b, tag, self.dlcs) is True
                    for b in blocks)
+
+    def needs(self, *blocks) -> list[str]:
+        """The DLCs the conditions in ``blocks`` test with ``has_dlc`` that are off, when those
+        tests alone rule the item out; empty when it stands (or the active set is unknown)."""
+        if self.dlcs is None:
+            return []
+        out: list[str] = []
+        for block in blocks:
+            if block and S.dlc_truth(block, self.dlcs) is False:
+                out += [n for n in S.dlc_names(block) if n not in self.dlcs and n not in out]
+        return out
+
+    def decision_needs(self, decision: Decision) -> list[str]:
+        """The inactive DLCs that rule ``decision`` out through its ``allowed``, ``visible`` or
+        ``available`` blocks or its category's."""
+        category = self.categories().get(decision.category)
+        blocks = [decision.allowed, decision.visible, decision.available]
+        if category is not None:
+            blocks += [category.allowed, category.visible]
+        return self.needs(*blocks)
 
     def find_decision(self, decision_id: str) -> Decision | None:
         return self.decisions().get(decision_id)
@@ -397,7 +428,7 @@ class ModContext:
         out = []
         for gui in self.guis().values():
             blocks = [gui.visible, gui.ai_enabled or [], self._gui_guard(gui)]
-            verdicts = [S.tag_truth(b, tag) for b in blocks]
+            verdicts = [S.tag_truth(b, tag, self.dlcs) for b in blocks]
             if False in verdicts:
                 continue
             if not any(v is True for v in verdicts):
@@ -415,8 +446,14 @@ class ModContext:
         memo: dict = self._cache.setdefault("click_refusals", {})  # type: ignore[assignment]
         key = (gui.id, button.key, tag, allow_global)
         if key not in memo:
-            memo[key] = refusal(gui, button, self.scripted_effects(), set(self.index.tags), tag,
-                                allow_global, self._gui_guard(gui))
+            gone = self.needs(gui.visible, button.visible, button.enabled)
+            if gone:
+                from ..dlc import needs_message
+
+                memo[key] = needs_message(f"Button '{button.key}'", gone)
+            else:
+                memo[key] = refusal(gui, button, self.scripted_effects(), set(self.index.tags), tag,
+                                    allow_global, self._gui_guard(gui))
         return memo[key]
 
     def find_button(self, gui_id: str, button: str):
@@ -545,6 +582,15 @@ class ModContext:
                                 message=f"This playset ({self.playset.name}) has no custom windows.",
                                 error_kind="invalid_args")
         guis = {g.id: g for g in self.guis_for(country)}
+        if gui_id not in guis and gui_id in self.guis():
+            window = self.guis()[gui_id]
+            gone = self.needs(window.visible, window.ai_enabled or [], self._gui_guard(window))
+            if gone:
+                from ..dlc import needs_message
+
+                return ActionResult(ok=False, action=call.name, call_id=call.call_id,
+                                    message=needs_message(f"Window '{gui_id}'", gone) + ".",
+                                    error_kind="invalid_args")
         if gui_id not in guis:
             why = (f"'{gui_id}' is a window, but not one {country} has" if gui_id in self.guis()
                    else f"There is no custom window '{gui_id}' in this playset")
@@ -554,6 +600,46 @@ class ModContext:
             return None
         return self.index._reject(call, f"'{gui_id}' has no button '{button}'", button,
                                   window.buttons)
+
+    # --- features gated item by item -----------------------------------------------
+
+    def item_feature(self, key: str, tag: str) -> dict:
+        """How many items of a feature (``ITEM_FEATURES``) ``tag`` has with the active DLCs, out of
+        those the tag alone allows, and the DLCs that would add some. ``exists`` is None when the
+        playset has no such folder (the feature is not described), else whether any item stands."""
+        def build() -> dict:
+            label, folder = ITEM_FEATURES[key]
+            total = standing = 0
+            wanted: list[str] = []
+            for path in self._files(folder):
+                for item, _op, body in self._read(path):
+                    if not item or item.startswith("@") or not isinstance(body, list):
+                        continue
+                    blocks = [S.block(body, "allowed") or [], S.block(body, "visible") or []]
+                    if any(S.tag_truth(b, tag) is False for b in blocks):
+                        continue
+                    total += 1
+                    if not self.needs(*blocks):
+                        standing += 1
+                    else:
+                        wanted += [n for b in blocks for n in S.dlc_names(b) if n not in wanted]
+            return {"label": label, "total": total, "available": standing,
+                    "exists": None if not total else standing > 0,
+                    "needs": [] if standing else wanted}
+
+        return self._memo(f"feature:{key}:{tag}", build)  # type: ignore[return-value]
+
+    def feature_gap(self, key: str, tag: str) -> str:
+        """``<feature> needs the <DLC> DLC, which is not active`` when ``tag`` has none of the
+        feature's items with the active DLCs, else an empty string."""
+        if self.dlcs is None:
+            return ""
+        info = self.item_feature(key, tag)
+        if info["exists"] is not False:
+            return ""
+        from ..dlc import needs_message
+
+        return needs_message(info["label"], info["needs"])
 
     # --- balance of power --------------------------------------------------------
 
@@ -572,11 +658,20 @@ class ModContext:
 
         return self._memo("balances", build)  # type: ignore[return-value]
 
+    def balance_needs(self, bar_id: str) -> str | None:
+        """The DLC a balance of power bar belongs to when that DLC is off, else None
+        (``dlc.BOP_DLC``: the script that sets the bar up is gated on it)."""
+        from ..dlc import BOP_DLC
+
+        name = BOP_DLC.get(bar_id)
+        return name if name and self.dlcs is not None and name not in self.dlcs else None
+
     def balance_lines(self, readings) -> list[str]:
         """The brief's lines for the bars the mod logged (``GameState.power_balances``)."""
         from .bop import brief_line
 
         bars = self.balances()
+        readings = [r for r in readings if self.balance_needs(r.id) is None]
         keys: set[str] = set()
         for reading in readings:
             if reading.id in bars:
@@ -721,7 +816,8 @@ class ModContext:
         found = self.find_law(law_id)
         if found is None:
             return None
-        return plan_law(found[0], found[1], country, effect_command=effect_command, console=console)
+        return plan_law(found[0], found[1], country, effect_command=effect_command, console=console,
+                        dlcs=self.dlcs)
 
     def occupation_laws(self) -> dict[str, dict]:
         """``common/occupation_laws``: id -> its visible and available blocks."""
@@ -747,7 +843,7 @@ class ModContext:
         if law is None:
             return None
         return plan_occupation_law(law, country, occupied, effect_command=effect_command,
-                                   console=console, state=state)
+                                   console=console, state=state, dlcs=self.dlcs)
 
     def advisors(self, tag: str) -> list[dict]:
         def build() -> list[dict]:
@@ -764,7 +860,10 @@ class ModContext:
                             continue
                         for advisor in S.blocks(spec, "advisor"):
                             allowed = S.block(advisor, "allowed") or []
-                            if S.tag_truth(allowed, tag) is not True:
+                            if S.tag_truth(allowed, tag, self.dlcs) is not True:
+                                continue
+                            if self.needs(S.block(advisor, "visible") or [],
+                                          S.block(advisor, "available") or []):
                                 continue
                             out.append({"character": char, "name_key": S.text(spec, "name") or char,
                                         "slot": S.text(advisor, "slot"),
@@ -897,10 +996,12 @@ class ModContext:
         used = sorted({d.category for d in decisions})
         ideas = self.ideas()
         spirits = [i for i in ideas["spirits"]
-                   if i["id"].startswith(tag + "_") or S.tag_truth(i["allowed"], tag) is True]
+                   if not self.needs(i["allowed"])
+                   and (i["id"].startswith(tag + "_") or S.tag_truth(i["allowed"], tag, self.dlcs) is True)]
         laws = []
         for group, options in sorted(ideas["laws"].items()):
-            relevant = [o for o in options if S.tag_truth(o["allowed"], tag) is not False]
+            relevant = [o for o in options if S.tag_truth(o["allowed"], tag, self.dlcs) is not False
+                        and not self.needs(o.get("visible") or [], o.get("available") or [])]
             if relevant:
                 laws.append({"group": group, "options": relevant})
         trees = self.index.trees_for(tag)
@@ -995,6 +1096,14 @@ class ModContext:
             return ActionResult(ok=False, action=call.name, call_id=call.call_id,
                                 message=f"This playset ({self.playset.name}) defines no decisions.",
                                 error_kind="invalid_args")
+        if decision is not None:
+            gone = self.decision_needs(decision)
+            if gone:
+                from ..dlc import needs_message
+
+                return ActionResult(ok=False, action=call.name, call_id=call.call_id,
+                                    message=needs_message(f"Decision '{decision_id}'", gone) + ".",
+                                    error_kind="invalid_args")
         why = (f"'{decision_id}' is a decision, but not one {country} can have" if decision
                else f"There is no decision '{decision_id}' in this playset ({self.playset.name})")
         return self.index._reject(call, why, decision_id, mine or self.decisions())

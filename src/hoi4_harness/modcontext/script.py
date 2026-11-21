@@ -186,11 +186,64 @@ def readable(nodes, limit: int = 6, width: int = 160) -> str:
     return text_
 
 
-def tag_truth(nodes, tag: str) -> bool | None:
+def dlc_truth(nodes, dlcs) -> bool | None:
+    """Whether ``has_dlc`` tests alone decide a condition block, for the active set ``dlcs``
+    (a collection of DLC names, or None when it is not known).
+
+    True or False when they decide it, None when anything else could (a tag, a flag, a
+    state of the game) or when ``dlcs`` is None. Every other trigger counts as unknown, so
+    ``OR = { tag = X has_dlc = "D" }`` is never False just because D is off, and
+    ``AND = { tag = X has_dlc = "D" }`` is False when D is off whatever the tag is. ``NOT``
+    with several entries is a NOR, as in the game. """
+    if dlcs is None:
+        return None
+    return _dlc_and(nodes, dlcs)
+
+
+def _dlc_and(nodes, dlcs) -> bool | None:
+    verdicts = [_dlc_node(n, dlcs) for n in nodes]
+    if any(v is False for v in verdicts):
+        return False
+    if all(v is True for v in verdicts):
+        return True            # an empty block holds
+    return None
+
+
+def _dlc_or(nodes, dlcs) -> bool | None:
+    verdicts = [_dlc_node(n, dlcs) for n in nodes]
+    if any(v is True for v in verdicts):
+        return True
+    return False if verdicts and all(v is False for v in verdicts) else None
+
+
+def _dlc_node(node: Node, dlcs) -> bool | None:
+    key, _op, value = node
+    if key == "has_dlc" and isinstance(value, str):
+        return value in dlcs
+    if not isinstance(value, list):
+        return None
+    if key in ("AND", "hidden_trigger"):
+        return _dlc_and(value, dlcs)
+    if key == "OR":
+        return _dlc_or(value, dlcs)
+    if key == "NOT":
+        inner = _dlc_or(value, dlcs)
+        return None if inner is None else not inner
+    return None
+
+
+def tag_truth(nodes, tag: str, dlcs=None) -> bool | None:
     """Whether a condition block holds for country ``tag``, going by the tag
     tests alone: True or False when they decide it, None when anything else
-    could. Used to tell which decisions a country can ever have."""
-    verdicts = [_node_truth(n, tag) for n in nodes]
+    could. Used to tell which decisions a country can ever have.
+
+    With ``dlcs`` (the active DLC names) a ``has_dlc`` test that is False for them
+    rules the block out; one that holds says nothing about the country, so it is
+    skipped rather than counted as a tag match."""
+    if dlcs is not None and _dlc_and(nodes, dlcs) is False:
+        return False
+    verdicts = [_node_truth(n, tag, dlcs) for n in nodes
+                if dlcs is None or _dlc_node(n, dlcs) is not True]
     if any(v is False for v in verdicts):
         return False
     if verdicts and all(v is True for v in verdicts):
@@ -198,8 +251,12 @@ def tag_truth(nodes, tag: str) -> bool | None:
     return None
 
 
-def _node_truth(node: Node, tag: str) -> bool | None:
+def _node_truth(node: Node, tag: str, dlcs=None) -> bool | None:
     key, _op, value = node
+    if dlcs is not None:
+        by_dlc = _dlc_node(node, dlcs)
+        if by_dlc is not None:
+            return False if by_dlc is False else None   # a DLC that is on says nothing of the tag
     if key in ("tag", "original_tag") and isinstance(value, str) and re.fullmatch(r"[A-Z][A-Z0-9]{2}", value):
         return value == tag
     if key == "always" and isinstance(value, str):
@@ -207,13 +264,65 @@ def _node_truth(node: Node, tag: str) -> bool | None:
     if not isinstance(value, list):
         return None
     if key in ("AND", "hidden_trigger"):
-        return tag_truth(value, tag)
+        return tag_truth(value, tag, dlcs)
     if key == "OR":
-        verdicts = [_node_truth(n, tag) for n in value]
+        verdicts = [_node_truth(n, tag, dlcs) for n in value]
         if any(v is True for v in verdicts):
             return True
         return False if verdicts and all(v is False for v in verdicts) else None
     if key == "NOT":
-        inner = tag_truth(value, tag)
+        inner = tag_truth(value, tag, dlcs)
         return None if inner is None else not inner
+    return None
+
+
+def dlc_names(nodes) -> list[str]:
+    """The DLC names a condition block tests with ``has_dlc``, in order, without repeats."""
+    found: list[str] = []
+
+    def walk(items) -> None:
+        for key, _op, value in items:
+            if key == "has_dlc" and isinstance(value, str):
+                if value not in found:
+                    found.append(value)
+            elif isinstance(value, list):
+                walk(value)
+
+    walk(nodes)
+    return found
+
+
+def holds(nodes, tag: str, dlcs) -> bool | None:
+    """Whether a block of conditions holds for country ``tag`` with ``dlcs`` active, going by
+    tag tests, ``has_dlc`` and ``always`` alone: True or False when they decide it, None when
+    another trigger could. An empty block holds. (``tag_truth`` answers a different question:
+    whether the *tag* alone rules a country out.) ``NOT`` with several entries is a NOR."""
+    verdicts = [_holds_node(n, tag, dlcs) for n in nodes]
+    if any(v is False for v in verdicts):
+        return False
+    return True if all(v is True for v in verdicts) else None
+
+
+def _holds_node(node: Node, tag: str, dlcs) -> bool | None:
+    key, _op, value = node
+    if key in ("tag", "original_tag") and isinstance(value, str) and re.fullmatch(r"[A-Z][A-Z0-9]{2}", value):
+        return value == tag
+    if key == "has_dlc" and isinstance(value, str):
+        return None if dlcs is None else value in dlcs
+    if key == "always" and isinstance(value, str):
+        return value == "yes"
+    if not isinstance(value, list):
+        return None
+    if key in ("AND", "hidden_trigger"):
+        return holds(value, tag, dlcs)
+    if key == "OR":
+        verdicts = [_holds_node(n, tag, dlcs) for n in value]
+        if any(v is True for v in verdicts):
+            return True
+        return False if verdicts and all(v is False for v in verdicts) else None
+    if key == "NOT":
+        verdicts = [_holds_node(n, tag, dlcs) for n in value]
+        if any(v is True for v in verdicts):
+            return False
+        return True if all(v is False for v in verdicts) else None
     return None

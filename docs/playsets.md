@@ -22,6 +22,8 @@ A mod can also be named the way the launcher names it, by its descriptor:
 resolves to the folder that file's `path=` line points at. The harness does not
 read the launcher's `dlc_load.json`; list the mods yourself, in the playset's
 order (the launcher's playset screen shows it).
+It does read the DLC half of that file (`disabled_dlcs`) and the install's `dlc/` folder, to
+know which DLCs are on: see [dlc.md](dlc.md).
 
 `HOI4_GAME_DIR` is the **install** (the folder holding `common/`), not the
 Documents folder where saves and logs live. `HOI4_MOD_DIRS` lists mod folders in
