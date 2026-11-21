@@ -71,6 +71,19 @@ STRATEGIES: dict[str, tuple[tuple[str, int], ...]] = {
     "befriend": (("befriend", 150),),
     "antagonize": (("antagonize", 150),),
     "ignore": (("ignore", 150),),
+    # Diplomacy the AI carries out itself, with its own acceptance and timing (the effects for
+    # these would force the other side's answer, or skip the justification time).
+    "prepare_war": (("prepare_for_war", 150),),
+    "declare_war": (("declare_war", 150),),
+    "volunteers": (("send_volunteers_desire", 200),),
+    "lend_lease": (("send_lend_lease_desire", 200),),
+    "ally": (("alliance", 150),),
+    # Intelligence against one country: operative_mission / operative_operation take the target
+    # as mission_target / operation_target (ai_strategy/_documentation.md). A "kind:name" type
+    # is written by _strategy_body.
+    "spy_on": (("operative_mission:build_intel_network", 800),),
+    "sabotage": (("operative_operation:operation_targeted_sabotage_industry", 800),),
+    "steal_tech": (("operative_operation:operation_steal_tech_civilian", 800),),
 }
 
 #: The extra weight each directive gets while the global flag ``llmb_strong_directives`` is
@@ -111,7 +124,7 @@ class GeneratedFile:
 
 
 def generate(tags: tuple[str, ...] | list[str] = DEFAULT_TAGS) -> list[GeneratedFile]:
-    from . import front_orders
+    from . import front_orders, steering
 
     tags = tuple(dict.fromkeys(tag.strip().upper() for tag in tags if tag.strip()))
     for tag in tags:
@@ -126,6 +139,7 @@ def generate(tags: tuple[str, ...] | list[str] = DEFAULT_TAGS) -> list[Generated
         GeneratedFile("common/decisions/llm_bridge_target_decisions.txt", _decisions(tags)),
         GeneratedFile("common/scripted_effects/llm_bridge_cadence.txt", _cadence_effects()),
         GeneratedFile(front_orders.FILE, front_orders.strategies()),
+        GeneratedFile(steering.FILE, steering.strategies()),
         GeneratedFile("events/llm_bridge_cadence_events.txt", _cadence_events()),
         # The empty inbox: the game must know both events at load. The harness rewrites the
         # INSTALLED copies while it runs (inbox.py); this repo copy stays empty.
@@ -190,12 +204,23 @@ def _strategies(tags: tuple[str, ...]) -> str:
             out.append(f"\tenable = {{ has_country_flag = {flag} }}")
             out.append(f"\tabort = {{ NOT = {{ has_country_flag = {flag} }} }}")
             for kind, value in STRATEGIES[directive]:
-                out.append(f'\tai_strategy = {{ type = {kind} id = "{tag}" value = {value} }}')
+                out.append(f"\tai_strategy = {{ {_strategy_body(kind, tag, value)} }}")
             out.append("}")
             out.append("")
-            out += _strong_block(flag, [f'type = {kind} id = "{tag}" value = {STRONG_BOOST}'
+            out += _strong_block(flag, [_strategy_body(kind, tag, STRONG_BOOST)
                                         for kind, _ in STRATEGIES[directive]])
     return "\n".join(out)
+
+
+def _strategy_body(kind: str, tag: str, value: int) -> str:
+    """The inside of one ``ai_strategy`` block for ``kind`` against ``tag``."""
+    if kind.startswith("operative_mission:"):
+        return (f"type = operative_mission mission = {kind.split(':', 1)[1]} value = {value} "
+                f"mission_target = {tag}")
+    if kind.startswith("operative_operation:"):
+        return (f"type = operative_operation operation = {kind.split(':', 1)[1]} value = {value} "
+                f"operation_target = {tag}")
+    return f'type = {kind} id = "{tag}" value = {value}'
 
 
 def _strong_block(flag: str, strategies: list[str]) -> list[str]:
@@ -561,6 +586,23 @@ def generate_probe(index: IdentifierIndex) -> GeneratedFile:
     return GeneratedFile(PROBE_PATH, "\n".join(out))
 
 
+def generate_research(index: IdentifierIndex) -> GeneratedFile:
+    """The research_tech blocks (steering.research_strategies), one per technology."""
+    from . import steering
+
+    return GeneratedFile(steering.RESEARCH_FILE, steering.research_strategies(index.technologies))
+
+
+def generate_regions(index: IdentifierIndex) -> GeneratedFile:
+    """The navy and air steers (steering.region_strategies): per strategic region and country."""
+    from . import steering
+
+    every, sea = steering.regions(index.playset)
+    return GeneratedFile(steering.REGIONS_FILE,
+                         steering.region_strategies(every, sea,
+                                                         [x for x in index.tags if x in DEFAULT_TAGS]))
+
+
 def generate_reserves(index: IdentifierIndex) -> GeneratedFile:
     """The reserve blocks (front_orders.reserves), one per state of the playset."""
     from . import front_orders
@@ -572,7 +614,8 @@ def generate_reserves(index: IdentifierIndex) -> GeneratedFile:
 def write_probe(mod_dir: Path, index: IdentifierIndex) -> Path:
     """The playset-specific files: the focus/research/bop probe and the reserve blocks."""
     target = mod_dir / PROBE_PATH
-    for item in (generate_probe(index), generate_reserves(index)):
+    for item in (generate_probe(index), generate_reserves(index), generate_research(index),
+                 generate_regions(index)):
         out = mod_dir / item.path
         out.parent.mkdir(parents=True, exist_ok=True)
         out.write_text(item.text, encoding="utf-8", newline="\n")

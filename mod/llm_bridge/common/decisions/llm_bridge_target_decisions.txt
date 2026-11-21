@@ -1183,6 +1183,102 @@ llm_bridge_target_category = {
 		ai_will_do = { factor = 0 }
 	}
 
+	llmb_directive_prepare_war = {
+		icon = generic_political_actions
+		cost = 0
+		fire_only_once = no
+		days_re_enable = 0
+		available = { always = yes }
+		complete_effect = {
+			llm_bridge_raise_prepare_war = yes
+		}
+		ai_will_do = { factor = 0 }
+	}
+
+	llmb_directive_declare_war = {
+		icon = generic_political_actions
+		cost = 0
+		fire_only_once = no
+		days_re_enable = 0
+		available = { always = yes }
+		complete_effect = {
+			llm_bridge_raise_declare_war = yes
+		}
+		ai_will_do = { factor = 0 }
+	}
+
+	llmb_directive_volunteers = {
+		icon = generic_political_actions
+		cost = 0
+		fire_only_once = no
+		days_re_enable = 0
+		available = { always = yes }
+		complete_effect = {
+			llm_bridge_raise_volunteers = yes
+		}
+		ai_will_do = { factor = 0 }
+	}
+
+	llmb_directive_lend_lease = {
+		icon = generic_political_actions
+		cost = 0
+		fire_only_once = no
+		days_re_enable = 0
+		available = { always = yes }
+		complete_effect = {
+			llm_bridge_raise_lend_lease = yes
+		}
+		ai_will_do = { factor = 0 }
+	}
+
+	llmb_directive_ally = {
+		icon = generic_political_actions
+		cost = 0
+		fire_only_once = no
+		days_re_enable = 0
+		available = { always = yes }
+		complete_effect = {
+			llm_bridge_raise_ally = yes
+		}
+		ai_will_do = { factor = 0 }
+	}
+
+	llmb_directive_spy_on = {
+		icon = generic_political_actions
+		cost = 0
+		fire_only_once = no
+		days_re_enable = 0
+		available = { always = yes }
+		complete_effect = {
+			llm_bridge_raise_spy_on = yes
+		}
+		ai_will_do = { factor = 0 }
+	}
+
+	llmb_directive_sabotage = {
+		icon = generic_political_actions
+		cost = 0
+		fire_only_once = no
+		days_re_enable = 0
+		available = { always = yes }
+		complete_effect = {
+			llm_bridge_raise_sabotage = yes
+		}
+		ai_will_do = { factor = 0 }
+	}
+
+	llmb_directive_steal_tech = {
+		icon = generic_political_actions
+		cost = 0
+		fire_only_once = no
+		days_re_enable = 0
+		available = { always = yes }
+		complete_effect = {
+			llm_bridge_raise_steal_tech = yes
+		}
+		ai_will_do = { factor = 0 }
+	}
+
 	llmb_theater_defensive = {
 		icon = generic_political_actions
 		cost = 0

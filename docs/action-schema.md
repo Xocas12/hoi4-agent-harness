@@ -1,6 +1,6 @@
 # The action catalog
 
-The catalog is the agent's entire vocabulary. It is small on purpose: 33 verbs,
+The catalog is the agent's entire vocabulary. It is small on purpose: 42 verbs,
 listed by `hoi4-harness actions` (add `--json` for schemas).
 
 | Action | Category | Notes |
@@ -20,6 +20,15 @@ listed by `hoi4-harness actions` (add `--json` for schemas).
 | `click_gui_button` | politics | Presses a scripted GUI button: its click effect inside the window's and button's own conditions, through the inbox or the console (`docs/mods.md`) |
 | `list_gui_buttons` | query | Read-only; the custom-window buttons a country can press, with the game AI's weights and refusal reasons. Needs `--mod-context` |
 | `set_front_order` | steer | Steers the front at one state (push, attack, probe, hold, clear) through the game's own `front_control`; inbox or console (`docs/observation.md`) |
+| `change_law` | politics | Economy, trade and conscription laws: the law's own allowed, visible and available blocks, the law you leave being allowed to go, and its political power cost, in one guarded effect; inbox or console (`docs/interaction.md`) |
+| `fire_advisor` | politics | Dismisses a hired advisor whose role can be fired; free; guarded by `has_idea` of the role's token (`docs/interaction.md`) |
+| `set_occupation_law` | politics | The default occupation law, or the override for one occupied country; guarded by the law's visible and available blocks, no cost (`docs/interaction.md`) |
+| `diplomacy_act` | politics | `guarantee` and `leave_faction`, the acts that need nobody's answer, each guarded; every act that needs an acceptance or takes time is refused with the reason and the faithful route (`docs/interaction.md`) |
+| `steer_production` | steer | What the game's AI builds: equipment share, ship and plane mix, preferred building, garrison size; `ai_strategy` blocks keyed on a country flag (`docs/interaction.md`) |
+| `steer_intelligence` | steer | How the AI runs its agency: branch order, factories, untargeted operative missions; as above |
+| `steer_navy` | steer | Where the AI's navy seeks sea control (a sea region) and whose convoys its raiders hunt; per-playset blocks (`docs/interaction.md`) |
+| `steer_air` | steer | Which strategic region's air war the AI weighs most (`docs/interaction.md`) |
+| `steer_research` | steer | Research one technology first when a slot is free; one `research_tech` block per technology |
 | `send_message` | memory | Single-player chat with the person and other LLM countries; free, never touches the game (`docs/chat.md`) |
 | `inspect_world` | query | Read-only; the map, armies and every other panel (faction, intel, projects, navy, air, politics, economy, diplomacy, research, occupation, supply, commanders) from the newest text save, other countries through intel (`docs/observation.md`) |
 | `list_decisions` | query | Read-only; answered from the playset's files, never reaches the game. Needs `--mod-context` |
@@ -39,7 +48,7 @@ listed by `hoi4-harness actions` (add `--json` for schemas).
 | `draw_offensive` | army | Battle-plan offensive arrow from an own state into a hostile one; as above |
 | `assign_battle_plan` | army | Select a recorded army and press assign-units (a recorded point); as above |
 
-The four `strategy` verbs are the hybrid vocabulary (`docs/hybrid-control.md`).
+The four `strategy` verbs are the hybrid vocabulary (`docs/hybrid-control.md`); the `steer` verbs extend it (`set_front_order`, `steer_production`, `steer_intelligence`, `steer_research`, `steer_navy`, `steer_air`), and `set_ai_directive` also carries diplomacy (`prepare_war`, `declare_war`, `volunteers`, `lend_lease`, `ally`) and intelligence (`spy_on`, `sabotage`, `steal_tech`) intent.
 
 ## Design rules
 
