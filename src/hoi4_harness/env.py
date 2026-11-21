@@ -14,7 +14,7 @@ import json
 from collections.abc import Callable, Iterable
 
 from .actions import registry
-from .actions.catalog import QUERY_ACTIONS
+from .actions.catalog import PLAYSET_QUERIES, QUERY_ACTIONS
 from .adapters.base import GameAdapter
 from .adapters.input_driver import InputInterrupted
 from .config import HarnessConfig
@@ -64,16 +64,30 @@ class HOI4Env:
         #: Callables ``(state) -> lines`` whose output ends every brief (campaign mode adds
         #: the conquest numbers this way).
         self.brief_hooks: list[Callable[[GameState], list[str]]] = []
+        #: The map and armies from the newest save (world.WorldObserver, #139); None: off.
+        self.world = None
+
+    def attach_world(self, observer) -> None:
+        """Give the brief a forces-and-map section and the model the inspect_world tool."""
+        self.world = observer
+        self.brief_hooks.append(observer.brief_lines)
 
     # --- observation ---------------------------------------------------------
 
     @property
     def allowed_actions(self) -> set[str]:
         """Adapter capability, narrowed by the operator's whitelist/blacklist."""
-        supported = set(self.adapter.supported_actions)
-        if self.queries_enabled:
-            supported |= QUERY_ACTIONS
+        supported = set(self.adapter.supported_actions) | self.available_queries
         return self.config.allowed_actions(supported)
+
+    @property
+    def available_queries(self) -> set[str]:
+        """The read-only tools this run can answer: the playset's (mod context) and the
+        world's (a save observer)."""
+        out = set(PLAYSET_QUERIES) if self.queries_enabled else set()
+        if self.world is not None:
+            out.add("inspect_world")
+        return out
 
     @property
     def script_actions(self) -> set[str]:
@@ -102,6 +116,18 @@ class HOI4Env:
             return ActionResult(ok=False, action=call.name, call_id=call.call_id, message=message,
                                 error_kind="unsupported")
 
+        if call.name == "inspect_world":
+            if self.world is None:
+                return fail("this run has no save observer (observe_world is off)")
+            problem = registry.check(call, QUERY_ACTIONS)
+            if problem is not None:
+                return problem
+            args = call.arguments
+            data = self.world.query(self.adapter.read_state(), str(args.get("view", "divisions")),
+                                    args.get("id"), int(args.get("limit", 60)))
+            return ActionResult(ok="error" not in data, action=call.name, call_id=call.call_id,
+                                message=json.dumps(data, sort_keys=True, ensure_ascii=False),
+                                error_kind=None if "error" not in data else "invalid_args")
         if not self.queries_enabled:
             return fail("this run has no playset files to answer from (mod context is off)")
         problem = registry.check(call, QUERY_ACTIONS)

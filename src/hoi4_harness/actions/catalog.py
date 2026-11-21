@@ -269,6 +269,24 @@ ACTIONS += [
         ),
     ),
     ActionSpec(
+        name="inspect_world",
+        category="query",
+        description=(
+            "Read-only: the map and the armies as your country sees them, from the newest save. "
+            "view=divisions lists every one of your divisions (template, state, province, terrain, "
+            "organisation, manpower, entrenchment); view=state id=<state id> shows one state, both "
+            "sides; view=country id=<TAG> shows what your intelligence knows of a country (army, "
+            "factories, production: exact, estimated or unknown by your intel); view=borders lists "
+            "the states across your borders. The result comes back on your next call."
+        ),
+        parameters=_schema(
+            {"view": {"type": "string", "enum": ["divisions", "state", "country", "borders"]},
+             "id": {"type": "string", "description": "State id for view=state, tag for view=country."},
+             "limit": {"type": "integer", "minimum": 1, "maximum": 120}},
+            ["view"],
+        ),
+    ),
+    ActionSpec(
         name="list_decisions",
         category="query",
         description=(
@@ -363,7 +381,9 @@ ACTIONS += [
 ]
 
 #: Read-only tools the harness answers from the playset's files; the game is not touched.
-QUERY_ACTIONS = frozenset({"list_decisions", "describe_action", "list_gui_buttons"})
+QUERY_ACTIONS = frozenset({"list_decisions", "describe_action", "list_gui_buttons", "inspect_world"})
+#: The queries answered from the playset's files (mod context); inspect_world reads the save.
+PLAYSET_QUERIES = frozenset({"list_decisions", "describe_action", "list_gui_buttons"})
 
 BY_NAME: dict[str, ActionSpec] = {spec.name: spec for spec in ACTIONS}
 

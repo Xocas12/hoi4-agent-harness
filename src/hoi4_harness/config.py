@@ -465,6 +465,9 @@ class HarnessConfig:
     # default: it changes the prompt. The Workshop pages it summarises are read from
     # the cache unless ``mod_context_fetch`` lets the run fetch a missing one.
     mod_context: bool = False
+    #: The forces-and-map brief section and inspect_world, from the newest text save (#139).
+    #: Rival and native runs turn it on.
+    observe_world: bool = False
     mod_context_fetch: bool = False
     mod_context_tokens: int = 900
     mod_context_cache_dir: Path | None = None

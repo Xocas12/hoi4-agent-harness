@@ -157,6 +157,10 @@ def apply_defaults(config: HarnessConfig) -> HarnessConfig:
     config.headless_save_days = 0
     if config.guidance == "doctrine":
         config.guidance = "rival+strategy"
+    # See what a player of the country sees (#139) and the playset's decisions and windows.
+    config.observe_world = True
+    if config.game_dir is not None:
+        config.mod_context = True
     if config.objective == _DEFAULT_OBJECTIVE:
         config.objective = OBJECTIVE.format(tag=tag)
     config.turns = max(config.turns, BACKSTOP_TURNS)

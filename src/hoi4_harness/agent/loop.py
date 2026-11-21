@@ -463,8 +463,7 @@ class AgentLoop:
             # seat. Both hybrid vocabularies are fair as advice, so only the
             # operator's whitelist narrows the full catalog.
             allowed = set(catalog.names()) - set(self.config.disabled_actions)
-            if not self.env.queries_enabled:
-                allowed -= catalog.QUERY_ACTIONS
+            allowed -= catalog.QUERY_ACTIONS - self.env.available_queries
             if self.config.enabled_actions is not None:
                 allowed &= set(self.config.enabled_actions)
             tools = registry.tool_specs(allowed)

@@ -80,6 +80,33 @@ llm_bridge_emit_state = {
 	llm_bridge_emit_probe = yes
 }
 
+# What this country's intelligence knows of the countries that matter to it (#139): enemies,
+# neighbours and majors, weekly. civilian_intel, army_intel, navy_intel and air_intel are the
+# 1.20 country-scope dynamic variables (dynamic_variables_documentation.md: "GER.army_intel@ENG",
+# GER's army intel against ENG), x100. UNVERIFIED in the live game: the @THIS target form. A
+# token the game does not expand prints literally and the reader drops it, never reads 0.
+llm_bridge_emit_intel = {
+	every_country = {
+		limit = {
+			NOT = { tag = ROOT }
+			OR = {
+				has_war_with = ROOT
+				is_neighbor_of = ROOT
+				is_major = yes
+			}
+		}
+		set_temp_variable = { llmb_ic = ROOT.civilian_intel@THIS }
+		multiply_temp_variable = { llmb_ic = 100 }
+		set_temp_variable = { llmb_ia = ROOT.army_intel@THIS }
+		multiply_temp_variable = { llmb_ia = 100 }
+		set_temp_variable = { llmb_in = ROOT.navy_intel@THIS }
+		multiply_temp_variable = { llmb_in = 100 }
+		set_temp_variable = { llmb_iair = ROOT.air_intel@THIS }
+		multiply_temp_variable = { llmb_iair = 100 }
+		log = "LLMB|v5|intel|tag=[ROOT.GetTag]|of=[THIS.GetTag]|civ=[?llmb_ic]|army=[?llmb_ia]|navy=[?llmb_in]|air=[?llmb_iair]"
+	}
+}
+
 # Front and army summary. This is the state that does not compress well and the
 # state the hybrid model cares most about, so it gets its own line rather than
 # being crammed into the state line.

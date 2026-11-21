@@ -400,6 +400,10 @@ def run_rival(
     log = CampaignLog(run_dir / RIVAL_LOG, None if quiet else out)
     env = env or _env_from_config(config)
     session = build_session(env, config, log)
+    if config.observe_world and env.world is None:
+        from ..world import build_observer
+
+        env.attach_world(build_observer(config, env.index, getattr(env.adapter, "fake_game", None)))
     queue = env.handover
     if resume:
         if (restored := queue.restore()):

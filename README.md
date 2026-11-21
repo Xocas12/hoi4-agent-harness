@@ -230,7 +230,7 @@ verification checklist: [docs/mod-bridge.md](docs/mod-bridge.md).
 | Piece | State |
 |---|---|
 | Agent loop, budget, memory, policy | Working, tested |
-| Action catalog + validation | Working, tested (30 actions) |
+| Action catalog + validation | Working, tested (31 actions) |
 | Observation briefs + deltas | Working, tested |
 | Mock adapter | Working, tested, deterministic |
 | Log-tail adapter (reads the mod's telemetry) | Working, tested, run against a live 1.19.5 log; `verify-bridge` checks tag consistency and date shapes, and the brief shows focus, research and theater postures |

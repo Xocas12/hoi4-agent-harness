@@ -388,6 +388,8 @@ class LogTailAdapter(GameAdapter):
             self._probe(kind, fields)
         elif kind == "bop":
             self._balance(fields)
+        elif kind == "intel":
+            self._intel(fields)
         elif kind == "war":
             self._war_line(fields)
         elif kind in {"div", "divend"}:
@@ -525,6 +527,21 @@ class LogTailAdapter(GameAdapter):
             state.research.append(ResearchSlot(index=len(state.research), technology=ident))
         if ("national_focus" if kind == "focus" else "research") in state.unknown_fields:
             state.unknown_fields.remove("national_focus" if kind == "focus" else "research")
+
+    def _intel(self, fields: dict[str, str]) -> None:
+        """``intel|tag|of|civ|army|navy|air``: the country's intel against ``of``, x100. A value
+        the game did not expand is left out, never read as zero."""
+        other = fields.get("of", "").strip().upper()
+        if not other:
+            return
+        values = {}
+        for key, name in (("civ", "civilian"), ("army", "army"), ("navy", "navy"), ("air", "air")):
+            try:
+                values[name] = max(0.0, min(1.0, float(fields[key]) / 100))
+            except (KeyError, ValueError):
+                continue
+        if values:
+            self._state.intel = {**self._state.intel, other: values}
 
     def _balance(self, fields: dict[str, str]) -> None:
         """A balance of power bar on one day: ``bop|tag|id|value|weekly``, both x100.
