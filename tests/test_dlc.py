@@ -504,3 +504,22 @@ def test_the_prompt_section_names_the_active_dlcs_and_the_features_that_are_off(
     assert "Not in this game: Ship designer (modules, variants) (needs Man the Guns)" in text
     assert "Tank designer" not in text
     assert "Active DLC" not in playset_section(build(tmp_path / "u", None), "SWE")
+
+
+def test_the_games_own_active_list_beats_the_folder_scan(tmp_path):
+    """A DLC can be owned with an empty folder, or have a folder and not be active: the game's
+    system.log names what it actually activated at its last start."""
+    from hoi4_harness import dlc as D
+
+    user = tmp_path / "user"
+    (user / "logs").mkdir(parents=True)
+    (user / "logs" / "system.log").write_text(
+        "[14:53:04][no_game_date]: Active DLC Count: 1\n"
+        "[14:53:04][no_game_date]: Active DLC: Old One\n"
+        "[18:00:00][no_game_date]: Active DLC Count: 2\n"
+        "[18:00:00][no_game_date]: Active DLC: Man the Guns\n"
+        "[18:00:00][no_game_date]: Active DLC: La Resistance\n"
+        "[18:00:01][no_game_date]: something else\n", encoding="utf-8")
+    found = D.detect(None, user)
+    assert found.source == "game log" and found.active == {"Man the Guns", "La Resistance"}
+    assert D.detect(None, user, override=[]).active == frozenset()     # explicit still wins
