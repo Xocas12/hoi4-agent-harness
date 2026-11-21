@@ -558,7 +558,8 @@ class ConsoleChannel:
             raise Refused(f"{advisor} costs {cost:g} political power, {state.political_power:g} held")
         plan = policy_effects.plan_advisor(advisor, char, role.token, cost, by_role[0], country,
                                            effect_command=self.config.effect_command,
-                                           console=self.transport != "inbox")
+                                           console=self.transport != "inbox",
+                                           dlcs=index.playset.dlcs)
         if not plan.executable:
             raise Refused(f"{advisor} cannot be hired faithfully: {plan.reason}")
         return self._marked(call, plan.nonce, plan.line, plan.done, plan.unchecked)

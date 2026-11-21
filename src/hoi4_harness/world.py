@@ -692,12 +692,32 @@ def _ranked(pic: Picture) -> dict[str, dict]:
                        key=lambda kv: (-len(pic.contact.get(kv[0], [])), kv[0])))
 
 
+_VIEW_FEATURES = {"projects": "special_projects", "economy": "mios"}
+
+
+def _feature_gap(index, view: str, me: str) -> str:
+    """Why a view's feature does not exist for ``me`` with the DLCs that are on (docs/dlc.md);
+    empty when it does, or when there is no playset to tell."""
+    key = _VIEW_FEATURES.get(view)
+    if index is None or key is None:
+        return ""
+    return index.mod_context().feature_gap(key, me)
+
+
 def query(pic: Picture, view: str, ident: str | None, index=None, layer=None, limit: int = 60) -> dict:
     view = (view or "divisions").lower()
     from . import world_full
 
     if view in world_full.NEW_VIEWS:
-        return world_full.query(pic, view, ident, layer, limit)
+        gap = _feature_gap(index, view, pic.me)
+        if gap and view == "projects":
+            return {"view": view, "exists": False, "note": gap + ": there are no special projects "
+                    "in this game for your country, so there is nothing to show"}
+        data = world_full.query(pic, view, ident, layer, limit)
+        if gap and view == "economy" and isinstance(data, dict) and "industrial_organisations" in data:
+            data["industrial_organisations"] = "none exist in this game"
+            data["industrial_organisations_note"] = gap
+        return data
     if view == "battles":
         from . import battles as B
 

@@ -477,6 +477,12 @@ class HarnessConfig:
     # checked against what the game actually loads -- see identifiers.py.
     game_dir: Path | None = None
     mod_dirs: list[Path] = field(default_factory=list)
+    # --- DLC (docs/dlc.md): which of the game's DLCs are on. ``dlcs`` None reads the install
+    # (<game_dir>/dlc) minus ``disabled_dlcs`` in <user_dir>/dlc_load.json; a list names the
+    # active set outright ([] is "no DLC"); ``--dlc NAME`` / ``--no-dlc`` set it. ``user_dir`` is
+    # the folder holding dlc_load.json (default: where the game keeps its saves).
+    dlcs: list[str] | None = None
+    user_dir: Path | None = None
     # --- mod context (docs/mods.md): a "This playset" section in the system prompt
     # (a world brief per mod, the country's decisions and focus tree, what the
     # mods add) and the read-only list_decisions / describe_action tools. Off by
@@ -586,7 +592,7 @@ class HarnessConfig:
                     setattr(self.budget, sub_key, sub_value)
             elif key in {"run_dir", "save_dir", "log_path", "system_prompt_path", "game_dir",
                          "ui_scripts_path", "calibration_path", "console_dir", "camera_path",
-                         "fake_game_dir", "fake_game_files", "mod_context_cache_dir", "inbox_dir",
+                         "fake_game_dir", "fake_game_files", "mod_context_cache_dir", "inbox_dir", "user_dir",
                          "chat_path",
                          "fake_human_script"} and value is not None:
                 setattr(self, key, Path(value))
@@ -649,7 +655,18 @@ class HarnessConfig:
             return None
         from .identifiers import IdentifierIndex, Playset
 
-        return IdentifierIndex.build(Playset.from_paths(self.game_dir, self.mod_dirs))
+        return IdentifierIndex.build(Playset.from_paths(self.game_dir, self.mod_dirs, self.dlc_set()))
+
+    def dlc_set(self):
+        """The DLC picture of this configuration (``dlc.DlcSet``); unknown without a game dir."""
+        from . import dlc, paths
+
+        if self.game_dir is None:
+            return dlc.DlcSet()
+        user = None
+        if self.dlcs is None:
+            user = self.user_dir if self.user_dir is not None else paths.find_game_dir()
+        return dlc.detect(self.game_dir, user, self.dlcs)
 
     def allowed_actions(self, adapter_supports: set[str]) -> set[str]:
         """Adapter capability, narrowed by control mode then by the operator.

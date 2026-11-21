@@ -77,7 +77,8 @@ ACTIONS: list[ActionSpec] = [
         category="politics",
         description=(
             "Start a national focus. Only one runs at a time; starting a new one is "
-            "impossible until the current focus completes."
+            "impossible until the current focus completes. A focus that needs a DLC which is not "
+            "active is refused (\"needs the <DLC> DLC\")."
         ),
         parameters=_schema(
             {"focus_id": {"type": "string", "description": "Focus id, e.g. SWE_expand_the_army."}},
@@ -248,7 +249,8 @@ ACTIONS += [
     ActionSpec(
         name="hire_advisor",
         category="politics",
-        description="Spend political power on an advisor, minister or designer.",
+        description=("Spend political power on an advisor, minister or designer. An advisor that needs a "
+                     "DLC which is not active is refused (\"needs the <DLC> DLC\")."),
         parameters=_schema(
             {"slot": {"type": "string"}, "advisor_id": {"type": "string"}},
             ["advisor_id"],
@@ -261,7 +263,8 @@ ACTIONS += [
             "Take a decision from the decisions view, as the player would: the game's own "
             "conditions and its political power cost are checked first. A targeted decision "
             "also needs a target (a country tag or state id from its targets). Missions are "
-            "activated by the game and cannot be taken. Find ids with list_decisions."
+            "activated by the game and cannot be taken. A decision that needs a DLC which is not "
+            "active is refused (\"needs the <DLC> DLC\"). Find ids with list_decisions."
         ),
         parameters=_schema(
             {"decision_id": {"type": "string"},
@@ -360,7 +363,9 @@ ACTIONS += [
             "score, guarantees, puppets, lend-lease, world tension, volunteers), "
             "research (slots, doctrines, decisions, focus), occupation (resistance, victory points), "
             "supply (hubs, railways, trucks, divisions short of supply), commanders (generals, "
-            "marshals and admirals with skills and traits). The result comes back on your next call."
+            "marshals and admirals with skills and traits). A panel whose feature the active DLCs "
+            "leave out (projects, the MIOs in economy) says it does not exist and which DLC it "
+            "needs. The result comes back on your next call."
         ),
         parameters=_schema(
             {"view": {"type": "string", "enum": [
@@ -722,7 +727,8 @@ ACTIONS += [
             "Change a law (economy, trade or conscription) to the one named, as the politics "
             "screen does: the law's own allowed, visible and available conditions are checked, "
             "the law you replace must be allowed to go, and its political power cost is charged. "
-            "Refused with the reason when the law cannot be taken now. Find laws and their costs "
+            "Refused with the reason when the law cannot be taken now, or needs a DLC that is not "
+            "active. Find laws and their costs "
             "with inspect_world view=politics or describe_action."
         ),
         parameters=_schema(
@@ -752,7 +758,8 @@ ACTIONS += [
             "available conditions are checked. With occupied (a country tag) it sets the "
             "override for that country's land only; with state (a state id you control and do not "
             "own) the override for that one state; with neither, the default for all. Laws that "
-            "depend on which country is occupied (some DLC laws) are refused with the reason."
+            "depend on which country is occupied (some DLC laws) are refused with the reason, and "
+            "so is a law that needs a DLC which is not active (\"needs the <DLC> DLC\")."
         ),
         parameters=_schema(
             {"law": {"type": "string", "description": "Occupation law id, e.g. martial_law_occupation."},
