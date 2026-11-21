@@ -39,3 +39,10 @@ llmb_front_hold = {
 	ai_strategy = { type = force_concentration_target_weight state_trigger = { has_state_flag = llmb_front_hold } value = -80 }
 	ai_strategy = { type = force_concentration_front_factor state_trigger = { has_state_flag = llmb_front_hold } ratio = 0 value = -60 }
 }
+
+llmb_front_invade = {
+	enable = { llm_bridge_is_harness = yes any_state = { has_state_flag = llmb_front_invade } }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { any_state = { has_state_flag = llmb_front_invade } } } }
+	ai_strategy = { type = front_control state_trigger = { has_state_flag = llmb_front_invade } ratio = 0 priority = 300 ordertype = invasion execution_type = rush execute_order = yes }
+	ai_strategy = { type = invasion_unit_request state_trigger = { has_state_flag = llmb_front_invade } value = 200 }
+}
