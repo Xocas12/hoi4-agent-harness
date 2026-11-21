@@ -245,6 +245,14 @@ What that established:
   and the harness sets the flag with `effect <TAG> llm_bridge_mark_harness` before it toggles
   `human_ai` ([campaign.md](campaign.md)). The state line also carries `ai=` (the read-back
   of `is_ai`), and a weekly `camp` line (`on_weekly`) carries the conquest numbers.
+- **Weekly `observe` lines** (`llm_bridge_observe.txt`, `llm_bridge_emit_observe`, also from
+  `on_weekly`): `obsbegin`, `res`, `tension`, `equip`, `garrison`, `peace`, `fac`, `vol` and
+  `collab` carry the numbers the text save lacks (resource income, equipment against need, world
+  tension, garrison, the peace conference, faction influence, volunteers, collaboration). They are
+  additive: an older harness skips the kinds it does not know. Every token is quoted from the
+  installed `documentation/` and **unverified in a live game**; one the game does not expand prints
+  `[?llmb_x]` and the reader drops that field (never 0). The coverage table in
+  [observation.md](observation.md) says which row each line serves.
 - **`front_unit_request` takes a literal country tag or none**, not a variable, so
   the per-target `ai_strategy` blocks stay generated rather than variable-driven.
 - **Completion events have no on_action.** The only completion hooks in 1.19.5 are
