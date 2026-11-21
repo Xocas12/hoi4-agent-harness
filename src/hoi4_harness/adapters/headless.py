@@ -61,6 +61,8 @@ MOUSE_ACTIONS = frozenset({
     "draw_front_line", "draw_offensive", "assign_battle_plan",
     # Editing a production line is a click on the production screen (adapters/production_ui.py).
     "change_production_equipment",
+    # Choosing an event option is a click on the window (adapters/event_choice.py).
+    "choose_event_option",
 })
 #: Actions the log cannot make safe. add_equipment_production adds a second line
 #: for equipment that already has one (seen live on 1.19.5), and only a reader
@@ -489,6 +491,7 @@ def build_headless(config: HarnessConfig, fake=None) -> CompositeAdapter:
         adapter = HeadlessComposite(reader, writer, **kwargs)
     adapter.fake_game = fake
     adapter.hands = hands
+    adapter.event_reader = hands.event_reader
     if hands.mouse:
         _announce_hands(config, hands, adapter)
     adapter.watchdog = adapter.patient_focus = None
@@ -605,6 +608,7 @@ def _wire_hands(driver, console, config: HarnessConfig, hands: Hands, fake):
                             unattended=bool(config.campaign))
     _wire_production(driver, console, config, hands, driver.index)
     _wire_events(driver, config, hands, fake)
+    _wire_event_reader(driver, config, hands, fake)
     if "start_research" in driver.scripts:
         config.wake_on_free_research_slot = True
         if not config.dry_run:
@@ -629,6 +633,52 @@ def _wire_events(driver, config: HarnessConfig, hands: Hands, fake) -> None:
         return
     driver.event_guard = guard
     hands.events = {"guarded": True, "missing": guard.missing(driver.config.coordinates)}
+
+
+def _wire_event_reader(driver, config: HarnessConfig, hands: Hands, fake) -> None:
+    """Reading the open event and choosing its option (adapters/event_choice.py). Needs the
+    playset's events, a way to read the screen (Windows OCR, or the fake game's) and the mouse;
+    each missing piece is named at the start and ``choose_event_option`` is then not offered."""
+    from ..modcontext.events import EventCatalog
+    from . import event_choice as ec
+    from .ocr import WindowsOcr
+
+    spec = config.event_screen or {}
+    if spec.get("enabled") is False:
+        hands.event_reading = {"on": False, "why": "event_screen.enabled is false in the profile"}
+        return
+    if driver.index is None:
+        hands.event_reading = {"on": False, "why": "no playset index (the event texts come from "
+                                                  "the playset's files)"}
+        return
+    if fake is not None:
+        backend = getattr(fake, "event_ocr", None)
+        if backend is None:
+            hands.event_reading = {"on": False, "why": "the fake game draws no event text"}
+            return
+    elif config.dry_run:
+        hands.event_reading = {"on": False, "why": "a dry run reads no screen"}
+        return
+    else:
+        backend = WindowsOcr(upscale=float(spec.get("upscale", 2.0)))
+    why = backend.available()
+    if why:
+        hands.event_reading = {"on": False, "why": why}
+        return
+    ctx = driver.index.mod_context()
+    catalog = EventCatalog(ctx).for_country(config.country)
+    reader = ec.EventReader(
+        catalog, backend, driver.geometry, layout=ec.layout_for(driver.index.playset),
+        focused=lambda: driver.focus().focused,
+        probe=driver.event_guard.probe if driver.event_guard is not None else None,
+        log_path=Path(config.run_dir) / "events.jsonl", grow=float(spec.get("grow", 0.0)),
+        centre_growth=bool(spec.get("centre_growth", False)))
+    if driver.event_guard is not None:
+        driver.event_guard.namer = reader.open_title
+    ec.enable_events(driver, reader, settle=float(spec.get("settle", 0.8)))
+    hands.event_reader = reader
+    hands.event_reading = {"on": True, "ocr": type(backend).__name__,
+                           "layout": reader.layout.source}
 
 
 def _wire_production(driver, console, config: HarnessConfig, hands: Hands, index) -> None:
