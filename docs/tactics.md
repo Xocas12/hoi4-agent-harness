@@ -769,6 +769,90 @@ that serves its axes in an order chosen by something real (nearest first, strong
 experiment this suggests; it has not been run and would need a tuning set to be chosen on, with France
 read once afterwards.
 
+## Stage 8: a principled axis order against best-first (#123)
+
+#117 left one experiment open: whether an order chosen by something real beats the planner's own
+best-first order, rather than the best of six arbitrary ones on France. **Simulator results only.**
+
+**The hook.** `Planner(axis_order=...)` replaces the boolean `sort_axes` (kept: `sort_axes=True` is
+`axis_order="sorted"`). The order is the order of the plans (`axis1`, `axis2`...), so it decides who is
+served first. Orders (`AXIS_ORDERS`; tests in `tests/test_123_axis_order.py`):
+
+- `best` (default): best-first, as scored.
+- `sorted`: region id, what the chooser did.
+- `nearest`: the target our divisions stand closest to first (`_march`, mean hops to the sector).
+- `weakest`: the least defended target first (enemy power in the region).
+- `supply`: the target nearest our supply net first (hops from the net).
+- `flanks`: outer flanks alternately: the axis farthest from the others, then the one farthest from it,
+  the middle last.
+
+**Benchmark.** `scripts/tactics_axis_order_bench.py`; per-game outcomes in
+`tactics/data/axis_order_results.json` (tuning) and `axis_order_heldout.json` (France). The default
+planner (patience 96) with each order; seeds 4000-4029, 30 games per cell, a fresh controller per game
+(#116), both opponents. Tuning set: the four small maps, Poland and three Poland variants. Brackets: games
+won only by the cell / only by best-first on the same seed. The order was chosen on the tuning set
+alone, then France was run once.
+
+Tuning set, wins of 30 (the four small maps are identical for every order and are left out of the
+columns: `break_line` 28, `close_encirclement` 1 against vanilla and 30 against scripted,
+`escape_encirclement` 30, `hold_line` 30; they draw one axis, so there is nothing to order):
+
+| order | Poland | v7001 | v7002 | v7003 | total of 240 (+/-) |
+|---|---|---|---|---|---|
+| **vs vanilla** | | | | | |
+| best-first | 26 | 28 | 20 | 29 | 192 |
+| sorted | 23 (+4/-7) | 27 (+0/-1) | 24 (+6/-2) | 29 (+1/-1) | 192 (+11/-11) |
+| nearest | 26 (+3/-3) | 28 (+1/-1) | 25 (+6/-1) | 30 (+1/-0) | 198 (+11/-5) |
+| weakest | 26 (+4/-4) | 29 (+1/-0) | 22 (+5/-3) | 30 (+1/-0) | 196 (+11/-7) |
+| supply | 23 (+4/-7) | 27 (+0/-1) | 24 (+6/-2) | 29 (+1/-1) | 192 (+11/-11) |
+| flanks | 23 (+4/-7) | 27 (+1/-2) | 24 (+4/-0) | 27 (+1/-3) | 190 (+10/-12) |
+| **vs scripted** | | | | | |
+| best-first | 11 | 7 | 2 | 9 | 147 |
+| sorted | 16 (+10/-5) | 3 (+1/-5) | 1 (+0/-1) | 8 (+7/-8) | 146 (+18/-19) |
+| nearest | 10 (+1/-2) | 3 (+3/-7) | 1 (+0/-1) | 10 (+4/-3) | 142 (+8/-13) |
+| weakest | 16 (+11/-6) | 6 (+2/-3) | 5 (+3/-0) | 10 (+8/-7) | 155 (+24/-16) |
+| supply | 9 (+1/-3) | 3 (+1/-5) | 1 (+0/-1) | 14 (+5/-0) | 145 (+7/-9) |
+| flanks | 15 (+8/-4) | 7 (+4/-4) | 3 (+2/-1) | 9 (+9/-9) | 152 (+23/-18) |
+
+Held out, France, wins of 30 (run once, after the table above):
+
+| order | vs vanilla | vs scripted |
+|---|---|---|
+| best-first | 12 | 1 |
+| sorted | 6 (+3/-9) | 0 (+0/-1) |
+| nearest | 4 (+2/-10) | 3 (+3/-1) |
+| weakest | 9 (+5/-8) | 2 (+2/-1) |
+| supply | 6 (+3/-9) | 0 (+0/-1) |
+| flanks | 3 (+2/-11) | 2 (+2/-1) |
+
+**Reading it honestly.**
+
+- **No order beats best-first on the tuning set.** The most promising, `weakest`, is +4 games against
+  vanilla and +8 against scripted over 240 each, with 35 games won only by it and 23 only by best-first
+  (sign test, one-sided, p = 0.07 pooled, 0.24 and 0.13 per opponent). `nearest` is +6 against vanilla
+  (11 against 5, p = 0.11) and -5 against scripted. Both are inside the noise a 30-seed cell has, and
+  the sign of the result changes with the opponent. Nothing wins on both opponents with a margin a
+  paired test would call real.
+- **Where each loses.** `sorted` and `supply` (their totals tie against vanilla) lose Poland
+  against vanilla (23 against 26, -7 paired) and `v7001` against scripted (3 against 7). `nearest` loses
+  `v7001` against scripted (3 against 7, -7 paired) and France against vanilla (4 against 12). `flanks`
+  loses the most against vanilla (190 in total, 3 on France). `weakest` loses 6 paired games on Poland against scripted (while winning 11) and `v7001` against
+  scripted (6 against 7, -3 paired), and is level on Poland against vanilla (+4/-4). On France every order loses to best-first against vanilla (3 to 9 games), and
+  `weakest` is the least bad.
+- **break_line and hold_line are untouched.** One axis there, so every order plays the same games
+  (28/30 and 30/30 for all six).
+- **The France edge of `sorted` was a one-map accident.** Against the planner at patience 0 it gave
+  20/30 (stage 7); on the default planner it gives 6/30 on France, worse than best-first's 12. The
+  stage 7 edge does not carry over to the patience-96 planner, and no principled order replaces it.
+- **Held out.** The France result did not pick anything, and it agrees with the tuning set only in that
+  nothing clearly beats best-first: against vanilla every alternative is worse.
+
+**Decision.** `axis_order` defaults to `"best"`. A default would change only if an order won on the
+tuning set against both opponents without regressing `break_line` or `hold_line`; none did, and
+`weakest`'s +8 against scripted does not survive a paired test. The options stay as off-by-default
+options for the next experiment (a larger seed count on the multi-axis maps would settle `weakest`;
+the small maps cannot, as they never draw a second axis).
+
 ## Gap list against the real game
 
 Simplifications, each with the mechanic it stands in for:
