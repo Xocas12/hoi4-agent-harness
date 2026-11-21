@@ -22,11 +22,13 @@ from ..types import (
     CampaignStats,
     GameEvent,
     GameState,
+    ModObserved,
     PowerBalance,
     ResearchSlot,
     StateForces,
     War,
 )
+from . import observe_lines
 from .base import AdapterInfo, GameAdapter
 from .clock import wait_for_days
 
@@ -396,6 +398,10 @@ class LogTailAdapter(GameAdapter):
             self._front(kind, fields)
         elif kind == "camp":
             self._campaign(fields)
+        elif kind in observe_lines.KINDS:
+            if state.observed is None:
+                state.observed = ModObserved()
+            observe_lines.apply(state.observed, kind, fields, fields.get("_engine_date") or state.date)
         elif kind == "evt":
             code = fields.get("kind", "")
             event_kind, severity = EVENT_CODES.get(code, (code or "unknown", "info"))

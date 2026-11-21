@@ -1,0 +1,207 @@
+# LLM Bridge -- what the save cannot tell: the economy, the world and the war, from script
+#
+# docs/observation.md lists rows the text save does not hold. Each has, in this install's
+# documentation/, a dynamic variable or trigger that the game computes, so the mod logs it weekly
+# (on_weekly, llm_bridge_on_actions.txt; `effect <TAG> llm_bridge_emit_observe` on demand) and the
+# harness reads it into GameState.observed (adapters/logtail.py, observation/mechanics.py).
+#
+# EVERY TOKEN HERE IS UNVERIFIED IN A LIVE GAME. Each is quoted from documentation/ (file:line
+# below) but none has run. A token the game does not expand prints literally (`[?llmb_x]`), and the
+# reader treats that as MISSING, never as 0: a field that reads `[?...]` is "unknown" in the brief.
+# When one fails live, fix the token here; the reader needs no change.
+#
+# Lines (all `LLMB|v5|<kind>|tag=<ROOT>|...`, additive: a harness that does not know a kind skips it;
+# `obsbegin` opens each weekly batch):
+#   res      one per resource: prod, cons, imp, exp (resource_produced / _consumed / _imported /
+#            _exported @<resource>, dynamic_variables_documentation.md:777-790) and net (resource@<r>,
+#            the surplus, :777)
+#   tension  world tension x100 (the global `threat`, dynamic_variables_documentation.md:1058,
+#            triggers_documentation.md:7755); one line per week
+#   equip    one per army equipment archetype: stock (num_equipment@<a>, :564), army (num_equipment_
+#            in_armies@<a>, :567) and need (num_target_equipment_in_armies@<a>, :694): the deficit of
+#            the divisions is need - army, what is on the shelf is stock
+#   garrison garrison_manpower_need (:400), foreign_manpower (:388), num_occupied_states (:595)
+#   peace    in (is_in_peace_conference, triggers_documentation.md:5791), score (pc_current_score,
+#            :735), total (pc_total_score, :741), turn (the global pc_turn, :1013)
+#   fac      faction influence: score, ratio, rank (faction_influence_score / _ratio / _rank,
+#            :337, :324, :311), manifest (faction_manifest_fulfillment, :353), power (faction_power_
+#            projection, :369); one line for ROOT (no `of=`) and one per other member (`of=<TAG>`)
+#   vol      volunteers between ROOT and one country, as a LOWER BOUND: has_volunteers_amount_from
+#            (triggers_documentation.md:5064) only compares, so each bound is a comparison chain:
+#            in = volunteers from <of> serving ROOT, out = ROOT's volunteers serving <of>
+#   collab   has_collaboration@<enemy> (triggers_documentation.md:3483, :422) x100 for each enemy
+#
+# surrender_progress needs no line here: the war lines of llm_bridge_telemetry.txt carry it.
+
+llm_bridge_emit_observe = {
+	# A new weekly batch: the reader empties the per-country sets (members, volunteers, collab).
+	log = "LLMB|v5|obsbegin|tag=[THIS.GetTag]"
+
+	# --- resources: what the top bar's income is made of ---
+	set_temp_variable = { llmb_rp = resource_produced@steel }
+	set_temp_variable = { llmb_rc = resource_consumed@steel }
+	set_temp_variable = { llmb_ri = resource_imported@steel }
+	set_temp_variable = { llmb_rx = resource_exported@steel }
+	set_temp_variable = { llmb_rn = resource@steel }
+	log = "LLMB|v5|res|tag=[THIS.GetTag]|r=steel|prod=[?llmb_rp]|cons=[?llmb_rc]|imp=[?llmb_ri]|exp=[?llmb_rx]|net=[?llmb_rn]"
+	set_temp_variable = { llmb_rp = resource_produced@aluminium }
+	set_temp_variable = { llmb_rc = resource_consumed@aluminium }
+	set_temp_variable = { llmb_ri = resource_imported@aluminium }
+	set_temp_variable = { llmb_rx = resource_exported@aluminium }
+	set_temp_variable = { llmb_rn = resource@aluminium }
+	log = "LLMB|v5|res|tag=[THIS.GetTag]|r=aluminium|prod=[?llmb_rp]|cons=[?llmb_rc]|imp=[?llmb_ri]|exp=[?llmb_rx]|net=[?llmb_rn]"
+	set_temp_variable = { llmb_rp = resource_produced@oil }
+	set_temp_variable = { llmb_rc = resource_consumed@oil }
+	set_temp_variable = { llmb_ri = resource_imported@oil }
+	set_temp_variable = { llmb_rx = resource_exported@oil }
+	set_temp_variable = { llmb_rn = resource@oil }
+	log = "LLMB|v5|res|tag=[THIS.GetTag]|r=oil|prod=[?llmb_rp]|cons=[?llmb_rc]|imp=[?llmb_ri]|exp=[?llmb_rx]|net=[?llmb_rn]"
+	set_temp_variable = { llmb_rp = resource_produced@rubber }
+	set_temp_variable = { llmb_rc = resource_consumed@rubber }
+	set_temp_variable = { llmb_ri = resource_imported@rubber }
+	set_temp_variable = { llmb_rx = resource_exported@rubber }
+	set_temp_variable = { llmb_rn = resource@rubber }
+	log = "LLMB|v5|res|tag=[THIS.GetTag]|r=rubber|prod=[?llmb_rp]|cons=[?llmb_rc]|imp=[?llmb_ri]|exp=[?llmb_rx]|net=[?llmb_rn]"
+	set_temp_variable = { llmb_rp = resource_produced@tungsten }
+	set_temp_variable = { llmb_rc = resource_consumed@tungsten }
+	set_temp_variable = { llmb_ri = resource_imported@tungsten }
+	set_temp_variable = { llmb_rx = resource_exported@tungsten }
+	set_temp_variable = { llmb_rn = resource@tungsten }
+	log = "LLMB|v5|res|tag=[THIS.GetTag]|r=tungsten|prod=[?llmb_rp]|cons=[?llmb_rc]|imp=[?llmb_ri]|exp=[?llmb_rx]|net=[?llmb_rn]"
+	set_temp_variable = { llmb_rp = resource_produced@chromium }
+	set_temp_variable = { llmb_rc = resource_consumed@chromium }
+	set_temp_variable = { llmb_ri = resource_imported@chromium }
+	set_temp_variable = { llmb_rx = resource_exported@chromium }
+	set_temp_variable = { llmb_rn = resource@chromium }
+	log = "LLMB|v5|res|tag=[THIS.GetTag]|r=chromium|prod=[?llmb_rp]|cons=[?llmb_rc]|imp=[?llmb_ri]|exp=[?llmb_rx]|net=[?llmb_rn]"
+
+	# --- world tension ---
+	set_temp_variable = { llmb_threat = global.threat }
+	multiply_temp_variable = { llmb_threat = 100 }
+	log = "LLMB|v5|tension|tag=[THIS.GetTag]|threat=[?llmb_threat]"
+
+	# --- equipment against need ---
+	set_temp_variable = { llmb_es = num_equipment@infantry_equipment }
+	set_temp_variable = { llmb_ea = num_equipment_in_armies@infantry_equipment }
+	set_temp_variable = { llmb_en = num_target_equipment_in_armies@infantry_equipment }
+	log = "LLMB|v5|equip|tag=[THIS.GetTag]|a=infantry_equipment|stock=[?llmb_es]|army=[?llmb_ea]|need=[?llmb_en]"
+	set_temp_variable = { llmb_es = num_equipment@support_equipment }
+	set_temp_variable = { llmb_ea = num_equipment_in_armies@support_equipment }
+	set_temp_variable = { llmb_en = num_target_equipment_in_armies@support_equipment }
+	log = "LLMB|v5|equip|tag=[THIS.GetTag]|a=support_equipment|stock=[?llmb_es]|army=[?llmb_ea]|need=[?llmb_en]"
+	set_temp_variable = { llmb_es = num_equipment@artillery_equipment }
+	set_temp_variable = { llmb_ea = num_equipment_in_armies@artillery_equipment }
+	set_temp_variable = { llmb_en = num_target_equipment_in_armies@artillery_equipment }
+	log = "LLMB|v5|equip|tag=[THIS.GetTag]|a=artillery_equipment|stock=[?llmb_es]|army=[?llmb_ea]|need=[?llmb_en]"
+	set_temp_variable = { llmb_es = num_equipment@anti_tank_equipment }
+	set_temp_variable = { llmb_ea = num_equipment_in_armies@anti_tank_equipment }
+	set_temp_variable = { llmb_en = num_target_equipment_in_armies@anti_tank_equipment }
+	log = "LLMB|v5|equip|tag=[THIS.GetTag]|a=anti_tank_equipment|stock=[?llmb_es]|army=[?llmb_ea]|need=[?llmb_en]"
+	set_temp_variable = { llmb_es = num_equipment@anti_air_equipment }
+	set_temp_variable = { llmb_ea = num_equipment_in_armies@anti_air_equipment }
+	set_temp_variable = { llmb_en = num_target_equipment_in_armies@anti_air_equipment }
+	log = "LLMB|v5|equip|tag=[THIS.GetTag]|a=anti_air_equipment|stock=[?llmb_es]|army=[?llmb_ea]|need=[?llmb_en]"
+	set_temp_variable = { llmb_es = num_equipment@motorized_equipment }
+	set_temp_variable = { llmb_ea = num_equipment_in_armies@motorized_equipment }
+	set_temp_variable = { llmb_en = num_target_equipment_in_armies@motorized_equipment }
+	log = "LLMB|v5|equip|tag=[THIS.GetTag]|a=motorized_equipment|stock=[?llmb_es]|army=[?llmb_ea]|need=[?llmb_en]"
+	set_temp_variable = { llmb_es = num_equipment@mechanized_equipment }
+	set_temp_variable = { llmb_ea = num_equipment_in_armies@mechanized_equipment }
+	set_temp_variable = { llmb_en = num_target_equipment_in_armies@mechanized_equipment }
+	log = "LLMB|v5|equip|tag=[THIS.GetTag]|a=mechanized_equipment|stock=[?llmb_es]|army=[?llmb_ea]|need=[?llmb_en]"
+	set_temp_variable = { llmb_es = num_equipment@armored_car_equipment }
+	set_temp_variable = { llmb_ea = num_equipment_in_armies@armored_car_equipment }
+	set_temp_variable = { llmb_en = num_target_equipment_in_armies@armored_car_equipment }
+	log = "LLMB|v5|equip|tag=[THIS.GetTag]|a=armored_car_equipment|stock=[?llmb_es]|army=[?llmb_ea]|need=[?llmb_en]"
+	set_temp_variable = { llmb_es = num_equipment@light_tank_chassis }
+	set_temp_variable = { llmb_ea = num_equipment_in_armies@light_tank_chassis }
+	set_temp_variable = { llmb_en = num_target_equipment_in_armies@light_tank_chassis }
+	log = "LLMB|v5|equip|tag=[THIS.GetTag]|a=light_tank_chassis|stock=[?llmb_es]|army=[?llmb_ea]|need=[?llmb_en]"
+	set_temp_variable = { llmb_es = num_equipment@medium_tank_chassis }
+	set_temp_variable = { llmb_ea = num_equipment_in_armies@medium_tank_chassis }
+	set_temp_variable = { llmb_en = num_target_equipment_in_armies@medium_tank_chassis }
+	log = "LLMB|v5|equip|tag=[THIS.GetTag]|a=medium_tank_chassis|stock=[?llmb_es]|army=[?llmb_ea]|need=[?llmb_en]"
+	set_temp_variable = { llmb_es = num_equipment@heavy_tank_chassis }
+	set_temp_variable = { llmb_ea = num_equipment_in_armies@heavy_tank_chassis }
+	set_temp_variable = { llmb_en = num_target_equipment_in_armies@heavy_tank_chassis }
+	log = "LLMB|v5|equip|tag=[THIS.GetTag]|a=heavy_tank_chassis|stock=[?llmb_es]|army=[?llmb_ea]|need=[?llmb_en]"
+
+	# --- garrison ---
+	set_temp_variable = { llmb_gn = garrison_manpower_need }
+	set_temp_variable = { llmb_gf = foreign_manpower }
+	set_temp_variable = { llmb_go = num_occupied_states }
+	log = "LLMB|v5|garrison|tag=[THIS.GetTag]|need=[?llmb_gn]|foreign=[?llmb_gf]|occupied=[?llmb_go]"
+
+	# --- peace conference ---
+	set_temp_variable = { llmb_pin = 0 }
+	if = {
+		limit = { is_in_peace_conference = yes }
+		set_temp_variable = { llmb_pin = 1 }
+	}
+	set_temp_variable = { llmb_pcs = pc_current_score }
+	set_temp_variable = { llmb_pct = pc_total_score }
+	set_temp_variable = { llmb_pcn = global.pc_turn }
+	log = "LLMB|v5|peace|tag=[THIS.GetTag]|in=[?llmb_pin]|score=[?llmb_pcs]|total=[?llmb_pct]|turn=[?llmb_pcn]"
+
+	# --- faction influence: ROOT, then the other members ---
+	if = {
+		limit = { is_in_faction = yes }
+		set_temp_variable = { llmb_fs = faction_influence_score }
+		set_temp_variable = { llmb_fr = faction_influence_ratio }
+		multiply_temp_variable = { llmb_fr = 100 }
+		set_temp_variable = { llmb_fk = faction_influence_rank }
+		set_temp_variable = { llmb_fm = faction_manifest_fulfillment }
+		multiply_temp_variable = { llmb_fm = 100 }
+		set_temp_variable = { llmb_fp = faction_power_projection }
+		log = "LLMB|v5|fac|tag=[THIS.GetTag]|score=[?llmb_fs]|ratio=[?llmb_fr]|rank=[?llmb_fk]|manifest=[?llmb_fm]|power=[?llmb_fp]"
+		every_country = {
+			limit = {
+				NOT = { tag = ROOT }
+				is_in_faction_with = ROOT
+			}
+			set_temp_variable = { llmb_fs = faction_influence_score }
+			set_temp_variable = { llmb_fr = faction_influence_ratio }
+			multiply_temp_variable = { llmb_fr = 100 }
+			set_temp_variable = { llmb_fk = faction_influence_rank }
+			log = "LLMB|v5|fac|tag=[ROOT.GetTag]|of=[THIS.GetTag]|score=[?llmb_fs]|ratio=[?llmb_fr]|rank=[?llmb_fk]"
+		}
+	}
+
+	# --- volunteers, as lower bounds (the trigger only compares) ---
+	every_country = {
+		limit = {
+			NOT = { tag = ROOT }
+			exists = yes
+		}
+		set_temp_variable = { llmb_vin = 0 }
+		set_temp_variable = { llmb_vout = 0 }
+		ROOT = {
+			if = { limit = { has_volunteers_amount_from = { tag = PREV count > 0 } } set_temp_variable = { llmb_vin = 1 } }
+			if = { limit = { has_volunteers_amount_from = { tag = PREV count > 4 } } set_temp_variable = { llmb_vin = 5 } }
+			if = { limit = { has_volunteers_amount_from = { tag = PREV count > 9 } } set_temp_variable = { llmb_vin = 10 } }
+			if = { limit = { has_volunteers_amount_from = { tag = PREV count > 19 } } set_temp_variable = { llmb_vin = 20 } }
+			if = { limit = { has_volunteers_amount_from = { tag = PREV count > 49 } } set_temp_variable = { llmb_vin = 50 } }
+		}
+		if = { limit = { has_volunteers_amount_from = { tag = ROOT count > 0 } } set_temp_variable = { llmb_vout = 1 } }
+		if = { limit = { has_volunteers_amount_from = { tag = ROOT count > 4 } } set_temp_variable = { llmb_vout = 5 } }
+		if = { limit = { has_volunteers_amount_from = { tag = ROOT count > 9 } } set_temp_variable = { llmb_vout = 10 } }
+		if = { limit = { has_volunteers_amount_from = { tag = ROOT count > 19 } } set_temp_variable = { llmb_vout = 20 } }
+		if = { limit = { has_volunteers_amount_from = { tag = ROOT count > 49 } } set_temp_variable = { llmb_vout = 50 } }
+		if = {
+			limit = {
+				OR = {
+					check_variable = { llmb_vin > 0 }
+					check_variable = { llmb_vout > 0 }
+				}
+			}
+			log = "LLMB|v5|vol|tag=[ROOT.GetTag]|of=[THIS.GetTag]|in=[?llmb_vin]|out=[?llmb_vout]"
+		}
+	}
+
+	# --- collaboration in the countries ROOT is at war with ---
+	every_enemy_country = {
+		set_temp_variable = { llmb_col = ROOT.has_collaboration@THIS }
+		multiply_temp_variable = { llmb_col = 100 }
+		log = "LLMB|v5|collab|tag=[ROOT.GetTag]|of=[THIS.GetTag]|v=[?llmb_col]"
+	}
+}

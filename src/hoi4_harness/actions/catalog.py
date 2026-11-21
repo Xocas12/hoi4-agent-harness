@@ -310,7 +310,11 @@ ACTIONS += [
         category="query",
         description=(
             "Read-only: everything a player of your country sees, from the newest save. "
-            "view=divisions lists every one of your divisions; view=state id=<state id> shows one "
+            "view=divisions lists every one of your divisions, worst first, with organisation, "
+            "strength, supply, days out of supply, entrenchment, equipment fill and whether it is "
+            "encircled or in a battle; view=battles lists the battles you are in and the ones you "
+            "can see (sides, divisions, tactics, damage, an estimate of who is winning); "
+            "view=state id=<state id> shows one "
             "state, both sides; view=country id=<TAG> shows what your intelligence knows of a country "
             "(army, factories, production: exact, estimated or unknown by your intel); view=borders "
             "lists the states across your borders. The other panels: view=faction (members, leader, "
@@ -318,14 +322,16 @@ ACTIONS += [
             "missions, network strength per country, your intel levels), projects (special projects, "
             "facilities, scientists), navy and air (your fleets and wings, or id=TAG as your intel "
             "allows), politics (parties, laws, spirits, advisors), economy (fuel, manpower, "
-            "stockpile, trade), diplomacy (wars with their score, guarantees, puppets, lend-lease), "
+            "stockpile, trade, resource income, equipment against need), diplomacy (wars with their "
+            "score, guarantees, puppets, lend-lease, world tension, volunteers), "
             "research (slots, doctrines, decisions, focus), occupation (resistance, victory points), "
             "supply (hubs, railways, trucks, divisions short of supply), commanders (generals, "
             "marshals and admirals with skills and traits). The result comes back on your next call."
         ),
         parameters=_schema(
             {"view": {"type": "string", "enum": [
-                "divisions", "state", "country", "borders", "faction", "intel", "projects", "navy",
+                "divisions", "battles", "state", "country", "borders", "faction", "intel", "projects",
+                "navy",
                 "air", "politics", "economy", "diplomacy", "research", "occupation", "supply",
                 "commanders"]},
              "id": {"type": "string", "description": "State id for view=state; a country tag for "
