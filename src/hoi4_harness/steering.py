@@ -208,10 +208,6 @@ AREAS: dict[str, dict[str, Spec]] = {
                              {"less": -30, "more": 30, "much_more": 100}, source="tag",
                              what="how much the AI wants to trade with that country (raises its "
                                   "acceptance of purchases and market access)"),
-        "sell": Spec("equipment_market_for_sale_factor", (), {"less": -50, "more": 50, "much_more": 100},
-                     source="archetype",
-                     what="how much of its surplus in that equipment the AI puts up for sale (a "
-                          "factor on the game's default ratio)"),
         "spend": Spec("equipment_market_spend_factories", (),
                       {"less": -50, "more": 20, "much_more": 100},
                       what="how many civilian factories the AI will spend buying equipment "

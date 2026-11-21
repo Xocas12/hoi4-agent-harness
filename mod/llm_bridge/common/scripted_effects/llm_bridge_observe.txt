@@ -132,76 +132,8 @@ llm_bridge_emit_observe = {
 	set_temp_variable = { llmb_go = num_occupied_states }
 	log = "LLMB|v5|garrison|tag=[THIS.GetTag]|need=[?llmb_gn]|foreign=[?llmb_gf]|occupied=[?llmb_go]"
 
-	# --- peace conference ---
-	set_temp_variable = { llmb_pin = 0 }
-	if = {
-		limit = { is_in_peace_conference = yes }
-		set_temp_variable = { llmb_pin = 1 }
-	}
-	set_temp_variable = { llmb_pcs = pc_current_score }
-	set_temp_variable = { llmb_pct = pc_total_score }
-	set_temp_variable = { llmb_pcn = global.pc_turn }
-	log = "LLMB|v5|peace|tag=[THIS.GetTag]|in=[?llmb_pin]|score=[?llmb_pcs]|total=[?llmb_pct]|turn=[?llmb_pcn]"
-
-	# --- faction influence: ROOT, then the other members ---
-	if = {
-		limit = { is_in_faction = yes }
-		set_temp_variable = { llmb_fs = faction_influence_score }
-		set_temp_variable = { llmb_fr = faction_influence_ratio }
-		multiply_temp_variable = { llmb_fr = 100 }
-		set_temp_variable = { llmb_fk = faction_influence_rank }
-		set_temp_variable = { llmb_fm = faction_manifest_fulfillment }
-		multiply_temp_variable = { llmb_fm = 100 }
-		set_temp_variable = { llmb_fp = faction_power_projection }
-		log = "LLMB|v5|fac|tag=[THIS.GetTag]|score=[?llmb_fs]|ratio=[?llmb_fr]|rank=[?llmb_fk]|manifest=[?llmb_fm]|power=[?llmb_fp]"
-		every_country = {
-			limit = {
-				NOT = { tag = ROOT }
-				is_in_faction_with = ROOT
-			}
-			set_temp_variable = { llmb_fs = faction_influence_score }
-			set_temp_variable = { llmb_fr = faction_influence_ratio }
-			multiply_temp_variable = { llmb_fr = 100 }
-			set_temp_variable = { llmb_fk = faction_influence_rank }
-			log = "LLMB|v5|fac|tag=[ROOT.GetTag]|of=[THIS.GetTag]|score=[?llmb_fs]|ratio=[?llmb_fr]|rank=[?llmb_fk]"
-		}
-	}
-
-	# --- volunteers, as lower bounds (the trigger only compares) ---
-	every_country = {
-		limit = {
-			NOT = { tag = ROOT }
-			exists = yes
-		}
-		set_temp_variable = { llmb_vin = 0 }
-		set_temp_variable = { llmb_vout = 0 }
-		ROOT = {
-			if = { limit = { has_volunteers_amount_from = { tag = PREV count > 0 } } set_temp_variable = { llmb_vin = 1 } }
-			if = { limit = { has_volunteers_amount_from = { tag = PREV count > 4 } } set_temp_variable = { llmb_vin = 5 } }
-			if = { limit = { has_volunteers_amount_from = { tag = PREV count > 9 } } set_temp_variable = { llmb_vin = 10 } }
-			if = { limit = { has_volunteers_amount_from = { tag = PREV count > 19 } } set_temp_variable = { llmb_vin = 20 } }
-			if = { limit = { has_volunteers_amount_from = { tag = PREV count > 49 } } set_temp_variable = { llmb_vin = 50 } }
-		}
-		if = { limit = { has_volunteers_amount_from = { tag = ROOT count > 0 } } set_temp_variable = { llmb_vout = 1 } }
-		if = { limit = { has_volunteers_amount_from = { tag = ROOT count > 4 } } set_temp_variable = { llmb_vout = 5 } }
-		if = { limit = { has_volunteers_amount_from = { tag = ROOT count > 9 } } set_temp_variable = { llmb_vout = 10 } }
-		if = { limit = { has_volunteers_amount_from = { tag = ROOT count > 19 } } set_temp_variable = { llmb_vout = 20 } }
-		if = { limit = { has_volunteers_amount_from = { tag = ROOT count > 49 } } set_temp_variable = { llmb_vout = 50 } }
-		if = {
-			limit = {
-				OR = {
-					check_variable = { llmb_vin > 0 }
-					check_variable = { llmb_vout > 0 }
-				}
-			}
-			log = "LLMB|v5|vol|tag=[ROOT.GetTag]|of=[THIS.GetTag]|in=[?llmb_vin]|out=[?llmb_vout]"
-		}
-	}
-
-	# --- collaboration in the countries ROOT is at war with ---
-	every_enemy_country = {
-		set_temp_variable = { llmb_col = ROOT.has_collaboration@THIS }
-		multiply_temp_variable = { llmb_col = 100 }
-		log = "LLMB|v5|collab|tag=[ROOT.GetTag]|of=[THIS.GetTag]|v=[?llmb_col]"
-	}
+	# The peace-conference, faction-influence, volunteer and collaboration blocks were removed
+	# after the first live run (2026-11-22): pc_current_score errors outside a conference, and
+	# the game crashed (access violation, deep recursion) right after this effect at the first
+	# weekly tick. Resources, tension, equipment and garrison logged correctly and stay.
 }
