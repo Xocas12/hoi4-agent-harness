@@ -120,7 +120,11 @@ class ConsoleConfig:
     #: the mod was regenerated with others).
     target_tags: tuple[str, ...] = modgen.DEFAULT_TAGS
     #: Seconds for the console to open before typing, and to run the file.
-    open_delay: float = 0.4
+    #: Seconds between the open key and the first typed character. 0.4 lost the race live on
+    #: 2026-11-21 (paused 1936 game, a panel open): the console received `n llmb_turn.txt`, and
+    #: the `r` and `u` typed before it opened went to the map (`r` opened Recruit & Deploy).
+    #: 1.0 ran every time.
+    open_delay: float = 1.0
     run_delay: float = 0.8
     #: Where a dry run writes the file, and where live runs keep a copy. A
     #: dry run never touches ``directory``.
