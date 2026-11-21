@@ -577,6 +577,10 @@ def generate_probe(index: IdentifierIndex) -> GeneratedFile:
             f'log = "LLMB|v{SCHEMA_VERSION}|bop|tag=[THIS.GetTag]|id={bar}|value=[?llmb_bop]'
             f'|weekly=[?llmb_bop_w]" }}'
         )
+    # Civil-war breakaways (late.py): every dynamic country with the country it broke away from.
+    from .late import probe_lines
+
+    out += probe_lines(index.tags, SCHEMA_VERSION)
     for tech in sorted(t for t in index.technologies if ok(t)):
         out.append(
             f"\tif = {{ limit = {{ is_researching_technology = {tech} }} "
