@@ -50,6 +50,8 @@ PATIENCE = 96
 #: patience shrinks in proportion (see `scaled_patience`, #112).
 PATIENCE_REF_REGIONS = 24
 MAX_AXES = 3
+#: Orders in which a planner hands its drawn axes on (#123); the order is the order of the plans.
+AXIS_ORDERS = ("best", "sorted", "nearest", "weakest", "supply", "flanks")
 #: Attack modifier of a river between two regions, indexed by the river flag (none, small, large).
 RIVER_PEN = (0.0, -0.3, -0.6)
 
@@ -70,11 +72,17 @@ class Planner:
     step instead of every ``cadence``); ``sort_axes`` hands the axes on in region-id order instead
     of best-first, which is the order of the plans and so who gets the nearest divisions first.
     The second has no reason except that id order is what the chooser did: on the France map it
-    swings the result from 0/30 to 20/30 depending on which fixed order is used (docs/tactics.md)."""
+    swings the result from 0/30 to 20/30 depending on which fixed order is used (docs/tactics.md).
+
+    ``axis_order`` (#123) generalises ``sort_axes``: "best" (best-first, the default), "sorted"
+    (region id), and the principled orders "nearest" (the sector our divisions stand closest to
+    first), "weakest" (the least defended target first), "supply" (the target nearest our supply
+    net first) and "flanks" (outer flanks alternately, the middle last). ``sort_axes=True`` is
+    ``axis_order="sorted"``."""
 
     def __init__(
         self, observe: str = "aggregated", cadence: int = 24, patience: int | str = PATIENCE,
-        reset_idle_commit: bool = False, sort_axes: bool = False,
+        reset_idle_commit: bool = False, sort_axes: bool = False, axis_order: str = "best",
     ) -> None:
         if isinstance(patience, str) and patience != "scaled":
             raise ValueError(f"patience must be hours or 'scaled', not {patience!r}")
@@ -84,7 +92,10 @@ class Planner:
         self.cadence = cadence
         self.patience = patience
         self.reset_idle_commit = reset_idle_commit
+        if axis_order not in AXIS_ORDERS:
+            raise ValueError(f"axis_order must be one of {AXIS_ORDERS}, not {axis_order!r}")
         self.sort_axes = sort_axes
+        self.axis_order = "sorted" if sort_axes and axis_order == "best" else axis_order
         self._last_hour = -(10**9)
         self._last_control: dict[str, str] | None = None
         self._last_own = 0
@@ -163,8 +174,7 @@ class Planner:
             axes = self._choose_axes(pic)
             if self.reset_idle_commit and not axes:
                 self._commit = None
-            if self.sort_axes:
-                axes = sorted(axes)
+            axes = self._order_axes(pic, axes)
             axis_specs = [self._axis_spec(pic, tgt, f"axis{i + 1}", extend=True)
                           for i, tgt in enumerate(axes)]
             specs.extend(axis_specs)
@@ -269,6 +279,28 @@ class Planner:
                 return list(old) if len(alive) == len(old) else alive
         self._commit = (tuple(axes), pic.hour, score)
         return axes
+
+    def _order_axes(self, pic: Picture, axes: list[str]) -> list[str]:
+        order = self.axis_order
+        if order == "best" or len(axes) < 2:
+            return axes
+        if order == "sorted":
+            return sorted(axes)
+        if order == "nearest":
+            return sorted(axes, key=lambda a: (self._march(pic, a), a))
+        if order == "weakest":
+            return sorted(axes, key=lambda a: (pic.regions[a].foe_power, a))
+        if order == "supply":
+            dist = pic.hops(sorted(pic.supply_net(pic.side)) or sorted(axes))
+            return sorted(axes, key=lambda a: (dist.get(a, 99), a))
+        # flanks: the axis farthest from the others first, then the one farthest from it, then the rest
+        far = {a: pic.hops([a]) for a in axes}
+        first = max(sorted(axes), key=lambda a: sum(far[a].get(b, 99) for b in axes))
+        out = [first]
+        while len(out) < len(axes):
+            rest = [a for a in sorted(axes) if a not in out]
+            out.append(max(rest, key=lambda a: min(far[o].get(a, 99) for o in out)))
+        return out
 
     def _march(self, pic: Picture, tgt: str) -> float:
         """Mean number of region hops our divisions are from the sector facing `tgt`."""
