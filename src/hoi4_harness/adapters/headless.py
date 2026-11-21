@@ -455,6 +455,15 @@ def build_headless(config: HarnessConfig, fake=None) -> CompositeAdapter:
             country=config.country, refresh=refresh and config.headless_reader != "savegame",
             refresh_front=refresh and config.headless_reader != "savegame"),
         index=index, sleep=sleep)
+    if getattr(config, "console_transport", "keys") == "inbox":
+        # Orders go into the mod's inbox file; no key is sent (inbox.py, docs/inbox.md).
+        from . import build_inbox
+
+        if fake is not None and hasattr(fake, "inbox"):
+            console.inbox = fake.inbox(config)
+        else:
+            console.inbox = build_inbox(config)
+        console.config.inbox_ack_seconds = config.inbox_ack_seconds
     if config.headless_reader == "log+save":
         reader.take = lambda: console.send_lines(["savegame"])
         reader.enabled = not config.dry_run

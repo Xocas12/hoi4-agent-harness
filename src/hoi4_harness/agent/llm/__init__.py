@@ -20,7 +20,7 @@ __all__ = [
     "build_llm",
 ]
 
-PROVIDERS = ("anthropic", "openai", "google", "scripted", "mailbox")
+PROVIDERS = ("anthropic", "openai", "google", "scripted", "mailbox", "claude-cli")
 
 
 def build_llm(config: LLMConfig) -> LLMClient:
@@ -54,6 +54,13 @@ def build_llm(config: LLMConfig) -> LLMClient:
         timeout = config.extra.get("mailbox_timeout_minutes")
         return MailboxClient(directory, model=config.model or "mailbox",
                              timeout_seconds=float(timeout) * 60 if timeout else None)
+    if provider == "claude-cli":
+        from .claude_cli import ClaudeCliClient
+
+        timeout = config.extra.get("cli_timeout_seconds")
+        return ClaudeCliClient(model=config.model or "haiku", cli=config.extra.get("cli_path"),
+                               timeout_seconds=float(timeout) if timeout else 300.0,
+                               workdir=config.extra.get("cli_workdir"))
     if provider == "anthropic":
         from .anthropic_provider import AnthropicClient
 

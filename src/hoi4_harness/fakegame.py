@@ -817,10 +817,48 @@ class FakeGame:
     def date_ordinal(self) -> int:
         return self.world.date.toordinal()
 
+    # --- the inbox (inbox.py): a game in -debug_mode reloads the mod's inbox files -----
+
+    def inbox(self, config=None):
+        """The harness's inbox for this fake game: the installed mod under the user dir, on
+        the fake's clock. Asking for it makes this game run the inbox once a day."""
+        from .inbox import Inbox
+
+        self._inbox_on = True
+        self._inbox_done = getattr(self, "_inbox_done", set())
+        return Inbox(self.user_dir / "mod" / "llm_bridge", log_path=self.log_path,
+                     clock=lambda: self._wall, sleep=self.sleep,
+                     effect_command=getattr(config, "console_effect_command", "eval_effect"))
+
+    def _run_inbox(self) -> None:
+        """``on_daily`` -> ``llmb_inbox.1`` -> ``llmb_inbox.2`` per country: every batch whose
+        flag is unset runs, sets it and logs its acknowledgement. ``reloads_inbox = False`` is
+        a game started without -debug_mode: it never sees the file change."""
+        if not getattr(self, "_inbox_on", False) or not getattr(self, "reloads_inbox", True):
+            return
+        from .inbox import EVENTS_FILE, parse_batches
+
+        path = self.user_dir / "mod" / "llm_bridge" / EVENTS_FILE
+        try:
+            batches = parse_batches(path.read_text(encoding="utf-8"))
+        except OSError:
+            return
+        for batch in batches:
+            if batch.id in self._inbox_done:
+                continue
+            self._inbox_done.add(batch.id)
+            for script in batch.script:
+                name, sep, rest = script.partition(" = ")
+                line = (f"effect {batch.tag} {name}" if sep and rest == "yes" and " " not in name
+                        else f"eval_effect {batch.tag} = {{ {script} }}")
+                self._console(line)
+            self._write(self._llmb("inbox", tag=batch.tag, id=batch.id, via="event"))
+
     def tick_day(self) -> None:
         """One in-game day: the model moves, and the mod logs it."""
         self.world.date += dt.timedelta(days=1)
         self.world._tick_one_day()
+        self._run_inbox()
         opened = self.event_script.pop(self.date, None)
         if opened is not None:
             self.open_event(*opened)

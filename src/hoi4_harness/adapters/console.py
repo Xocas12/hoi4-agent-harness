@@ -138,6 +138,10 @@ class ConsoleConfig:
     #: scripted effect ``llm_bridge_emit_state``, which the mod ships.
     refresh: bool = False
     refresh_effect: str = "llm_bridge_emit_state"
+    #: The inbox transport (inbox.py): how long to wait for the game to acknowledge a batch
+    #: before reporting it as posted and not yet run. The game runs the inbox once a day, so
+    #: a running game answers within a day of game time; a paused one never does.
+    inbox_ack_seconds: float = 6.0
     refresh_repeats: int = 2
     #: Also ask for the front picture (divisions per state, #85) with the refresh.
     #: The effect lives in llm_bridge_divisions.txt; an older mod prints an
@@ -208,6 +212,13 @@ class ConsoleChannel:
         #: A reader that can take and read text saves (``combined.CombinedReader``).
         #: Without one, construction and production stay "unverified".
         self.saves = None
+        #: The inbox transport (``inbox.Inbox``): when set, the lines this channel would type
+        #: go into the mod's inbox file instead, and no key is ever sent (docs/inbox.md).
+        self.inbox = None
+
+    @property
+    def transport(self) -> str:
+        return "inbox" if self.inbox is not None else "keys"
 
     def attach_reader(self, read_state: Callable[[], GameState]) -> None:
         self._read_state = read_state
@@ -474,6 +485,12 @@ class ConsoleChannel:
         a dry run writes the archive copy only and sends nothing.
         """
         driver, config = self.driver, self.config
+        if self.inbox is not None:
+            self.last_lines = list(lines)
+            if driver.dry_run:
+                return self._write(self._archive_path(), lines)
+            self.inbox.post(lines)
+            return self._write(self._archive_path(), lines)
         for line in lines:
             check_console_line(line)
         text_chords(f"run {config.filename}")
@@ -536,7 +553,8 @@ class ConsoleChannel:
         return [results[i] for i in range(len(calls))]
 
     def _wants_save(self, calls: list[ActionCall]) -> bool:
-        return (self.saves is not None and not self.driver.dry_run
+        # A save is taken with the console's `savegame`, which the inbox cannot carry.
+        return (self.saves is not None and not self.driver.dry_run and self.inbox is None
                 and any(c.name in SAVE_VERIFIED for c in calls))
 
     def execute_shared(
@@ -591,6 +609,8 @@ class ConsoleChannel:
                 lines += console.refresh_lines(console._country(before))
         needs_save = all(c is self for c, _, _ in flat) and self._wants_save(
             [p.call for p in planned])
+        if self.inbox is not None:
+            return self._send_inbox(flat, lines)
         if needs_save:
             # Last, so the save holds what the lines above did. The save is
             # written a few seconds later, from the state at this command.
@@ -643,6 +663,46 @@ class ConsoleChannel:
                 message += f" The save could not be used: {save_error}."
             out[i] = _result(p.call, outcome.ok, outcome.kind, message,
                              lines=p.lines, unchecked=p.unchecked)
+        return out
+
+    def _send_inbox(self, flat, lines: list[str]) -> dict[int, ActionResult]:
+        """``_send_flat`` for the inbox: post the lines, wait a little for the game to run
+        them, verify what it ran. Nothing touches the keyboard, so nothing needs focus."""
+        planned = [p for _, _, p in flat]
+        self.last_lines = lines
+        try:
+            if self.driver.dry_run:
+                path = self._write(self._archive_path(), lines)
+                return {i: _result(p.call, False, "not_executed", (
+                    f"dry run: would post {len(p.lines)} line(s) to the inbox ({path.name}): "
+                    + " | ".join(p.lines)), lines=p.lines, unchecked=p.unchecked)
+                    for i, p in enumerate(planned)}
+            batches = self.inbox.post(lines)
+            self._write(self._archive_path(), lines)
+        except (ValueError, OSError) as exc:
+            return {i: _result(p.call, False, "rejected", f"{exc}; nothing was posted")
+                    for i, p in enumerate(planned)}
+        ids = [b.id for b in batches]
+        if not self.inbox.wait(ids, self.config.inbox_ack_seconds, poll_seconds=0.25):
+            # Posted and safe in the file: the game runs it at its next daily pulse. Not
+            # an error, and not done either; the next brief shows whether it landed.
+            return {i: _result(p.call, True, None, (
+                f"posted to the game's inbox (batch {', '.join(ids)}); the game runs it at its "
+                "next in-game day, which has not come yet (paused, or between days). Not "
+                "confirmed: do not plan as if it had happened until a brief shows it."),
+                lines=p.lines, unchecked=p.unchecked, inbox=ids, acknowledged=False)
+                for i, p in enumerate(planned)}
+        out = {}
+        for i, (console, before, p) in enumerate(flat):
+            if p.call.name == "take_decision":
+                ok, kind, message = console._verify_decision(p.call, before, p)
+            else:
+                outcome = verify(p.verify_call or p.call, before, console._read_state,
+                                 timeout=console.verify_timeout, sleep=console._sleep)
+                ok, kind, message = outcome.ok, outcome.kind, outcome.message
+            out[i] = _result(p.call, ok, kind, f"{message} (through the inbox, batch "
+                             f"{', '.join(ids)})", lines=p.lines, unchecked=p.unchecked,
+                             inbox=ids, acknowledged=True)
         return out
 
     def _keys_sequence(self) -> None:

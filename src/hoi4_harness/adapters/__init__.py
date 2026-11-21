@@ -102,6 +102,22 @@ def build_adapter(config: HarnessConfig) -> GameAdapter:
     raise ValueError(f"Unknown adapter {name!r}. Known: {', '.join(ADAPTERS)}")
 
 
+def build_inbox(config: HarnessConfig):
+    """The inbox for ``config`` (inbox.py), its empty files written if the mod has none."""
+    from .. import paths
+    from ..inbox import Inbox, default_mod_dir
+    from .logtail import find_log
+
+    mod_dir = config.inbox_dir or default_mod_dir(paths.find_game_dir())
+    if mod_dir is None:
+        raise ValueError("the inbox needs the installed mod's folder: set inbox_dir "
+                         "(<Documents>/Paradox Interactive/Hearts of Iron IV/mod/llm_bridge)")
+    inbox = Inbox(Path(mod_dir), log_path=config.log_path or find_log(),
+                  effect_command=config.console_effect_command)
+    inbox.ensure()
+    return inbox
+
+
 def _with_console(driver, config: HarnessConfig):
     """Wrap the input driver in the per-action channel router (#83)."""
     from .channels import ChannelRouter, resolve_channels
@@ -124,6 +140,9 @@ def _with_console(driver, config: HarnessConfig):
         ),
         index=config.build_index(),
     )
+    if getattr(config, "console_transport", "keys") == "inbox":
+        console.inbox = build_inbox(config)
+        console.config.inbox_ack_seconds = config.inbox_ack_seconds
     if config.unit_orders:
         from .unit_orders import enable_from_config
 

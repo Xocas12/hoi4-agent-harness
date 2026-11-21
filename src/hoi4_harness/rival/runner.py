@@ -33,12 +33,13 @@ from ..agent.loop import AgentLoop, RunReport, Supervisor
 from ..agent.memory import Memory
 from ..campaign.progress import ProgressTracker
 from ..campaign.runner import CampaignLog
-from ..config import HarnessConfig
+from ..config import UNPRICED_PROVIDERS, HarnessConfig
 from ..env import HOI4Env
 from ..handover import GRANT_FILENAME
 from ..types import GameState
 from .safety import (
     HandoverPolicy,
+    InboxPolicy,
     KeyWatch,
     LogClock,
     NeverPolicy,
@@ -168,6 +169,8 @@ def build_policy(config: HarnessConfig, adapter, fake, now: Callable[[], float])
         return NeverPolicy()
     if config.rival_act_when == "handover":
         return HandoverPolicy(Path(config.run_dir) / GRANT_FILENAME)
+    if config.rival_act_when == "inbox":
+        return InboxPolicy()
     driver = adapter.writer.router.driver
     watch = fake.input_watch() if fake is not None else system_input_watch()
     return PausedPolicy(LogClock(getattr(adapter.reader, "log_path", config.log_path), now), watch,
@@ -187,11 +190,15 @@ def build_session(env: HOI4Env, config: HarnessConfig, log: CampaignLog) -> Riva
         now, sleep, alive = time.monotonic, time.sleep, (lambda: process_running(name))
     policy = build_policy(config, adapter, fake, now)
     watch = KeyWatch(policy, config.console_key)
-    driver = adapter.writer.router.driver
-    driver.key_watch = watch
-    keys = driver._keys()
-    keys.on_send, keys.before_send = watch.own_input, watch.check
-    env.handover.attach(policy, watch)
+    if isinstance(policy, InboxPolicy):
+        # No key is ever sent, so there is nothing for a key guard to watch.
+        env.handover.attach(policy, None)
+    else:
+        driver = adapter.writer.router.driver
+        driver.key_watch = watch
+        keys = driver._keys()
+        keys.on_send, keys.before_send = watch.own_input, watch.check
+        env.handover.attach(policy, watch)
     session = RivalSession(env, config, policy, watch, log, now=now, sleep=sleep, alive=alive)
     adapter.on_poll = session.poll
     # A paused game stays paused as long as the person likes: a clock wait has no deadline.
@@ -245,21 +252,34 @@ def begin(env: HOI4Env, config: HarnessConfig, log: CampaignLog, session: RivalS
         log.line(f"policy never: type these in the game's console to start ({tag} must be marked): "
                  + "; ".join(lines[:len(lines) - len(session.console.refresh_lines(tag))]))
     else:
-        log.line(f"marking {tag}: {lines[0]} (waiting for a safe window: pause the game and "
-                 f"leave the keyboard alone for {config.rival_idle_seconds:g}s)"
-                 if config.rival_act_when == "paused" else f"marking {tag}: {lines[0]}")
+        if config.rival_act_when == "paused":
+            log.line(f"marking {tag}: {lines[0]} (waiting for a safe window: pause the game and "
+                     f"leave the keyboard alone for {config.rival_idle_seconds:g}s)")
+        elif config.rival_act_when == "inbox":
+            log.line(f"marking {tag}: {lines[0]} (posted to the inbox: it runs at the game's next "
+                     "in-game day, so the game must be running, not paused)")
+        else:
+            log.line(f"marking {tag}: {lines[0]}")
         if not session.send_in_window(lines, timeout, "mark"):
             raise RivalStartError(
                 f"no safe window in {config.rival_start_wait_minutes:g} minutes to mark {tag}. "
                 f"Pause the game and leave the keyboard alone, or type `{lines[0]}` in the "
                 "game's console yourself and start again")
-    deadline = session.now() + (timeout if session.policy.advice_only else VERIFY_TRIES * VERIFY_SECONDS)
+    # Under never the person types it; on the inbox the game runs it when the person next lets
+    # a day pass. Either can take as long as the person likes, up to the start wait.
+    patient = session.policy.advice_only or config.rival_act_when == "inbox"
+    deadline = session.now() + (timeout if patient else VERIFY_TRIES * VERIFY_SECONDS)
     while True:
         state = _read_rival(env)
         if state is not None and state.country == tag and _marked(state):
             log.line(f"{tag} marked: the mark event and a state line for {tag} are in the log")
             return state
         if session.now() >= deadline:
+            if config.rival_act_when == "inbox":
+                raise RivalStartError(
+                    f"{tag} did not start reporting in {config.rival_start_wait_minutes:g} minutes: "
+                    "the game never ran the inbox. Was it started with -debug_mode, is it running "
+                    "the installed mod (hoi4-harness inbox status), and did any day pass?")
             raise RivalStartError(
                 f"{tag} did not start reporting: after the mark there is no state line for it in "
                 "game.log. Is the mod schema v5 and the tag right? (hoi4-harness verify-bridge)")
@@ -279,7 +299,8 @@ def finish(session: RivalSession, config: HarnessConfig, log: CampaignLog, lost:
         return
     try:
         if session.send_in_window([line], config.rival_exit_wait_seconds, "unmark"):
-            log.line(f"{tag} unmarked")
+            log.line(f"{tag} unmark posted to the inbox: it runs at the game's next in-game day"
+                     if config.rival_act_when == "inbox" else f"{tag} unmarked")
             return
     except Exception as exc:  # noqa: BLE001 - the exit must not hide how the run ended
         log.line(f"unmark failed: {type(exc).__name__}: {exc}")
@@ -328,10 +349,17 @@ def _check_ready(config: HarnessConfig) -> None:
     if config.dry_run:
         raise RivalStartError("rival mode types into the game: pass --live (against the real game, "
                               "loaded and in front) or use --fake-game")
-    if not config.fake_game and not config.enforce_window_focus:
+    if config.console_transport == "inbox" and config.rival_act_when == "paused":
+        config.rival_act_when = "inbox"      # the default window policy means "no window" here
+    if config.rival_act_when == "inbox" or config.console_transport == "inbox":
+        if config.console_transport != "inbox" or config.rival_act_when != "inbox":
+            raise RivalStartError("the inbox needs both halves: --transport inbox (orders go into "
+                                  "the mod file) sets rival_act_when=inbox (no window to wait for)")
+    elif not config.fake_game and not config.enforce_window_focus:
         raise RivalStartError("rival mode never types without the game in front: leave the window "
                               "guard on (drop --no-window-guard)")
-    priced = config.planner_enabled and config.planner.provider != "scripted"
+    # Subscription-side answerers (a mailbox agent, the claude CLI) bill nothing here.
+    priced = config.planner_enabled and config.planner.provider not in UNPRICED_PROVIDERS
     if priced and config.budget.max_usd is None:
         raise RivalStartError("a rival run spends money while you play: give it a hard cap "
                               "with --max-usd N")

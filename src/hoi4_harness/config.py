@@ -14,7 +14,12 @@ DEFAULT_MODELS = {
     "google": "gemini-2.5-pro",
     "scripted": "scripted",
     "mailbox": "mailbox",
+    "claude-cli": "haiku",
 }
+
+#: Providers that bill nothing through this harness: a scripted model, a mailbox answered
+#: by an agent outside it, and the Claude Code CLI on the person's subscription.
+UNPRICED_PROVIDERS = frozenset({"scripted", "mailbox", "claude-cli"})
 
 def mod_dirs_from_env(raw: str | None) -> list[Path]:
     """``HOI4_MOD_DIRS``: mod folders in load order, separated like PATH."""
@@ -252,6 +257,15 @@ class HarnessConfig:
     #: How hybrid actions reach the mod: scripted | decision.
     console_hybrid_via: str = "scripted"
     console_guards: bool = True
+    #: How the console channel's lines reach the game: ``keys`` (type ``run <file>`` into the
+    #: console: needs the game in front and an idle person) or ``inbox`` (write them into the
+    #: mod's inbox file, which a game started with -debug_mode reloads and runs once a day:
+    #: no keyboard, no focus, no pause; docs/inbox.md). HOI4_TRANSPORT.
+    console_transport: str = "keys"
+    #: The installed mod folder the inbox writes into. Default: <user dir>/mod/llm_bridge.
+    inbox_dir: Path | None = None
+    #: Seconds to wait for the game to acknowledge a batch before reporting it as posted.
+    inbox_ack_seconds: float = 6.0
     # --- division orders by click (adapters/unit_orders.py, docs/unit-orders.md) -----
     #: Offer move_division / attack_province. Needs the mouse, a playset (game_dir)
     #: for the map, and a camera fit recorded in the live game.
@@ -494,6 +508,7 @@ class HarnessConfig:
                          if os.environ.get("HOI4_CONSOLE_DIR") else None),
             console_filename=os.environ.get("HOI4_CONSOLE_FILE", "llmb_turn.txt"),
             console_key=os.environ.get("HOI4_CONSOLE_KEY", "grave").strip(),
+            console_transport=os.environ.get("HOI4_TRANSPORT", "keys").strip().lower() or "keys",
             console_effect_command=os.environ.get("HOI4_CONSOLE_EFFECT_COMMAND",
                                                   "eval_effect").strip(),
             handover=_env_bool("HOI4_HANDOVER", False),
@@ -545,7 +560,7 @@ class HarnessConfig:
                     setattr(self.budget, sub_key, sub_value)
             elif key in {"run_dir", "save_dir", "log_path", "system_prompt_path", "game_dir",
                          "ui_scripts_path", "calibration_path", "console_dir", "camera_path",
-                         "fake_game_dir", "fake_game_files", "mod_context_cache_dir",
+                         "fake_game_dir", "fake_game_files", "mod_context_cache_dir", "inbox_dir",
                          "fake_human_script"} and value is not None:
                 setattr(self, key, Path(value))
             elif key == "mod_dirs":

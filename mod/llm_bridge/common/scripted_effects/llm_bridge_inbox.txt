@@ -1,0 +1,12 @@
+# WRITTEN by hoi4-harness (src/hoi4_harness/inbox.py) while it runs: the orders the
+# harness has posted and the game has not yet acknowledged. The game reloads this file
+# when it changes (-debug_mode). Do not edit by hand. See docs/inbox.md.
+
+# The scripted-effect copy of the inbox events, for a game that reloads
+# scripted effects and not events. Guarded by the same flags: one copy runs.
+
+llm_bridge_inbox_dispatch = {
+}
+
+llm_bridge_inbox_run = {
+}

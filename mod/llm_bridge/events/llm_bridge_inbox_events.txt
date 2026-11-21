@@ -1,0 +1,25 @@
+# WRITTEN by hoi4-harness (src/hoi4_harness/inbox.py) while it runs: the orders the
+# harness has posted and the game has not yet acknowledged. The game reloads this file
+# when it changes (-debug_mode). Do not edit by hand. See docs/inbox.md.
+
+add_namespace = llmb_inbox
+
+# Fired once a day by on_daily for each harness country (llm_bridge_on_actions.txt).
+country_event = {
+	id = llmb_inbox.1
+	hidden = yes
+	is_triggered_only = yes
+	immediate = {
+		llm_bridge_inbox_dispatch = yes
+	}
+}
+
+# Fired in the scope of each country with orders waiting: ROOT is that country.
+country_event = {
+	id = llmb_inbox.2
+	hidden = yes
+	is_triggered_only = yes
+	immediate = {
+		llm_bridge_inbox_run = yes
+	}
+}

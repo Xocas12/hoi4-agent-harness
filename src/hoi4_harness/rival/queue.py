@@ -114,7 +114,8 @@ class RivalQueue(HandoverQueue):
 
     def _when(self) -> str:
         return {"paused": "the person's next pause", "handover": "the person's next handover",
-                "never": "the person to do it themselves"}.get(
+                "never": "the person to do it themselves",
+                "inbox": "the game's inbox at the next in-game day"}.get(
                     self.policy.name if self.policy else "paused", "a safe window")
 
     def enqueue(self, call: ActionCall, date: str, turn: int) -> ActionResult:

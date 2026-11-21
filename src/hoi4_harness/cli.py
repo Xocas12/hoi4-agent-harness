@@ -39,6 +39,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+import time
 from contextlib import nullcontext
 from pathlib import Path
 
@@ -216,6 +217,10 @@ def _config_from_args(args: argparse.Namespace) -> HarnessConfig:
         config.rival = args.rival.upper()
     if getattr(args, "rival_act_when", None):
         config.rival_act_when = args.rival_act_when
+    if getattr(args, "transport", None):
+        config.console_transport = args.transport
+    if getattr(args, "inbox_dir", None):
+        config.inbox_dir = Path(args.inbox_dir)
     for item in getattr(args, "rival_share", None) or []:
         tag, _, weight = item.partition("=")
         try:
@@ -795,6 +800,108 @@ def cmd_mailbox(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_inbox(args: argparse.Namespace) -> int:
+    """``inbox status|probe|clear``: what the inbox holds, and whether the game reloads it."""
+    from . import native, paths
+    from .adapters.logtail import find_log
+    from .inbox import Inbox, default_mod_dir
+    from .rival.setup import human_tags_in_log
+
+    mod_dir = Path(args.inbox_dir) if args.inbox_dir else default_mod_dir(paths.find_game_dir())
+    log = Path(args.log) if args.log else find_log()
+    if mod_dir is None:
+        print("inbox: no installed mod found; pass --inbox-dir", file=sys.stderr)
+        return 2
+    box = Inbox(mod_dir, log_path=log)
+    problems = native.installed_mod_problems(mod_dir)
+    if args.verb == "status":
+        print(f"mod:  {mod_dir}" + ("" if not problems else "  NOT READY: " + "; ".join(problems)))
+        print(f"log:  {log}")
+        if native.game_running():
+            print(f"game: {native.check_debug_mode(native.game_command_line()).message}")
+        else:
+            print("game: not running")
+        print(f"pending: {len(box.pending)} batch(es)")
+        for b in box.pending:
+            print(f"  {b.id} {b.tag}: " + " | ".join(b.script))
+        print(f"acknowledged in this log: {len(box.acked)}")
+        return 0
+    if args.verb == "clear":
+        n = len(box.pending)
+        box.pending = []
+        box._write()
+        print(f"cleared {n} batch(es); the inbox is empty")
+        return 0
+    # probe: a batch that only asks for a state line. The game must be running, unpaused.
+    if problems:
+        print("inbox probe: the installed mod has no inbox: " + "; ".join(problems), file=sys.stderr)
+        return 2
+    humans = human_tags_in_log(log)
+    if not humans:
+        print("inbox probe: game.log shows no human country yet (load a game first)", file=sys.stderr)
+        return 2
+    tag = humans[-1]
+    started = time.monotonic()
+    (batch,) = box.post([f"effect {tag} llm_bridge_emit_state"])
+    print(f"posted probe batch {batch.id} for {tag}; unpause the game and wait "
+          f"(up to {args.timeout:.0f} s)...", flush=True)
+    if box.wait([batch.id], args.timeout, poll_seconds=0.5):
+        print(f"ACKNOWLEDGED after {time.monotonic() - started:.1f} s via "
+              f"{box.acked[batch.id]}: the game reloads the inbox")
+        return 0
+    print(f"NO ACKNOWLEDGEMENT in {args.timeout:.0f} s. Is the game unpaused, started with "
+          "-debug_mode, and running the installed mod? The batch stays posted; "
+          "`hoi4-harness inbox clear` removes it.")
+    return 1
+
+
+def cmd_native(args: argparse.Namespace) -> int:
+    """``native --rival TAG``: rival mode through the inbox, following the game's lifetime."""
+    from . import native, paths
+    from .inbox import default_mod_dir
+
+    def echo(line: str) -> None:
+        print(line, file=sys.stderr, flush=True)
+
+    args.transport, args.live, args.rival_act_when = "inbox", True, "inbox"
+    if not getattr(args, "provider", None):
+        args.provider = "claude-cli"
+    base = _config_from_args(args)
+    mod_dir = base.inbox_dir or default_mod_dir(paths.find_game_dir())
+    problems = native.installed_mod_problems(mod_dir)
+    if problems:
+        echo("native: the installed mod has no inbox yet: " + "; ".join(problems))
+        echo("native: with the game CLOSED, install it: python scripts/live_setup.py prepare --apply")
+        return 2
+    base_run = Path(base.run_dir)
+    process = base.campaign_game_process
+    code = 0
+    while True:
+        if args.launch and not native.game_running(process):
+            if base.game_dir is None:
+                echo("native: --launch needs --game-dir (the HOI4 install)")
+                return 2
+            echo("native: starting Hearts of Iron IV with -debug_mode")
+            native.launch_game(base.game_dir)
+        native.wait_for_game(lambda: native.game_running(process), time.sleep, echo)
+        check = native.check_debug_mode(native.game_command_line(process))
+        echo(f"native: {check.message}")
+        if check.ok is False and not args.no_debug_check:
+            if not args.keep_running:
+                return 2
+        else:
+            config = _config_from_args(args)
+            config.run_dir = native.session_dir(base_run)
+            echo(f"native: playing {config.rival} in the background; run folder {config.run_dir}")
+            with keep_awake_for(config, echo):
+                code = cmd_rival(args, config)
+        if not args.keep_running:
+            return code
+        while native.game_running(process):
+            time.sleep(10)
+        echo("native: the game has quit; waiting for the next start")
+
+
 def cmd_handover(args: argparse.Namespace) -> int:
     """Grant (or take back) the keyboard for a running --handover session."""
     from .handover import QUEUE_FILENAME, HandoverQueue
@@ -1309,6 +1416,13 @@ def build_parser() -> argparse.ArgumentParser:
         p.add_argument("--save-days", dest="save_days", type=int, metavar="N",
                        help="with log+save: at most one periodic save per N in-game days "
                             "(0: only at the start and around verified actions)")
+        p.add_argument("--transport", choices=["keys", "inbox"],
+                       help="how console actions reach the game: keys (type `run` into the "
+                            "console) or inbox (a mod file the game reloads by itself when "
+                            "started with -debug_mode: no keyboard, no focus; docs/inbox.md)")
+        p.add_argument("--inbox-dir", dest="inbox_dir", metavar="PATH",
+                       help="with --transport inbox: the installed llm_bridge mod folder "
+                            "(default: <Documents>/Paradox Interactive/Hearts of Iron IV/mod/llm_bridge)")
         p.add_argument("--telemetry-hours", dest="telemetry_hours", type=int, metavar="H",
                        help="with --headless: how often the mod writes its telemetry, in "
                             "in-game hours: 1, 2, 3, 4, 6, 8 or 12 (several a day), 24 (once a "
@@ -1417,7 +1531,8 @@ def build_parser() -> argparse.ArgumentParser:
     play.add_argument("--rival-window-cap", dest="rival_window_cap", type=int, metavar="N",
                       help="several rivals: the most actions one window types across all of "
                            "them, taken in turn (default 12)")
-    play.add_argument("--rival-act-when", dest="rival_act_when", choices=["paused", "handover", "never"],
+    play.add_argument("--rival-act-when", dest="rival_act_when",
+                      choices=["paused", "handover", "never", "inbox"],
                       help="rival: when the queue may be typed: paused (you paused and left the "
                            "keyboard alone), handover (only when you run `hoi4-harness handover`), "
                            "never (shown, not run)")
@@ -1501,6 +1616,31 @@ def build_parser() -> argparse.ArgumentParser:
                         help="show the turns in the transcript, then exit")
     common(replay)
     replay.set_defaults(func=cmd_replay)
+
+    native = sub.add_parser(
+        "native", help="you play; an LLM plays another country through the inbox, with no "
+                       "keyboard, console or focus (docs/inbox.md)")
+    common(native)
+    native.add_argument("--rival", metavar="TAG[,TAG...]", required=True,
+                        help="the country (or countries) the LLM plays")
+    native.add_argument("--keep-running", dest="keep_running", action="store_true",
+                        help="when the game quits, wait for the next start and play again")
+    native.add_argument("--launch", action="store_true",
+                        help="start hoi4.exe with -debug_mode if it is not running (needs --game-dir)")
+    native.add_argument("--no-debug-check", dest="no_debug_check", action="store_true",
+                        help="play even when the game seems to run without -debug_mode")
+    native.add_argument("--until", metavar="YYYY-MM-DD", help="stop at this in-game date")
+    native.add_argument("--quiet", action="store_true", help="no per-turn progress line on stderr")
+    native.set_defaults(func=cmd_native)
+
+    inbox_p = sub.add_parser("inbox", help="the inbox transport: what is posted, and a live probe")
+    inbox_p.add_argument("verb", choices=["status", "probe", "clear"])
+    inbox_p.add_argument("--inbox-dir", dest="inbox_dir", metavar="PATH",
+                         help="the installed llm_bridge mod folder (default: found)")
+    inbox_p.add_argument("--log", dest="log", metavar="PATH", help="game.log (default: found)")
+    inbox_p.add_argument("--timeout", type=float, default=120.0,
+                         help="probe: seconds to wait for the game to acknowledge (default 120)")
+    inbox_p.set_defaults(func=cmd_inbox)
 
     mailbox = sub.add_parser("mailbox", help="answer a --mailbox run's requests (the agent side)")
     mailbox.add_argument("verb", choices=["wait", "show", "system", "answer"])
