@@ -134,7 +134,8 @@ def campaign_llm(hands=None) -> str:
     exactly the keyboard-and-console text (``CAMPAIGN_LLM``)."""
     offered = set((hands or {}).get("offered") or ())
     production = (hands or {}).get("production") or {}
-    if not offered and not production.get("edit") and not production.get("equipment"):
+    events = bool((hands or {}).get("events"))
+    if not offered and not production.get("edit") and not production.get("equipment") and not events:
         return CAMPAIGN_LLM
     got = {"research": "start_research" in offered,
            "orders": bool(offered & {"move_division", "attack_province"}),
@@ -171,6 +172,15 @@ def campaign_llm(hands=None) -> str:
             + (" change_production_equipment switches an existing line to other equipment "
                "(for example a newer variant) and keeps its factories; it refuses when the "
                "other equipment already has a line." if production.get("equipment") else ""))
+    if events:
+        lines.append(
+            "- Events: when a country event window opens, the brief shows it: its title, the "
+            "text and every option with what it does. read_event has the full reading and "
+            "choose_event_option(option) clicks the option, as a person would; the result says "
+            "whether the window closed. Choose before any other mouse tool: with a window open "
+            "they answer it blind first, which takes option 1. An option is a real decision "
+            "(politics, wars, focuses), so read it. If the brief says a window could not be "
+            "matched to an event, you cannot choose and the next mouse tool answers it blind.")
     if not got["orders"] and not got["delegate"]:
         lines.append("- Armies: no tool here moves a division, and the game's AI is not moving "
                      "them. They stand where they are; plan for a war you cannot attack in.")

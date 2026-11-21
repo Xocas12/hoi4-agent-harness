@@ -104,17 +104,21 @@ route exists, left out; the reason is given), **not feasible** (no faithful rout
 | 71 | Balance of power | Pick a side or a policy | console `click_gui_button` where the bar has a window | inbox | have | the bar's decisions are `take_decision` |
 | 72 | Time | Pause, set speed, end the turn | `set_game_speed`, `advance_time` | n/a | have | the harness owns the clock |
 | 73 | Chat | Talk to the person or another LLM country | `send_message` | same | have | no game effect |
+| 74 | Events | Read the open event: title, text, options, what each does | brief and `read_event`: the window read by Windows OCR and matched to `events/*.txt` + localisation (`adapters/event_choice.py`, `docs/events.md`); NOT live-verified | none: nothing is read for a country the person is not playing | built now | the match carries a confidence; below the bar nothing is claimed and nothing is clicked |
+| 75 | Events | Choose an event option | `choose_event_option`: a click where the option's text was read, through the driver's focus guard, verified by the window closing; NOT live-verified | none: the game's AI answers a rival's events by `ai_chance`; there is no input and no `ai_strategy` token for it | built now | no effect picks an option of a window already open (`event <id> <TAG>` only fires one); `docs/events.md` has the rival section |
+| 76 | Events | Close a news window | blind click on `event.news_close` before any mouse tool (`event_windows.py`); `read_event` describes it when its text is matched | AI | have | the old blind answer, kept as the fallback the brief tells the model about; unverified |
+| 77 | Events | Answer other popups: peace offers, faction invites, access and lend-lease requests | none: not event windows, so no events file to match the text against | AI | feasible, not built | the same capture-and-match would work against the diplomacy localisation; left out |
 
-Counts, 73 rows: **have** 18, **built now** 29, **feasible, not built** 14, **not feasible** 12.
+Counts, 77 rows: **have** 19, **built now** 31, **feasible, not built** 15, **not feasible** 12.
 
 ## Counts
 
 The status is the best route available to an LLM, so a row where the seat has a path and the rival is
 steered counts once. "Built now" includes row 32 (`ally` joined the six existing directives) and the
 refusal rows 25 to 31 and 36: a verb that used to fail in the UI path or silently do nothing now says
-why and where the faithful route is. The 14 left are cheap clicks that need a recording session
+why and where the faithful route is. The 15 left are cheap clicks that need a recording session
 (11, 18, 21, 58), effects that are plausibly faithful but carry consequences the harness cannot read
-(38, 50), and steering tokens with lower value (12, 13, 23, 40, 47, 51, 65, 69).
+(38, 50), steering tokens with lower value (12, 13, 23, 40, 47, 51, 65, 69), and the popups that are not events (77).
 
 ## What was built and how it is guarded
 
@@ -134,6 +138,10 @@ why and where the faithful route is. The 14 left are cheap clicks that need a re
   the route: every act in `DIPLOMACY_REFUSALS`. A test pins that the action enum is exactly those two plus the refusals.
 * **Directives** (`modgen.STRATEGIES`). `prepare_war`, `declare_war`, `volunteers`, `lend_lease`, `ally`, `spy_on`,
   `sabotage`, `steal_tech`, on the existing target plumbing: a block per (directive, country), gated on `llmb_<directive>_<TAG>`.
+* **`read_event`, `choose_event_option`** (`adapters/event_choice.py`, `modcontext/events.py`, `adapters/ocr.py`). The
+  open window is read by Windows OCR and matched to the playset's events; the option is clicked where its text was read.
+  Refused with nothing clicked when no window is open, it is not matched, the option is not shown to the country, or the
+  game is not in front. Whole story and the live steps: `docs/events.md`.
 * **`steer_production`, `steer_intelligence`, `steer_research`, `steer_navy`, `steer_air`** (`steering.py`). One block per (kind, id, level) in
   `llm_bridge_steering.txt`, one per technology in `llm_bridge_research.txt`, one per strategic region or country in
   `llm_bridge_regions.txt` (the last two generated per playset by `hoi4-harness mod-probe`); the inbox sets the flag, replacing the

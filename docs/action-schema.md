@@ -1,6 +1,6 @@
 # The action catalog
 
-The catalog is the agent's entire vocabulary. It is small on purpose: 43 verbs,
+The catalog is the agent's entire vocabulary. It is small on purpose: 45 verbs,
 listed by `hoi4-harness actions` (add `--json` for schemas).
 
 | Action | Category | Notes |
@@ -32,6 +32,8 @@ listed by `hoi4-harness actions` (add `--json` for schemas).
 | `send_message` | memory | Single-player chat with the person and other LLM countries; free, never touches the game (`docs/chat.md`) |
 | `set_region_order` | steer | Steers the navy or air force by strategic region (dominate, raid_convoys, avoid, home_base, air_superiority) through the game's own AI; inbox or console (`docs/front-control.md`) |
 | `inspect_world` | query | Read-only; the map, armies and every other panel (faction, intel, projects, navy, air, politics, economy, diplomacy, research, occupation, supply, commanders) from the newest text save, other countries through intel (`docs/observation.md`) |
+| `read_event` | query | Read-only; the event window open in the player's seat, read from the screen (Windows OCR) and matched to the playset's events: id, title, description, every option with its effects, the match confidence, how long it has been open; with `id` an event from the files. Independent campaign with the mouse (`docs/events.md`) |
+| `choose_event_option` | events | Clicks one option of the open event window, as a person does, where the option's text was read; refused with nothing clicked when no window is open, it could not be matched, or the option is not shown to the country; verified by the window closing. NOT live-verified (`docs/events.md`) |
 | `list_decisions` | query | Read-only; answered from the playset's files, never reaches the game. Needs `--mod-context` |
 | `describe_action` | query | Read-only; a decision, focus, new tech or idea in full. Needs `--mod-context` |
 | `diplomacy` | diplomacy | Confirmation-gated; includes `declare_war` |

@@ -29,7 +29,7 @@ from .types import ActionCall, ActionResult, GameEvent, GameState, Observation
 #: Calls the per-turn action cap does not count: a note only writes to the
 #: journal, and advance_time hands the clock back -- the prompt asks for "up to
 #: N actions, then advance_time", and refusing it would not stop the turn.
-UNCAPPED_ACTIONS = frozenset({"note", "advance_time", "send_message"}) | QUERY_ACTIONS
+UNCAPPED_ACTIONS = frozenset({"note", "advance_time", "send_message", "choose_event_option"}) | QUERY_ACTIONS
 
 
 class HOI4Env:
@@ -98,11 +98,18 @@ class HOI4Env:
         """The read-only tools this run can answer: the playset's (mod context) and the
         world's (a save observer)."""
         out = set(PLAYSET_QUERIES) if self.queries_enabled else set()
+        if self.events is not None:
+            out.add("read_event")
         if self.world is not None:
             out.add("inspect_world")
         if self.chat is not None or self.mp_chat is not None or self.config.multiplayer:
             out.add("send_message")
         return out
+
+    @property
+    def events(self):
+        """The event reader the adapter was wired with (adapters/event_choice.py), or None."""
+        return getattr(self.adapter, "event_reader", None)
 
     @property
     def script_actions(self) -> set[str]:
@@ -143,6 +150,8 @@ class HOI4Env:
             return ActionResult(ok="error" not in data, action=call.name, call_id=call.call_id,
                                 message=json.dumps(data, sort_keys=True, ensure_ascii=False),
                                 error_kind=None if "error" not in data else "invalid_args")
+        if call.name == "read_event":
+            return self._read_event(call, fail)
         if not self.queries_enabled:
             return fail("this run has no playset files to answer from (mod context is off)")
         problem = registry.check(call, QUERY_ACTIONS)
@@ -165,6 +174,28 @@ class HOI4Env:
                                     message=f"Nothing called '{call.arguments['id']}' is a decision, "
                                             f"a focus of {country}'s tree, or a technology or idea "
                                             "this playset adds.", error_kind="invalid_args")
+        return ActionResult(ok=True, action=call.name, call_id=call.call_id,
+                            message=json.dumps(data, sort_keys=True, ensure_ascii=False))
+
+    def _read_event(self, call: ActionCall, fail) -> ActionResult:
+        """``read_event``: the open window as read from the screen, or one event from the files."""
+        reader = self.events
+        if reader is None:
+            return fail("this run does not read event windows (docs/events.md: needs Windows OCR "
+                        "and mod context in an independent campaign with the mouse)")
+        problem = registry.check(call, QUERY_ACTIONS)
+        if problem is not None:
+            return problem
+        wanted = call.arguments.get("id")
+        if wanted:
+            info = reader.catalog.get(str(wanted))
+            if info is None:
+                return ActionResult(ok=False, action=call.name, call_id=call.call_id,
+                                    message=f"no event called '{wanted}' in this playset",
+                                    error_kind="invalid_args")
+            data = {"status": "from_files", **info.describe()}
+        else:
+            data = reader.describe(reader.look())
         return ActionResult(ok=True, action=call.name, call_id=call.call_id,
                             message=json.dumps(data, sort_keys=True, ensure_ascii=False))
 
@@ -195,6 +226,8 @@ class HOI4Env:
         if self.handover is not None:
             extra += self.handover.describe()
         extra += coop_lines(self.config)
+        if self.events is not None:
+            extra += self.events.brief_lines(state)
         for hook in self.brief_hooks:
             extra += hook(state)
         if self.index is not None:

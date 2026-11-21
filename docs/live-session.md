@@ -1058,6 +1058,9 @@ paused.
 
 ### 14c. Event and news windows in independent mode (#125)
 
+(Reading the open event and choosing its option, instead of the blind first option, is
+`docs/events.md`, with its own live steps; this section is the blind guard it falls back to.)
+
 In `--control llm` nothing answers a country event or closes a news window (`human_ai` is not
 sent), and every mouse tool clicks fixed points an open window covers. What was found about
 answering them without a click: the game has **no on_action for an event reaching a country**

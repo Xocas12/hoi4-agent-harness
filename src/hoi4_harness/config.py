@@ -376,6 +376,11 @@ class HarnessConfig:
     #: are open and refuses to click while one is; without them nothing knows a window is open
     #: (the start log says so). The points and colours are measured in the live game.
     event_windows: dict = field(default_factory=dict)
+    #: Reading the open event window and choosing its option (adapters/event_choice.py,
+    #: docs/events.md): ``{"enabled": true, "upscale": 2.0, "settle": 0.8, "grow": 0.0,
+    #: "centre_growth": false}``. On by default in an independent campaign with the mouse; it
+    #: needs Windows OCR and the playset's files, and says so at the start when it has neither.
+    event_screen: dict = field(default_factory=dict)
     #: What the independent campaign found live or refused at its start (set by the adapter and
     #: ``campaign.runner.begin``, read by the prompt). Not a setting.
     campaign_hands: dict = field(default_factory=dict, repr=False)
