@@ -60,6 +60,7 @@ from .ui_scripts import verify
 CONSOLE_ACTIONS = frozenset({
     "queue_construction", "set_production", "hire_advisor",
     "set_ai_directive", "set_ai_posture", "clear_ai_directives", "take_decision",
+    "click_gui_button",
 })
 #: The console for every action it has a faithful effect for: settled live on
 #: 1.19.5 (run reads the user directory, needs no -debug, and eval_effect takes
@@ -119,6 +120,10 @@ class ConsoleConfig:
     #: Countries the mod has a directive block for (modgen.DEFAULT_TAGS unless
     #: the mod was regenerated with others).
     target_tags: tuple[str, ...] = modgen.DEFAULT_TAGS
+    #: Let click_gui_button press a button whose script changes more than this country
+    #: (global flags, every country, another country's scope). Off: an LLM rival pressing
+    #: Expert AI's settings would change the person's game.
+    gui_allow_global: bool = False
     #: Seconds for the console to open before typing, and to run the file.
     #: Seconds between the open key and the first typed character. 0.4 lost the race live on
     #: 2026-11-21 (paused 1936 game, a panel open): the console received `n llmb_turn.txt`, and
@@ -215,6 +220,8 @@ class ConsoleChannel:
         #: The inbox transport (``inbox.Inbox``): when set, the lines this channel would type
         #: go into the mod's inbox file instead, and no key is ever sent (docs/inbox.md).
         self.inbox = None
+        #: click_gui_button: the marker each planned click logs inside its guard.
+        self.click_markers: dict[int, str] = {}
 
     @property
     def transport(self) -> str:
@@ -237,6 +244,8 @@ class ConsoleChannel:
             return self._plan_advisor(call, args, country, state)
         if call.name == "take_decision":
             return self._plan_decision(call, args, country, state)
+        if call.name == "click_gui_button":
+            return self._plan_click(call, args, country)
         return self._plan_hybrid(call, args, country)
 
     def _country(self, state: GameState) -> str:
@@ -388,6 +397,50 @@ class ConsoleChannel:
         if decision.fire_only_once and not self.driver.dry_run:
             self.taken_once.add(decision_id)
         return Planned(call, [plan.line], plan.unchecked)
+
+    def _plan_click(self, call, args, country) -> Planned:
+        index = self._need_index("reading the window's script")
+        ctx = index.mod_context()
+        gui_id, button = str(args["gui"]), str(args["button"])
+        plan = ctx.plan_click(gui_id, button, country, effect_command=self.config.effect_command,
+                              console=self.transport != "inbox",
+                              allow_global=self.config.gui_allow_global)
+        if plan is None:
+            raise Refused(f"there is no button {button!r} in a window {gui_id!r} in this playset")
+        if not plan.executable:
+            raise Refused(f"{gui_id}/{button} cannot be pressed faithfully: {plan.reason}")
+        self.click_markers[id(call)] = plan.nonce
+        return Planned(call, [plan.line], plan.unchecked)
+
+    def _verify_click(self, call: ActionCall):
+        """The click logs its marker only inside its guard, so the line in the log is the
+        proof that the game let it through; its absence once the batch ran is a refusal."""
+        nonce = self.click_markers.pop(id(call), "")
+        path = self.inbox.log_path if self.inbox is not None else None
+        if path is None:
+            from .logtail import find_log
+            path = find_log()
+        waited = 0.0
+        while path is not None:
+            try:
+                with open(path, "rb") as fh:
+                    fh.seek(0, 2)
+                    fh.seek(max(0, fh.tell() - 512_000))
+                    tail = fh.read().decode("utf-8", errors="replace")
+            except OSError:
+                tail = ""
+            if nonce and f"|click|{nonce}" in tail:
+                return True, None, "pressed: the game ran the click (its conditions held)"
+            if waited >= self.verify_timeout:
+                break
+            self._sleep(0.25)
+            waited += 0.25
+        if self.inbox is not None:
+            return False, "rejected", (
+                "the game ran the batch but not the click: the window's open_when or the "
+                "button's enabled_when did not hold. Nothing changed.")
+        return False, "unverified", ("sent, but the click's log line has not appeared yet. "
+                                     "Treat it as not done until a later brief shows its effect.")
 
     def _verify_decision(self, call: ActionCall, before: GameState, planned: Planned):
         """Decisions are not in the telemetry, so the only trace is political power.
@@ -651,6 +704,10 @@ class ConsoleChannel:
                 ok, kind, message = console._verify_decision(p.call, before, p)
                 out[i] = _result(p.call, ok, kind, message, lines=p.lines, unchecked=p.unchecked)
                 continue
+            if p.call.name == "click_gui_button":
+                ok, kind, message = console._verify_click(p.call)
+                out[i] = _result(p.call, ok, kind, message, lines=p.lines, unchecked=p.unchecked)
+                continue
             via_save = needs_save and p.call.name in SAVE_VERIFIED
             baseline = before
             if via_save and save_error is None:
@@ -696,6 +753,8 @@ class ConsoleChannel:
         for i, (console, before, p) in enumerate(flat):
             if p.call.name == "take_decision":
                 ok, kind, message = console._verify_decision(p.call, before, p)
+            elif p.call.name == "click_gui_button":
+                ok, kind, message = console._verify_click(p.call)
             else:
                 outcome = verify(p.verify_call or p.call, before, console._read_state,
                                  timeout=console.verify_timeout, sleep=console._sleep)

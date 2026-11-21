@@ -538,6 +538,9 @@ class FakeGame:
             lines.append(self._llmb("focus", tag=tag, id=s.national_focus))
         lines += [self._llmb("research", tag=tag, id=slot.technology)
                   for slot in s.research if slot.technology]
+        lines += [self._llmb("bop", tag=tag, id=bar.id, value=f"{bar.value * 100:.3f}",
+                             weekly=f"{(bar.weekly or 0) * 100:.3f}")
+                  for bar in s.power_balances]
         lines += [self._llmb("war", tag=tag, enemy=war.against, divs=self._enemy_divisions(war),
                              border=int(war.borders is not False),
                              surr=f"{(war.surrender_progress or 0) * 100:.0f}")
@@ -1239,6 +1242,8 @@ class FakeGame:
                 self.world.state.political_power += _number(str(entry.value))
             elif key == "activate_decision":
                 self._scripted(self._decision_effect(str(entry.value)))
+            elif key == "add_power_balance_value":
+                self._move_balance(entry)
             elif key == "set_country_flag":
                 self.flags.add(str(entry.value))
             elif key == "clr_country_flag":
@@ -1247,6 +1252,17 @@ class FakeGame:
                 self._log(str(entry.value))
             else:
                 raise ScriptError(f"Unknown effect-type: {key}")
+
+    def _move_balance(self, entry: Entry) -> None:
+        body = entry.value if isinstance(entry.value, list) else []
+        ident, value = _get(body, "id"), _get(body, "value")
+        if ident is None or value is None:
+            raise ScriptError("add_power_balance_value = { id = X value = 0.1 }")
+        for bar in self.world.state.power_balances:
+            if bar.id == str(ident.value):
+                bar.value = max(-1.0, min(1.0, bar.value + _number(str(value.value))))
+                return
+        # As the game does for a bar the country does not have: nothing happens.
 
     def _if(self, entry: Entry, scope: dict) -> None:
         body = entry.value if isinstance(entry.value, list) else []

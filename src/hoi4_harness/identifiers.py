@@ -520,6 +520,8 @@ class IdentifierIndex:
                 return self._reject(call, f"There is no state '{state}' in this playset", state, names)
         if call.name == "take_decision":
             return self.mod_context().check_take(call, country)
+        if call.name == "click_gui_button":
+            return self.mod_context().check_click(call, country)
         argument = TAG_ARGUMENTS.get(call.name)
         if argument and self.tags:
             tag = str(args.get(argument, ""))
@@ -539,7 +541,14 @@ class IdentifierIndex:
     # --- the slice that goes in the brief ------------------------------------
 
     def brief_lines(self, state: GameState, limit: int = 12) -> list[str]:
-        """The focuses this country can start now -- only when it needs one."""
+        """Balance of power bars, every brief; the focuses this country can start now,
+        only when it needs one."""
+        lines: list[str] = []
+        if state.power_balances:
+            lines += self.mod_context().balance_lines(state.power_balances)
+        return lines + self._focus_lines(state, limit)
+
+    def _focus_lines(self, state: GameState, limit: int) -> list[str]:
         if state.national_focus or not state.known("national_focus") or not self.trees:
             return []
         focuses = self.focuses_for(state.country)

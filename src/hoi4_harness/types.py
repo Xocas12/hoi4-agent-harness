@@ -30,6 +30,16 @@ class ResearchSlot:
 
 
 @dataclass
+class PowerBalance:
+    """One balance of power bar, as the mod logs it (``bop`` line): the bar's id, its
+    value from -1 (all the way to the left side) to 1 (right), and its weekly change."""
+
+    id: str
+    value: float
+    weekly: float | None = None
+
+
+@dataclass
 class ConstructionItem:
     building: str
     state: str
@@ -269,6 +279,8 @@ class GameState:
     fronts: list[Front] = field(default_factory=list)
     wars: list[War] = field(default_factory=list)
     faction: str | None = None
+    #: Balance of power bars active for the country (schema v5 ``bop`` lines); [] is none.
+    power_balances: list[PowerBalance] = field(default_factory=list)
     #: Whether the game's AI runs this country (the state line's ``ai=``, schema v5):
     #: None is "not observed". Campaign mode checks it after the console's ``human_ai``.
     ai_controlled: bool | None = None

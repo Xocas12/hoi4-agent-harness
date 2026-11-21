@@ -22,6 +22,7 @@ from ..types import (
     CampaignStats,
     GameEvent,
     GameState,
+    PowerBalance,
     ResearchSlot,
     StateForces,
     War,
@@ -385,6 +386,8 @@ class LogTailAdapter(GameAdapter):
                 self._open_tick(fields)
         elif kind in {"focus", "research"}:
             self._probe(kind, fields)
+        elif kind == "bop":
+            self._balance(fields)
         elif kind == "war":
             self._war_line(fields)
         elif kind in {"div", "divend"}:
@@ -501,7 +504,7 @@ class LogTailAdapter(GameAdapter):
         except (KeyError, ValueError):
             slots = None          # an older mod: busy slots only, an idle one cannot be seen
         self._ticks[tag] = {"date": fields.get("_engine_date"), "focus": set(), "research": set(),
-                            "war": {}, "rslots": slots}
+                            "war": {}, "rslots": slots, "bop": {}}
 
     def _probe(self, kind: str, fields: dict[str, str]) -> None:
         tag = fields.get("tag", "").strip().upper()
@@ -522,6 +525,32 @@ class LogTailAdapter(GameAdapter):
             state.research.append(ResearchSlot(index=len(state.research), technology=ident))
         if ("national_focus" if kind == "focus" else "research") in state.unknown_fields:
             state.unknown_fields.remove("national_focus" if kind == "focus" else "research")
+
+    def _balance(self, fields: dict[str, str]) -> None:
+        """A balance of power bar on one day: ``bop|tag|id|value|weekly``, both x100.
+
+        Like a probe line it belongs to the tick open for that country; a bar that
+        stops logging leaves the state when the day closes without it."""
+        tag = fields.get("tag", "").strip().upper()
+        ident = fields.get("id", "").strip()
+        tick = self._ticks.get(tag)
+        if tick is None or not ident:
+            return
+        stamp = fields.get("_engine_date")
+        if stamp and tick["date"] and stamp != tick["date"]:
+            return
+        try:
+            value = float(fields["value"]) / 100
+        except (KeyError, ValueError):
+            return                 # an unexpanded token is missing, never zero
+        try:
+            weekly: float | None = float(fields["weekly"]) / 100
+        except (KeyError, ValueError):
+            weekly = None
+        tick.setdefault("bop", {})[ident] = PowerBalance(ident, value, weekly)
+        current = [b for b in self._state.power_balances if b.id != ident]
+        self._state.power_balances = sorted(current + [PowerBalance(ident, value, weekly)],
+                                            key=lambda b: b.id)
 
     def _war_line(self, fields: dict[str, str]) -> None:
         """One enemy of the player on one day: ``war|tag|enemy|divs|border|surr``.
@@ -631,6 +660,7 @@ class LogTailAdapter(GameAdapter):
             del self._war_since[gone]
         self._seen_baseline = True
         state.wars = wars
+        state.power_balances = sorted(tick.get("bop", {}).values(), key=lambda b: b.id)
         for name in ("national_focus", "research", "wars"):
             if name in state.unknown_fields:
                 state.unknown_fields.remove(name)

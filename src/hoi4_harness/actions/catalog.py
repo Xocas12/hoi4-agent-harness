@@ -237,6 +237,38 @@ ACTIONS += [
         ),
     ),
     ActionSpec(
+        name="click_gui_button",
+        category="politics",
+        description=(
+            "Press a button in a custom window (a mod's or the game's scripted GUI), as the "
+            "player would: the window's and the button's own conditions are checked by the game "
+            "first, and the click runs in your country's scope. Find windows and buttons with "
+            "list_gui_buttons; a button marked cannot_press says why it cannot be pressed."
+        ),
+        parameters=_schema(
+            {"gui": {"type": "string", "description": "The window id (list_gui_buttons' window)."},
+             "button": {"type": "string",
+                        "description": "The button id, e.g. my_button_click."}},
+            ["gui", "button"],
+        ),
+    ),
+    ActionSpec(
+        name="list_gui_buttons",
+        category="query",
+        description=(
+            "Read-only: the buttons in custom windows your country can press, by window, with a "
+            "label, when each can be pressed, what the game's own AI weighs it at, and why the "
+            "harness cannot press the others. Window-switching buttons are left out unless you "
+            "name a window. The result comes back on your next call, so do not send "
+            "advance_time with it."
+        ),
+        parameters=_schema(
+            {"gui": {"type": "string"}, "query": {"type": "string"},
+             "limit": {"type": "integer", "minimum": 1, "maximum": 80}},
+            [],
+        ),
+    ),
+    ActionSpec(
         name="list_decisions",
         category="query",
         description=(
@@ -331,7 +363,7 @@ ACTIONS += [
 ]
 
 #: Read-only tools the harness answers from the playset's files; the game is not touched.
-QUERY_ACTIONS = frozenset({"list_decisions", "describe_action"})
+QUERY_ACTIONS = frozenset({"list_decisions", "describe_action", "list_gui_buttons"})
 
 BY_NAME: dict[str, ActionSpec] = {spec.name: spec for spec in ACTIONS}
 

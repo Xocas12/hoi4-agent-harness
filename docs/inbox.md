@@ -107,3 +107,6 @@ Then every time:
 | 4 | orders while playing | the model's directive appears as kind=14 for POL while you play, with no key in driver.log |
 | 5 | saves | save, reload an older save: no batch runs twice, new batches still land |
 | 6 | no debug mode | start without it: `native` refuses with the reason |
+| 7 | balance of power | a rival with a bar (SWE, ITA): the brief's `Balance of power` line matches the bar on screen within 0.01; a decision from its category moves it (#135) |
+| 8 | custom GUI | with a playset that has one (Expert AI, a TNO country): `list_gui_buttons` lists the window, `click_gui_button` lands and the window shows it; a button whose condition fails comes back "did not hold" (#136) |
+| 9 | the campaign | only after 1 to 8 pass: `native --rival <TAG> --keep-running` for a whole campaign, the strategist on the strategy sheet (`rival+strategy`); judged by states held, wars won and surrender progress, against the same country left to the game's AI |

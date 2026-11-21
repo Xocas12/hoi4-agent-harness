@@ -99,10 +99,12 @@ def test_localised_names_lose_the_text_the_game_fills_in(base):
     assert base.names({"swe_aid"})["swe_aid"] == "Aid"          # "[FROM.GetName]" is draw-time
 
 
-def test_scripted_guis_are_not_read(base):
+def test_scripted_guis_are_read_and_counted_beside_the_decisions(base):
     gui = [c for c in base.surface("GER").categories if c["id"] == "ger_cat"]
     assert gui and gui[0]["custom_gui"] == "ger_cat_window"      # flagged, decisions still listed
-    assert base.surface("SWE").excluded == ["common/scripted_guis (1 files, custom GUIs)"]
+    surface = base.surface("SWE")
+    assert surface.excluded == []                                  # nothing left out since #136
+    assert surface.counts["gui_windows"] == 3 and surface.counts["gui_buttons_pressable"] >= 2
     assert not any("scripted_gui" in d.id for d in base.decisions().values())
 
 
@@ -204,6 +206,6 @@ def test_mod_actions_json_on_the_fixture(capsys):
 def test_mod_actions_text_and_unknown_country(capsys, tmp_path):
     assert main(["mod-actions", "--game-dir", str(GAME), "--country", "SWE", "--offline"]) == 0
     text = capsys.readouterr().out
-    assert "takeable decisions        7" in text and "excluded         common/scripted_guis" in text
+    assert "takeable decisions        7" in text and "gui windows               3" in text
     assert main(["mod-actions", "--game-dir", str(GAME), "--country", "ZZZ", "--offline"]) == 1
     assert main(["mod-actions", "--game-dir", str(GAME), "--offline"]) == 2

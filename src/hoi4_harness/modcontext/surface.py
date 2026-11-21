@@ -6,9 +6,9 @@ evaluated: a condition is kept as the script the game would run (and as a short
 readable line for people), because only the game can say whether ``available``
 holds in a given position.
 
-Out of scope on purpose: ``common/scripted_guis`` and the ``interface`` files
-behind it. A custom window is a click path with no console equivalent, and a
-decision category that is only reachable through one is flagged, not hidden.
+Custom windows (``common/scripted_guis``) are read in ``gui.py``: a button's click is
+script with a trigger, so it can be pressed through the inbox the way the game's AI
+presses it (#136). The ``interface`` files are only scanned for button labels.
 """
 
 from __future__ import annotations
@@ -21,8 +21,8 @@ from pathlib import Path
 from ..identifiers import IdentifierIndex, Playset
 from . import script as S
 
-#: Folders deliberately not read.
-EXCLUDED_FOLDERS = ("common/scripted_guis",)
+#: Folders deliberately not read (none since #136 read the custom GUIs).
+EXCLUDED_FOLDERS: tuple[str, ...] = ()
 
 _TARGET_KEYS = {"target_trigger", "targets", "targets_dynamic", "target_array",
                 "target_root_trigger", "target_start_state"}
@@ -71,7 +71,7 @@ class Category:
     priority: int = 0
     allowed: list = field(default_factory=list, repr=False)
     visible: list = field(default_factory=list, repr=False)
-    #: The category is drawn by a custom GUI (out of scope); its decisions are
+    #: The category is drawn by a custom GUI (``gui.py``); its decisions are
     #: still ordinary decisions.
     scripted_gui: str | None = None
 
@@ -341,6 +341,239 @@ class ModContext:
 
     def find_decision(self, decision_id: str) -> Decision | None:
         return self.decisions().get(decision_id)
+
+    # --- custom windows (scripted GUIs, #136) -------------------------------------
+
+    def guis(self) -> dict:
+        """Every scripted GUI window in the playset, by id, with its category link."""
+        from .gui import parse_gui
+
+        def build() -> dict:
+            found = {}
+            for path in self._files("common/scripted_guis"):
+                source = self._source(path)
+                for key, _op, body in self._read(path):
+                    if key != "scripted_gui" or not isinstance(body, list):
+                        continue
+                    for name, _o, spec in body:
+                        if name and isinstance(spec, list):
+                            found[name] = parse_gui(name, spec, source)
+            for category in self.categories().values():
+                if category.scripted_gui in found:
+                    found[category.scripted_gui].category = category.id
+            return found
+
+        return self._memo("guis", build)  # type: ignore[return-value]
+
+    def scripted_effects(self) -> dict[str, list]:
+        """Every scripted effect's body, by name (what a click calls)."""
+        def build() -> dict:
+            found: dict[str, list] = {}
+            for path in self._files("common/scripted_effects"):
+                for key, _op, body in self._read(path):
+                    if key and isinstance(body, list):
+                        found[key] = body
+            return found
+
+        return self._memo("scripted_effects", build)  # type: ignore[return-value]
+
+    def _gui_guard(self, gui) -> list:
+        category = self.categories().get(gui.category or "")
+        return [*category.allowed, *category.visible] if category is not None else []
+
+    def guis_for(self, tag: str) -> list:
+        """The windows ``tag`` can see, by the tag tests in their conditions (as for
+        decisions): a superset of what is on screen at any moment."""
+        tags = self.index.tags
+        out = []
+        for gui in self.guis().values():
+            blocks = [gui.visible, gui.ai_enabled or [], self._gui_guard(gui)]
+            verdicts = [S.tag_truth(b, tag) for b in blocks]
+            if False in verdicts:
+                continue
+            if not any(v is True for v in verdicts):
+                owner = gui.id[:3]
+                if gui.id[3:4] == "_" and owner != tag and owner in tags:
+                    continue
+            if gui.buttons:
+                out.append(gui)
+        out.sort(key=lambda g: (not g.id.startswith(tag + "_"), g.id))
+        return out
+
+    def click_refusal(self, gui, button, tag: str, allow_global: bool = False) -> str:
+        from .gui import refusal
+
+        memo: dict = self._cache.setdefault("click_refusals", {})  # type: ignore[assignment]
+        key = (gui.id, button.key, tag, allow_global)
+        if key not in memo:
+            memo[key] = refusal(gui, button, self.scripted_effects(), set(self.index.tags), tag,
+                                allow_global, self._gui_guard(gui))
+        return memo[key]
+
+    def find_button(self, gui_id: str, button: str):
+        gui = self.guis().get(gui_id)
+        if gui is None:
+            return None, None
+        return gui, gui.buttons.get(button) or gui.buttons.get(f"{button}_click")
+
+    def plan_click(self, gui_id: str, button: str, country: str, *, effect_command="eval_effect",
+                   console: bool = True, allow_global: bool = False):
+        from .gui import plan_click
+
+        gui, found = self.find_button(gui_id, button)
+        if gui is None or found is None:
+            return None
+        return plan_click(gui, found, country, scripted=self.scripted_effects(),
+                          tags=set(self.index.tags), effect_command=effect_command,
+                          allow_global=allow_global, console=console,
+                          extra_guard=self._gui_guard(gui))
+
+    def gui_labels(self) -> dict[str, str]:
+        """Element name -> the localisation key its interface file shows (button text or
+        tooltip). A scan, not a parse: ``name = "x"`` then the first text key after it."""
+        def build() -> dict:
+            labels: dict[str, str] = {}
+            rx = re.compile(r'\b(name|buttonText|text|pdx_tooltip)\s*=\s*"?([^"\s}]+)"?')
+            for path in self.playset.layered("interface", "*.gui"):
+                current = None
+                text = path.read_text(encoding="utf-8-sig", errors="replace")
+                for key, value in rx.findall(text):
+                    if key == "name":
+                        current = value
+                    elif current and current not in labels:
+                        labels[current] = value
+            return labels
+
+        return self._memo("gui_labels", build)  # type: ignore[return-value]
+
+    def _button_names(self, buttons) -> dict[str, str]:
+        labels = self.gui_labels()
+        keys: set[str] = set()
+        for b in buttons:
+            keys |= {b.element, f"{b.element}_tt", f"{b.element}_tooltip", labels.get(b.element, "")}
+        names = self.names({k for k in keys if k})
+        out = {}
+        for b in buttons:
+            for key in (labels.get(b.element, ""), b.element, f"{b.element}_tt", f"{b.element}_tooltip"):
+                if key and names.get(key):
+                    out[b.key] = names[key]
+                    break
+        return out
+
+    def list_gui_buttons(self, tag: str, gui: str | None = None, query: str | None = None,
+                         limit: int = 40, include_ui: bool = False) -> dict:
+        """The custom-window buttons ``tag`` can press, by window: label, kind, the game AI's
+        weighting, and why the harness cannot press the others."""
+        from .gui import ui_only, visible_flags
+
+        windows = self.guis_for(tag)
+        if gui:
+            windows = [g for g in windows if g.id == gui]
+        scripted = self.scripted_effects()
+        openers: dict[str, list[str]] = {}
+        everything = list(self.guis().values())
+        for w in windows:
+            flags = visible_flags(w.visible)
+            if flags:
+                openers[w.id] = [f"{o.id}/{b.key}" for o in everything for b in o.buttons.values()
+                                 if any(f"set_country_flag = {f}" in S.inline(b.effect)
+                                        for f in flags)][:3]
+        rows, total = [], 0
+        needle = (query or "").lower()
+        # One localisation pass for every window: a pass per window is a minute on TNO.
+        names = self._button_names([b for w in windows for b in w.buttons.values()])
+        for w in windows:
+            buttons = []
+            for b in w.buttons.values():
+                ui = ui_only(b.effect, scripted)
+                if ui and not include_ui and not gui:
+                    continue
+                label = names.get(b.key, "")
+                if needle and not any(needle in text.lower() for text in (b.key, label, w.id)):
+                    continue
+                total += 1
+                why = self.click_refusal(w, b, tag)
+                row = {"button": b.key, "label": label, "kind": "window" if ui else "action"}
+                if why:
+                    row["cannot_press"] = why
+                if b.enabled:
+                    row["enabled_when"] = S.readable(b.enabled)
+                if b.ai_will_do is not None:
+                    row["game_ai_weight"] = S.readable(b.ai_will_do)
+                buttons.append({k: v for k, v in row.items() if v != ""})
+            if not buttons:
+                continue
+            entry = {"window": w.id, "context": w.context, "source": w.source, "buttons": buttons}
+            if w.visible:
+                entry["open_when"] = S.readable(w.visible)
+            if openers.get(w.id):
+                entry["opened_by"] = openers[w.id]
+            if w.category:
+                entry["decision_category"] = w.category
+            if w.ai_enabled is not None:
+                entry["game_ai_uses_it"] = S.readable(w.ai_enabled) or "yes"
+            rows.append(entry)
+        shown, count = [], 0
+        for entry in rows:
+            if count >= max(1, limit):
+                break
+            take = entry["buttons"][:max(1, limit) - count]
+            count += len(take)
+            shown.append({**entry, "buttons": take})
+        return {"country": tag, "windows": len(rows), "matching_buttons": total,
+                "shown_buttons": count, "list": shown,
+                "how": "click_gui_button(gui=<window>, button=<button>) presses one in your "
+                       "country's scope; the game checks open_when and enabled_when first"}
+
+    def check_click(self, call, country: str):
+        """None when ``click_gui_button`` names a window and button this country has."""
+        from ..types import ActionResult
+
+        gui_id = str(call.arguments.get("gui", ""))
+        button = str(call.arguments.get("button", ""))
+        if not self.guis():
+            return ActionResult(ok=False, action=call.name, call_id=call.call_id,
+                                message=f"This playset ({self.playset.name}) has no custom windows.",
+                                error_kind="invalid_args")
+        guis = {g.id: g for g in self.guis_for(country)}
+        if gui_id not in guis:
+            why = (f"'{gui_id}' is a window, but not one {country} has" if gui_id in self.guis()
+                   else f"There is no custom window '{gui_id}' in this playset")
+            return self.index._reject(call, why, gui_id, guis or self.guis())
+        window = guis[gui_id]
+        if button in window.buttons or f"{button}_click" in window.buttons:
+            return None
+        return self.index._reject(call, f"'{gui_id}' has no button '{button}'", button,
+                                  window.buttons)
+
+    # --- balance of power --------------------------------------------------------
+
+    def balances(self) -> dict:
+        """Every balance of power bar in the playset (``common/bop``), by id."""
+        from .bop import parse_balance
+
+        def build() -> dict:
+            found = {}
+            for path in self._files("common/bop"):
+                source = self._source(path)
+                for key, _op, body in self._read(path):
+                    if key and isinstance(body, list):
+                        found[key] = parse_balance(key, body, source)
+            return found
+
+        return self._memo("balances", build)  # type: ignore[return-value]
+
+    def balance_lines(self, readings) -> list[str]:
+        """The brief's lines for the bars the mod logged (``GameState.power_balances``)."""
+        from .bop import brief_line
+
+        bars = self.balances()
+        keys: set[str] = set()
+        for reading in readings:
+            if reading.id in bars:
+                keys |= bars[reading.id].keys()
+        names = self.names(keys) if keys else {}
+        return [brief_line(bars.get(r.id), r.id, r.value, r.weekly, names) for r in readings]
 
     # --- focus tree ------------------------------------------------------------
 
@@ -634,7 +867,11 @@ class ModContext:
             count = sum(1 for _ in self.playset.layered(folder))
             excluded.append(f"{folder} ({count} files, custom GUIs)")
         surface.excluded = excluded
+        windows = self.guis_for(tag)
+        pressable = [b for g in windows for b in g.buttons.values() if not self.click_refusal(g, b, tag)]
         surface.counts = {
+            "gui_windows": len(windows), "gui_buttons": sum(len(g.buttons) for g in windows),
+            "gui_buttons_pressable": len(pressable),
             "decisions": len(decisions), "decision_categories": len(used),
             "takeable_decisions": sum(1 for d in decisions if d.takeable),
             "missions": sum(1 for d in decisions if d.kind == "mission"),
@@ -710,6 +947,23 @@ class ModContext:
                 if plan.executable and plan.unchecked:
                     out["unchecked"] = plan.unchecked
             return out
+        window = self.guis().get(ident.split("/")[0])
+        if window is not None:
+            wanted = ident.split("/")[1] if "/" in ident else None
+            data = self.list_gui_buttons(tag, window.id, limit=60, include_ui=True)
+            if wanted:
+                for entry in data["list"]:
+                    entry["buttons"] = [b for b in entry["buttons"]
+                                        if b["button"] in (wanted, f"{wanted}_click")]
+                _gui, button = self.find_button(window.id, wanted)
+                if button is not None:
+                    data["click_effect"] = S.readable(button.effect, limit=10, width=400)
+            return {"type": "custom_window", **data}
+        bar = self.balances().get(ident)
+        if bar is not None:
+            from .bop import describe as describe_bar
+
+            return describe_bar(bar, self.names(bar.keys()))
         focus = self.focus_details(tag).get(ident)
         if focus is not None:
             names = self.names({ident, f"{ident}_desc"})

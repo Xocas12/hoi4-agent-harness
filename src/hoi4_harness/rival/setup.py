@@ -156,7 +156,7 @@ def apply_defaults(config: HarnessConfig) -> HarnessConfig:
     config.headless_reader = "logtail"
     config.headless_save_days = 0
     if config.guidance == "doctrine":
-        config.guidance = "rival"
+        config.guidance = "rival+strategy"
     if config.objective == _DEFAULT_OBJECTIVE:
         config.objective = OBJECTIVE.format(tag=tag)
     config.turns = max(config.turns, BACKSTOP_TURNS)

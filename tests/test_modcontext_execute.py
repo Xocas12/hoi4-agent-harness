@@ -130,7 +130,7 @@ def test_without_a_trace_in_the_telemetry_the_result_is_unverified_not_done(tmp_
 
 def test_take_decision_is_a_console_action_and_the_queries_are_not_actions():
     assert "take_decision" in CONSOLE_ACTIONS and DEFAULT_CHANNELS["take_decision"] == "console"
-    assert catalog.QUERY_ACTIONS == {"list_decisions", "describe_action"}
+    assert catalog.QUERY_ACTIONS == {"list_decisions", "describe_action", "list_gui_buttons"}
     assert catalog.get("enact_decision") is None
     spec = {t.name: t for t in registry.tool_specs()}
     assert "decision_id" in spec["take_decision"].parameters["required"]
