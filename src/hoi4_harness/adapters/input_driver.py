@@ -152,6 +152,9 @@ class InputConfig:
     #: False builds a keyboard-only driver: ``click`` refuses, so no path through
     #: it can reach pyautogui or move the pointer (headless play).
     mouse: bool = True
+    #: Switch the game window to the US keyboard layout before sending keys (the scan codes are
+    #: the US layout's; window.ensure_us_layout). False leaves the layout alone.
+    us_layout: bool = True
 
 
 class InputDriverAdapter(GameAdapter):
@@ -272,6 +275,22 @@ class InputDriverAdapter(GameAdapter):
             )
         raise NotFocused(f"{self.config.window_title!r} is not focused: {result.reason}")
 
+    def _require_layout(self) -> None:
+        """Before a key: the focused game window must type with the US layout the scan codes
+        assume. Switched once if it does not (logged); refused (NotFocused) if it cannot be."""
+        if self.dry_run or not self.config.us_layout:
+            return
+        if self._keys_override is not None or self._gui_override is not None:
+            return                      # a fake or injected sender: no real window to switch
+        from .window import LayoutUnavailable, ensure_us_layout
+
+        try:
+            line = ensure_us_layout()
+        except LayoutUnavailable as exc:
+            raise NotFocused(str(exc)) from None
+        if line:
+            self.log.append(line)
+
     def info(self) -> AdapterInfo:
         return AdapterInfo(
             name="input",
@@ -306,6 +325,7 @@ class InputDriverAdapter(GameAdapter):
         if self.key_watch is not None and not self.dry_run:
             self.key_watch.before("press", key)
         self._require_focus()
+        self._require_layout()
         self.log.append(f"press {key}")
         if not self.dry_run:
             self._keys().chord(key)
@@ -445,6 +465,7 @@ class InputDriverAdapter(GameAdapter):
 
     def type_text(self, text: str) -> None:
         self._require_focus()
+        self._require_layout()
         self.log.append(f"type {text}")
         if not self.dry_run:
             if self.key_watch is None:

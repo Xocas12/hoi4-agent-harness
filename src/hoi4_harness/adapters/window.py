@@ -177,3 +177,82 @@ def client_rect() -> tuple[int, int, int, int] | None:
             not user32.ClientToScreen(handle, ctypes.byref(origin)):
         return None
     return (origin.x, origin.y, rect.right - rect.left, rect.bottom - rect.top)
+
+
+# --- the keyboard layout the game window types with --------------------------------------------
+#
+# The scan codes the harness sends (keys.ScanCodeKeys) are the US layout's: `grave` opens the
+# console, `minus` with shift is `_`. Under another layout the same physical keys mean other
+# characters. Seen live 2026-11-21 with a Spanish/Galician layout on the game window: the console
+# key typed `º` and the console received `ºrun llmb?turn.txt` ("Unknown command"), so nothing the
+# console channel sent ever ran. Windows keeps the input layout per window, so the game can be on
+# a different layout than the terminal that started the harness.
+
+#: The US English keyboard layout handle (language 0x0409, layout 0x0409).
+US_LAYOUT = 0x04090409
+WM_INPUTLANGCHANGEREQUEST = 0x0050
+
+
+class LayoutUnavailable(RuntimeError):
+    """The game window types with another layout and the US one cannot be selected."""
+
+
+def foreground_layout() -> int | None:
+    """The keyboard layout handle of the focused window's thread (Windows), else None."""
+    if sys.platform != "win32":
+        return None
+    import ctypes
+
+    user32 = ctypes.windll.user32
+    handle = user32.GetForegroundWindow()
+    if not handle:
+        return None
+    thread = user32.GetWindowThreadProcessId(handle, None)
+    return user32.GetKeyboardLayout(thread) & 0xFFFFFFFF
+
+
+def installed_layouts() -> list[int]:
+    if sys.platform != "win32":
+        return []
+    import ctypes
+
+    user32 = ctypes.windll.user32
+    count = user32.GetKeyboardLayoutList(0, None)
+    handles = (ctypes.c_void_p * count)()
+    user32.GetKeyboardLayoutList(count, handles)
+    return [(h or 0) & 0xFFFFFFFF for h in handles]
+
+
+def request_layout(layout: int) -> None:
+    """Ask the focused window to switch its input layout (it applies it asynchronously)."""
+    import ctypes
+
+    user32 = ctypes.windll.user32
+    user32.PostMessageW(user32.GetForegroundWindow(), WM_INPUTLANGCHANGEREQUEST, 0, layout)
+
+
+def ensure_us_layout(*, read=foreground_layout, installed=installed_layouts,
+                     request=request_layout, sleep=None, tries: int = 10) -> str | None:
+    """Make the focused window type with the US layout. Returns a line for the log when it
+    switched, None when it already was (or the platform has no per-window layout). Raises
+    LayoutUnavailable when the US layout is not installed or the switch does not take."""
+    current = read()
+    if current is None or current & 0xFFFF == US_LAYOUT & 0xFFFF:
+        return None
+    if not any(h & 0xFFFF == US_LAYOUT & 0xFFFF for h in installed()):
+        raise LayoutUnavailable(
+            f"the game window types with keyboard layout {current:#010x}, the harness sends US "
+            "scan codes (the console key would type another character), and no US English layout "
+            "is installed: add one in Windows settings (Time & language, Language, Keyboard)")
+    import time
+
+    pause = sleep or time.sleep
+    request(US_LAYOUT)
+    for _ in range(tries):
+        pause(0.05)
+        now = read()
+        if now is not None and now & 0xFFFF == US_LAYOUT & 0xFFFF:
+            return (f"keyboard layout of the game window switched from {current:#010x} to US "
+                    "(the harness types US scan codes)")
+    raise LayoutUnavailable(f"asked the game window to switch from layout {current:#010x} to US "
+                            "and it did not: switch it by hand (Win+Space) and start again")
