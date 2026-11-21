@@ -42,7 +42,7 @@ OPERATIONAL_ACTIONS = frozenset({
 #: Actions that only make sense when the native AI is executing.
 DIRECTIVE_ACTIONS = frozenset(
     {"delegate_army_to_ai", "set_ai_posture", "set_ai_directive", "clear_ai_directives",
-     "set_front_order", "steer_production", "steer_intelligence", "steer_research",
+     "set_front_order", "set_region_order", "steer_production", "steer_intelligence", "steer_research",
      "steer_navy", "steer_air"}
 )
 

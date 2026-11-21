@@ -34,7 +34,21 @@ What a rival (or any run without a mouse) has is the game's front AI, steered pe
 | `reserve` | a tenth of the army kept stationed in that state, behind the line (`put_unit_buffers`, one generated block per state) |
 | `clear` | drop the order |
 
-The mechanism: the inbox sets a state flag; fixed blocks in `llm_bridge_front_orders.txt` use `state_trigger = { has_state_flag = ... }` on `front_control`, `front_unit_request`, `force_concentration_target_weight` and `force_concentration_front_factor` (all documented to take a state trigger in 1.20's `common/ai_strategy/_documentation.md`); reserves are `llm_bridge_reserves.txt`, generated per playset by `hoi4-harness mod-probe`. Divisions still move as the AI moves them: the LLM chooses where and how hard, the AI executes. Orders stand until changed, and the brief lists them. **Unverified in the live game**: that `state_trigger` is honoured for each of these types, and how strongly the weights move the AI.
+The mechanism: the inbox sets a state flag; fixed blocks in `llm_bridge_front_orders.txt` use `state_trigger = { has_state_flag = ... }` on `front_control`, `front_unit_request`, `force_concentration_target_weight` and `force_concentration_front_factor` (all documented to take a state trigger in 1.20's `common/ai_strategy/_documentation.md`); reserves are `llm_bridge_reserves.txt`, generated per playset by `hoi4-harness mod-probe`. | `invade` | the naval invasion planner aims at that coastal state: `front_control` with `ordertype = invasion`, attack on, rush, and +200 `invasion_unit_request` |
+
+**Navy and air, by strategic region:** `set_region_order(region, order)`:
+
+| Order | Strategy (value) |
+|---|---|
+| `dominate` | `naval_dominance` (90%) |
+| `raid_convoys` | `naval_convoy_raid_region` (300) |
+| `avoid` | `naval_avoid_region` (500) |
+| `home_base` | `strike_force_home_base` (250) |
+| `air_superiority` | `strategic_air_importance` (40,000; a main front in active combat is about 35,000) |
+
+These take a region id, not a trigger, so `hoi4-harness mod-probe` generates one block per (region, order) from the playset's `map/strategicregions` (naval orders for the 92 vanilla sea regions, air for all 304), keyed on a country flag on the ordering country: two LLM countries never read each other's region orders. The values follow the game's own `ENG.txt`.
+
+Divisions still move as the AI moves them: the LLM chooses where and how hard, the AI executes. Orders stand until changed, and the brief lists them. **Unverified in the live game**: that `state_trigger` is honoured for each of these types, and how strongly the weights move the AI.
 
 ## Live plan
 

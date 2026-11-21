@@ -613,9 +613,12 @@ def generate_reserves(index: IdentifierIndex) -> GeneratedFile:
 
 def write_probe(mod_dir: Path, index: IdentifierIndex) -> Path:
     """The playset-specific files: the focus/research/bop probe and the reserve blocks."""
+    from . import regions
+
     target = mod_dir / PROBE_PATH
+    region_file = GeneratedFile(regions.FILE, regions.strategies(regions.read_regions(index.playset)))
     for item in (generate_probe(index), generate_reserves(index), generate_research(index),
-                 generate_regions(index)):
+                 generate_regions(index), region_file):
         out = mod_dir / item.path
         out.parent.mkdir(parents=True, exist_ok=True)
         out.write_text(item.text, encoding="utf-8", newline="\n")

@@ -1,6 +1,6 @@
 # The action catalog
 
-The catalog is the agent's entire vocabulary. It is small on purpose: 42 verbs,
+The catalog is the agent's entire vocabulary. It is small on purpose: 43 verbs,
 listed by `hoi4-harness actions` (add `--json` for schemas).
 
 | Action | Category | Notes |
@@ -30,6 +30,7 @@ listed by `hoi4-harness actions` (add `--json` for schemas).
 | `steer_air` | steer | Which strategic region's air war the AI weighs most (`docs/interaction.md`) |
 | `steer_research` | steer | Research one technology first when a slot is free; one `research_tech` block per technology |
 | `send_message` | memory | Single-player chat with the person and other LLM countries; free, never touches the game (`docs/chat.md`) |
+| `set_region_order` | steer | Steers the navy or air force by strategic region (dominate, raid_convoys, avoid, home_base, air_superiority) through the game's own AI; inbox or console (`docs/front-control.md`) |
 | `inspect_world` | query | Read-only; the map, armies and every other panel (faction, intel, projects, navy, air, politics, economy, diplomacy, research, occupation, supply, commanders) from the newest text save, other countries through intel (`docs/observation.md`) |
 | `list_decisions` | query | Read-only; answered from the playset's files, never reaches the game. Needs `--mod-context` |
 | `describe_action` | query | Read-only; a decision, focus, new tech or idea in full. Needs `--mod-context` |

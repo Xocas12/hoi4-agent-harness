@@ -275,7 +275,8 @@ ACTIONS += [
             "Tell your armies what to do on the stretch of front at one state, and the game's AI "
             "carries it out: push (all-out attack, more divisions), attack (a steady offensive), "
             "probe (careful, small attacks), hold (no attacks, more defenders), reserve (keep a "
-            "tenth of the army stationed in that state, behind the line), clear (drop the order). "
+            "tenth of the army stationed in that state, behind the line), invade (aim the naval "
+            "invasion planner at that coastal state), clear (drop the order). "
             "push and attack also aim the AI's concentrated offensives at that state. It stands "
             "until changed. Pick states from the Forces and map section or "
             "inspect_world view=borders; an order on an enemy state facing your line works best."
@@ -283,8 +284,25 @@ ACTIONS += [
         parameters=_schema(
             {"state": {"type": "string", "description": "State id (or name)."},
              "order": {"type": "string",
-                       "enum": ["push", "attack", "probe", "hold", "reserve", "clear"]}},
+                       "enum": ["push", "attack", "probe", "hold", "reserve", "invade", "clear"]}},
             ["state", "order"],
+        ),
+    ),
+    ActionSpec(
+        name="set_region_order",
+        category="army",
+        description=(
+            "Tell your navy or air force where to fight, by strategic region (sea or land area), "
+            "and the game's AI carries it out: dominate (contest the sea region), raid_convoys "
+            "(hunt convoys there), avoid (keep the fleet out), home_base (base the strike force "
+            "there), air_superiority (send fighters to win the air over the region), clear. It "
+            "stands until changed. Regions are named in the brief and inspect_world."
+        ),
+        parameters=_schema(
+            {"region": {"type": "string", "description": "Strategic region id or name."},
+             "order": {"type": "string", "enum": ["dominate", "raid_convoys", "avoid",
+                                                  "home_base", "air_superiority", "clear"]}},
+            ["region", "order"],
         ),
     ),
     ActionSpec(
@@ -759,7 +777,9 @@ ACTIONS += [
             "kind=dominance (id: a sea region id: how much sea control it seeks there, "
             "less/more/much_more) or raiding (id: a country tag: how hard its raiders hunt that "
             "country's convoys). It does not move a ship: the AI still needs the fleet. Level "
-            "clear drops it."
+            "clear drops it. For orders by sea region (dominate, raid convoys in a region, avoid, "
+            "home base) use set_region_order; use this for raiding a country's convoys anywhere, "
+            "or a graded dominance weight."
         ),
         parameters=_schema(
             {"kind": {"type": "string", "enum": ["dominance", "raiding"]},
@@ -774,7 +794,9 @@ ACTIONS += [
         description=(
             "Tell the game's AI which strategic region's air war to weigh most (more / much_more, "
             "or clear to drop it): its wings are sent where the weight is. It does not fly a "
-            "wing: the AI still needs the planes and the bases."
+            "wing: the AI still needs the planes and the bases. set_region_order "
+            "order=air_superiority is the plain standing order for the same thing; use this one "
+            "for a graded weight."
         ),
         parameters=_schema(
             {"region": {"type": "string", "description": "Strategic region id."},

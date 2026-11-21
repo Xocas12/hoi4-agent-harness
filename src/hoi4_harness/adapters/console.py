@@ -61,14 +61,15 @@ from .ui_scripts import verify
 CONSOLE_ACTIONS = frozenset({
     "queue_construction", "set_production", "hire_advisor",
     "set_ai_directive", "set_ai_posture", "clear_ai_directives", "take_decision",
-    "click_gui_button", "set_front_order",
+    "click_gui_button", "set_front_order", "set_region_order",
     "change_law", "set_occupation_law", "diplomacy_act", "fire_advisor",
     "steer_production", "steer_intelligence", "steer_research", "steer_navy", "steer_air",
 })
 #: The actions whose effect logs a marker inside its guard: the line in the game's log is the
 #: proof the game let it through (``_verify_click``).
 MARKED_ACTIONS = frozenset({
-    "click_gui_button", "set_front_order", "change_law", "set_occupation_law", "diplomacy_act",
+    "click_gui_button", "set_front_order", "set_region_order", "change_law", "set_occupation_law",
+    "diplomacy_act",
     "fire_advisor", "steer_production", "steer_intelligence", "steer_research", "steer_navy",
     "steer_air",
 })
@@ -274,6 +275,8 @@ class ConsoleChannel:
         if call.name in ("steer_production", "steer_intelligence", "steer_research", "steer_navy",
                          "steer_air"):
             return self._plan_steer(call, args, country)
+        if call.name == "set_region_order":
+            return self._plan_region(call, args, country)
         return self._plan_hybrid(call, args, country)
 
     def _country(self, state: GameState) -> str:
@@ -448,7 +451,7 @@ class ConsoleChannel:
         order = str(args["order"]).lower()
         if order not in (*front_orders.ALL_ORDERS, "clear"):
             raise Refused(f"{order!r} is not a front order (push, attack, probe, hold, reserve, "
-                          "clear)")
+                          "invade, clear)")
         index = self._need_index("finding the state")
         found = index.resolve_state(str(args["state"]))
         if found is None or not str(found.id).isdigit():
@@ -574,6 +577,36 @@ class ConsoleChannel:
         line = self._inline(country, f'{body} log = "LLMB|v5|click|{nonce}"')
         return Planned(call, [line], ["whether the AI has a free slot or the means: a steer "
                                        "changes what it prefers, not what it can do"])
+    def regions(self):
+        """The playset's strategic regions, named, read once."""
+        if getattr(self, "_regions", None) is None:
+            from .. import regions as R
+
+            index = self._need_index("finding the region")
+            self._regions = R.read_regions(index.playset)
+            R.name_regions(self._regions, index.mod_context().names)
+        return self._regions
+
+    def _plan_region(self, call, args, country) -> Planned:
+        import secrets
+
+        from .. import regions as R
+
+        order = str(args["order"]).lower()
+        if order not in (*R.ORDERS, "clear"):
+            raise Refused(f"{order!r} is not a region order ({', '.join(R.ORDERS)}, clear)")
+        region = R.resolve(self.regions(), str(args["region"]))
+        if region is None:
+            raise Refused(f"there is no strategic region {args['region']!r} in this playset")
+        if order != "clear" and R.ORDERS[order][2] and not region.sea:
+            raise Refused(f"{region.name or region.id} is a land region: {order} is a naval order "
+                          "and needs a sea region")
+        nonce = "r" + secrets.token_hex(5)
+        self.click_markers[id(call)] = nonce
+        self.front_pending[id(call)] = (f"region:{region.id}", order)
+        body = f'{R.effect(region.id, order)} log = "LLMB|v5|click|{nonce}"'
+        return Planned(call, [self._inline(country, body)],
+                       ["how strongly the weight moves the AI's fleet or air force"])
 
     def _verify_click(self, call: ActionCall):
         """The click logs its marker only inside its guard, so the line in the log is the
@@ -602,8 +635,10 @@ class ConsoleChannel:
                 pending = self.front_pending.pop(id(call), None)
                 if pending is not None:
                     self.front_standing.record(*pending)
-                    return True, None, (f"front order {pending[1]} set on state {pending[0]}: the "
-                                        "game's AI steers that front by it from now on")
+                    where = (f"region {str(pending[0]).split(':', 1)[1]}"
+                             if str(pending[0]).startswith("region:") else f"state {pending[0]}")
+                    return True, None, (f"order {pending[1]} set on {where}: the game's AI "
+                                        "steers by it from now on")
                 return True, None, "pressed: the game ran the click (its conditions held)"
             if waited >= self.verify_timeout:
                 break

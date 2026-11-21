@@ -44,7 +44,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 FILE = "common/ai_strategy/llm_bridge_steering.txt"
-REGIONS_FILE = "common/ai_strategy/llm_bridge_regions.txt"
+REGIONS_FILE = "common/ai_strategy/llm_bridge_steer_regions.txt"
 RESEARCH_FILE = "common/ai_strategy/llm_bridge_research.txt"
 STANDING = "steering.json"
 CLEAR = "clear"
