@@ -62,7 +62,7 @@ def test_every_catalog_action_has_one_owner_or_is_always_available():
     assert len(owned) == len(set(owned))                       # no action in two domains
     steered = set(STEER_ACTIONS) | {DELEGATE_ACTION}
     free = {"note", "advance_time", "list_decisions", "describe_action", "list_gui_buttons",
-            "inspect_world",
+            "inspect_world", "send_message",
             "set_game_speed"}
     assert ALL == set(owned) | steered | free
 

@@ -29,7 +29,7 @@ from .types import ActionCall, ActionResult, GameEvent, GameState, Observation
 #: Calls the per-turn action cap does not count: a note only writes to the
 #: journal, and advance_time hands the clock back -- the prompt asks for "up to
 #: N actions, then advance_time", and refusing it would not stop the turn.
-UNCAPPED_ACTIONS = frozenset({"note", "advance_time"}) | QUERY_ACTIONS
+UNCAPPED_ACTIONS = frozenset({"note", "advance_time", "send_message"}) | QUERY_ACTIONS
 
 
 class HOI4Env:
@@ -66,6 +66,13 @@ class HOI4Env:
         self.brief_hooks: list[Callable[[GameState], list[str]]] = []
         #: The map and armies from the newest save (world.WorldObserver, #139); None: off.
         self.world = None
+        #: This country's end of the single-player chat (chat.ChatChannel, #133); None: off.
+        self.chat = None
+
+    def attach_chat(self, channel) -> None:
+        """Give the brief a messages section and the model the send_message tool."""
+        self.chat = channel
+        self.brief_hooks.append(channel.brief_lines)
 
     def attach_world(self, observer) -> None:
         """Give the brief a forces-and-map section and the model the inspect_world tool."""
@@ -87,6 +94,8 @@ class HOI4Env:
         out = set(PLAYSET_QUERIES) if self.queries_enabled else set()
         if self.world is not None:
             out.add("inspect_world")
+        if self.chat is not None:
+            out.add("send_message")
         return out
 
     @property
@@ -226,6 +235,8 @@ class HOI4Env:
         """
         if call.name in QUERY_ACTIONS:
             return self.query(call)
+        if call.name == "send_message":
+            return self._send_message(call, date)
         if self.config.advisor:
             # The hard edge of advisor mode. The loop routes calls to the
             # advisor instead of here, but the env refusing is what makes the
@@ -384,6 +395,20 @@ class HOI4Env:
             ),
             error_kind="budget",
         )
+
+    def _send_message(self, call: ActionCall, date: str) -> ActionResult:
+        def result(ok: bool, message: str) -> ActionResult:
+            return ActionResult(ok=ok, action=call.name, call_id=call.call_id, message=message,
+                                error_kind=None if ok else "invalid_args")
+
+        if self.chat is None:
+            return result(False, "this run has no chat")
+        try:
+            sent = self.chat.send(str(call.arguments.get("to", "")),
+                                  str(call.arguments.get("text", "")), date or None)
+        except ValueError as exc:
+            return result(False, f"not sent: {exc}")
+        return result(True, f"sent to {sent.to} (message #{sent.id})")
 
     def act_many(self, calls: list[ActionCall], date: str = "", *,
                  auto: bool = False) -> list[ActionResult]:

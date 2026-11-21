@@ -385,6 +385,21 @@ ACTIONS += [
         ),
     ),
     ActionSpec(
+        name="send_message",
+        category="memory",
+        description=(
+            "Say something in the single-player chat: to the person playing (person), to every "
+            "country's strategist and the person (global), or to one LLM country (its tag). Free, "
+            "and nothing happens in the game: talk binds nobody, and what you do is what counts. "
+            "Answer a message addressed to you here."
+        ),
+        parameters=_schema(
+            {"to": {"type": "string", "description": "person, global, or a country tag."},
+             "text": {"type": "string", "maxLength": 800}},
+            ["to", "text"],
+        ),
+    ),
+    ActionSpec(
         name="note",
         category="memory",
         description=(

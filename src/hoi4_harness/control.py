@@ -77,7 +77,7 @@ DELEGATE_ACTION = "delegate_army_to_ai"
 CLOCK_ACTION = "set_game_speed"
 #: Never narrowed by control: notes, the clock handed back, the read-only playset queries.
 ALWAYS = frozenset({"note", "advance_time", "list_decisions", "describe_action",
-                    "list_gui_buttons", "inspect_world"})
+                    "list_gui_buttons", "inspect_world", "send_message"})
 
 #: Domains with a deterministic controller in ``hoi4_harness.auto``. Diplomacy has none: no
 #: rule is sound without knowing who the country's neighbours and rivals are, and a script that

@@ -25,6 +25,7 @@
     hoi4-harness verify-bridge              check the mod's tokens against an install and a log
     hoi4-harness save-inspect               what a save contains, for mapping it
     hoi4-harness check-scripts              pre-flight the input driver's scripts and calibration
+    hoi4-harness chat --to POL "..."        talk to the LLM countries in a single-player game
     hoi4-harness map --state 141            where a state or province is, in map pixels
     hoi4-harness mod-directives --tags ...  regenerate the mod's per-target directives
     hoi4-harness mod-probe                  regenerate the focus/research probe from the install
@@ -428,6 +429,41 @@ def cmd_campaign_report(args: argparse.Namespace) -> int:
     else:
         print(f"wrote {path}")
     return 0
+
+
+def cmd_chat(args: argparse.Namespace) -> int:
+    """``chat``: talk to the LLM countries in a single-player game (#133)."""
+    from .chat import ChatLog
+
+    log = ChatLog(Path(args.chat) if args.chat else None)
+    text = " ".join(args.text).strip()
+    if text:
+        try:
+            sent = log.post("person", args.to, text)
+        except ValueError as exc:
+            print(f"chat: {exc}", file=sys.stderr)
+            return 1
+        print(f"#{sent.id} to {sent.to}: {sent.text}")
+        if not args.follow:
+            return 0
+    shown = 0
+    for message in log.visible_to("person")[-args.last:]:
+        print(f"#{message.id} {message.line()}")
+        shown = message.id
+    if not args.follow:
+        if shown == 0:
+            print(f"(no messages yet in {log.path})")
+        return 0
+    print(f"(following {log.path}; Ctrl+C to stop)")
+    try:
+        while True:
+            for message in log.visible_to("person"):
+                if message.id > shown:
+                    print(f"#{message.id} {message.line()}", flush=True)
+                    shown = message.id
+            time.sleep(1.0)
+    except KeyboardInterrupt:
+        return 0
 
 
 def cmd_guide(args: argparse.Namespace) -> int:
@@ -1580,6 +1616,18 @@ def build_parser() -> argparse.ArgumentParser:
     guide.add_argument("--expire", type=float, metavar="DAYS",
                        help="remove items older than DAYS days")
     guide.set_defaults(func=cmd_guide)
+
+    chat = sub.add_parser(
+        "chat", help="talk to the LLM countries in a single-player game: send a message, show the "
+                     "chat, or follow it (docs/chat.md)")
+    chat.add_argument("text", nargs="*", help='the message, e.g. "Poland, join me against the Soviets"')
+    chat.add_argument("--to", default="global", metavar="TAG|global",
+                      help="a country tag for a direct message (default: global, everyone)")
+    chat.add_argument("--last", type=int, default=20, metavar="N", help="messages to show (20)")
+    chat.add_argument("--follow", "-f", action="store_true", help="keep showing new messages")
+    chat.add_argument("--chat", metavar="PATH", help="the chat file (default ~/.hoi4-harness/chat.jsonl "
+                                                     "or HOI4_CHAT)")
+    chat.set_defaults(func=cmd_chat)
 
     report = sub.add_parser(
         "campaign-report", help="write the markdown report of a campaign run directory")

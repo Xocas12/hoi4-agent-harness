@@ -159,6 +159,7 @@ def apply_defaults(config: HarnessConfig) -> HarnessConfig:
         config.guidance = "rival+strategy"
     # See what a player of the country sees (#139) and the playset's decisions and windows.
     config.observe_world = True
+    config.chat = True
     if config.game_dir is not None:
         config.mod_context = True
     if config.objective == _DEFAULT_OBJECTIVE:
