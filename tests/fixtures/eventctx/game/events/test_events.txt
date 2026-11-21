@@ -1,0 +1,117 @@
+add_namespace = germany
+add_namespace = poland
+add_namespace = world
+add_namespace = generic
+
+# Three visible options, one with a tag trigger and effects worth reading.
+country_event = {
+	id = germany.75
+	title = germany.75.t
+	desc = germany.75.d
+	picture = GFX_report_event_generic_read_write
+	is_triggered_only = yes
+
+	option = {
+		name = germany.75.a
+		add_political_power = 50
+		add_stability = 0.05
+		country_event = { id = germany.76 days = 3 }
+		ai_chance = { base = 70 }
+	}
+	option = {
+		name = germany.75.b
+		trigger = { tag = GER }
+		add_war_support = -0.1
+		set_country_flag = refused_the_pact
+	}
+	option = {
+		name = germany.75.c
+		trigger = { tag = POL }
+		add_stability = -0.05
+	}
+	option = {
+		name = germany.75.e
+		trigger = { has_war = yes }
+		add_manpower = 5000
+	}
+}
+
+# A title with a placeholder the game fills in.
+country_event = {
+	id = germany.76
+	title = germany.76.t
+	desc = germany.76.d
+	is_triggered_only = yes
+	option = {
+		name = germany.76.a
+		add_political_power = -25
+	}
+	option = {
+		name = germany.76.b
+		declare_war_on = { target = POL type = annex_everything }
+	}
+}
+
+# Two events with the same title: only the text and options tell them apart.
+country_event = {
+	id = generic.1
+	title = generic.shared.t
+	desc = generic.1.d
+	is_triggered_only = yes
+	option = {
+		name = generic.1.a
+		add_political_power = 10
+	}
+}
+country_event = {
+	id = generic.2
+	title = generic.shared.t
+	desc = generic.2.d
+	is_triggered_only = yes
+	option = {
+		name = generic.2.a
+		add_political_power = -10
+	}
+	option = {
+		name = generic.2.b
+		add_stability = 0.02
+	}
+}
+
+country_event = {
+	id = poland.1
+	title = poland.1.t
+	desc = {
+		text = poland.1.d_war
+		trigger = { has_war = yes }
+	}
+	desc = {
+		text = poland.1.d_peace
+		trigger = { NOT = { has_war = yes } }
+	}
+	is_triggered_only = yes
+	option = {
+		name = poland.1.a
+		army_experience = 10
+	}
+}
+
+news_event = {
+	id = world.1
+	title = world.1.t
+	desc = world.1.d
+	major = yes
+	is_triggered_only = yes
+	option = {
+		name = world.1.a
+	}
+}
+
+country_event = {
+	id = germany.99
+	hidden = yes
+	title = germany.99.t
+	option = {
+		name = germany.99.a
+	}
+}

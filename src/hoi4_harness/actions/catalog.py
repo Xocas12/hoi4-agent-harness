@@ -484,9 +484,11 @@ ACTIONS += [
 ]
 
 #: Read-only tools the harness answers from the playset's files; the game is not touched.
-QUERY_ACTIONS = frozenset({"list_decisions", "describe_action", "list_gui_buttons", "inspect_world"})
+QUERY_ACTIONS = frozenset({"list_decisions", "describe_action", "list_gui_buttons", "inspect_world",
+                           "read_event"})
 #: The queries answered from the playset's files (mod context); inspect_world reads the save.
 PLAYSET_QUERIES = frozenset({"list_decisions", "describe_action", "list_gui_buttons"})
+#: ``read_event`` is answered from the screen (adapters/event_choice.py) and the playset's events.
 
 BY_NAME: dict[str, ActionSpec] = {spec.name: spec for spec in ACTIONS}
 
@@ -935,6 +937,45 @@ ACTIONS += [
             {"technology": {"type": "string", "description": "Technology id."},
              "level": {"type": "string", "enum": ["first", "clear"]}},
             ["technology", "level"],
+        ),
+    ),
+]
+
+BY_NAME = {spec.name: spec for spec in ACTIONS}
+
+
+# --- events: read the open window and choose its option (docs/events.md) -----------------------
+
+ACTIONS += [
+    ActionSpec(
+        name="read_event",
+        category="query",
+        description=(
+            "Read-only: the event window that is open on the screen in your seat. Returns its "
+            "id, title, description and every option with what it does (effects) and when it is "
+            "shown, how sure the match is, and how long it has been open. With id=<event id> it "
+            "reads that event from the playset's files instead (no screen, no window needed). "
+            "The brief already carries an open event; call this for the full text."
+        ),
+        parameters=_schema(
+            {"id": {"type": "string", "description": "An event id, e.g. germany.75 (optional)."}},
+            [],
+        ),
+    ),
+    ActionSpec(
+        name="choose_event_option",
+        category="events",
+        description=(
+            "Answer the open event window by clicking one of its options, as a person does. "
+            "option is the number shown by read_event / the brief (1, 2, ...) or the option's "
+            "key. Refused, with nothing clicked, when no window is open, when the window could "
+            "not be matched to an event, or when that option is not shown to your country. The "
+            "result says whether the window closed. Choose before other mouse tools: with an "
+            "event open, any other mouse tool answers it blind first (option 1)."
+        ),
+        parameters=_schema(
+            {"option": {"type": "string", "description": "Option number (\"1\") or its key."}},
+            ["option"],
         ),
     ),
 ]

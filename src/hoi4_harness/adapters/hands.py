@@ -106,6 +106,10 @@ class Hands:
     #: What the event-window guard does (adapters/event_windows.py): ``{"guarded": bool,
     #: "missing": [recorded points the answers click that are not recorded], "why": str}``.
     events: dict = field(default_factory=dict)
+    #: Reading the open event and choosing its option (adapters/event_choice.py): ``{"on": bool,
+    #: "why": str, "ocr": str}`` and the reader itself (None: off).
+    event_reading: dict = field(default_factory=dict)
+    event_reader: object = None
 
     def refuse(self, actions, reason: str) -> None:
         for action in ([actions] if isinstance(actions, str) else actions):
@@ -132,6 +136,7 @@ class Hands:
         if self.research_path and "start_research" in live:
             out.append(f"research path: {self.research_path}")
         out.extend(self.event_lines())
+        out.extend(self.event_reading_lines())
         out.extend(self.production_lines(offered))
         plans = sorted(set(PLAN_ACTIONS) & set(offered))
         if plans:
@@ -159,6 +164,19 @@ class Hands:
                        "are recorded, and the mouse tools refuse meanwhile: "
                        + ", ".join(self.events["missing"]))
         return out
+
+    def event_reading_lines(self) -> list[str]:
+        """The start-log lines for reading events and choosing an option."""
+        if not self.event_reading:
+            return []
+        if not self.event_reading.get("on"):
+            return ["event reading: OFF: " + self.event_reading.get("why", "")
+                    + "; a country event is answered blind (option 1) before a mouse tool "
+                    "(docs/events.md)"]
+        return ["event reading: ON (UNVERIFIED against the real game): the brief carries an "
+                "open event with its options, read_event reads it, choose_event_option clicks an "
+                f"option (ocr {self.event_reading.get('ocr', '?')}; layout "
+                f"{self.event_reading.get('layout', '?')}); docs/events.md has the live steps"]
 
     def production_lines(self, offered) -> list[str]:
         """The start-log lines for production by click: what edits a line, what is missing."""
@@ -191,4 +209,4 @@ class Hands:
                       "equipment": "change_production_equipment" in offered}
         return {"mouse": self.mouse, "offered": self.live(offered),
                 "refused": dict(self.refused), "armies": list(self.armies),
-                "production": production}
+                "production": production, "events": "choose_event_option" in offered}

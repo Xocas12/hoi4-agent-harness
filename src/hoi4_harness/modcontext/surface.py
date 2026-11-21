@@ -39,10 +39,12 @@ def _clean(value: str) -> str:
     return re.sub(r"\s+", " ", value).strip()
 
 
-def english(playset: Playset, wanted: set[str]) -> dict[str, str]:
+def english(playset: Playset, wanted: set[str], clean=_clean) -> dict[str, str]:
     """English text for the keys in ``wanted`` only, layered as the identifier
     index layers names: the first definition wins, except from a ``replace/``
-    folder, which wins over it. One pass over the files."""
+    folder, which wins over it. One pass over the files. ``clean`` turns the file's text into
+    the value kept; the default drops colour codes and placeholders, and the event matcher
+    passes the identity, because it needs to know where a placeholder stood."""
     names: dict[str, str] = {}
     if not wanted:
         return names
@@ -57,7 +59,7 @@ def english(playset: Playset, wanted: set[str]) -> dict[str, str]:
                 continue
             match = line_re.match(line)
             if match and (replacing or match.group(1) not in names):
-                names[match.group(1)] = _clean(match.group(2))
+                names[match.group(1)] = clean(match.group(2))
     return names
 
 

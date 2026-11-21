@@ -117,6 +117,10 @@ route exists, left out; the reason is given), **not feasible** (no faithful rout
 | 75 | Steering | Spend experience or political power | none | inbox `steer_spending` | built now | `land_xp_spend_priority`, `air_xp_spend_priority`, `navy_xp_spend_priority`, `pp_spend_priority`, `pp_spend_amount` |
 | 76 | Steering | Use the equipment market | none | inbox `steer_market` | built now | row 23; `equipment_market_*` |
 | 77 | Steering | Choose divisions, fuel and supply | none | inbox `steer_army` | built now | rows 51, 69, 70 |
+| 78 | Events | Read the open event: title, text, options, what each does | brief and `read_event`: the window read by Windows OCR and matched to `events/*.txt` + localisation (`adapters/event_choice.py`, `docs/events.md`); NOT live-verified | none: nothing is read for a country the person is not playing | built now | the match carries a confidence; below the bar nothing is claimed and nothing is clicked |
+| 79 | Events | Choose an event option | `choose_event_option`: a click where the option's text was read, through the driver's focus guard, verified by the window closing; NOT live-verified | none: the game's AI answers a rival's events by `ai_chance`; there is no input and no `ai_strategy` token for it | built now | no effect picks an option of a window already open (`event <id> <TAG>` only fires one); `docs/events.md` has the rival section |
+| 80 | Events | Close a news window | blind click on `event.news_close` before any mouse tool (`event_windows.py`); `read_event` describes it when its text is matched | AI | have | the old blind answer, kept as the fallback the brief tells the model about; unverified |
+| 81 | Events | Answer other popups: peace offers, faction invites, access and lend-lease requests | none: not event windows, so no events file to match the text against | AI | feasible, not built | the same capture-and-match would work against the diplomacy localisation; left out |
 
 Counts, 73 rows of the table above: **have** 18, **built now** 29 (before the second pass; rows 74 to 77 and
 the changed rows 4, 12, 13, 14, 18, 23, 47, 50, 51, 65, 69, 70 are the second pass).
@@ -137,15 +141,15 @@ An audit (`C:/dev/audit-table.md`, outside the repo) walked 122 actions a player
 * **missing**: no faithful route known (no effect, no token with documented syntax, or the other side's answer), or
   built on another branch (the event rows 1, 2 and 4).
 
-Now: **38** covered, **33** steered only, **13** refused, **27** needs recording, **11** missing (122). Before: 35 covered, 21 steered only, 11 refused, 55 missing. Row 119 and row 48 are mixed rows: the seat route covers the part
+Now: **40** covered, **33** steered only, **13** refused, **27** needs recording, **9** missing (122). Before: 35 covered, 21 steered only, 11 refused, 55 missing. Row 119 and row 48 are mixed rows: the seat route covers the part
 the table names first (hubs, forts) and refuses the rest (railways); the class is the better route.
 
 | # | Screen | Action | Audit | Now | How |
 |---|---|---|---|---|---|
-| 1 | Events | Read a pending event's text and options | MISSING | MISSING | events: built on another branch (hoi4wt-events), not here |
-| 2 | Events | Choose an event option | MISSING | MISSING | events branch |
+| 1 | Events | Read a pending event's text and options | MISSING | COVERED (seat) | `read_event` and the brief: OCR matched to events/*.txt (row 78) |
+| 2 | Events | Choose an event option | MISSING | COVERED (seat) | `choose_event_option` (row 79); rival: the game's AI answers |
 | 3 | Events | Close a news window | COVERED | COVERED | event.news_close click, unverified |
-| 4 | Events | Answer popups: peace offers, faction invites, access/lend-lease requests received | MISSING | MISSING | events branch |
+| 4 | Events | Answer popups: peace offers, faction invites, access/lend-lease requests received | MISSING | MISSING | not event windows: no events file to match (row 81) |
 | 5 | Top bar | Pause/unpause, set speed 1-5 | COVERED | COVERED |  |
 | 6 | Top bar | Advance time N days | COVERED | COVERED |  |
 | 7 | Top bar | Read panels and alerts | COVERED | COVERED |  |
@@ -316,6 +320,10 @@ for members are not readable) and 40.
   the route: every act in `DIPLOMACY_REFUSALS`. A test pins that the action enum is exactly those two plus the refusals.
 * **Directives** (`modgen.STRATEGIES`). `prepare_war`, `declare_war`, `volunteers`, `lend_lease`, `ally`, `spy_on`,
   `sabotage`, `steal_tech`, on the existing target plumbing: a block per (directive, country), gated on `llmb_<directive>_<TAG>`.
+* **`read_event`, `choose_event_option`** (`adapters/event_choice.py`, `modcontext/events.py`, `adapters/ocr.py`). The
+  open window is read by Windows OCR and matched to the playset's events; the option is clicked where its text was read.
+  Refused with nothing clicked when no window is open, it is not matched, the option is not shown to the country, or the
+  game is not in front. Whole story and the live steps: `docs/events.md`.
 * **`steer_production`, `steer_intelligence`, `steer_research`, `steer_navy`, `steer_air`, `steer_spending`, `steer_market`, `steer_army`** (`steering.py`). One block per (kind, id, level) in
   `llm_bridge_steering.txt`, one per technology in `llm_bridge_research.txt`, one per strategic region or country in
   `llm_bridge_regions.txt` (the last two generated per playset by `hoi4-harness mod-probe`); the inbox sets the flag, replacing the

@@ -1,0 +1,25 @@
+guiTypes = {
+	containerWindowType = {
+		name = "EventWindow"
+		position = { x=-282 y=-310 }
+		size = { width = 581 height =427 }
+		Orientation = CENTER
+		containerWindowType = {
+			name = "top_Window"
+			position = { x=0 y=0 }
+			size = { width = 581 height =121 }
+		}
+		containerWindowType = {
+			name = "bottom_Window"
+			position = { x=0 y=221 }
+			size = { width = 581 height = 206 }
+			gridBoxType = {
+				name = "options_grid"
+				position = { x = 215 y = -1 }
+				size = { width = 300 height = 30 }
+				slotsize = { width = 300 height = 47 }
+				max_slots_horizontal = 1
+			}
+		}
+	}
+}
