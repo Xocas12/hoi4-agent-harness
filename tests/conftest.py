@@ -54,3 +54,9 @@ def _no_real_display(monkeypatch):
     test pins it (or injects the readers) instead of depending on this machine."""
     monkeypatch.setattr("hoi4_harness.adapters.input_driver.default_display_settings", lambda: None)
     monkeypatch.setattr("hoi4_harness.adapters.input_driver.client_rect", lambda: None)
+
+
+@pytest.fixture(autouse=True)
+def _no_real_skill_home(monkeypatch, tmp_path):
+    """Skill packs are read from ~/.hoi4-harness/skills; a test gets an empty home of its own."""
+    monkeypatch.setenv("HOI4_HARNESS_HOME", str(tmp_path / "hoi4-harness-home"))

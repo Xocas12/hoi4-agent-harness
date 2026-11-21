@@ -150,6 +150,11 @@ class HarnessConfig:
     # replaces the whole prompt, mechanics included.
     guidance: str = "doctrine"
     system_prompt_extra: str = ""
+    # Skill packs (docs/skills.md): SKILL.md folders from these directories, the home
+    # folder, the repo and the active mods; `skills` names ones to include anyway.
+    skills: list[str] = field(default_factory=list)
+    skills_dirs: list[Path] = field(default_factory=list)
+    skill_tokens: int = 3000
     system_prompt_path: Path | None = None
     objective: str = (
         "Build a defensible economy, keep stability and war support healthy, and do not "
@@ -571,8 +576,8 @@ class HarnessConfig:
                          "chat_path",
                          "fake_human_script"} and value is not None:
                 setattr(self, key, Path(value))
-            elif key == "mod_dirs":
-                self.mod_dirs = [Path(v) for v in value]
+            elif key in ("mod_dirs", "skills_dirs"):
+                setattr(self, key, [Path(v) for v in value])
             elif hasattr(self, key):
                 setattr(self, key, value)
             else:
