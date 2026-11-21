@@ -62,6 +62,11 @@ REMOVE = "production.line.remove"
 CHANGE = "production.equipment.change"
 ROW = "production.line.{n}"
 PICK = "production.equipment.{equipment}"
+#: Per-row buttons. The 1.20 production screen has a - , + and remove button on EVERY line
+#: (seen live 2026-11-21), so a shared PLUS/MINUS/REMOVE only ever reaches row 1. When a row's
+#: own button is recorded it is clicked directly, without selecting the row first (a click on
+#: the row opens the equipment chooser).
+ROW_BUTTON = "production.line.{n}.{button}"
 
 #: The actions this module performs, and the one that exists only because of it.
 PRODUCTION_ACTIONS = ("set_production", "change_production_equipment")
@@ -74,6 +79,22 @@ def row_point(n: int) -> str:
 
 def pick_point(equipment: str) -> str:
     return PICK.format(equipment=equipment)
+
+
+def row_button(n: int, button: str) -> str:
+    return ROW_BUTTON.format(n=n, button=button)
+
+
+def _button_steps(row: int, shared: str, button: str, clicks: int,
+                  coordinates: dict) -> tuple[list[str], tuple[tuple[str, str], ...]]:
+    """The points needed and the gestures for ``clicks`` presses of a row's button: the row's
+    own button when recorded, else select the row and press the shared one."""
+    own = row_button(row, button)
+    if own in coordinates:
+        return [own], tuple(("click", own) for _ in range(clicks))
+    return ([row_point(row), shared],
+            (("click", row_point(row)), ("wait", "0.4"),
+             *(("click", shared) for _ in range(clicks))))
 
 
 def edit_points(rows: int = 1) -> list[str]:
@@ -162,8 +183,9 @@ def plan_set(call: ActionCall, state: GameState, coordinates: dict) -> Productio
             f"the {equipment} line is row {row}, past the {MAX_ROWS} rows a point can be "
             "recorded for")
     if target == 0:
-        _refuse_missing("set_production", _missing([row_point(row), REMOVE], coordinates))
-        steps = (*_opening(), ("click", row_point(row)), ("wait", "0.4"), ("click", REMOVE))
+        needed, clicks = _button_steps(row, REMOVE, "remove", 1, coordinates)
+        _refuse_missing("set_production", _missing(needed, coordinates))
+        steps = (*_opening(), *clicks)
         return ProductionOrder("set_production", "remove", equipment, row, -line.factories, 0,
                                current=line.factories, note=dup.strip(), steps=steps)
     delta = target - line.factories
@@ -180,10 +202,10 @@ def plan_set(call: ActionCall, state: GameState, coordinates: dict) -> Productio
             raise ProductionRefused(
                 f"{delta} more factories asked for, {free} free ({state.military_factories} "
                 f"military, {used} on lines)")
-    button = PLUS if delta > 0 else MINUS
-    _refuse_missing("set_production", _missing([row_point(row), button], coordinates))
-    steps = (*_opening(), ("click", row_point(row)), ("wait", "0.4"),
-             *[("click", button) for _ in range(abs(delta))])
+    shared, name = (PLUS, "plus") if delta > 0 else (MINUS, "minus")
+    needed, clicks = _button_steps(row, shared, name, abs(delta), coordinates)
+    _refuse_missing("set_production", _missing(needed, coordinates))
+    steps = (*_opening(), *clicks)
     return ProductionOrder("set_production", "edit", equipment, row, delta, target,
                            current=line.factories, note=dup.strip(), steps=steps)
 
@@ -208,10 +230,13 @@ def plan_equipment(call: ActionCall, state: GameState, coordinates: dict,
     if row > MAX_ROWS:
         raise ProductionRefused(f"the {source} line is row {row}, past the {MAX_ROWS} rows a "
                                 "point can be recorded for")
-    needed = [row_point(row), CHANGE, pick_point(dest)]
+    # On 1.20 a click on the line itself opens the equipment chooser; CHANGE is only for a
+    # layout that needs a separate button, and is clicked when it is recorded.
+    needed = [row_point(row), pick_point(dest)]
     _refuse_missing("change_production_equipment", _missing(needed, coordinates))
-    steps = (*_opening(), ("click", row_point(row)), ("wait", "0.4"), ("click", CHANGE),
-             ("wait", "0.5"), ("click", pick_point(dest)))
+    change = (("wait", "0.4"), ("click", CHANGE)) if CHANGE in coordinates else ()
+    steps = (*_opening(), ("click", row_point(row)), *change,
+             ("wait", "0.8"), ("click", pick_point(dest)))
     return ProductionOrder(EQUIPMENT_ACTION, "equipment", source, row, 0, 0, to_equipment=dest,
                            current=state.production[rows[0]].factories, steps=steps)
 
@@ -221,16 +246,20 @@ def recorded_summary(coordinates: dict) -> dict:
     rows = [n for n in range(1, MAX_ROWS + 1) if row_point(n) in coordinates]
     picks = sorted(k[len("production.equipment."):] for k in coordinates
                    if k.startswith("production.equipment.") and k != CHANGE)
-    return {"rows": rows, "plus": PLUS in coordinates, "minus": MINUS in coordinates,
+    own = [n for n in range(1, MAX_ROWS + 1) if row_button(n, "plus") in coordinates]
+    return {"rows": rows, "row_buttons": own,
+            "plus": PLUS in coordinates, "minus": MINUS in coordinates,
             "remove": REMOVE in coordinates, "change": CHANGE in coordinates, "picks": picks}
 
 
 def missing_for_edit(coordinates: dict) -> list[str]:
+    if row_button(1, "plus") in coordinates and row_button(1, "minus") in coordinates:
+        return []
     return _missing(edit_points(1), coordinates)
 
 
 def missing_for_equipment(coordinates: dict) -> list[str]:
-    miss = _missing([row_point(1), CHANGE], coordinates)
+    miss = _missing([row_point(1)], coordinates)
     if not recorded_summary(coordinates)["picks"]:
         miss.append(pick_point("<equipment>"))
     return miss

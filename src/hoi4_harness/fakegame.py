@@ -643,35 +643,49 @@ class FakeGame:
                     return True
             self.ui_log.append(f"production: click {pos} hit nothing on the equipment list")
             return True
+        # The 1.20 layout: every line has its own -, + and remove buttons ("row_buttons":
+        # {n: {"plus": p, "minus": p, "remove": p}}), which act on that line, selected or not.
+        for n, buttons in (ui.get("row_buttons") or {}).items():
+            for name, point in buttons.items():
+                if self._near(pos, point, tol):
+                    mine["row"] = int(n) - 1
+                    return self._production_button(name, self._selected_line(), lines)
         for n, point in ui["rows"].items():
             if self._near(pos, point, tol):
                 mine["row"] = int(n) - 1
                 self.ui_log.append(f"production: row {n} selected")
+                if ui.get("row_opens_picker"):  # 1.20: a click on a line opens the chooser
+                    mine["picker"] = True
+                    self.ui_log.append("production: the equipment list opened")
                 return True
         line = self._selected_line()
         for name, point in (("plus", ui.get("plus")), ("minus", ui.get("minus")),
                             ("remove", ui.get("remove")), ("change", ui.get("change"))):
             if point is None or not self._near(pos, point, tol):
                 continue
-            if line is None:
-                self.ui_log.append(f"production: {name} pressed with no line selected")
-            elif name == "plus":
-                free = self.world.state.military_factories - sum(x.factories for x in lines)
-                if free > 0:
-                    line.factories += 1
-                self.ui_log.append(f"production: {line.equipment} + -> {line.factories}")
-            elif name == "minus":
-                line.factories = max(line.factories - 1, 0)
-                self.ui_log.append(f"production: {line.equipment} - -> {line.factories}")
-            elif name == "remove":
-                lines.remove(line)
-                mine["row"] = None
-                self.ui_log.append(f"production: {line.equipment} line removed")
-            else:
-                mine["picker"] = True
-                self.ui_log.append("production: the equipment list opened")
-            return True
+            return self._production_button(name, line, lines)
         self.ui_log.append(f"production: click {pos} hit nothing on the production screen")
+        return True
+
+    def _production_button(self, name, line, lines) -> bool:
+        """One production button pressed on ``line`` (None: no line selected)."""
+        if line is None:
+            self.ui_log.append(f"production: {name} pressed with no line selected")
+        elif name == "plus":
+            free = self.world.state.military_factories - sum(x.factories for x in lines)
+            if free > 0:
+                line.factories += 1
+            self.ui_log.append(f"production: {line.equipment} + -> {line.factories}")
+        elif name == "minus":
+            line.factories = max(line.factories - 1, 0)
+            self.ui_log.append(f"production: {line.equipment} - -> {line.factories}")
+        elif name == "remove":
+            lines.remove(line)
+            self._production["row"] = None
+            self.ui_log.append(f"production: {line.equipment} line removed")
+        else:
+            self._production["picker"] = True
+            self.ui_log.append("production: the equipment list opened")
         return True
 
     def _selected_line(self):

@@ -969,6 +969,21 @@ Expected in the first lines: `independent mode: ... human_ai is not sent`, then 
 ...` and one `mouse tool refused: <tool>: <why>` for each tool that is off. Note which. A refused
 tool is the harness doing its job, not a failure: fix what it names and start again.
 
+**Research on 1.20, measured live 2026-11-21.** The 1.19 path (`y`, `w`, slot, tab, technology,
+Return twice) fails on 1.20 at the last two steps: a technology opens a details popup whose
+Research button Return does not press, and the military-industrial-organisation chooser that
+follows ignores Return (closing it cancels the research). The slot, the tabs (now a horizontal
+strip) and the technology cells the harness computes were all where the screen has them. Use
+`profiles/ui_scripts.1.20.json` (copy it to `<run-dir>/ui_scripts.json`) and record
+`research.confirm` (the popup's Research button, 750,252 at 1920x1080) and `research.mio_choice`
+(the chooser's "Research without a Military Industrial Organization" row, 1207,345). Clicked by
+hand, that sequence started Improved Infantry Equipment I. Through the harness it was not yet
+seen to work, for two reasons that are not the click path: the technologies asked for were not
+researchable yet (Radio needs Electronic Mechanical Engineering; the popup opens, its button does
+nothing), and an event window (the Rhineland news) lay over the popup's Research button.
+**Independent mode does not answer or close event windows**, and every click under one goes to
+the event: that is the next thing to build for this mode.
+
 **3. Research is picked and verified.** In the first wake (`no national focus` or `research slot(s)
 idle`) the model should call `start_research`. Watch the game: the research panel opens, a free slot
 is clicked, the tab, the technology, Return twice. Then check, in `transcript.jsonl`, the result:
@@ -1000,6 +1015,25 @@ Check `runs/hands-1/campaign.log` for `STOP:` lines when you end it, and that th
 paused.
 
 ### 14b. Production by click: edit a line, never duplicate it (#112)
+
+**Run live 2026-11-21 (1.20.0, 1920x1080, UI scale 1, GER 1936, `runs/hands-1`, `runs/hands-2`).**
+Two edits went through the harness and a fresh save confirmed both: support equipment, row 2,
+2 -> 4 (`+` twice) and 4 -> 3 (`-` once), `done and verified`, no second line. What it settled:
+
+* **P3 fails as written, and the code now copes.** The 1.20 screen has `-`, `+` and a remove
+  button on EVERY line, so one shared `production.factories.plus` only ever reaches row 1. Record
+  `production.line.N.minus`, `production.line.N.plus` and `production.line.N.remove` per row; the
+  harness clicks a row's own button when it is recorded, without selecting the row. At 1920x1080
+  the buttons are at x 497 / 592 / 627, y = 482 + 138 (N - 1) for the four rows the panel shows
+  without scrolling; `production.line.N` (the equipment picture, which opens the chooser) at
+  x 110, y = 550 + 138 (N - 1).
+* **P1 holds for the four visible rows**: the save's `military_lines` order (infantry, support,
+  artillery, light tank) is the screen's.
+* **P2 holds**: research then production leaves production open.
+* A click on a line's picture opens the equipment chooser directly, so
+  `production.equipment.change` is optional now (clicked only when recorded). The chooser itself
+  (P4) was not measured.
+
 
 Built against the fake game only. `set_production` over the console DUPLICATES a line that exists
 (seen live), so the click path edits it on the production screen instead. It needs a reader that
