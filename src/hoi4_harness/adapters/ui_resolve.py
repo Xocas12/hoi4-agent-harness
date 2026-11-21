@@ -38,7 +38,33 @@ COMPUTED_TARGETS: dict[str, tuple[str, ...]] = {
     # (uilayout.py); a recorded ``research.free_slot`` / ``research.tab.<folder>``
     # still overrides them.
     "research.free_slot": (),
+    # The 1.20 research path's two popup buttons (REFERENCE_POINTS): scaled from the
+    # points measured at 1920x1080, UI scale 1; a recorded point still wins.
+    "research.confirm": (),
+    "research.mio_choice": (),
 }
+#: Points measured live on 1.20.0 at 1920x1080, UI scale 1 (2026-11-21), in screen pixels. Both
+#: are on centred popups, so they are scaled from the screen's centre, the way
+#: ``uilayout.Geometry`` scales GUI units (pixels / 1.25 at the measured size, times the window's
+#: own scale). Only the measured size is verified; every other size or UI scale is an
+#: extrapolation, which is why a recorded point wins.
+REFERENCE_SCREEN = (1920, 1080)
+REFERENCE_POINTS: dict[str, tuple[int, int]] = {
+    # The technology popup's Research button.
+    "research.confirm": (750, 252),
+    # The MIO chooser's "Research without a Military Industrial Organization" row.
+    "research.mio_choice": (1207, 345),
+}
+
+
+def reference_point(name: str, window: Geometry) -> tuple[int, int]:
+    """A measured 1080p point placed in ``window``: its offset from the screen's centre, in GUI
+    units, times the window's scale (the identity at 1920x1080, UI scale 1)."""
+    rx, ry = REFERENCE_POINTS[name]
+    measured = Geometry(*REFERENCE_SCREEN)
+    dx, dy = (rx - REFERENCE_SCREEN[0] / 2) / measured.scale, (ry - REFERENCE_SCREEN[1] / 2) / measured.scale
+    gui_w, gui_h = window.gui_size
+    return window.to_screen(gui_w / 2 + dx, gui_h / 2 + dy)
 #: Click targets that start with one of these are computed too (the folder tabs).
 COMPUTED_PREFIXES = ("research.tab.",)
 
@@ -244,6 +270,10 @@ def resolve(
             computed["research.tech_point"] = tech_point(
                 place, coordinates, screen, tech, index.tech_gridboxes, window)
             _research_panel(computed, coordinates, index, place.folder, wanted, window, screen)
+            for point in REFERENCE_POINTS:
+                if point in wanted and point not in coordinates:
+                    computed[point] = reference_point(
+                        point, window or Geometry(*(screen or REFERENCE_SCREEN)))
         except LayoutRefused as why:
             raise Unresolvable(str(why)) from None
     return Resolved(args, computed)

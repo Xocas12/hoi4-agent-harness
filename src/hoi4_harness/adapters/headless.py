@@ -29,6 +29,7 @@ import time
 from collections.abc import Callable
 from pathlib import Path
 
+from ..baseai import game_version
 from ..config import HarnessConfig
 from ..types import ActionCall, ActionResult, GameState
 from .base import AdapterInfo, GameAdapter
@@ -42,6 +43,7 @@ from .hands import (
     Hands,
     delegable_armies,
     delegate_steps,
+    research_path_for,
     research_steps,
 )
 from .input_driver import ClockUnobservable, InputConfig, InputDriverAdapter
@@ -405,7 +407,14 @@ def build_headless(config: HarnessConfig, fake=None) -> CompositeAdapter:
     scripts: dict[str, list[Step]] = {"set_national_focus": parse_steps(FOCUS_SCRIPT)}
     user_scripts = config.ui_scripts_path or Path(config.run_dir) / DEFAULT_FILENAME
     if hands.mouse:
-        scripts["start_research"] = research_steps()
+        version = game_version(config.game_dir)
+        path = research_path_for(version)
+        scripts["start_research"] = research_steps(version)
+        hands.research_path = (
+            f"{path} click path (game version {version or 'unknown'}"
+            + ("" if version else ": the 1.19 path is kept") + ")"
+            + ("; research.confirm and research.mio_choice are scaled from the measured 1920x1080 "
+               "points unless recorded" if path == "1.20" else ""))
         scripts["delegate_army_to_ai"] = delegate_steps()
         if Path(user_scripts).exists():
             recorded = load_scripts(Path(user_scripts))

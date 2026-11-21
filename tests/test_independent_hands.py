@@ -89,11 +89,13 @@ class World:
 
 
 def make_world(tmp_path, *, camera="fresh", research_points=True, army_points=True, army=True,
-               **options) -> World:
+               version=None, **options) -> World:
     """A campaign config and fake game for SWE on the grid map, the mouse tools wired as the
     options say. ``camera``: fresh, stale (3 days old, no fingerprint), fingerprinted (3 days old
     with a matching display fingerprint), moved (a fingerprint from another UI scale), missing."""
     game = write_playset(tmp_path / "game")
+    if version:
+        (game / "launcher-settings.json").write_text(json.dumps({"rawVersion": version}))
     layer = load_layer(game)
     record_path = tmp_path / "camera.json"
     options.setdefault("campaign_control", "llm")

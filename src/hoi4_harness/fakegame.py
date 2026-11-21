@@ -383,7 +383,9 @@ class FakeGame:
         self.screen = (1920, 1080)
         #: Where the research panel's controls are, for a test that wants the mouse path:
         #: ``{"slot": (x, y), "tabs": {folder: (x, y)}, "techs": {tech: (folder, (x, y))}}``,
-        #: with ``tolerance`` px. None: no research clicks do anything. The points are the
+        #: with ``tolerance`` px. ``confirm`` and ``mio`` make it the 1.20 screen (a popup after
+        #: the technology, then the chooser, each answered by a click only).
+        #: None: no research clicks do anything. The points are the
         #: test's own (what the real game would put there), not computed by the harness.
         self.research_ui: dict | None = None
         self._research = {"stage": "panel", "tab": None, "tech": None}
@@ -595,6 +597,25 @@ class FakeGame:
                 else:
                     self.ui_log.append(f"research: click {pos} hit nothing on the slot list")
                 return True
+            if stage == "popup":
+                # 1.20: the technology's details popup. Its Research button starts the
+                # technology; a click anywhere else leaves the popup as it was.
+                if "confirm" in ui and self._near(pos, ui["confirm"], tol):
+                    tech = self._research["tech"]
+                    result = self.world.apply(ActionCall("start_research", {"technology": tech}))
+                    self.ui_log.append(f"research: popup Research -> {result.message}")
+                    self._research["stage"] = "chooser"
+                else:
+                    self.ui_log.append(f"research: click {pos} hit nothing on the popup")
+                return True
+            if stage == "chooser" and "mio" in ui:
+                if self._near(pos, ui["mio"], tol):
+                    self.panel = None
+                    self._research.update(stage="panel", tab=None, tech=None)
+                    self.ui_log.append("research: chooser answered without an organisation")
+                else:
+                    self.ui_log.append(f"research: click {pos} hit nothing on the chooser")
+                return True
             if stage == "tree":
                 for folder, point in ui["tabs"].items():
                     if self._near(pos, point, tol):
@@ -604,6 +625,8 @@ class FakeGame:
                 for tech, (folder, point) in ui["techs"].items():
                     if folder == self._research["tab"] and self._near(pos, point, tol):
                         self._research["tech"] = tech
+                        if "confirm" in ui:
+                            self._research["stage"] = "popup"
                         self.ui_log.append(f"research: {tech} selected")
                         return True
                 self.ui_log.append(f"research: click {pos} hit nothing on the tree")
@@ -710,6 +733,8 @@ class FakeGame:
         research = self._research
         if self.panel != "research" or self.research_ui is None:
             return
+        if "confirm" in self.research_ui:
+            return                      # 1.20: Return presses neither the popup nor the chooser
         if research["stage"] == "tree" and research["tech"]:
             result = self.world.apply(ActionCall("start_research",
                                                  {"technology": research["tech"]}))
