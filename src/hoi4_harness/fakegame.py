@@ -545,6 +545,26 @@ class FakeGame:
         """The mod's ``llm_bridge_emit_campaign``: the weekly conquest numbers."""
         self._write(self._llmb("camp", **self.ai.campaign_fields()))
 
+    def emit_observe(self) -> None:
+        """The mod's ``llm_bridge_emit_observe``: the weekly script-read numbers the save lacks.
+        The fake world has a resource income, a stockpile, wars and divisions, so those give the
+        resource, equipment, tension, garrison and peace lines; faction, volunteer and
+        collaboration lines need a world the fake does not model, so it prints none."""
+        s, tag = self.world.state, self.country
+        divisions = sum(g.count for g in s.divisions)
+        lines = [self._llmb("obsbegin", tag=tag)]
+        for name, net in sorted(s.resources.items()):
+            lines.append(self._llmb("res", tag=tag, r=name, prod=max(net, 0), cons=max(-net, 0),
+                                    imp=0, exp=0, net=net))
+        lines.append(self._llmb("tension", tag=tag, threat=min(100, 10 + 15 * len(s.wars))))
+        need = divisions * 600
+        lines.append(self._llmb("equip", tag=tag, a="infantry_equipment",
+                                stock=s.stockpiles.get("infantry_equipment", 0),
+                                army=need - 50 * len(s.wars), need=need))
+        lines.append(self._llmb("garrison", tag=tag, need=0, foreign=0, occupied=0))
+        lines.append(self._llmb("peace", tag=tag, **{"in": 0}, score=0, total=0, turn=0))
+        self._write(*lines)
+
     def kill(self) -> None:
         """The game process dies: no more days, no more lines."""
         self.alive = False
@@ -922,6 +942,7 @@ class FakeGame:
             self._telemetry_ticks()
             if self.date_ordinal % 7 == 0:
                 self.emit_campaign()
+                self.emit_observe()
 
     def _telemetry_ticks(self) -> None:
         """The mod's cadence for one in-game day: ``llm_bridge_daily_tick`` (daily, or every N
@@ -1498,6 +1519,8 @@ class FakeGame:
             return self.emit_front()
         if name == "llm_bridge_emit_campaign":
             return self.emit_campaign()
+        if name == "llm_bridge_emit_observe":
+            return self.emit_observe()
         if name.startswith("llm_bridge_telemetry_every_") and name.endswith("h"):
             try:
                 hours = cadence.validate(name.removeprefix("llm_bridge_telemetry_every_")[:-1])

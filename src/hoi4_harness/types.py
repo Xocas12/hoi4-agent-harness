@@ -144,6 +144,34 @@ class CampaignStats:
 
 
 @dataclass
+class ModObserved:
+    """What the mod's weekly ``observe`` lines read from script (adapters/observe_lines.py): the
+    rows of docs/observation.md the text save cannot hold. Every field is None / empty until its
+    line arrives, and a token the game did not expand leaves its field out (never a zero)."""
+
+    date: str | None = None
+    #: Resource -> {"prod", "cons", "imp", "exp", "net"}: what the top bar's income is made of.
+    resources: dict[str, dict[str, float]] = field(default_factory=dict)
+    #: World tension, 0-1.
+    tension: float | None = None
+    #: Equipment archetype -> {"stock", "army", "need"}: the shelf, what divisions hold, what they need.
+    equipment: dict[str, dict[str, float]] = field(default_factory=dict)
+    #: {"need", "foreign", "occupied"}: garrison manpower needed and held abroad, occupied states.
+    garrison: dict[str, float] = field(default_factory=dict)
+    #: {"in": bool, "score": float, "total": float, "turn": float}.
+    peace: dict[str, float | bool] = field(default_factory=dict)
+    #: The country's own influence in its faction ({"score", "ratio", "rank", "manifest", "power"})
+    #: and the other members' ({"score", "ratio", "rank"}), keyed by tag.
+    faction: dict[str, float] = field(default_factory=dict)
+    faction_members: dict[str, dict[str, float]] = field(default_factory=dict)
+    #: Country -> {"in", "out"}: volunteers from it serving the player / the player's serving it,
+    #: each a LOWER BOUND (the trigger only compares).
+    volunteers: dict[str, dict[str, int]] = field(default_factory=dict)
+    #: Enemy -> collaboration with the player's occupation, 0-1.
+    collaboration: dict[str, float] = field(default_factory=dict)
+
+
+@dataclass
 class WarChange:
     """One dated change to a war the mock is scripted to fight.
 
@@ -289,6 +317,9 @@ class GameState:
     ai_controlled: bool | None = None
     #: The weekly conquest numbers of a campaign run; None until the first line.
     campaign: CampaignStats | None = None
+    #: The weekly script-read numbers the save lacks (schema v5 ``res``, ``tension``, ``equip``,
+    #: ``garrison``, ``peace``, ``fac``, ``vol``, ``collab`` lines); None until the first one.
+    observed: ModObserved | None = None
     # --- hybrid control: what the native AI has been told to do ---------
     delegated_armies: list[str] = field(default_factory=list)
     ai_directives: list[str] = field(default_factory=list)
