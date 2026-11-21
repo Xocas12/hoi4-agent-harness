@@ -892,6 +892,318 @@ llmb_steer_production_garrison_any_much_more = {
 	ai_strategy = { type = garrison value = 200 }
 }
 
+llmb_steer_production_min_factories_infantry_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_production_min_factories_infantry_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_production_min_factories_infantry_more } } }
+	ai_strategy = { type = equipment_production_min_factories id = infantry value = 3 }
+}
+
+llmb_steer_production_min_factories_infantry_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_production_min_factories_infantry_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_production_min_factories_infantry_much_more } } }
+	ai_strategy = { type = equipment_production_min_factories id = infantry value = 10 }
+}
+
+llmb_steer_production_min_factories_artillery_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_production_min_factories_artillery_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_production_min_factories_artillery_more } } }
+	ai_strategy = { type = equipment_production_min_factories id = artillery value = 3 }
+}
+
+llmb_steer_production_min_factories_artillery_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_production_min_factories_artillery_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_production_min_factories_artillery_much_more } } }
+	ai_strategy = { type = equipment_production_min_factories id = artillery value = 10 }
+}
+
+llmb_steer_production_min_factories_anti_tank_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_production_min_factories_anti_tank_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_production_min_factories_anti_tank_more } } }
+	ai_strategy = { type = equipment_production_min_factories id = anti_tank value = 3 }
+}
+
+llmb_steer_production_min_factories_anti_tank_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_production_min_factories_anti_tank_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_production_min_factories_anti_tank_much_more } } }
+	ai_strategy = { type = equipment_production_min_factories id = anti_tank value = 10 }
+}
+
+llmb_steer_production_min_factories_anti_air_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_production_min_factories_anti_air_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_production_min_factories_anti_air_more } } }
+	ai_strategy = { type = equipment_production_min_factories id = anti_air value = 3 }
+}
+
+llmb_steer_production_min_factories_anti_air_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_production_min_factories_anti_air_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_production_min_factories_anti_air_much_more } } }
+	ai_strategy = { type = equipment_production_min_factories id = anti_air value = 10 }
+}
+
+llmb_steer_production_min_factories_support_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_production_min_factories_support_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_production_min_factories_support_more } } }
+	ai_strategy = { type = equipment_production_min_factories id = support value = 3 }
+}
+
+llmb_steer_production_min_factories_support_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_production_min_factories_support_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_production_min_factories_support_much_more } } }
+	ai_strategy = { type = equipment_production_min_factories id = support value = 10 }
+}
+
+llmb_steer_production_min_factories_motorized_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_production_min_factories_motorized_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_production_min_factories_motorized_more } } }
+	ai_strategy = { type = equipment_production_min_factories id = motorized value = 3 }
+}
+
+llmb_steer_production_min_factories_motorized_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_production_min_factories_motorized_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_production_min_factories_motorized_much_more } } }
+	ai_strategy = { type = equipment_production_min_factories id = motorized value = 10 }
+}
+
+llmb_steer_production_min_factories_mechanized_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_production_min_factories_mechanized_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_production_min_factories_mechanized_more } } }
+	ai_strategy = { type = equipment_production_min_factories id = mechanized value = 3 }
+}
+
+llmb_steer_production_min_factories_mechanized_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_production_min_factories_mechanized_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_production_min_factories_mechanized_much_more } } }
+	ai_strategy = { type = equipment_production_min_factories id = mechanized value = 10 }
+}
+
+llmb_steer_production_min_factories_armor_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_production_min_factories_armor_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_production_min_factories_armor_more } } }
+	ai_strategy = { type = equipment_production_min_factories id = armor value = 3 }
+}
+
+llmb_steer_production_min_factories_armor_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_production_min_factories_armor_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_production_min_factories_armor_much_more } } }
+	ai_strategy = { type = equipment_production_min_factories id = armor value = 10 }
+}
+
+llmb_steer_production_min_factories_fighter_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_production_min_factories_fighter_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_production_min_factories_fighter_more } } }
+	ai_strategy = { type = equipment_production_min_factories id = fighter value = 3 }
+}
+
+llmb_steer_production_min_factories_fighter_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_production_min_factories_fighter_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_production_min_factories_fighter_much_more } } }
+	ai_strategy = { type = equipment_production_min_factories id = fighter value = 10 }
+}
+
+llmb_steer_production_min_factories_heavy_fighter_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_production_min_factories_heavy_fighter_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_production_min_factories_heavy_fighter_more } } }
+	ai_strategy = { type = equipment_production_min_factories id = heavy_fighter value = 3 }
+}
+
+llmb_steer_production_min_factories_heavy_fighter_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_production_min_factories_heavy_fighter_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_production_min_factories_heavy_fighter_much_more } } }
+	ai_strategy = { type = equipment_production_min_factories id = heavy_fighter value = 10 }
+}
+
+llmb_steer_production_min_factories_interceptor_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_production_min_factories_interceptor_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_production_min_factories_interceptor_more } } }
+	ai_strategy = { type = equipment_production_min_factories id = interceptor value = 3 }
+}
+
+llmb_steer_production_min_factories_interceptor_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_production_min_factories_interceptor_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_production_min_factories_interceptor_much_more } } }
+	ai_strategy = { type = equipment_production_min_factories id = interceptor value = 10 }
+}
+
+llmb_steer_production_min_factories_cas_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_production_min_factories_cas_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_production_min_factories_cas_more } } }
+	ai_strategy = { type = equipment_production_min_factories id = cas value = 3 }
+}
+
+llmb_steer_production_min_factories_cas_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_production_min_factories_cas_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_production_min_factories_cas_much_more } } }
+	ai_strategy = { type = equipment_production_min_factories id = cas value = 10 }
+}
+
+llmb_steer_production_min_factories_tactical_bomber_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_production_min_factories_tactical_bomber_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_production_min_factories_tactical_bomber_more } } }
+	ai_strategy = { type = equipment_production_min_factories id = tactical_bomber value = 3 }
+}
+
+llmb_steer_production_min_factories_tactical_bomber_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_production_min_factories_tactical_bomber_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_production_min_factories_tactical_bomber_much_more } } }
+	ai_strategy = { type = equipment_production_min_factories id = tactical_bomber value = 10 }
+}
+
+llmb_steer_production_min_factories_strategic_bomber_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_production_min_factories_strategic_bomber_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_production_min_factories_strategic_bomber_more } } }
+	ai_strategy = { type = equipment_production_min_factories id = strategic_bomber value = 3 }
+}
+
+llmb_steer_production_min_factories_strategic_bomber_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_production_min_factories_strategic_bomber_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_production_min_factories_strategic_bomber_much_more } } }
+	ai_strategy = { type = equipment_production_min_factories id = strategic_bomber value = 10 }
+}
+
+llmb_steer_production_min_factories_naval_bomber_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_production_min_factories_naval_bomber_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_production_min_factories_naval_bomber_more } } }
+	ai_strategy = { type = equipment_production_min_factories id = naval_bomber value = 3 }
+}
+
+llmb_steer_production_min_factories_naval_bomber_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_production_min_factories_naval_bomber_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_production_min_factories_naval_bomber_much_more } } }
+	ai_strategy = { type = equipment_production_min_factories id = naval_bomber value = 10 }
+}
+
+llmb_steer_production_min_factories_scout_plane_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_production_min_factories_scout_plane_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_production_min_factories_scout_plane_more } } }
+	ai_strategy = { type = equipment_production_min_factories id = scout_plane value = 3 }
+}
+
+llmb_steer_production_min_factories_scout_plane_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_production_min_factories_scout_plane_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_production_min_factories_scout_plane_much_more } } }
+	ai_strategy = { type = equipment_production_min_factories id = scout_plane value = 10 }
+}
+
+llmb_steer_production_min_factories_maritime_patrol_plane_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_production_min_factories_maritime_patrol_plane_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_production_min_factories_maritime_patrol_plane_more } } }
+	ai_strategy = { type = equipment_production_min_factories id = maritime_patrol_plane value = 3 }
+}
+
+llmb_steer_production_min_factories_maritime_patrol_plane_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_production_min_factories_maritime_patrol_plane_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_production_min_factories_maritime_patrol_plane_much_more } } }
+	ai_strategy = { type = equipment_production_min_factories id = maritime_patrol_plane value = 10 }
+}
+
+llmb_steer_production_min_factories_convoy_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_production_min_factories_convoy_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_production_min_factories_convoy_more } } }
+	ai_strategy = { type = equipment_production_min_factories id = convoy value = 3 }
+}
+
+llmb_steer_production_min_factories_convoy_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_production_min_factories_convoy_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_production_min_factories_convoy_much_more } } }
+	ai_strategy = { type = equipment_production_min_factories id = convoy value = 10 }
+}
+
+llmb_steer_production_min_factories_submarine_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_production_min_factories_submarine_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_production_min_factories_submarine_more } } }
+	ai_strategy = { type = equipment_production_min_factories id = submarine value = 3 }
+}
+
+llmb_steer_production_min_factories_submarine_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_production_min_factories_submarine_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_production_min_factories_submarine_much_more } } }
+	ai_strategy = { type = equipment_production_min_factories id = submarine value = 10 }
+}
+
+llmb_steer_production_min_factories_screen_ship_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_production_min_factories_screen_ship_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_production_min_factories_screen_ship_more } } }
+	ai_strategy = { type = equipment_production_min_factories id = screen_ship value = 3 }
+}
+
+llmb_steer_production_min_factories_screen_ship_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_production_min_factories_screen_ship_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_production_min_factories_screen_ship_much_more } } }
+	ai_strategy = { type = equipment_production_min_factories id = screen_ship value = 10 }
+}
+
+llmb_steer_production_min_factories_capital_ship_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_production_min_factories_capital_ship_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_production_min_factories_capital_ship_more } } }
+	ai_strategy = { type = equipment_production_min_factories id = capital_ship value = 3 }
+}
+
+llmb_steer_production_min_factories_capital_ship_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_production_min_factories_capital_ship_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_production_min_factories_capital_ship_much_more } } }
+	ai_strategy = { type = equipment_production_min_factories id = capital_ship value = 10 }
+}
+
+llmb_steer_production_min_factories_carrier_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_production_min_factories_carrier_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_production_min_factories_carrier_more } } }
+	ai_strategy = { type = equipment_production_min_factories id = carrier value = 3 }
+}
+
+llmb_steer_production_min_factories_carrier_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_production_min_factories_carrier_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_production_min_factories_carrier_much_more } } }
+	ai_strategy = { type = equipment_production_min_factories id = carrier value = 10 }
+}
+
+llmb_steer_production_military_share_any_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_production_military_share_any_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_production_military_share_any_more } } }
+	ai_strategy = { type = added_military_to_civilian_factory_ratio value = 25 }
+}
+
+llmb_steer_production_military_share_any_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_production_military_share_any_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_production_military_share_any_much_more } } }
+	ai_strategy = { type = added_military_to_civilian_factory_ratio value = 50 }
+}
+
+llmb_steer_production_dockyard_share_any_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_production_dockyard_share_any_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_production_dockyard_share_any_more } } }
+	ai_strategy = { type = dockyard_to_military_factory_ratio value = 20 }
+}
+
+llmb_steer_production_dockyard_share_any_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_production_dockyard_share_any_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_production_dockyard_share_any_much_more } } }
+	ai_strategy = { type = dockyard_to_military_factory_ratio value = 40 }
+}
+
+llmb_steer_production_air_balance_any_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_production_air_balance_any_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_production_air_balance_any_more } } }
+	ai_strategy = { type = air_factory_balance value = 15 }
+}
+
+llmb_steer_production_air_balance_any_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_production_air_balance_any_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_production_air_balance_any_much_more } } }
+	ai_strategy = { type = air_factory_balance value = 50 }
+}
+
+llmb_steer_production_surplus_any_less = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_production_surplus_any_less }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_production_surplus_any_less } } }
+	ai_strategy = { type = equipment_stockpile_surplus_ratio value = -25 }
+}
+
+llmb_steer_production_surplus_any_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_production_surplus_any_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_production_surplus_any_more } } }
+	ai_strategy = { type = equipment_stockpile_surplus_ratio value = 35 }
+}
+
 llmb_steer_intelligence_branch_branch_intelligence_less = {
 	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_intelligence_branch_branch_intelligence_less }
 	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_intelligence_branch_branch_intelligence_less } } }
@@ -1058,4 +1370,838 @@ llmb_steer_intelligence_mission_control_trade_much_more = {
 	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_intelligence_mission_control_trade_much_more }
 	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_intelligence_mission_control_trade_much_more } } }
 	ai_strategy = { type = operative_mission mission = control_trade value = 1000 }
+}
+
+llmb_steer_intelligence_spymaster_any_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_intelligence_spymaster_any_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_intelligence_spymaster_any_more } } }
+	ai_strategy = { type = become_spymaster value = 30 }
+}
+
+llmb_steer_intelligence_spymaster_any_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_intelligence_spymaster_any_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_intelligence_spymaster_any_much_more } } }
+	ai_strategy = { type = become_spymaster value = 100 }
+}
+
+llmb_steer_spending_land_xp_division_template_less = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_spending_land_xp_division_template_less }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_spending_land_xp_division_template_less } } }
+	ai_strategy = { type = land_xp_spend_priority id = division_template value = -100 }
+}
+
+llmb_steer_spending_land_xp_division_template_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_spending_land_xp_division_template_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_spending_land_xp_division_template_more } } }
+	ai_strategy = { type = land_xp_spend_priority id = division_template value = 100 }
+}
+
+llmb_steer_spending_land_xp_division_template_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_spending_land_xp_division_template_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_spending_land_xp_division_template_much_more } } }
+	ai_strategy = { type = land_xp_spend_priority id = division_template value = 300 }
+}
+
+llmb_steer_spending_land_xp_unlock_doctrine_less = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_spending_land_xp_unlock_doctrine_less }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_spending_land_xp_unlock_doctrine_less } } }
+	ai_strategy = { type = land_xp_spend_priority id = unlock_doctrine value = -100 }
+}
+
+llmb_steer_spending_land_xp_unlock_doctrine_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_spending_land_xp_unlock_doctrine_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_spending_land_xp_unlock_doctrine_more } } }
+	ai_strategy = { type = land_xp_spend_priority id = unlock_doctrine value = 100 }
+}
+
+llmb_steer_spending_land_xp_unlock_doctrine_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_spending_land_xp_unlock_doctrine_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_spending_land_xp_unlock_doctrine_much_more } } }
+	ai_strategy = { type = land_xp_spend_priority id = unlock_doctrine value = 300 }
+}
+
+llmb_steer_spending_land_xp_equipment_variant_less = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_spending_land_xp_equipment_variant_less }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_spending_land_xp_equipment_variant_less } } }
+	ai_strategy = { type = land_xp_spend_priority id = equipment_variant value = -100 }
+}
+
+llmb_steer_spending_land_xp_equipment_variant_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_spending_land_xp_equipment_variant_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_spending_land_xp_equipment_variant_more } } }
+	ai_strategy = { type = land_xp_spend_priority id = equipment_variant value = 100 }
+}
+
+llmb_steer_spending_land_xp_equipment_variant_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_spending_land_xp_equipment_variant_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_spending_land_xp_equipment_variant_much_more } } }
+	ai_strategy = { type = land_xp_spend_priority id = equipment_variant value = 300 }
+}
+
+llmb_steer_spending_land_xp_army_spirit_less = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_spending_land_xp_army_spirit_less }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_spending_land_xp_army_spirit_less } } }
+	ai_strategy = { type = land_xp_spend_priority id = army_spirit value = -100 }
+}
+
+llmb_steer_spending_land_xp_army_spirit_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_spending_land_xp_army_spirit_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_spending_land_xp_army_spirit_more } } }
+	ai_strategy = { type = land_xp_spend_priority id = army_spirit value = 100 }
+}
+
+llmb_steer_spending_land_xp_army_spirit_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_spending_land_xp_army_spirit_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_spending_land_xp_army_spirit_much_more } } }
+	ai_strategy = { type = land_xp_spend_priority id = army_spirit value = 300 }
+}
+
+llmb_steer_spending_air_xp_unlock_doctrine_less = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_spending_air_xp_unlock_doctrine_less }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_spending_air_xp_unlock_doctrine_less } } }
+	ai_strategy = { type = air_xp_spend_priority id = unlock_doctrine value = -100 }
+}
+
+llmb_steer_spending_air_xp_unlock_doctrine_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_spending_air_xp_unlock_doctrine_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_spending_air_xp_unlock_doctrine_more } } }
+	ai_strategy = { type = air_xp_spend_priority id = unlock_doctrine value = 100 }
+}
+
+llmb_steer_spending_air_xp_unlock_doctrine_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_spending_air_xp_unlock_doctrine_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_spending_air_xp_unlock_doctrine_much_more } } }
+	ai_strategy = { type = air_xp_spend_priority id = unlock_doctrine value = 300 }
+}
+
+llmb_steer_spending_air_xp_equipment_variant_less = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_spending_air_xp_equipment_variant_less }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_spending_air_xp_equipment_variant_less } } }
+	ai_strategy = { type = air_xp_spend_priority id = equipment_variant value = -100 }
+}
+
+llmb_steer_spending_air_xp_equipment_variant_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_spending_air_xp_equipment_variant_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_spending_air_xp_equipment_variant_more } } }
+	ai_strategy = { type = air_xp_spend_priority id = equipment_variant value = 100 }
+}
+
+llmb_steer_spending_air_xp_equipment_variant_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_spending_air_xp_equipment_variant_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_spending_air_xp_equipment_variant_much_more } } }
+	ai_strategy = { type = air_xp_spend_priority id = equipment_variant value = 300 }
+}
+
+llmb_steer_spending_air_xp_air_spirit_less = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_spending_air_xp_air_spirit_less }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_spending_air_xp_air_spirit_less } } }
+	ai_strategy = { type = air_xp_spend_priority id = air_spirit value = -100 }
+}
+
+llmb_steer_spending_air_xp_air_spirit_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_spending_air_xp_air_spirit_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_spending_air_xp_air_spirit_more } } }
+	ai_strategy = { type = air_xp_spend_priority id = air_spirit value = 100 }
+}
+
+llmb_steer_spending_air_xp_air_spirit_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_spending_air_xp_air_spirit_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_spending_air_xp_air_spirit_much_more } } }
+	ai_strategy = { type = air_xp_spend_priority id = air_spirit value = 300 }
+}
+
+llmb_steer_spending_navy_xp_unlock_doctrine_less = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_spending_navy_xp_unlock_doctrine_less }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_spending_navy_xp_unlock_doctrine_less } } }
+	ai_strategy = { type = navy_xp_spend_priority id = unlock_doctrine value = -100 }
+}
+
+llmb_steer_spending_navy_xp_unlock_doctrine_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_spending_navy_xp_unlock_doctrine_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_spending_navy_xp_unlock_doctrine_more } } }
+	ai_strategy = { type = navy_xp_spend_priority id = unlock_doctrine value = 100 }
+}
+
+llmb_steer_spending_navy_xp_unlock_doctrine_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_spending_navy_xp_unlock_doctrine_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_spending_navy_xp_unlock_doctrine_much_more } } }
+	ai_strategy = { type = navy_xp_spend_priority id = unlock_doctrine value = 300 }
+}
+
+llmb_steer_spending_navy_xp_equipment_variant_less = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_spending_navy_xp_equipment_variant_less }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_spending_navy_xp_equipment_variant_less } } }
+	ai_strategy = { type = navy_xp_spend_priority id = equipment_variant value = -100 }
+}
+
+llmb_steer_spending_navy_xp_equipment_variant_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_spending_navy_xp_equipment_variant_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_spending_navy_xp_equipment_variant_more } } }
+	ai_strategy = { type = navy_xp_spend_priority id = equipment_variant value = 100 }
+}
+
+llmb_steer_spending_navy_xp_equipment_variant_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_spending_navy_xp_equipment_variant_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_spending_navy_xp_equipment_variant_much_more } } }
+	ai_strategy = { type = navy_xp_spend_priority id = equipment_variant value = 300 }
+}
+
+llmb_steer_spending_navy_xp_navy_spirit_less = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_spending_navy_xp_navy_spirit_less }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_spending_navy_xp_navy_spirit_less } } }
+	ai_strategy = { type = navy_xp_spend_priority id = navy_spirit value = -100 }
+}
+
+llmb_steer_spending_navy_xp_navy_spirit_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_spending_navy_xp_navy_spirit_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_spending_navy_xp_navy_spirit_more } } }
+	ai_strategy = { type = navy_xp_spend_priority id = navy_spirit value = 100 }
+}
+
+llmb_steer_spending_navy_xp_navy_spirit_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_spending_navy_xp_navy_spirit_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_spending_navy_xp_navy_spirit_much_more } } }
+	ai_strategy = { type = navy_xp_spend_priority id = navy_spirit value = 300 }
+}
+
+llmb_steer_spending_pp_admiral_less = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_spending_pp_admiral_less }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_spending_pp_admiral_less } } }
+	ai_strategy = { type = pp_spend_priority id = admiral value = -100 }
+}
+
+llmb_steer_spending_pp_admiral_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_spending_pp_admiral_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_spending_pp_admiral_more } } }
+	ai_strategy = { type = pp_spend_priority id = admiral value = 100 }
+}
+
+llmb_steer_spending_pp_admiral_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_spending_pp_admiral_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_spending_pp_admiral_much_more } } }
+	ai_strategy = { type = pp_spend_priority id = admiral value = 200 }
+}
+
+llmb_steer_spending_pp_army_chief_less = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_spending_pp_army_chief_less }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_spending_pp_army_chief_less } } }
+	ai_strategy = { type = pp_spend_priority id = army_chief value = -100 }
+}
+
+llmb_steer_spending_pp_army_chief_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_spending_pp_army_chief_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_spending_pp_army_chief_more } } }
+	ai_strategy = { type = pp_spend_priority id = army_chief value = 100 }
+}
+
+llmb_steer_spending_pp_army_chief_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_spending_pp_army_chief_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_spending_pp_army_chief_much_more } } }
+	ai_strategy = { type = pp_spend_priority id = army_chief value = 200 }
+}
+
+llmb_steer_spending_pp_navy_chief_less = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_spending_pp_navy_chief_less }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_spending_pp_navy_chief_less } } }
+	ai_strategy = { type = pp_spend_priority id = navy_chief value = -100 }
+}
+
+llmb_steer_spending_pp_navy_chief_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_spending_pp_navy_chief_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_spending_pp_navy_chief_more } } }
+	ai_strategy = { type = pp_spend_priority id = navy_chief value = 100 }
+}
+
+llmb_steer_spending_pp_navy_chief_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_spending_pp_navy_chief_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_spending_pp_navy_chief_much_more } } }
+	ai_strategy = { type = pp_spend_priority id = navy_chief value = 200 }
+}
+
+llmb_steer_spending_pp_become_faction_leader_less = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_spending_pp_become_faction_leader_less }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_spending_pp_become_faction_leader_less } } }
+	ai_strategy = { type = pp_spend_priority id = become_faction_leader value = -100 }
+}
+
+llmb_steer_spending_pp_become_faction_leader_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_spending_pp_become_faction_leader_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_spending_pp_become_faction_leader_more } } }
+	ai_strategy = { type = pp_spend_priority id = become_faction_leader value = 100 }
+}
+
+llmb_steer_spending_pp_become_faction_leader_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_spending_pp_become_faction_leader_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_spending_pp_become_faction_leader_much_more } } }
+	ai_strategy = { type = pp_spend_priority id = become_faction_leader value = 200 }
+}
+
+llmb_steer_spending_pp_decision_less = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_spending_pp_decision_less }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_spending_pp_decision_less } } }
+	ai_strategy = { type = pp_spend_priority id = decision value = -100 }
+}
+
+llmb_steer_spending_pp_decision_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_spending_pp_decision_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_spending_pp_decision_more } } }
+	ai_strategy = { type = pp_spend_priority id = decision value = 100 }
+}
+
+llmb_steer_spending_pp_decision_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_spending_pp_decision_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_spending_pp_decision_much_more } } }
+	ai_strategy = { type = pp_spend_priority id = decision value = 200 }
+}
+
+llmb_steer_spending_pp_guarantee_less = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_spending_pp_guarantee_less }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_spending_pp_guarantee_less } } }
+	ai_strategy = { type = pp_spend_priority id = guarantee value = -100 }
+}
+
+llmb_steer_spending_pp_guarantee_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_spending_pp_guarantee_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_spending_pp_guarantee_more } } }
+	ai_strategy = { type = pp_spend_priority id = guarantee value = 100 }
+}
+
+llmb_steer_spending_pp_guarantee_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_spending_pp_guarantee_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_spending_pp_guarantee_much_more } } }
+	ai_strategy = { type = pp_spend_priority id = guarantee value = 200 }
+}
+
+llmb_steer_spending_pp_industrial_concern_less = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_spending_pp_industrial_concern_less }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_spending_pp_industrial_concern_less } } }
+	ai_strategy = { type = pp_spend_priority id = industrial_concern value = -100 }
+}
+
+llmb_steer_spending_pp_industrial_concern_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_spending_pp_industrial_concern_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_spending_pp_industrial_concern_more } } }
+	ai_strategy = { type = pp_spend_priority id = industrial_concern value = 100 }
+}
+
+llmb_steer_spending_pp_industrial_concern_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_spending_pp_industrial_concern_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_spending_pp_industrial_concern_much_more } } }
+	ai_strategy = { type = pp_spend_priority id = industrial_concern value = 200 }
+}
+
+llmb_steer_spending_pp_political_advisor_less = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_spending_pp_political_advisor_less }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_spending_pp_political_advisor_less } } }
+	ai_strategy = { type = pp_spend_priority id = political_advisor value = -100 }
+}
+
+llmb_steer_spending_pp_political_advisor_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_spending_pp_political_advisor_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_spending_pp_political_advisor_more } } }
+	ai_strategy = { type = pp_spend_priority id = political_advisor value = 100 }
+}
+
+llmb_steer_spending_pp_political_advisor_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_spending_pp_political_advisor_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_spending_pp_political_advisor_much_more } } }
+	ai_strategy = { type = pp_spend_priority id = political_advisor value = 200 }
+}
+
+llmb_steer_spending_pp_relation_less = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_spending_pp_relation_less }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_spending_pp_relation_less } } }
+	ai_strategy = { type = pp_spend_priority id = relation value = -100 }
+}
+
+llmb_steer_spending_pp_relation_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_spending_pp_relation_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_spending_pp_relation_more } } }
+	ai_strategy = { type = pp_spend_priority id = relation value = 100 }
+}
+
+llmb_steer_spending_pp_relation_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_spending_pp_relation_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_spending_pp_relation_much_more } } }
+	ai_strategy = { type = pp_spend_priority id = relation value = 200 }
+}
+
+llmb_steer_spending_pp_supportive_scientist_less = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_spending_pp_supportive_scientist_less }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_spending_pp_supportive_scientist_less } } }
+	ai_strategy = { type = pp_spend_priority id = supportive_scientist value = -100 }
+}
+
+llmb_steer_spending_pp_supportive_scientist_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_spending_pp_supportive_scientist_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_spending_pp_supportive_scientist_more } } }
+	ai_strategy = { type = pp_spend_priority id = supportive_scientist value = 100 }
+}
+
+llmb_steer_spending_pp_supportive_scientist_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_spending_pp_supportive_scientist_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_spending_pp_supportive_scientist_much_more } } }
+	ai_strategy = { type = pp_spend_priority id = supportive_scientist value = 200 }
+}
+
+llmb_steer_spending_pp_amount_idea_less = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_spending_pp_amount_idea_less }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_spending_pp_amount_idea_less } } }
+	ai_strategy = { type = pp_spend_amount id = idea value = -50 }
+}
+
+llmb_steer_spending_pp_amount_idea_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_spending_pp_amount_idea_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_spending_pp_amount_idea_more } } }
+	ai_strategy = { type = pp_spend_amount id = idea value = 100 }
+}
+
+llmb_steer_spending_pp_amount_idea_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_spending_pp_amount_idea_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_spending_pp_amount_idea_much_more } } }
+	ai_strategy = { type = pp_spend_amount id = idea value = 500 }
+}
+
+llmb_steer_spending_pp_amount_decision_less = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_spending_pp_amount_decision_less }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_spending_pp_amount_decision_less } } }
+	ai_strategy = { type = pp_spend_amount id = decision value = -50 }
+}
+
+llmb_steer_spending_pp_amount_decision_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_spending_pp_amount_decision_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_spending_pp_amount_decision_more } } }
+	ai_strategy = { type = pp_spend_amount id = decision value = 100 }
+}
+
+llmb_steer_spending_pp_amount_decision_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_spending_pp_amount_decision_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_spending_pp_amount_decision_much_more } } }
+	ai_strategy = { type = pp_spend_amount id = decision value = 500 }
+}
+
+llmb_steer_market_spend_any_less = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_spend_any_less }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_spend_any_less } } }
+	ai_strategy = { type = equipment_market_spend_factories value = -50 }
+}
+
+llmb_steer_market_spend_any_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_spend_any_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_spend_any_more } } }
+	ai_strategy = { type = equipment_market_spend_factories value = 20 }
+}
+
+llmb_steer_market_spend_any_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_spend_any_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_spend_any_much_more } } }
+	ai_strategy = { type = equipment_market_spend_factories value = 100 }
+}
+
+llmb_steer_army_template_infantry_less = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_army_template_infantry_less }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_army_template_infantry_less } } }
+	ai_strategy = { type = template_prio id = infantry value = -100 }
+}
+
+llmb_steer_army_template_infantry_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_army_template_infantry_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_army_template_infantry_more } } }
+	ai_strategy = { type = template_prio id = infantry value = 50 }
+}
+
+llmb_steer_army_template_infantry_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_army_template_infantry_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_army_template_infantry_much_more } } }
+	ai_strategy = { type = template_prio id = infantry value = 150 }
+}
+
+llmb_steer_army_template_cavalry_less = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_army_template_cavalry_less }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_army_template_cavalry_less } } }
+	ai_strategy = { type = template_prio id = cavalry value = -100 }
+}
+
+llmb_steer_army_template_cavalry_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_army_template_cavalry_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_army_template_cavalry_more } } }
+	ai_strategy = { type = template_prio id = cavalry value = 50 }
+}
+
+llmb_steer_army_template_cavalry_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_army_template_cavalry_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_army_template_cavalry_much_more } } }
+	ai_strategy = { type = template_prio id = cavalry value = 150 }
+}
+
+llmb_steer_army_template_motorized_less = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_army_template_motorized_less }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_army_template_motorized_less } } }
+	ai_strategy = { type = template_prio id = motorized value = -100 }
+}
+
+llmb_steer_army_template_motorized_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_army_template_motorized_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_army_template_motorized_more } } }
+	ai_strategy = { type = template_prio id = motorized value = 50 }
+}
+
+llmb_steer_army_template_motorized_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_army_template_motorized_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_army_template_motorized_much_more } } }
+	ai_strategy = { type = template_prio id = motorized value = 150 }
+}
+
+llmb_steer_army_template_mechanized_less = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_army_template_mechanized_less }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_army_template_mechanized_less } } }
+	ai_strategy = { type = template_prio id = mechanized value = -100 }
+}
+
+llmb_steer_army_template_mechanized_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_army_template_mechanized_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_army_template_mechanized_more } } }
+	ai_strategy = { type = template_prio id = mechanized value = 50 }
+}
+
+llmb_steer_army_template_mechanized_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_army_template_mechanized_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_army_template_mechanized_much_more } } }
+	ai_strategy = { type = template_prio id = mechanized value = 150 }
+}
+
+llmb_steer_army_template_light_armor_less = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_army_template_light_armor_less }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_army_template_light_armor_less } } }
+	ai_strategy = { type = template_prio id = light_armor value = -100 }
+}
+
+llmb_steer_army_template_light_armor_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_army_template_light_armor_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_army_template_light_armor_more } } }
+	ai_strategy = { type = template_prio id = light_armor value = 50 }
+}
+
+llmb_steer_army_template_light_armor_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_army_template_light_armor_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_army_template_light_armor_much_more } } }
+	ai_strategy = { type = template_prio id = light_armor value = 150 }
+}
+
+llmb_steer_army_template_medium_armor_less = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_army_template_medium_armor_less }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_army_template_medium_armor_less } } }
+	ai_strategy = { type = template_prio id = medium_armor value = -100 }
+}
+
+llmb_steer_army_template_medium_armor_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_army_template_medium_armor_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_army_template_medium_armor_more } } }
+	ai_strategy = { type = template_prio id = medium_armor value = 50 }
+}
+
+llmb_steer_army_template_medium_armor_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_army_template_medium_armor_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_army_template_medium_armor_much_more } } }
+	ai_strategy = { type = template_prio id = medium_armor value = 150 }
+}
+
+llmb_steer_army_template_heavy_armor_less = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_army_template_heavy_armor_less }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_army_template_heavy_armor_less } } }
+	ai_strategy = { type = template_prio id = heavy_armor value = -100 }
+}
+
+llmb_steer_army_template_heavy_armor_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_army_template_heavy_armor_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_army_template_heavy_armor_more } } }
+	ai_strategy = { type = template_prio id = heavy_armor value = 50 }
+}
+
+llmb_steer_army_template_heavy_armor_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_army_template_heavy_armor_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_army_template_heavy_armor_much_more } } }
+	ai_strategy = { type = template_prio id = heavy_armor value = 150 }
+}
+
+llmb_steer_army_template_modern_armor_less = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_army_template_modern_armor_less }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_army_template_modern_armor_less } } }
+	ai_strategy = { type = template_prio id = modern_armor value = -100 }
+}
+
+llmb_steer_army_template_modern_armor_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_army_template_modern_armor_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_army_template_modern_armor_more } } }
+	ai_strategy = { type = template_prio id = modern_armor value = 50 }
+}
+
+llmb_steer_army_template_modern_armor_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_army_template_modern_armor_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_army_template_modern_armor_much_more } } }
+	ai_strategy = { type = template_prio id = modern_armor value = 150 }
+}
+
+llmb_steer_army_template_paratroopers_less = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_army_template_paratroopers_less }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_army_template_paratroopers_less } } }
+	ai_strategy = { type = template_prio id = paratroopers value = -100 }
+}
+
+llmb_steer_army_template_paratroopers_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_army_template_paratroopers_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_army_template_paratroopers_more } } }
+	ai_strategy = { type = template_prio id = paratroopers value = 50 }
+}
+
+llmb_steer_army_template_paratroopers_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_army_template_paratroopers_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_army_template_paratroopers_much_more } } }
+	ai_strategy = { type = template_prio id = paratroopers value = 150 }
+}
+
+llmb_steer_army_template_mountaineers_less = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_army_template_mountaineers_less }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_army_template_mountaineers_less } } }
+	ai_strategy = { type = template_prio id = mountaineers value = -100 }
+}
+
+llmb_steer_army_template_mountaineers_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_army_template_mountaineers_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_army_template_mountaineers_more } } }
+	ai_strategy = { type = template_prio id = mountaineers value = 50 }
+}
+
+llmb_steer_army_template_mountaineers_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_army_template_mountaineers_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_army_template_mountaineers_much_more } } }
+	ai_strategy = { type = template_prio id = mountaineers value = 150 }
+}
+
+llmb_steer_army_template_marines_less = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_army_template_marines_less }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_army_template_marines_less } } }
+	ai_strategy = { type = template_prio id = marines value = -100 }
+}
+
+llmb_steer_army_template_marines_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_army_template_marines_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_army_template_marines_more } } }
+	ai_strategy = { type = template_prio id = marines value = 50 }
+}
+
+llmb_steer_army_template_marines_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_army_template_marines_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_army_template_marines_much_more } } }
+	ai_strategy = { type = template_prio id = marines value = 150 }
+}
+
+llmb_steer_army_roles_infantry_less = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_army_roles_infantry_less }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_army_roles_infantry_less } } }
+	ai_strategy = { type = role_ratio id = infantry value = -50 }
+}
+
+llmb_steer_army_roles_infantry_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_army_roles_infantry_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_army_roles_infantry_more } } }
+	ai_strategy = { type = role_ratio id = infantry value = 50 }
+}
+
+llmb_steer_army_roles_infantry_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_army_roles_infantry_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_army_roles_infantry_much_more } } }
+	ai_strategy = { type = role_ratio id = infantry value = 100 }
+}
+
+llmb_steer_army_roles_armor_less = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_army_roles_armor_less }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_army_roles_armor_less } } }
+	ai_strategy = { type = role_ratio id = armor value = -50 }
+}
+
+llmb_steer_army_roles_armor_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_army_roles_armor_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_army_roles_armor_more } } }
+	ai_strategy = { type = role_ratio id = armor value = 50 }
+}
+
+llmb_steer_army_roles_armor_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_army_roles_armor_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_army_roles_armor_much_more } } }
+	ai_strategy = { type = role_ratio id = armor value = 100 }
+}
+
+llmb_steer_army_roles_garrison_less = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_army_roles_garrison_less }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_army_roles_garrison_less } } }
+	ai_strategy = { type = role_ratio id = garrison value = -50 }
+}
+
+llmb_steer_army_roles_garrison_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_army_roles_garrison_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_army_roles_garrison_more } } }
+	ai_strategy = { type = role_ratio id = garrison value = 50 }
+}
+
+llmb_steer_army_roles_garrison_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_army_roles_garrison_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_army_roles_garrison_much_more } } }
+	ai_strategy = { type = role_ratio id = garrison value = 100 }
+}
+
+llmb_steer_army_roles_mountaineers_less = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_army_roles_mountaineers_less }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_army_roles_mountaineers_less } } }
+	ai_strategy = { type = role_ratio id = mountaineers value = -50 }
+}
+
+llmb_steer_army_roles_mountaineers_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_army_roles_mountaineers_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_army_roles_mountaineers_more } } }
+	ai_strategy = { type = role_ratio id = mountaineers value = 50 }
+}
+
+llmb_steer_army_roles_mountaineers_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_army_roles_mountaineers_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_army_roles_mountaineers_much_more } } }
+	ai_strategy = { type = role_ratio id = mountaineers value = 100 }
+}
+
+llmb_steer_army_roles_paratroopers_less = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_army_roles_paratroopers_less }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_army_roles_paratroopers_less } } }
+	ai_strategy = { type = role_ratio id = paratroopers value = -50 }
+}
+
+llmb_steer_army_roles_paratroopers_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_army_roles_paratroopers_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_army_roles_paratroopers_more } } }
+	ai_strategy = { type = role_ratio id = paratroopers value = 50 }
+}
+
+llmb_steer_army_roles_paratroopers_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_army_roles_paratroopers_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_army_roles_paratroopers_much_more } } }
+	ai_strategy = { type = role_ratio id = paratroopers value = 100 }
+}
+
+llmb_steer_army_roles_marines_less = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_army_roles_marines_less }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_army_roles_marines_less } } }
+	ai_strategy = { type = role_ratio id = marines value = -50 }
+}
+
+llmb_steer_army_roles_marines_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_army_roles_marines_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_army_roles_marines_more } } }
+	ai_strategy = { type = role_ratio id = marines value = 50 }
+}
+
+llmb_steer_army_roles_marines_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_army_roles_marines_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_army_roles_marines_much_more } } }
+	ai_strategy = { type = role_ratio id = marines value = 100 }
+}
+
+llmb_steer_army_roles_motorized_less = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_army_roles_motorized_less }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_army_roles_motorized_less } } }
+	ai_strategy = { type = role_ratio id = motorized value = -50 }
+}
+
+llmb_steer_army_roles_motorized_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_army_roles_motorized_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_army_roles_motorized_more } } }
+	ai_strategy = { type = role_ratio id = motorized value = 50 }
+}
+
+llmb_steer_army_roles_motorized_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_army_roles_motorized_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_army_roles_motorized_much_more } } }
+	ai_strategy = { type = role_ratio id = motorized value = 100 }
+}
+
+llmb_steer_army_roles_militias_less = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_army_roles_militias_less }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_army_roles_militias_less } } }
+	ai_strategy = { type = role_ratio id = militias value = -50 }
+}
+
+llmb_steer_army_roles_militias_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_army_roles_militias_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_army_roles_militias_more } } }
+	ai_strategy = { type = role_ratio id = militias value = 50 }
+}
+
+llmb_steer_army_roles_militias_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_army_roles_militias_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_army_roles_militias_much_more } } }
+	ai_strategy = { type = role_ratio id = militias value = 100 }
+}
+
+llmb_steer_army_divisions_any_less = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_army_divisions_any_less }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_army_divisions_any_less } } }
+	ai_strategy = { type = ai_wanted_divisions_factor value = -30 }
+}
+
+llmb_steer_army_divisions_any_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_army_divisions_any_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_army_divisions_any_more } } }
+	ai_strategy = { type = ai_wanted_divisions_factor value = 100 }
+}
+
+llmb_steer_army_divisions_any_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_army_divisions_any_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_army_divisions_any_much_more } } }
+	ai_strategy = { type = ai_wanted_divisions_factor value = 240 }
+}
+
+llmb_steer_army_build_any_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_army_build_any_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_army_build_any_more } } }
+	ai_strategy = { type = force_build_armies value = 100 }
+}
+
+llmb_steer_army_build_any_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_army_build_any_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_army_build_any_much_more } } }
+	ai_strategy = { type = force_build_armies value = 200 }
+}
+
+llmb_steer_army_fuel_any_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_army_fuel_any_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_army_fuel_any_more } } }
+	ai_strategy = { type = stockpile_fuel stop_above = 90 }
+}
+
+llmb_steer_army_fuel_any_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_army_fuel_any_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_army_fuel_any_much_more } } }
+	ai_strategy = { type = stockpile_fuel start_below = 40 stop_above = 90 }
+}
+
+llmb_steer_army_trucks_any_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_army_trucks_any_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_army_trucks_any_more } } }
+	ai_strategy = { type = min_wanted_supply_trucks value = 100 }
+}
+
+llmb_steer_army_trucks_any_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_army_trucks_any_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_army_trucks_any_much_more } } }
+	ai_strategy = { type = min_wanted_supply_trucks value = 300 }
+}
+
+llmb_steer_army_trains_any_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_army_trains_any_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_army_trains_any_more } } }
+	ai_strategy = { type = min_wanted_supply_trains value = 30 }
+}
+
+llmb_steer_army_trains_any_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_army_trains_any_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_army_trains_any_much_more } } }
+	ai_strategy = { type = min_wanted_supply_trains value = 100 }
 }

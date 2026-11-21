@@ -103,6 +103,11 @@ def number(raw) -> float | None:
         return None
 
 
+#: What the screen may charge differently from the cost in the definition.
+COST_MODIFIER_NOTE = ("cost modifiers (the base cost is charged; the screen may charge more or "
+                      "less where the country has a cost modifier: {names})")
+
+
 # --- writing -----------------------------------------------------------------
 
 

@@ -7,6 +7,7 @@ here can type into the machine it runs on.
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 import pytest
@@ -44,8 +45,8 @@ CHARACTERS = """characters = {
 """
 EQUIPMENT = """equipments = {
 	infantry_equipment = { is_archetype = yes is_buildable = no }
-	infantry_equipment_1 = { archetype = infantry_equipment }
-	support_equipment_1 = { archetype = support_equipment }
+	infantry_equipment_1 = { archetype = infantry_equipment active = yes }
+	support_equipment_1 = { archetype = support_equipment active = yes }
 }
 """
 
@@ -173,18 +174,19 @@ def test_production_names_the_equipment_and_the_factories(tmp_path, index):
         "{ type = infantry_equipment_1 } requested_factories = 3 } }"]
 
 
-def test_an_advisor_is_activated_and_charged(tmp_path, index):
+def test_an_advisor_is_activated_charged_and_marked_inside_the_guard(tmp_path, index):
     _, _, _, channel = rig(tmp_path, index)
-    assert plan(channel, HIRE) == [
-        "eval_effect SWE = { if = { limit = { has_political_power > 24.99 } "
-        "activate_advisor = SWE_cheap_one add_political_power = -25 } }"]
+    (line,) = plan(channel, HIRE)
+    assert re.fullmatch(
+        r"eval_effect SWE = \{ if = \{ limit = \{ has_political_power > 24\.99 "
+        r"NOT = \{ has_idea = SWE_cheap_tok \} \} activate_advisor = SWE_cheap_one "
+        r"add_political_power = -25 log = \"LLMB\|v5\|click\|p[0-9a-f]{10}\" \} \}", line), line
 
 
 def test_an_advisor_may_be_named_by_idea_token(tmp_path, index):
-    _, _, _, channel = rig(tmp_path, index, guards=False)
+    _, _, _, channel = rig(tmp_path, index)
     call = ActionCall("hire_advisor", {"advisor_id": "SWE_cheap_tok"})
-    assert plan(channel, call) == [
-        "eval_effect SWE = { activate_advisor = SWE_cheap_one add_political_power = -25 }"]
+    assert "activate_advisor = SWE_cheap_one add_political_power = -25" in plan(channel, call)[0]
 
 
 def test_a_directive_selects_its_target_then_raises_through_the_mod(tmp_path, index):
@@ -408,7 +410,8 @@ def test_the_console_is_the_default_for_the_actions_verified_live():
         "set_ai_directive", "set_ai_posture", "clear_ai_directives", "take_decision",
         "click_gui_button", "set_front_order", "set_region_order", "change_law", "set_occupation_law",
         "diplomacy_act", "fire_advisor", "steer_production", "steer_intelligence", "steer_research",
-        "steer_navy", "steer_air"}
+        "steer_navy", "steer_air", "queue_province_building", "design_division_template",
+        "steer_spending", "steer_market", "steer_army"}
     opted_in = resolve_channels({name: "console" for name in CONSOLE_ACTIONS})
     assert {n for n, c in opted_in.items() if c == "console"} == CONSOLE_ACTIONS
     assert DEFAULT_CHANNELS["delegate_army_to_ai"] == "ui"

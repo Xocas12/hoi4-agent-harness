@@ -43,7 +43,7 @@ OPERATIONAL_ACTIONS = frozenset({
 DIRECTIVE_ACTIONS = frozenset(
     {"delegate_army_to_ai", "set_ai_posture", "set_ai_directive", "clear_ai_directives",
      "set_front_order", "set_region_order", "steer_production", "steer_intelligence", "steer_research",
-     "steer_navy", "steer_air"}
+     "steer_navy", "steer_air", "steer_spending", "steer_market", "steer_army"}
 )
 
 #: What the game's AI does for itself once it runs the whole country (the console's
@@ -53,7 +53,8 @@ DIRECTIVE_ACTIONS = frozenset(
 #: opens a second line beside the one the AI keeps), and a construction or production
 #: order costs two 66 MB saves to verify. The clock is the harness's.
 GAME_AI_OWNED = frozenset({
-    "set_national_focus", "start_research", "queue_construction", "set_production",
+    "set_national_focus", "start_research", "queue_construction", "queue_province_building",
+    "set_production",
     "change_production_equipment",
     "design_division_template", "deploy_divisions", "delegate_army_to_ai", "set_trade",
     "set_game_speed", "diplomacy",

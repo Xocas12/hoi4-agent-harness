@@ -53,6 +53,7 @@ BUILDINGS = [
     "synthetic_refinery",
 ]
 
+PROVINCE_BUILDINGS = ["fortification", "coastal_fortification", "naval_base", "supply_hub"]
 ARMY_ORDERS = ["hold", "front_line", "offensive", "garrison", "naval_invasion", "fall_back"]
 AIR_MISSIONS = ["air_superiority", "close_air_support", "strategic_bombing", "port_strike",
                 "naval_bombing", "logistical_strike", "interception"]
@@ -61,6 +62,14 @@ NAVAL_MISSIONS = ["patrol", "strike_force", "convoy_escort", "convoy_raiding", "
 DIPLOMACY = ["improve_relations", "guarantee", "justify_war_goal", "join_faction", "invite_to_faction",
              "non_aggression_pact", "lend_lease", "send_volunteers", "send_attache", "declare_war"]
 
+
+#: Tools whose only executor is the simulator (``adapters/mock.py``): a live game has no route for
+#: them (no effect does them faithfully, no UI script is recorded), so a live adapter never offers
+#: them, and their descriptions say so. Kept in one place so the docs and a test can check it.
+MOCK_ONLY = frozenset({"deploy_divisions", "set_trade", "set_army_order", "set_air_mission",
+                       "set_naval_mission", "diplomacy"})
+MOCK_ONLY_NOTE = (" Simulator only: no faithful effect does this and no UI path is recorded, so a "
+                  "live game does not offer it unless a UI script for it has been recorded.")
 
 ACTIONS: list[ActionSpec] = [
     ActionSpec(
@@ -136,7 +145,14 @@ ACTIONS: list[ActionSpec] = [
     ActionSpec(
         name="design_division_template",
         category="army",
-        description="Create or edit a division template.",
+        description=(
+            "Create a division template, as the template designer does: a new name, battalions "
+            "(each type in its own column, five deep) and up to five support companies, every "
+            "type one your technologies have unlocked. Creating costs nothing. Editing a template "
+            "that exists is refused: the designer charges army experience for it and no script "
+            "charges that. The name is letters, digits, underscore and hyphen (no spaces). "
+            "Training the divisions is done on the deployment screen, which no tool reaches."
+        ),
         parameters=_schema(
             {
                 "name": {"type": "string"},
@@ -211,6 +227,24 @@ ACTIONS: list[ActionSpec] = [
 ]
 
 ACTIONS += [
+    ActionSpec(
+        name="queue_province_building",
+        category="economy",
+        description=(
+            "Queue a building that sits in one province: fortification (land fort), "
+            "coastal_fortification, naval_base (a port province) or supply_hub. Province ids are "
+            "on inspect_world view=state. It queues construction that your civilian factories "
+            "then build, under the game's own slot rule for that province (what is already "
+            "queued counts); count is the levels (1 to 10). Railways are not offered: they run "
+            "between two provinces on a path the screen picks."
+        ),
+        parameters=_schema(
+            {"building": {"type": "string", "enum": PROVINCE_BUILDINGS},
+             "province": {"type": "integer", "minimum": 1, "description": "Province id."},
+             "count": {"type": "integer", "minimum": 1, "maximum": 10}},
+            ["building", "province"],
+        ),
+    ),
     ActionSpec(
         name="hire_advisor",
         category="politics",
@@ -670,8 +704,12 @@ BY_NAME = {spec.name: spec for spec in ACTIONS}
 # Each is guarded by the game's own conditions and charged what the screen charges (docs/interaction.md).
 
 DIPLOMACY_ACTS = [*DIPLOMACY, "military_access", "leave_faction"]
-STEER_PRODUCTION_KINDS = ["equipment", "units", "building", "garrison"]
-STEER_INTEL_KINDS = ["branch", "factories", "mission"]
+STEER_PRODUCTION_KINDS = ["equipment", "units", "building", "garrison", "min_factories",
+                          "military_share", "dockyard_share", "air_balance", "surplus"]
+STEER_INTEL_KINDS = ["branch", "factories", "mission", "spymaster"]
+STEER_SPENDING_KINDS = ["land_xp", "air_xp", "navy_xp", "pp", "pp_amount"]
+STEER_MARKET_KINDS = ["buy", "buy_from", "sell", "trade_desire", "spend"]
+STEER_ARMY_KINDS = ["template", "roles", "divisions", "build", "fuel", "trucks", "trains"]
 STEER_LEVELS = ["less", "more", "much_more", "clear"]
 
 ACTIONS += [
@@ -710,13 +748,16 @@ ACTIONS += [
         description=(
             "Set the occupation law you apply to occupied land: the law's own visible and "
             "available conditions are checked. With occupied (a country tag) it sets the "
-            "override for that country's land only; without it, the default for all. Laws that "
+            "override for that country's land only; with state (a state id you control and do not "
+            "own) the override for that one state; with neither, the default for all. Laws that "
             "depend on which country is occupied (some DLC laws) are refused with the reason."
         ),
         parameters=_schema(
             {"law": {"type": "string", "description": "Occupation law id, e.g. martial_law_occupation."},
              "occupied": {"type": "string",
-                          "description": "Optional: the occupied country's tag (an override)."}},
+                          "description": "Optional: the occupied country's tag (an override)."},
+             "state": {"type": "string",
+                       "description": "Optional: one occupied state's id (an override)."}},
             ["law"],
         ),
     ),
@@ -747,7 +788,13 @@ ACTIONS += [
             "its share of the factories), units (id: a ship or plane type: how much of it against "
             "the others), building (id: industrial_complex, arms_factory, dockyard ...: what it "
             "builds next), garrison (no id: how many divisions it keeps garrisoning occupied "
-            "land). Level less/more/much_more or clear (drop it). It stands until changed."
+            "land), min_factories (id: an equipment category: the fewest factories it puts on it, "
+            "more = 3, much_more = 10), military_share (no id: military factories against civilian "
+            "ones), dockyard_share (no id: dockyards against military factories), air_balance (no "
+            "id: how much of its factory share aircraft get), surplus (no id: how big a stockpile "
+            "surplus it keeps before shifting factories off). Level less/more/much_more or clear "
+            "(drop it); a kind has only the levels it makes sense at, and the result says which. "
+            "It stands until changed."
         ),
         parameters=_schema(
             {"kind": {"type": "string", "enum": STEER_PRODUCTION_KINDS},
@@ -765,7 +812,8 @@ ACTIONS += [
             "branch_operative or branch_crypto: which upgrades it wants next), factories (no id: "
             "how many factories it spends on the agency), mission (id: build_intel_network, "
             "counter_intelligence, quiet_network, root_out_resistance or control_trade: what its "
-            "operatives do when no country is named). Against one country use set_ai_directive "
+            "operatives do when no country is named), spymaster (no id: how much it wants to "
+            "become spymaster when it leads a faction). Against one country use set_ai_directive "
             "spy_on, sabotage or steal_tech. Level less/more/much_more or clear."
         ),
         parameters=_schema(
@@ -811,6 +859,71 @@ ACTIONS += [
         ),
     ),
     ActionSpec(
+        name="steer_spending",
+        category="steer",
+        description=(
+            "Tell the game's AI what to spend experience and political power on, as a standing "
+            "preference: kind=land_xp (id: division_template, unlock_doctrine, equipment_variant "
+            "or army_spirit), air_xp (id: unlock_doctrine, equipment_variant or air_spirit), "
+            "navy_xp (id: unlock_doctrine, equipment_variant or navy_spirit), pp (id: admiral, "
+            "army_chief, navy_chief, become_faction_leader, decision, guarantee, "
+            "industrial_concern, political_advisor, relation or supportive_scientist: what it "
+            "spends political power on), pp_amount (id: idea or decision: how much it will put "
+            "in). The AI still pays what the game charges and needs the points. Level "
+            "less/more/much_more or clear."
+        ),
+        parameters=_schema(
+            {"kind": {"type": "string", "enum": STEER_SPENDING_KINDS},
+             "id": {"type": "string"},
+             "level": {"type": "string", "enum": STEER_LEVELS}},
+            ["kind", "id", "level"],
+        ),
+    ),
+    ActionSpec(
+        name="steer_market",
+        category="steer",
+        description=(
+            "Tell the game's AI how to use the international equipment market, as a standing "
+            "preference: kind=buy (id: an equipment archetype such as infantry_equipment or "
+            "light_tank_chassis: how much it wants to buy it), sell (id: an equipment archetype: how "
+            "much of its surplus it puts up for sale), buy_from (id: a country tag: whom "
+            "it prefers to buy from), trade_desire (id: a country tag: how much it wants to trade "
+            "with that country), spend (no id: how many civilian factories it spends on "
+            "purchases). The other side's AI still accepts or refuses and the price is the "
+            "market's. Level less/more/much_more or clear (a kind has only the levels it makes "
+            "sense at)."
+        ),
+        parameters=_schema(
+            {"kind": {"type": "string", "enum": STEER_MARKET_KINDS},
+             "id": {"type": "string", "description": "The archetype or country tag; omit for spend."},
+             "level": {"type": "string", "enum": STEER_LEVELS}},
+            ["kind", "level"],
+        ),
+    ),
+    ActionSpec(
+        name="steer_army",
+        category="steer",
+        description=(
+            "Tell the game's AI what divisions to build and how to supply them, as a standing "
+            "preference: kind=template (id: infantry, cavalry, motorized, mechanized, light_armor, "
+            "medium_armor, heavy_armor, modern_armor, paratroopers, mountaineers or marines: which "
+            "templates it favours), roles (id: infantry, armor, garrison, mountaineers, "
+            "paratroopers, marines, motorized or militias: how many divisions of that role it "
+            "wants), divisions (no id: how many divisions in all), build (no id: how hard it "
+            "builds them), fuel (no id: more = it rebuilds fuel to 90 percent before attacking "
+            "again, much_more = it also stands offensives down below 40 percent), trucks and "
+            "trains (no id: the fewest it wants). The AI still needs the factories, manpower "
+            "and time. Level less/more/much_more or clear (a kind has only the levels it makes "
+            "sense at)."
+        ),
+        parameters=_schema(
+            {"kind": {"type": "string", "enum": STEER_ARMY_KINDS},
+             "id": {"type": "string", "description": "The template type or role; omit for the rest."},
+             "level": {"type": "string", "enum": STEER_LEVELS}},
+            ["kind", "level"],
+        ),
+    ),
+    ActionSpec(
         name="steer_research",
         category="steer",
         description=(
@@ -827,3 +940,18 @@ ACTIONS += [
 ]
 
 BY_NAME = {spec.name: spec for spec in ACTIONS}
+
+
+def _mark_mock_only() -> None:
+    """Append the simulator-only note to the tools whose only executor is the mock."""
+    for index, spec in enumerate(ACTIONS):
+        if spec.name in MOCK_ONLY and MOCK_ONLY_NOTE not in spec.description:
+            ACTIONS[index] = ActionSpec(
+                name=spec.name, description=spec.description + MOCK_ONLY_NOTE,
+                parameters=spec.parameters, category=spec.category,
+                requires_confirmation=spec.requires_confirmation, aliases=spec.aliases)
+    BY_NAME.clear()
+    BY_NAME.update({spec.name: spec for spec in ACTIONS})
+
+
+_mark_mock_only()

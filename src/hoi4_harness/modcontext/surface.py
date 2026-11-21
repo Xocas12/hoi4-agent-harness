@@ -88,6 +88,11 @@ class Decision:
     #: The cost when it is not a plain number (a variable or script value).
     cost_raw: str | None = None
     custom_cost: bool = False
+    #: The localisation key of the custom cost's text (``custom_cost_text``), when it has one.
+    custom_cost_text: str | None = None
+    #: Resources the decision's own effects take (a negative ``add_command_power``,
+    #: ``add_manpower`` or ``add_*_experience``): the cost a custom cost stands for.
+    pays: tuple[str, ...] = ()
     days_remove: int | None = None
     days_re_enable: int | None = None
     fire_only_once: bool = False
@@ -279,6 +284,8 @@ class ModContext:
             cost_raw=raw_cost if raw_cost is not None and cost is None else None,
             custom_cost=S.get(spec, "custom_cost_trigger") is not None
             or S.get(spec, "custom_cost_text") is not None,
+            custom_cost_text=S.text(spec, "custom_cost_text"),
+            pays=_paid_resources([n for e in effects if e for n in e]),
             days_remove=int(days) if days is not None else None,
             days_re_enable=int(again) if again is not None else None,
             fire_only_once=S.text(spec, "fire_only_once") == "yes",
@@ -730,14 +737,15 @@ class ModContext:
         return self._memo("occupation_laws", build)  # type: ignore[return-value]
 
     def plan_occupation_law(self, law_id: str, country: str, occupied: str | None = None,
-                            effect_command: str = "eval_effect", console: bool = True):
+                            effect_command: str = "eval_effect", console: bool = True,
+                            state: str | None = None):
         from ..policy_effects import plan_occupation_law
 
         law = self.occupation_laws().get(law_id)
         if law is None:
             return None
         return plan_occupation_law(law, country, occupied, effect_command=effect_command,
-                                   console=console)
+                                   console=console, state=state)
 
     def advisors(self, tag: str) -> list[dict]:
         def build() -> list[dict]:
@@ -763,6 +771,33 @@ class ModContext:
             return sorted(out, key=lambda a: (a["slot"] or "", a["character"]))
 
         return self._memo(f"advisors:{tag}", build)  # type: ignore[return-value]
+
+    def advisor_conditions(self, character: str, slot: str | None = None,
+                           token: str | None = None) -> dict[str, list]:
+        """The ``allowed``, ``visible`` and ``available`` blocks of one advisor role of a
+        character (the last file that defines the character wins, as in the game), as parsed
+        nodes. The role is the one with this ``slot`` and ``idea_token`` when given."""
+        found: dict[str, list] = {"allowed": [], "visible": [], "available": []}
+        for path in self._files("common/characters"):
+            text = path.read_text(encoding="utf-8-sig", errors="replace")
+            if character not in text:
+                continue
+            for key, _op, body in S.parse(text):
+                if key != "characters" or not isinstance(body, list):
+                    continue
+                for char, _o, spec in body:
+                    if char != character or not isinstance(spec, list):
+                        continue
+                    found = {"allowed": [], "visible": [], "available": []}
+                    for advisor in _advisor_nodes(spec):
+                        if slot and S.text(advisor, "slot") != slot:
+                            continue
+                        if token and S.text(advisor, "idea_token") != token:
+                            continue
+                        for name in found:
+                            found[name] = S.block(advisor, name) or []
+                        break
+        return found
 
     def start_date(self) -> str:
         """The default bookmark's date (``1936.1.1``), or the first one's."""
@@ -1064,3 +1099,33 @@ def _idea_names(value) -> list[str]:
             if idea:
                 names.append(idea)
     return names
+
+
+def _advisor_nodes(spec: list) -> list[list]:
+    """Every ``advisor = { }`` block of a character, including those inside ``instance`` wrappers."""
+    out: list[list] = []
+    for key, _op, value in spec:
+        if key == "advisor" and isinstance(value, list):
+            out.append(value)
+        elif key == "instance" and isinstance(value, list):
+            out += _advisor_nodes(value)
+    return out
+
+
+#: Effects that take a resource other than political power; a negative amount is a price.
+_COST_EFFECTS = {"add_command_power": "command power", "add_manpower": "manpower",
+                 "add_army_experience": "army experience", "add_navy_experience": "navy experience",
+                 "add_air_experience": "air experience"}
+
+
+def _paid_resources(nodes: list) -> tuple[str, ...]:
+    """The resources the effects take (a negative amount of a ``_COST_EFFECTS`` effect, at any depth)."""
+    found: list[str] = []
+    for key, _op, value in nodes:
+        if isinstance(value, list):
+            found += _paid_resources(value)
+        elif key in _COST_EFFECTS:
+            amount = S.number(value)
+            if amount is not None and amount < 0 and _COST_EFFECTS[key] not in found:
+                found.append(_COST_EFFECTS[key])
+    return tuple(dict.fromkeys(found))

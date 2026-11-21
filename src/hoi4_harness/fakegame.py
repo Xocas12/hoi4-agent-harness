@@ -72,6 +72,8 @@ BUILDING_NAMES = {
     "anti_air_building": "anti_air", "radar_station": "radar",
     "synthetic_refinery": "synthetic_refinery",
 }
+#: The buildings that sit in one province, with their level cap there (``province_max``).
+PROVINCE_BUILDINGS = {"bunker": 10, "coastal_bunker": 10, "naval_base": 10, "supply_node": 1}
 #: The ones that take a slot in a state's shared pool; the rest have their own cap.
 SLOT_BUILDINGS = {"industrial_complex", "arms_factory", "dockyard", "synthetic_refinery"}
 OTHER_BUILDING_CAP = 5
@@ -162,6 +164,13 @@ class FakeState:
     used: int
     #: Finished buildings outside the shared slot pool, by game building id.
     others: dict[str, int] = field(default_factory=dict)
+    #: The province ids of the state, and the finished province buildings as
+    #: ``"<province>:<building>" -> levels``.
+    provinces: frozenset[str] = frozenset()
+    province_levels: dict[str, int] = field(default_factory=dict)
+    #: Who controls the state when that is not the owner (an occupier), and whether it has a coast.
+    controller: str | None = None
+    coastal: bool = True
 
 
 # --- a playset to run against when there is no install ------------------------
@@ -200,9 +209,11 @@ DEMO_FILES = {
 """,
     "common/units/equipment/infantry.txt": """equipments = {
 	infantry_equipment = { is_archetype = yes is_buildable = no }
-	infantry_equipment_1 = { archetype = infantry_equipment }
+	infantry_equipment_1 = { archetype = infantry_equipment active = yes }
 	artillery_equipment = { is_archetype = yes is_buildable = no }
-	artillery_equipment_1 = { archetype = artillery_equipment }
+	artillery_equipment_1 = { archetype = artillery_equipment active = yes }
+	rocket_equipment_1 = { archetype = artillery_equipment }
+	sealed_equipment_1 = { }
 }
 """,
     "common/ideas/swe_laws.txt": """ideas = {
@@ -391,6 +402,15 @@ class FakeGame:
         self.human_ai = False
         #: Country flags the console's effects set (``llmb_harness`` is the one that matters).
         self.flags: set[str] = set()
+        #: Technologies the country has researched (``has_tech``): a test adds them.
+        self.researched: set[str] = set()
+        #: Province buildings queued by ``add_building_construction = { province = }``:
+        #: ``(state id, province, building)`` per level.
+        self.province_queue: list[tuple[str, str, str]] = []
+        #: The division templates the country holds (name -> its regiments and support), and the
+        #: occupation law set per state.
+        self.templates: dict[str, dict] = {}
+        self.state_occupation_laws: dict[str, str] = {}
         #: Global flags set through the console (llm_bridge_strong_directives).
         self.global_flags: set[str] = set()
         #: Hours between two telemetry ticks (cadence.py), set through the console like the
@@ -515,7 +535,8 @@ class FakeGame:
         if self.index is None or not self.index.states:
             return {}
         return {
-            sid: FakeState(sid, info.name, info.owner, slots=slots, used=used)
+            sid: FakeState(sid, info.name, info.owner, slots=slots, used=used,
+                           provinces=info.provinces)
             for sid, info in self.index.states.items()
         }
 
@@ -919,10 +940,20 @@ class FakeGame:
                 self._console(line)
             self._write(self._llmb("inbox", tag=batch.tag, id=batch.id, via="event"))
 
+    def _finish_province_queue(self) -> None:
+        """A queued province level is built after a day (the fake's construction is not timed)."""
+        for sid, province, building in self.province_queue:
+            state = self.states.get(sid)
+            if state is not None:
+                key = f"{province}:{building}"
+                state.province_levels[key] = state.province_levels.get(key, 0) + 1
+        self.province_queue.clear()
+
     def tick_day(self) -> None:
         """One in-game day: the model moves, and the mod logs it."""
         self.world.date += dt.timedelta(days=1)
         self.world._tick_one_day()
+        self._finish_province_queue()
         self._run_inbox()
         opened = self.event_script.pop(self.date, None)
         if opened is not None:
@@ -1299,6 +1330,8 @@ class FakeGame:
                 self._add_construction(entry, scope)
             elif key == "add_equipment_production":
                 self._add_production(entry)
+            elif key == "division_template":
+                self._division_template(entry)
             elif key == "activate_advisor":
                 self._activate_advisor(str(entry.value))
             elif key == "add_political_power":
@@ -1329,7 +1362,12 @@ class FakeGame:
             elif key == "set_occupation_law":
                 law = str(entry.value)
                 tag = scope.get("country_tag")
-                if tag is None:
+                if scope.get("state") is not None and tag is None:
+                    if law == "default_law":
+                        self.state_occupation_laws.pop(str(scope["state"].id), None)
+                    else:
+                        self.state_occupation_laws[str(scope["state"].id)] = law
+                elif tag is None:
                     self.occupation_law = law
                 elif law == "default_law":
                     self.occupation_overrides.pop(tag, None)
@@ -1403,10 +1441,35 @@ class FakeGame:
             building, size = _get(body, "building"), _get(body, "size")
             if state is None or building is None or size is None:
                 raise ScriptError("free_building_slots = { building = X size > 0 } in a state")
+            province = _get(body, "province")
+            if province is not None:
+                counted = _get(body, "include_constructions")
+                return _compare(self._free_province(state, str(province.value), str(building.value),
+                                                    counted is not None and counted.value == "yes"),
+                                size.op, _number(str(size.value)))
             return _compare(self._free(state, str(building.value)), size.op,
                             _number(str(size.value)))
         if key == "has_country_flag":
             return self._flag(str(entry.value))
+        if key == "has_tech":
+            return str(entry.value) in self.researched
+        if key == "has_template":
+            return str(entry.value) in self.templates
+        if key == "is_coastal":
+            state = scope.get("state")
+            if state is None:
+                raise ScriptError("is_coastal needs a state scope")
+            return state.coastal == (entry.value == "yes")
+        if key == "is_controlled_by":
+            state = scope.get("state")
+            if state is None:
+                raise ScriptError("is_controlled_by needs a state scope")
+            return (state.controller or state.owner) == str(entry.value)
+        if key.isdigit() and isinstance(entry.value, list):
+            state = self.states.get(key)
+            if state is None:
+                raise ScriptError(f"Unknown scope: {key}")
+            return self._triggers(entry.value, {**scope, "state": state})
         if key in ("AND", "OR"):
             results = [self._trigger(e, scope) for e in entry.value]
             return all(results) if key == "AND" else any(results)
@@ -1447,6 +1510,33 @@ class FakeGame:
             return state.slots - state.used - sum(self._queued(state, b) for b in SLOT_BUILDINGS)
         return OTHER_BUILDING_CAP - state.others.get(building, 0) - self._queued(state, building)
 
+    def _free_province(self, state: FakeState, province: str, building: str, queued: bool) -> int:
+        cap = PROVINCE_BUILDINGS.get(building)
+        if cap is None or province not in state.provinces:
+            return 0
+        held = state.province_levels.get(f"{province}:{building}", 0)
+        waiting = sum(1 for sid, prov, b in self.province_queue
+                      if sid == str(state.id) and prov == province and b == building)
+        return cap - held - (waiting if queued else 0)
+
+    def _division_template(self, entry: Entry) -> None:
+        body = entry.value if isinstance(entry.value, list) else []
+        name = _get(body, "name")
+        if name is None or not str(name.value):
+            raise ScriptError("division_template needs a name")
+        regiments = _get(body, "regiments")
+        support = _get(body, "support")
+        slots = [(e.key, _get(e.value, "x"), _get(e.value, "y"))
+                 for e in (regiments.value if regiments else []) if isinstance(e.value, list)]
+        if any(x is None or y is None for _k, x, y in slots):
+            raise ScriptError("every regiment needs x and y")
+        if str(name.value) in self.templates:
+            self._log(f"division_template: {name.value} already exists")
+            return
+        self.templates[str(name.value)] = {
+            "regiments": [k for k, _x, _y in slots],
+            "support": [e.key for e in (support.value if support else [])]}
+
     def _add_construction(self, entry: Entry, scope: dict) -> None:
         state = scope.get("state")
         if state is None:
@@ -1454,6 +1544,20 @@ class FakeGame:
         body = entry.value if isinstance(entry.value, list) else []
         kind, level = _get(body, "type"), _get(body, "level")
         building = str(kind.value) if kind else ""
+        province = _get(body, "province")
+        if province is not None:
+            if building not in PROVINCE_BUILDINGS:
+                raise ScriptError(f"Unknown province building type: {building or '?'}")
+            if state.owner != self.country:
+                self._log(f"add_building_construction: {state.name} is not owned by {self.country}")
+                return
+            for _ in range(int(_number(str(level.value))) if level else 1):
+                if self._free_province(state, str(province.value), building, True) <= 0:
+                    self._log(f"add_building_construction: no free {building} level in province "
+                              f"{province.value}")
+                    return
+                self.province_queue.append((str(state.id), str(province.value), building))
+            return
         if building not in BUILDING_NAMES:
             raise ScriptError(f"Unknown building type: {building or '?'}")
         if state.owner != self.country:

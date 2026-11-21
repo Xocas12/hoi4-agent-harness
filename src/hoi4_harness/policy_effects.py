@@ -30,6 +30,7 @@ from dataclasses import dataclass, field
 
 from .modcontext import script as S
 from .modcontext.gui import CONSOLE_LINE, INBOX_LINE, marker
+from .modcontext.script import COST_MODIFIER_NOTE
 
 _SAFE_ID = re.compile(r"^[A-Za-z0-9_.\-]+$")
 _TAG = re.compile(r"^[A-Z][A-Z0-9]{2}$")
@@ -71,6 +72,12 @@ def _finish(country: str, guard: str, body: str, cost: float, unchecked: list[st
         except UnsafeConsoleLine as exc:
             return _refuse(f"{exc} (the inbox has no such limit: use --transport inbox)")
     return PolicyPlan(line, "", cost, unchecked, nonce, done)
+
+
+def finish(country: str, guard: str, body: str, cost: float, unchecked: list[str], done: str,
+           effect_command: str = "eval_effect", console: bool = True) -> PolicyPlan:
+    """One guarded effect with a marker inside the guard, for the other planners (the console)."""
+    return _finish(country, guard, body, cost, unchecked, done, effect_command, console)
 
 
 def _inline(*blocks) -> str:
@@ -118,10 +125,56 @@ def plan_law(law: dict, siblings: list[dict], country: str, *, effect_command: s
     body += f" add_ideas = {ident}"
     if cost:
         body += f" add_political_power = -{cost:g}"
-    unchecked = ["cost modifiers (the base cost is charged)",
+    unchecked = [COST_MODIFIER_NOTE.format(names="the law group's <group>_cost_factor, "
+                                                "political_power_cost"),
                  "the law you leave being known: whichever of the group is held is replaced"]
     return _finish(country, guard, body.strip(), cost, unchecked,
                    f"law changed to {ident}" + (f": {cost:g} political power spent" if cost else ""),
+                   effect_command, console)
+
+
+# --- advisors -----------------------------------------------------------------------------
+
+#: Triggers that read a character, not a country: in a country-scope guard they are errors the
+#: game reads as false, so an advisor whose conditions use one is refused with the reason rather
+#: than left to fail silently.
+CHARACTER_TRIGGERS = {"has_character_flag", "is_hired_as_advisor", "not_already_hired_except_as",
+                      "has_trait", "is_country_leader", "has_unit_leader", "is_unit_leader"}
+
+def plan_advisor(advisor: str, character: str, token: str | None, cost: float,
+                 conditions: dict[str, list], country: str, *, effect_command: str = "eval_effect",
+                 console: bool = True) -> PolicyPlan:
+    """The line that hires ``character`` as ``country``'s advisor: the role's own ``allowed``,
+    ``visible`` and ``available`` blocks in the ``limit`` (the game evaluates them), the political
+    power cost tested in it and taken after it, and a marker logged inside it."""
+    if not _SAFE_ID.match(character):
+        return _refuse("its id has characters the console would split on")
+    if cost < 0:
+        return _refuse("a negative cost")
+    allowed, visible, available = (conditions.get(k) or [] for k in ("allowed", "visible", "available"))
+    if S.tag_truth(allowed, country) is False:
+        return _refuse(f"its allowed block rules {country} out: this country never has this advisor")
+    blocks = [allowed, visible, available]
+    if any(S.mentions(block, _UNSCOPED) for block in blocks):
+        return _refuse("its conditions read FROM/PREV, which have no value in a console scope")
+    if any(S.mentions(block, CHARACTER_TRIGGERS) for block in blocks):
+        return _refuse("its visible/available conditions test the character itself (a character flag "
+                       "or whether it is already hired), which a country-scope guard cannot copy: "
+                       "hire it on the screen")
+    parts = [_inline(*blocks)]
+    if cost:
+        parts.append(f"has_political_power > {cost - 0.01:g}")
+    if token and _SAFE_ID.match(token):
+        parts.append(f"NOT = {{ has_idea = {token} }}")
+    guard = " ".join(p for p in parts if p)
+    body = f"activate_advisor = {character}" + (f" add_political_power = -{cost:g}" if cost else "")
+    unchecked = [COST_MODIFIER_NOTE.format(names="army_advisor_cost_factor, navy_advisor_cost_factor, "
+                                                "air_advisor_cost_factor"),
+                 "whether the slot is free (activate_advisor into a full slot is unverified)",
+                 "the role's visible/available blocks are evaluated here in country scope; where the "
+                 "game evaluates them in another the guard fails closed (nothing is hired)"]
+    return _finish(country, guard, body, cost, unchecked,
+                   f"{advisor} hired" + (f": {cost:g} political power spent" if cost else ""),
                    effect_command, console)
 
 
@@ -129,11 +182,15 @@ def plan_law(law: dict, siblings: list[dict], country: str, *, effect_command: s
 
 
 def plan_occupation_law(law: dict, country: str, occupied: str | None = None, *,
-                        effect_command: str = "eval_effect", console: bool = True) -> PolicyPlan:
-    """The line that sets ``country``'s occupation law (default, or for ``occupied`` only)."""
+                        effect_command: str = "eval_effect", console: bool = True,
+                        state: str | None = None) -> PolicyPlan:
+    """The line that sets ``country``'s occupation law: the default, the override for ``occupied``
+    (a country), or the override for one ``state`` (an id) the country controls and does not own."""
     ident = law["id"]
     if not _SAFE_ID.match(ident):
         return _refuse("its id has characters the console would split on")
+    if occupied and state:
+        return _refuse("name a country or a state, not both")
     visible, available = law.get("visible") or [], law.get("available") or []
     if S.tag_truth(visible, country) is False:
         return _refuse("its visible block rules it out (`always = no`, or another tag): the game "
@@ -142,7 +199,15 @@ def plan_occupation_law(law: dict, country: str, occupied: str | None = None, *,
         return _refuse("its visible/available conditions read FROM (the occupied country), which "
                        "have no value in a console scope: pick it on the screen, per country")
     guard = _inline(visible, available)
-    if occupied:
+    if state:
+        state = str(state).strip()
+        if not state.isdigit():
+            return _refuse(f"{state!r} is not a state id")
+        guard = (guard + f" {state} = {{ is_controlled_by = {country} NOT = {{ is_owned_by = "
+                         f"{country} }} }}").strip()
+        body = f"{state} = {{ set_occupation_law = {ident} }}"
+        done = f"occupation law {ident} set for state {state}"
+    elif occupied:
         occupied = occupied.upper()
         if not _TAG.match(occupied):
             return _refuse(f"{occupied!r} is not a country tag")
@@ -153,6 +218,9 @@ def plan_occupation_law(law: dict, country: str, occupied: str | None = None, *,
         body = f"set_occupation_law = {ident}"
         done = f"default occupation law set to {ident}"
     unchecked = ["the law's ai_will_do: the game's AI may pick another law for a state later"]
+    if state:
+        unchecked.append("whether the law may be set on a state (a law can be limited to a country "
+                         "or the default: the game declines it then, and nothing changes)")
     return _finish(country, guard, body, 0.0, unchecked, done, effect_command, console)
 
 
