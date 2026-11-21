@@ -22,6 +22,8 @@ import time
 from dataclasses import dataclass
 from pathlib import Path
 
+from .home import home_dir
+
 MAX_CHARS = 800
 #: Lines of context the brief shows besides the new ones.
 CONTEXT = 6
@@ -29,7 +31,7 @@ CONTEXT = 6
 
 def default_path() -> Path:
     env = os.environ.get("HOI4_CHAT")
-    return Path(env) if env else Path.home() / ".hoi4-harness" / "chat.jsonl"
+    return Path(env) if env else home_dir() / "chat.jsonl"
 
 
 @dataclass(frozen=True)

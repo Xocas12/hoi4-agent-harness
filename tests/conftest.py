@@ -57,6 +57,8 @@ def _no_real_display(monkeypatch):
 
 
 @pytest.fixture(autouse=True)
-def _no_real_skill_home(monkeypatch, tmp_path):
-    """Skill packs are read from ~/.hoi4-harness/skills; a test gets an empty home of its own."""
-    monkeypatch.setenv("HOI4_HARNESS_HOME", str(tmp_path / "hoi4-harness-home"))
+def _own_harness_home(monkeypatch, tmp_path_factory):
+    """Nothing in a test may touch the real ~/.hoi4-harness (setup.json, players.json, chat)."""
+    home = tmp_path_factory.mktemp("harness-home")
+    monkeypatch.setenv("HOI4_HARNESS_HOME", str(home))
+    monkeypatch.delenv("HOI4_CHAT", raising=False)

@@ -107,6 +107,13 @@ keyboard at all: orders go into a mod file the game reloads by itself in `-debug
 model runs through the Claude Code CLI on your subscription, and you just play — see
 [docs/inbox.md](docs/inbox.md).
 
+**For non-technical users: `hoi4-harness setup`.** It opens a window where you pick the
+countries an AI plays beside you, what it thinks with (your Claude Code subscription, an
+Anthropic, OpenAI or Google key, or a model on your own PC), a starting instruction such as
+"go communist" and a spend limit, then press Start; the AI plays in the background and you can
+close the window. `hoi4-harness chat-gui` opens a window to talk to those countries. The same
+thing without a window is `hoi4-harness start --setup FILE`. See [docs/setup.md](docs/setup.md).
+
 Also configurable: which actions exist at all (`--actions`, `--without`), whether
 the reflex layer runs (`--no-reflex` hands every decision to the model), whether
 the model is woken at all (`--no-llm` plays on reflexes alone — the baseline

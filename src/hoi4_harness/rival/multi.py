@@ -59,7 +59,7 @@ from .runner import (
     build_policy,
 )
 from .safety import KeyWatch
-from .setup import apply_defaults, human_tags_in_log, share_weights
+from .setup import apply_defaults, human_tags_in_log, planner_config_for, share_weights
 
 SUMMARY_FILE = "rival-summary.json"
 
@@ -339,6 +339,9 @@ def member_config(config: HarnessConfig, tag: str, share_usd: float | None) -> H
 
 def split_budget(config: HarnessConfig, tags: list[str]) -> dict[str, float | None]:
     """``--max-usd`` divided by the shares (equal unless ``rival_shares`` says otherwise)."""
+    own = {t: (config.rival_players.get(t) or {}) for t in tags}
+    if any("max_usd" in o for o in own.values()):
+        return {t: own[t].get("max_usd") for t in tags}        # a cap per country (setup file)
     total = config.budget.max_usd
     if total is None:
         return {tag: None for tag in tags}
@@ -569,7 +572,8 @@ def run_rivals(
     tags = config.rivals
     got = {**{t: planner for t in tags}, **(planners or {})} if (planner or planners) else {}
     if not got and config.planner_enabled:
-        got = {t: build_llm(_planner_for(config.planner, t)) for t in tags}   # all, before any key
+        # All of them, before any key is used.
+        got = {t: build_llm(_planner_for(planner_config_for(config, t), t)) for t in tags}
     run_dir = Path(config.run_dir)
     run_dir.mkdir(parents=True, exist_ok=True)
     out = echo or (lambda line: None)
