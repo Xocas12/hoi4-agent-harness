@@ -688,10 +688,56 @@ class ModContext:
                                       "cost": S.number(S.text(spec, "cost")),
                                       "allowed": spec_allowed(spec),
                                       "default": S.text(spec, "default") == "yes"}
+                            if is_law:
+                                record["visible"] = S.block(spec, "visible") or []
+                                record["available"] = S.block(spec, "available") or []
+                                record["allowed_to_remove"] = S.block(spec, "allowed_to_remove") or []
                             (laws[category] if is_law else spirits).append(record)
             return {"spirits": spirits, "laws": dict(laws)}
 
         return self._memo("ideas", build)  # type: ignore[return-value]
+
+    def find_law(self, law_id: str) -> tuple[dict, list[dict]] | None:
+        """``(law, every law of its group)`` for an idea id, or None when it is no law."""
+        for options in self.ideas()["laws"].values():
+            for record in options:
+                if record["id"] == law_id:
+                    return record, options
+        return None
+
+    def plan_law(self, law_id: str, country: str, effect_command: str = "eval_effect",
+                 console: bool = True):
+        from ..policy_effects import plan_law
+
+        found = self.find_law(law_id)
+        if found is None:
+            return None
+        return plan_law(found[0], found[1], country, effect_command=effect_command, console=console)
+
+    def occupation_laws(self) -> dict[str, dict]:
+        """``common/occupation_laws``: id -> its visible and available blocks."""
+        def build() -> dict[str, dict]:
+            laws: dict[str, dict] = {}
+            for path in self._files("common/occupation_laws"):
+                for key, _op, body in self._read(path):
+                    if key is None or not isinstance(body, list):
+                        continue
+                    laws[key] = {"id": key, "visible": S.block(body, "visible") or [],
+                                 "available": S.block(body, "available") or [],
+                                 "default": S.text(body, "starting_law") == "yes"}
+            return laws
+
+        return self._memo("occupation_laws", build)  # type: ignore[return-value]
+
+    def plan_occupation_law(self, law_id: str, country: str, occupied: str | None = None,
+                            effect_command: str = "eval_effect", console: bool = True):
+        from ..policy_effects import plan_occupation_law
+
+        law = self.occupation_laws().get(law_id)
+        if law is None:
+            return None
+        return plan_occupation_law(law, country, occupied, effect_command=effect_command,
+                                   console=console)
 
     def advisors(self, tag: str) -> list[dict]:
         def build() -> list[dict]:
@@ -980,10 +1026,17 @@ class ModContext:
             for idea in group:
                 if idea["id"] == ident:
                     names = self.names({ident, f"{ident}_desc"})
-                    return {"type": "idea", **idea, "allowed": S.readable(idea["allowed"]),
+                    law = "available" in idea
+                    return {"type": "law" if law else "idea", **idea,
+                            "allowed": S.readable(idea["allowed"]),
+                            **({"visible": S.readable(idea["visible"]),
+                                "available": S.readable(idea["available"]),
+                                "allowed_to_remove": S.readable(idea["allowed_to_remove"])}
+                               if law else {}),
                             "name": names.get(ident, ""), "description": names.get(f"{ident}_desc", ""),
-                            "headless": "observe-only: ideas are granted by focuses, events and "
-                                        "decisions; laws are changed in the politics screen"}
+                            "headless": "change_law (guarded by its own conditions and its cost)"
+                                        if law else "observe-only: ideas are granted by focuses, "
+                                        "events and decisions"}
         return None
 
 # --- small helpers -------------------------------------------------------------

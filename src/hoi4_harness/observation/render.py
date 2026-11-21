@@ -15,6 +15,7 @@ from __future__ import annotations
 from ..types import GameState
 from .forces import forces_lines, order_lines
 from .fronts import summarise_fronts
+from .mechanics import lines as mechanics_lines
 
 _SEV = {"critical": "!!", "notable": "!", "info": "-"}
 
@@ -170,6 +171,7 @@ def render_full(state: GameState, max_events: int = 6, max_fronts: int = 3) -> s
             lines.append(_war_line(war))
     elif unnamed_enemies(state):
         lines.append(_unnamed_war_line(state))
+    lines.extend(mechanics_lines(state))
     lines.extend(summarise_fronts(state.fronts, limit=max_fronts))
     lines.extend(forces_lines(state))
     lines.extend(order_lines(state))

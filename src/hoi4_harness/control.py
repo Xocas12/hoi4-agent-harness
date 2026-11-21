@@ -63,7 +63,10 @@ DOMAIN_ACTIONS: dict[str, frozenset[str]] = {
     "construction": frozenset({"queue_construction"}),
     "production": frozenset({"set_production", "change_production_equipment", "set_trade",
                              "design_division_template", "deploy_divisions"}),
-    "politics": frozenset({"hire_advisor", "take_decision", "click_gui_button"}),
+    # diplomacy_act is the acts that need nobody's answer (guarantee, leave a faction): a country's
+    # own political choices, so they stay with politics when the game's AI holds diplomacy.
+    "politics": frozenset({"hire_advisor", "take_decision", "click_gui_button", "change_law",
+                           "set_occupation_law", "diplomacy_act", "fire_advisor"}),
     "diplomacy": frozenset({"diplomacy"}),
     "army": frozenset({"set_army_order", "move_division", "attack_province",
                        "draw_front_line", "draw_offensive", "assign_battle_plan"}),
@@ -72,7 +75,8 @@ DOMAIN_ACTIONS: dict[str, frozenset[str]] = {
 }
 #: The steering vocabulary of the game's AI.
 STEER_ACTIONS = frozenset({"set_ai_directive", "set_ai_posture", "clear_ai_directives",
-                           "set_front_order", "set_region_order"})
+                           "set_front_order", "set_region_order", "steer_production", "steer_intelligence",
+                           "steer_research", "steer_navy", "steer_air"})
 DELEGATE_ACTION = "delegate_army_to_ai"
 CLOCK_ACTION = "set_game_speed"
 #: Never narrowed by control: notes, the clock handed back, the read-only playset queries.

@@ -39,6 +39,7 @@ from __future__ import annotations
 
 import dataclasses
 import re
+import secrets
 import time
 from collections.abc import Callable
 from dataclasses import dataclass, field
@@ -61,6 +62,16 @@ CONSOLE_ACTIONS = frozenset({
     "queue_construction", "set_production", "hire_advisor",
     "set_ai_directive", "set_ai_posture", "clear_ai_directives", "take_decision",
     "click_gui_button", "set_front_order", "set_region_order",
+    "change_law", "set_occupation_law", "diplomacy_act", "fire_advisor",
+    "steer_production", "steer_intelligence", "steer_research", "steer_navy", "steer_air",
+})
+#: The actions whose effect logs a marker inside its guard: the line in the game's log is the
+#: proof the game let it through (``_verify_click``).
+MARKED_ACTIONS = frozenset({
+    "click_gui_button", "set_front_order", "set_region_order", "change_law", "set_occupation_law",
+    "diplomacy_act",
+    "fire_advisor", "steer_production", "steer_intelligence", "steer_research", "steer_navy",
+    "steer_air",
 })
 #: The console for every action it has a faithful effect for: settled live on
 #: 1.19.5 (run reads the user directory, needs no -debug, and eval_effect takes
@@ -226,6 +237,11 @@ class ConsoleChannel:
         self.front_pending: dict[int, tuple[int, str]] = {}
         from ..front_orders import Standing
         self.front_standing = Standing(getattr(self.config, 'archive_dir', None))
+        #: The result line of each marker-verified action, and the steers it leaves standing.
+        self.click_done: dict[int, str] = {}
+        self.steer_pending: dict[int, tuple[str, str]] = {}
+        from ..steering import Standing as SteerStanding
+        self.steer_standing = SteerStanding(getattr(self.config, 'archive_dir', None))
 
     @property
     def transport(self) -> str:
@@ -252,6 +268,13 @@ class ConsoleChannel:
             return self._plan_click(call, args, country)
         if call.name == "set_front_order":
             return self._plan_front(call, args, country)
+        if call.name in ("change_law", "set_occupation_law", "diplomacy_act"):
+            return self._plan_policy(call, args, country, state)
+        if call.name == "fire_advisor":
+            return self._plan_fire(call, args, country)
+        if call.name in ("steer_production", "steer_intelligence", "steer_research", "steer_navy",
+                         "steer_air"):
+            return self._plan_steer(call, args, country)
         if call.name == "set_region_order":
             return self._plan_region(call, args, country)
         return self._plan_hybrid(call, args, country)
@@ -441,6 +464,119 @@ class ConsoleChannel:
                        ["whether the state lies on a front: an order away from any front is "
                         "harmless and does nothing"])
 
+    def _marked(self, call: ActionCall, plan_nonce: str, line: str, done: str,
+                unchecked: list[str]) -> Planned:
+        self.click_markers[id(call)] = plan_nonce
+        self.click_done[id(call)] = done
+        return Planned(call, [line], unchecked)
+
+    def _plan_policy(self, call, args, country, state) -> Planned:
+        """change_law, set_occupation_law, diplomacy_act: one guarded effect, a marker inside."""
+        from .. import policy_effects
+
+        command, console = self.config.effect_command, self.transport != "inbox"
+        if call.name == "diplomacy_act":
+            action = str(args["action"])
+            target = args.get("target")
+            if (target and self.index is not None and self.index.tags
+                    and str(target).upper() not in self.index.tags):
+                raise Refused(f"there is no country '{target}' in this playset")
+            plan = policy_effects.plan_diplomacy(action, target, country, effect_command=command,
+                                                 console=console)
+            if not plan.executable:
+                raise Refused(plan.reason)
+            return self._marked(call, plan.nonce, plan.line, plan.done, plan.unchecked)
+        ctx = self._need_index("reading the law's conditions").mod_context()
+        law = str(args["law"])
+        if call.name == "change_law":
+            plan = ctx.plan_law(law, country, command, console)
+            if plan is None:
+                raise Refused(f"there is no law {law!r} in this playset")
+            if not plan.executable:
+                raise Refused(f"{law} cannot be taken faithfully: {plan.reason}")
+            if plan.cost:
+                if not state.known("political_power"):
+                    raise Refused("the reader cannot see political power, so affordability is "
+                                  "unknown")
+                if state.political_power < plan.cost:
+                    raise Refused(f"{law} costs {plan.cost:g} political power, "
+                                  f"{state.political_power:g} held")
+        else:
+            plan = ctx.plan_occupation_law(law, country, args.get("occupied"), command, console)
+            if plan is None:
+                raise Refused(f"there is no occupation law {law!r} in this playset")
+            if not plan.executable:
+                raise Refused(f"{law} cannot be set faithfully: {plan.reason}")
+        return self._marked(call, plan.nonce, plan.line, plan.done, plan.unchecked)
+
+    def _plan_fire(self, call, args, country) -> Planned:
+        """Dismiss a hired advisor: hired is ``has_idea`` of the role's token, firing is free."""
+        advisor = str(args["advisor_id"])
+        index = self._need_index("looking up the advisor")
+        roles = index.advisor_roles(advisor)
+        if not roles:
+            raise Refused(f"there is no advisor '{advisor}' in this playset")
+        slot = args.get("slot")
+        if slot:
+            roles = [r for r in roles if r.slot == slot]
+            if not roles:
+                raise Refused(f"{advisor} has no {slot} role")
+        if len(roles) > 1:
+            raise Refused(f"{advisor} has several roles ({', '.join(str(r.slot) for r in roles)}); "
+                          "pass slot to say which one to fire")
+        (role,) = roles
+        if not role.token or not _SAFE_ID.match(role.token):
+            raise Refused(f"{advisor}'s role names no idea token, so whether it is hired cannot be tested")
+        if not role.can_be_fired:
+            raise Refused(f"{advisor} cannot be fired: the role says can_be_fired = no")
+        char = index.advisor_character(advisor)
+        nonce = "d" + secrets.token_hex(5)
+        body = (f'if = {{ limit = {{ has_idea = {role.token} }} deactivate_advisor = {char} '
+                f'log = "LLMB|v5|click|{nonce}" }}')
+        self.click_markers[id(call)] = nonce
+        self.click_done[id(call)] = f"{advisor} dismissed"
+        return Planned(call, [self._inline(country, body)],
+                       ["can_be_fired changed by script since the files (not readable)"])
+
+    def _plan_steer(self, call, args, country) -> Planned:
+        """The steering actions: country flags the mod's ai_strategy blocks are keyed on."""
+        from .. import steering
+
+        level = str(args["level"])
+        if call.name == "steer_research":
+            tech = str(args["technology"])
+            if level not in (steering.FIRST, steering.CLEAR):
+                raise Refused(f"{level!r} is not a research level (first, clear)")
+            index = self._need_index("checking the technology exists")
+            if index.technologies and tech not in index.technologies:
+                raise Refused(f"there is no technology {tech!r} in this playset")
+            if not re.match(r"^[A-Za-z0-9_]+$", tech):
+                raise Refused("its id has characters the harness will not write into script")
+            body = steering.research_effect(tech, level)
+            key = f"research {tech}"
+            done = (f"the AI researches {tech} first when it has a free slot"
+                    if level != steering.CLEAR else f"the research preference for {tech} is dropped")
+        else:
+            area = call.name.removeprefix("steer_")
+            if call.name == "steer_air":
+                kind, ident = "importance", args.get("region")
+            else:
+                kind, ident = str(args["kind"]), args.get("id")
+            known = steering.known_ids(self.index) if self.index is not None else None
+            why = steering.refusal(area, kind, ident, level, known)
+            if why:
+                raise Refused(why)
+            body = steering.effect(area, kind, ident, level)
+            key = f"{kind}{' ' + str(ident) if ident else ''}"
+            done = (f"the AI now steers {key} {level}" if level != steering.CLEAR
+                    else f"the steer on {key} is dropped")
+        nonce = "s" + secrets.token_hex(5)
+        self.click_markers[id(call)] = nonce
+        self.click_done[id(call)] = done
+        self.steer_pending[id(call)] = (key, level)
+        line = self._inline(country, f'{body} log = "LLMB|v5|click|{nonce}"')
+        return Planned(call, [line], ["whether the AI has a free slot or the means: a steer "
+                                       "changes what it prefers, not what it can do"])
     def regions(self):
         """The playset's strategic regions, named, read once."""
         if getattr(self, "_regions", None) is None:
@@ -490,6 +626,12 @@ class ConsoleChannel:
             except OSError:
                 tail = ""
             if nonce and f"|click|{nonce}" in tail:
+                steer = self.steer_pending.pop(id(call), None)
+                if steer is not None:
+                    self.steer_standing.record(*steer)
+                done = self.click_done.pop(id(call), None)
+                if done is not None:
+                    return True, None, done
                 pending = self.front_pending.pop(id(call), None)
                 if pending is not None:
                     self.front_standing.record(*pending)
@@ -771,7 +913,7 @@ class ConsoleChannel:
                 ok, kind, message = console._verify_decision(p.call, before, p)
                 out[i] = _result(p.call, ok, kind, message, lines=p.lines, unchecked=p.unchecked)
                 continue
-            if p.call.name in ("click_gui_button", "set_front_order", "set_region_order"):
+            if p.call.name in MARKED_ACTIONS:
                 ok, kind, message = console._verify_click(p.call)
                 out[i] = _result(p.call, ok, kind, message, lines=p.lines, unchecked=p.unchecked)
                 continue
@@ -820,7 +962,7 @@ class ConsoleChannel:
         for i, (console, before, p) in enumerate(flat):
             if p.call.name == "take_decision":
                 ok, kind, message = console._verify_decision(p.call, before, p)
-            elif p.call.name in ("click_gui_button", "set_front_order", "set_region_order"):
+            elif p.call.name in MARKED_ACTIONS:
                 ok, kind, message = console._verify_click(p.call)
             else:
                 outcome = verify(p.verify_call or p.call, before, console._read_state,

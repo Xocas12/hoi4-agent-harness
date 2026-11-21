@@ -310,7 +310,11 @@ ACTIONS += [
         category="query",
         description=(
             "Read-only: everything a player of your country sees, from the newest save. "
-            "view=divisions lists every one of your divisions; view=state id=<state id> shows one "
+            "view=divisions lists every one of your divisions, worst first, with organisation, "
+            "strength, supply, days out of supply, entrenchment, equipment fill and whether it is "
+            "encircled or in a battle; view=battles lists the battles you are in and the ones you "
+            "can see (sides, divisions, tactics, damage, an estimate of who is winning); "
+            "view=state id=<state id> shows one "
             "state, both sides; view=country id=<TAG> shows what your intelligence knows of a country "
             "(army, factories, production: exact, estimated or unknown by your intel); view=borders "
             "lists the states across your borders. The other panels: view=faction (members, leader, "
@@ -318,14 +322,16 @@ ACTIONS += [
             "missions, network strength per country, your intel levels), projects (special projects, "
             "facilities, scientists), navy and air (your fleets and wings, or id=TAG as your intel "
             "allows), politics (parties, laws, spirits, advisors), economy (fuel, manpower, "
-            "stockpile, trade), diplomacy (wars with their score, guarantees, puppets, lend-lease), "
+            "stockpile, trade, resource income, equipment against need), diplomacy (wars with their "
+            "score, guarantees, puppets, lend-lease, world tension, volunteers), "
             "research (slots, doctrines, decisions, focus), occupation (resistance, victory points), "
             "supply (hubs, railways, trucks, divisions short of supply), commanders (generals, "
             "marshals and admirals with skills and traits). The result comes back on your next call."
         ),
         parameters=_schema(
             {"view": {"type": "string", "enum": [
-                "divisions", "state", "country", "borders", "faction", "intel", "projects", "navy",
+                "divisions", "battles", "state", "country", "borders", "faction", "intel", "projects",
+                "navy",
                 "air", "politics", "economy", "diplomacy", "research", "occupation", "supply",
                 "commanders"]},
              "id": {"type": "string", "description": "State id for view=state; a country tag for "
@@ -465,7 +471,9 @@ def names() -> list[str]:
 # the level it is actually good at -- who to fight, where it matters, what
 # posture to hold -- instead of pretending to be a corps commander.
 
-AI_DIRECTIVES = ["invade", "protect", "contain", "befriend", "antagonize", "ignore"]
+AI_DIRECTIVES = ["invade", "protect", "contain", "befriend", "antagonize", "ignore",
+                 "prepare_war", "declare_war", "volunteers", "lend_lease", "ally",
+                 "spy_on", "sabotage", "steal_tech"]
 
 ACTIONS += [
     ActionSpec(
@@ -514,7 +522,11 @@ ACTIONS += [
         description=(
             "Give the AI a standing strategic intent toward a country: who to "
             "invade, who to protect, who to contain, who to court. Weight is "
-            "relative priority, not a promise."
+            "relative priority, not a promise. Diplomacy is the AI's to carry out, with its "
+            "own acceptance and timing: prepare_war (justify and mass troops), declare_war "
+            "(declare when it can), volunteers (send volunteers to them), lend_lease (send "
+            "them lend-lease), ally (seek an alliance). Intelligence: spy_on (build an "
+            "intel network there), sabotage (sabotage its industry), steal_tech."
         ),
         requires_confirmation=True,
         parameters=_schema(
@@ -647,6 +659,169 @@ ACTIONS += [
         parameters=_schema(
             {"army": {"type": "string", "description": "A recorded army name (army.<name> point)."}},
             ["army"],
+        ),
+    ),
+]
+
+BY_NAME = {spec.name: spec for spec in ACTIONS}
+
+
+# --- politics the effects can do faithfully, and steering where only steering is -------------
+# Each is guarded by the game's own conditions and charged what the screen charges (docs/interaction.md).
+
+DIPLOMACY_ACTS = [*DIPLOMACY, "military_access", "leave_faction"]
+STEER_PRODUCTION_KINDS = ["equipment", "units", "building", "garrison"]
+STEER_INTEL_KINDS = ["branch", "factories", "mission"]
+STEER_LEVELS = ["less", "more", "much_more", "clear"]
+
+ACTIONS += [
+    ActionSpec(
+        name="change_law",
+        category="politics",
+        description=(
+            "Change a law (economy, trade or conscription) to the one named, as the politics "
+            "screen does: the law's own allowed, visible and available conditions are checked, "
+            "the law you replace must be allowed to go, and its political power cost is charged. "
+            "Refused with the reason when the law cannot be taken now. Find laws and their costs "
+            "with inspect_world view=politics or describe_action."
+        ),
+        parameters=_schema(
+            {"law": {"type": "string", "description": "The law's idea id, e.g. war_economy."}},
+            ["law"],
+        ),
+    ),
+    ActionSpec(
+        name="fire_advisor",
+        category="politics",
+        description=(
+            "Dismiss an advisor you hired, as the politics screen does: only an advisor who is "
+            "hired and whose role can be fired (the files' can_be_fired) goes. It costs nothing, "
+            "and the slot is free for hire_advisor."
+        ),
+        parameters=_schema(
+            {"advisor_id": {"type": "string", "description": "The character id or idea token."},
+             "slot": {"type": "string", "description": "Only when the character has several roles."}},
+            ["advisor_id"],
+        ),
+    ),
+    ActionSpec(
+        name="set_occupation_law",
+        category="politics",
+        description=(
+            "Set the occupation law you apply to occupied land: the law's own visible and "
+            "available conditions are checked. With occupied (a country tag) it sets the "
+            "override for that country's land only; without it, the default for all. Laws that "
+            "depend on which country is occupied (some DLC laws) are refused with the reason."
+        ),
+        parameters=_schema(
+            {"law": {"type": "string", "description": "Occupation law id, e.g. martial_law_occupation."},
+             "occupied": {"type": "string",
+                          "description": "Optional: the occupied country's tag (an override)."}},
+            ["law"],
+        ),
+    ),
+    ActionSpec(
+        name="diplomacy_act",
+        category="politics",
+        description=(
+            "A diplomatic act that needs nobody's answer, done as the diplomacy screen does it: "
+            "guarantee (guarantee a country's independence) and leave_faction (a member, not the "
+            "leader, leaves). Everything that needs the other side to accept (military access, "
+            "faction invitations, non-aggression pacts, lend-lease, volunteers) or takes time "
+            "(justify_war_goal, declare_war, improve_relations) is refused with the reason and the "
+            "faithful route: the AI steers it with set_ai_directive (prepare_war, declare_war, "
+            "volunteers, lend_lease, ally, befriend), or the diplomacy action where the mouse plays."
+        ),
+        parameters=_schema(
+            {"action": {"type": "string", "enum": DIPLOMACY_ACTS},
+             "target": {"type": "string", "description": "Country tag; not needed for leave_faction."}},
+            ["action"],
+        ),
+    ),
+    ActionSpec(
+        name="steer_production",
+        category="steer",
+        description=(
+            "Tell the game's AI what to build, as a standing preference it weighs against its own "
+            "plan: kind=equipment (id: an equipment category such as fighter, armor, infantry: "
+            "its share of the factories), units (id: a ship or plane type: how much of it against "
+            "the others), building (id: industrial_complex, arms_factory, dockyard ...: what it "
+            "builds next), garrison (no id: how many divisions it keeps garrisoning occupied "
+            "land). Level less/more/much_more or clear (drop it). It stands until changed."
+        ),
+        parameters=_schema(
+            {"kind": {"type": "string", "enum": STEER_PRODUCTION_KINDS},
+             "id": {"type": "string", "description": "The category, type or building; omit for garrison."},
+             "level": {"type": "string", "enum": STEER_LEVELS}},
+            ["kind", "level"],
+        ),
+    ),
+    ActionSpec(
+        name="steer_intelligence",
+        category="steer",
+        description=(
+            "Tell the game's AI how to run the intelligence agency, as a standing preference: "
+            "kind=branch (id: branch_intelligence, branch_defense, branch_operation, "
+            "branch_operative or branch_crypto: which upgrades it wants next), factories (no id: "
+            "how many factories it spends on the agency), mission (id: build_intel_network, "
+            "counter_intelligence, quiet_network, root_out_resistance or control_trade: what its "
+            "operatives do when no country is named). Against one country use set_ai_directive "
+            "spy_on, sabotage or steal_tech. Level less/more/much_more or clear."
+        ),
+        parameters=_schema(
+            {"kind": {"type": "string", "enum": STEER_INTEL_KINDS},
+             "id": {"type": "string", "description": "The branch or mission; omit for factories."},
+             "level": {"type": "string", "enum": STEER_LEVELS}},
+            ["kind", "level"],
+        ),
+    ),
+    ActionSpec(
+        name="steer_navy",
+        category="steer",
+        description=(
+            "Tell the game's AI where its navy should fight, as a standing preference: "
+            "kind=dominance (id: a sea region id: how much sea control it seeks there, "
+            "less/more/much_more) or raiding (id: a country tag: how hard its raiders hunt that "
+            "country's convoys). It does not move a ship: the AI still needs the fleet. Level "
+            "clear drops it. For orders by sea region (dominate, raid convoys in a region, avoid, "
+            "home base) use set_region_order; use this for raiding a country's convoys anywhere, "
+            "or a graded dominance weight."
+        ),
+        parameters=_schema(
+            {"kind": {"type": "string", "enum": ["dominance", "raiding"]},
+             "id": {"type": "string", "description": "Sea region id, or a country tag for raiding."},
+             "level": {"type": "string", "enum": STEER_LEVELS}},
+            ["kind", "id", "level"],
+        ),
+    ),
+    ActionSpec(
+        name="steer_air",
+        category="steer",
+        description=(
+            "Tell the game's AI which strategic region's air war to weigh most (more / much_more, "
+            "or clear to drop it): its wings are sent where the weight is. It does not fly a "
+            "wing: the AI still needs the planes and the bases. set_region_order "
+            "order=air_superiority is the plain standing order for the same thing; use this one "
+            "for a graded weight."
+        ),
+        parameters=_schema(
+            {"region": {"type": "string", "description": "Strategic region id."},
+             "level": {"type": "string", "enum": STEER_LEVELS}},
+            ["region", "level"],
+        ),
+    ),
+    ActionSpec(
+        name="steer_research",
+        category="steer",
+        description=(
+            "Tell the game's AI to research one technology first, when it next has a free slot "
+            "(level=first), or drop that preference (clear). It costs what research costs and "
+            "takes what it takes: nothing is skipped."
+        ),
+        parameters=_schema(
+            {"technology": {"type": "string", "description": "Technology id."},
+             "level": {"type": "string", "enum": ["first", "clear"]}},
+            ["technology", "level"],
         ),
     ),
 ]

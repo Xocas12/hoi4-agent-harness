@@ -46,6 +46,8 @@ TAG_ARGUMENTS = {
     "set_ai_directive": "target",
     "set_ai_posture": "theater",
     "diplomacy": "target",
+    "diplomacy_act": "target",
+    "set_occupation_law": "occupied",
     "set_trade": "from_country",
 }
 
@@ -249,6 +251,10 @@ class AdvisorRole:
 
     slot: str | None
     cost: float | None
+    #: The advisor's ``idea_token``: the idea the character holds while hired in this role.
+    token: str | None = None
+    #: False when the role says ``can_be_fired = no`` (script can change it later; not read).
+    can_be_fired: bool = True
 
 
 @dataclass
@@ -406,9 +412,12 @@ class IdentifierIndex:
                         for advisor in found:
                             cost = _number(_first(advisor.get("cost")))
                             slot = _first(advisor.get("slot"))
-                            roles[char_id].append(
-                                AdvisorRole(slot if isinstance(slot, str) else None, cost))
                             token = _first(advisor.get("idea_token"))
+                            fired = _first(advisor.get("can_be_fired"))
+                            roles[char_id].append(
+                                AdvisorRole(slot if isinstance(slot, str) else None, cost,
+                                            token if isinstance(token, str) else None,
+                                            fired != "no"))
                             if isinstance(token, str):
                                 tokens.setdefault(token, char_id)
             self._advisors = roles
@@ -507,7 +516,7 @@ class IdentifierIndex:
                 why = (f"'{focus}' is not in {country}'s focus tree" if anywhere
                        else f"There is no focus '{focus}' in this playset ({self.playset.name})")
                 return self._reject(call, why, focus, mine)
-        if call.name == "start_research" and self.technologies:
+        if call.name in ("start_research", "steer_research") and self.technologies:
             tech = str(args.get("technology", ""))
             if tech not in self.technologies:
                 return self._reject(
@@ -522,6 +531,29 @@ class IdentifierIndex:
             return self.mod_context().check_take(call, country)
         if call.name == "click_gui_button":
             return self.mod_context().check_click(call, country)
+        if call.name == "change_law":
+            ctx = self.mod_context()
+            law = str(args.get("law", ""))
+            laws = [o["id"] for options in ctx.ideas()["laws"].values() for o in options]
+            if laws and ctx.find_law(law) is None:
+                return self._reject(call, f"There is no law '{law}' in this playset", law, laws)
+        if call.name == "set_occupation_law":
+            law = str(args.get("law", ""))
+            known = self.mod_context().occupation_laws()
+            if known and law not in known:
+                return self._reject(call, f"There is no occupation law '{law}' in this playset",
+                                    law, known)
+        if call.name in ("steer_production", "steer_intelligence", "steer_navy", "steer_air"):
+            from . import steering
+
+            area = call.name.removeprefix("steer_")
+            kind, ident = (("importance", args.get("region")) if call.name == "steer_air"
+                           else (str(args.get("kind", "")), args.get("id")))
+            why = steering.refusal(area, kind, ident, str(args.get("level", "")),
+                                   steering.known_ids(self))
+            if why:
+                return ActionResult(ok=False, action=call.name, call_id=call.call_id,
+                                    message=why + ".", error_kind="invalid_args")
         if call.name == "set_front_order" and self.states:
             state = str(args.get("state", ""))
             if self.resolve_state(state) is None:

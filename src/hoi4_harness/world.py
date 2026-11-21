@@ -58,6 +58,26 @@ class Division:
     manpower: float | None = None
     dig_in: float | None = None
     supply: float | None = None
+    #: ``"<id>:<type>"``, how a combat block names a division (``unit={ id=1 type=51 }``): the id
+    #: alone is not unique, the type is part of the key.
+    key: str = ""
+    #: Absolute strength, the supply ceiling (``max_supply``) and the cap on entrenchment: the
+    #: save writes no maximum organisation or strength for a division.
+    strength: float | None = None
+    max_supply: float | None = None
+    dig_in_cap: float | None = None
+    #: Days out of supply (the key is only written while the division is cut off), the raw
+    #: experience points, the last combat's date, and the damage it took recently.
+    out_of_supply_days: int | None = None
+    experience: float | None = None
+    last_combat: str | None = None
+    str_damage: float | None = None
+    org_damage: float | None = None
+    #: Equipment held (items) and still requested by the reinforcement queue: the shortage.
+    equipment_held: int | None = None
+    equipment_missing: int | None = None
+    #: How far the division has adapted to the climate it stands in, 0..1 (None: no block).
+    acclimatisation: float | None = None
 
 
 @dataclass
@@ -95,6 +115,10 @@ class World:
     #: Provinces held by someone other than their state's owner (occupation, a front).
     controllers: dict[int, str] = field(default_factory=dict)
     countries: dict[str, CountryPicture] = field(default_factory=dict)
+    #: The countries the observed country is at war with (its own ``war_relation`` entries) and
+    #: every battle in the save's ``combat`` block (battles.RawBattle), for the battle picture.
+    enemies: set[str] = field(default_factory=set)
+    combat: list = field(default_factory=list)
     seconds: float = 0.0
     #: Victory points by province, and the shared parts of the other panels (factions, the
     #: country's intelligence networks): world_full.FullWorld.
@@ -231,6 +255,53 @@ def _ratio(block, value_key: str, need_key: str) -> float | None:
     return max(0.0, min(1.0, have / need))
 
 
+def _unit_key(value) -> str:
+    """``{ id=31387 type=4713 }`` -> ``"31387:4713"``: the key a combat block names a unit by."""
+    if isinstance(value, list):
+        value = value[0] if value else None
+    if isinstance(value, dict) and value.get("id") is not None:
+        return f"{value.get('id')}:{value.get('type', '')}"
+    return ""
+
+
+def _equipment_held(block) -> int | None:
+    """Items a division holds: the ``amount`` of each entry of its ``equipment`` block."""
+    equipment = block.get("equipment") if isinstance(block, dict) else None
+    if not isinstance(equipment, dict):
+        return None
+    return sum(_int(item.get("amount")) or 0
+               for item in sg._as_list(equipment.get("equipment")) if isinstance(item, dict))
+
+
+def _equipment_missing(requests) -> int:
+    """Items the reinforcement queue still asks for; a division with no requests block asks for none."""
+    if not isinstance(requests, dict):
+        return 0
+    reinforcement = requests.get("reinforcement")
+    if not isinstance(reinforcement, dict):
+        return 0
+    missing = 0
+    for request in sg._as_list(reinforcement.get("request")):
+        need = request.get("need") if isinstance(request, dict) else None
+        if isinstance(need, dict):
+            missing += sum(_int(v) or 0 for v in need.values() if not isinstance(v, (dict, list)))
+    return missing
+
+
+def _acclimatisation(block) -> float | None:
+    """The adapted climate's value against ``max_acclimatization``: 1.0 is fully adapted."""
+    if not isinstance(block, dict):
+        return None
+    limit = sg._number(block.get("max_acclimatization"))
+    if not limit:
+        return None
+    active = block.get("actively_gaining")
+    kinds = [str(active)] if isinstance(active, str) else [k for k in block if k.endswith("_climate")]
+    values = [sg._number(block.get(k)) for k in kinds]
+    values = [v for v in values if v is not None]
+    return max(0.0, min(1.0, max(values) / limit)) if values else None
+
+
 def read_divisions(country: dict, tag: str, templates: dict[str, str], layer) -> list[Division]:
     units = country.get("units") if isinstance(country, dict) else None
     out = []
@@ -255,7 +326,15 @@ def read_divisions(country: dict, tag: str, templates: dict[str, str], layer) ->
             organisation=sg._number(d.get("organisation")),
             manpower=_ratio(d.get("army_manpower"), "army_manpower_value", "army_manpower_need"),
             dig_in=sg._number(d.get("dig_in")),
-            supply=sg._number(d.get("army_current_supply_ratio"))))
+            supply=sg._number(d.get("army_current_supply_ratio")),
+            key=_unit_key(raw_id), strength=sg._number(d.get("strength")),
+            max_supply=sg._number(d.get("max_supply")), dig_in_cap=sg._number(d.get("dig_in_cap")),
+            out_of_supply_days=_int(d.get("out_of_supply_days")),
+            experience=sg._number(d.get("experience")),
+            last_combat=d.get("last_combat_date") if isinstance(d.get("last_combat_date"), str) else None,
+            str_damage=sg._number(d.get("str_damage")), org_damage=sg._number(d.get("org_damage")),
+            equipment_held=_equipment_held(d), equipment_missing=_equipment_missing(d.get("requests")),
+            acclimatisation=_acclimatisation(d.get("acclimatization"))))
     return out
 
 
@@ -342,6 +421,13 @@ def read_world(path: Path, me: str, *, layer=None, also: tuple[str, ...] = ()) -
         enemies = [t for t, r in F.read_relations(mine, me)[0].items() if "war" in r]
         found = shared.faction_of(me)
         members = [m for m in (found["members"] if found else []) if m != me]
+    world.enemies = set(enemies)
+    try:
+        from .battles import read_combat
+
+        world.combat = read_combat(text)
+    except Exception as exc:  # noqa: BLE001 - battles that cannot be read must not cost the army
+        world.full_error = world.full_error or f"combat: {type(exc).__name__}: {exc}"
     wanted = [me] + [t for t in (*also, world.player, *enemies) if t and t != me]
     wanted += [t for t in neighbours_of(me, world.states, world.controllers, layer) if t not in wanted]
     wanted += [t for t in members if t not in wanted]
@@ -396,6 +482,15 @@ class Picture:
     #: The save and the intel readings this picture was filtered from, for the other panels.
     world: World | None = None
     intel: dict[str, Intel] = field(default_factory=dict)
+    #: The provinces the country sees (its land, where its divisions stand, their neighbours).
+    seen: set[int] = field(default_factory=set)
+    #: The battles it can see and how fit each of its divisions is (battles.py, condition.py).
+    battles: list = field(default_factory=list)
+    conditions: list = field(default_factory=list)
+    #: Unit keys of the enemy divisions that are in a battle with one of the country's own.
+    engaged: set[str] = field(default_factory=set)
+    #: Unit keys of the country's own divisions in a battle.
+    fighting: set[str] = field(default_factory=set)
 
 
 def picture(world: World, me: str, intel: dict[str, Intel], layer) -> Picture:
@@ -428,8 +523,28 @@ def picture(world: World, me: str, intel: dict[str, Intel], layer) -> Picture:
             contact[tag] = near
         foreign[tag] = _foreign(world, country, near, intel.get(tag) or Intel(
             DEFAULT_INTEL, DEFAULT_INTEL, DEFAULT_INTEL, DEFAULT_INTEL, assumed=True))
-    return Picture(me, world.date, list(mine.divisions), contact, foreign, borders,
-                   world.factories(me), list(mine.production), world, dict(intel))
+    pic = Picture(me, world.date, list(mine.divisions), contact, foreign, borders,
+                  world.factories(me), list(mine.production), world, dict(intel), seen)
+    from . import battles as B
+    from . import condition as C
+
+    pic.battles = B.resolve(world, me, layer, seen)
+    fighting = {}
+    for b in pic.battles:
+        if b.own_side is None or b.kind != "land":
+            continue
+        raw = next((r for r in world.combat if r.ident == b.ident and r.kind == b.kind), None)
+        if raw is not None:
+            side = raw.attacker if b.own_side == "attacker" else raw.defender
+            other = raw.defender if b.own_side == "attacker" else raw.attacker
+            own_keys = {d.key for d in mine.divisions}
+            for k in side.keys:
+                if k in own_keys:
+                    fighting[k] = "reserve" if k in side.reserves else "line"
+            pic.engaged |= {k for k in other.keys if k not in own_keys}
+    pic.conditions = C.assess(world, me, layer, fighting)
+    pic.fighting = set(fighting)
+    return pic
 
 
 def _foreign(world: World, country: CountryPicture, near: list[Division], intel: Intel) -> dict:
@@ -532,6 +647,12 @@ def brief_lines(pic: Picture, index=None, layer=None, *, states: int = 6, countr
     lines.append(f"  Army: {len(pic.own)} divisions"
                  + (f", org {org:.0f}" if org is not None else "")
                  + (f", manpower {mp:.0%}" if mp is not None else ""))
+    from . import battles as B
+    from . import condition as C
+
+    name_of = lambda state: _state_name(index, state)  # noqa: E731
+    lines += C.brief_lines(pic.conditions, name_of)
+    lines += B.brief_lines(pic.battles, name_of)
     if pic.industry or pic.production:
         lines_ = sorted(pic.production, key=lambda x: -x.factories)
         making = ", ".join(f"{p.equipment} x{p.factories}" for p in lines_[:5]) or "nothing"
@@ -577,10 +698,20 @@ def query(pic: Picture, view: str, ident: str | None, index=None, layer=None, li
 
     if view in world_full.NEW_VIEWS:
         return world_full.query(pic, view, ident, layer, limit)
+    if view == "battles":
+        from . import battles as B
+
+        return B.view(pic.battles, lambda state: _state_name(index, state), limit)
     if view == "divisions":
-        rows = sorted(pic.own, key=lambda d: (d.state or 0, d.template, d.id))
+        from . import condition as C
+
+        name_of = lambda state: _state_name(index, state)  # noqa: E731
+        rows = pic.conditions or []
         return {"view": "divisions", "date": pic.date, "count": len(rows), "shown": min(limit, len(rows)),
-                "divisions": [_division(d, index) for d in rows[:limit]]}
+                "note": "worst first; organisation and strength shares are estimates against the "
+                        "best copy of the same template (the save writes no maximum); supply is "
+                        "the ratio over max_supply; attrition is not saved, its causes are shown",
+                "divisions": [C.row(c, name_of) for c in rows[:limit]]}
     if view == "state":
         sid = _int(ident)
         if sid is None:
@@ -592,7 +723,7 @@ def query(pic: Picture, view: str, ident: str | None, index=None, layer=None, li
                 "held_by": holder[0] or ("you" if own else "?"), "terrain": holder[1] or
                 (own[0].terrain if own else ""),
                 "own": [_division(d, index) for d in own],
-                "enemy_seen": [_division(d, index) for d in foe]}
+                "enemy_seen": [_foreign_division(d, index, pic) for d in foe]}
     if view == "country":
         tag = (ident or "").upper()
         if tag == pic.me:
@@ -601,13 +732,29 @@ def query(pic: Picture, view: str, ident: str | None, index=None, layer=None, li
             return {"view": "country", "tag": tag, "known": False,
                     "note": "not a neighbour, an enemy or the person's country in this save"}
         return {"view": "country", **pic.foreign[tag],
-                "in_contact": [_division(d, index) for d in pic.contact.get(tag, [])][:limit]}
+                "in_contact": [_foreign_division(d, index, pic) for d in pic.contact.get(tag, [])][:limit]}
     if view == "borders":
         return {"view": "borders", "borders": [
             {"state": s, "name": _state_name(index, s), "held_by": h, "terrain": t}
             for s, (h, t) in sorted(pic.borders.items(), key=lambda kv: (kv[1][0], kv[0]))][:limit]}
-    return {"error": f"unknown view {view!r}: divisions, state, country, borders, "
+    return {"error": f"unknown view {view!r}: divisions, battles, state, country, borders, "
                      + ", ".join(world_full.NEW_VIEWS)}
+
+
+def _foreign_division(d: Division, index, pic: Picture) -> dict:
+    """A foreign division in contact, as a player sees it: where it stands and what it is. Its
+    organisation and strength bars only when it is in a battle with one of the country's own (the
+    battle window lists them); never its supply, entrenchment, experience or equipment."""
+    out = {"id": d.id, "country": d.country, "template": d.template,
+           "state": _state_name(index, d.state), "province": d.province, "terrain": d.terrain}
+    if d.key in pic.engaged and pic.world is not None:
+        from . import battles as B
+
+        ref_org, ref_str = B.reference_maxima(pic.world)
+        row = B.unit_row(d, ref_org, ref_str, own=False)
+        out["in_battle_with_yours"] = True
+        out.update({k: v for k, v in row.items() if k in ("org_pct", "strength_pct")})
+    return out
 
 
 def _division(d: Division, index) -> dict:
@@ -739,8 +886,11 @@ class WorldObserver:
 
         pic = self.picture(state)
         lines = brief_lines(pic, self.index, self.layer) if pic is not None else []
+        from .steering import Standing as SteerStanding
+
         standing = Standing(self.run_dir).line(lambda s: _state_name(self.index, s))
-        return lines + ([standing] if standing else [])
+        steers = SteerStanding(self.run_dir).line()
+        return lines + [line for line in (standing, steers) if line]
 
     def query(self, state: GameState, view: str, ident: str | None, limit: int = 60) -> dict:
         pic = self.picture(state)
@@ -748,7 +898,12 @@ class WorldObserver:
             return {"error": "no text save of this campaign yet: the game autosaves monthly "
                              "(save_as_binary=no); until then only the brief's own numbers exist"
                              + (f" ({self.error})" if self.error else "")}
-        return query(pic, view, ident, self.index, self.layer, limit)
+        data = query(pic, view, ident, self.index, self.layer, limit)
+        if "error" not in data and (not ident or ident.upper() == self.me):
+            from .observation.mechanics import view_extras
+
+            data.update(view_extras(state, (view or "").lower()))
+        return data
 
 
 def intel_from(state: GameState) -> dict[str, Intel]:
