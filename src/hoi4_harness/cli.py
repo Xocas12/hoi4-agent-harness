@@ -774,7 +774,8 @@ def cmd_mailbox(args: argparse.Namespace) -> int:
     except ValueError as exc:
         print(f"REFUSED: not JSON: {exc}")
         return 1
-    seq, problems = mb.write_answer(directory, answer)
+    seq, problems = mb.write_answer(directory, answer, source=args.file or None,
+                                    force=getattr(args, "force", False))
     if problems:
         print("REFUSED: " + "; ".join(problems))
         return 1
@@ -1490,6 +1491,8 @@ def build_parser() -> argparse.ArgumentParser:
     mailbox.add_argument("--timeout", type=float, default=None, help="wait: seconds before giving up")
     mailbox.add_argument("--file", help="answer: a JSON file {text, calls: [{name, arguments}]}")
     mailbox.add_argument("--json", help="answer: the same JSON inline")
+    mailbox.add_argument("--force", action="store_true",
+                         help="answer: hand over a --file even if it looks like the previous answer")
     mailbox.set_defaults(func=cmd_mailbox)
 
     evaluate = sub.add_parser("eval", help="run a scenario and score it")

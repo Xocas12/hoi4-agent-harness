@@ -68,6 +68,8 @@ class FakeAI:
             for tag in modgen.DEFAULT_TAGS if tag != game.country
         }
         self.player_states = START_STATES
+        #: States the player controls without owning (occupied, not yet annexed).
+        self.occupied_states = 0
         #: tag -> the date the AI first saw an invade directive against it.
         self._asked: dict[str, dt.date] = {}
         self._day = 0
@@ -164,7 +166,8 @@ class FakeAI:
         state = self.game.world.state
         enemies = state.wars
         return {
-            "tag": self.game.country, "ostates": self.player_states, "cstates": self.player_states,
+            "tag": self.game.country, "ostates": self.player_states,
+            "cstates": self.player_states + self.occupied_states,
             "divs": self.player_divisions, "enemies": len(enemies),
             "capit": sum(1 for w in enemies if (w.surrender_progress or 0) >= 1.0),
             "infac": 0, "leader": 0, "fmem": 0,

@@ -242,11 +242,47 @@ def check_answer(req: dict, answer: dict) -> list[str]:
     return problems
 
 
-def write_answer(directory: str | Path, answer: dict) -> tuple[int | None, list[str]]:
-    """Check an answer against the pending request and hand it over. Returns (seq, problems)."""
+def stale_reason(directory: str | Path, answer: dict, source: str | Path) -> str | None:
+    """Why an answer *file* looks like an old answer, or None.
+
+    A player who writes to the wrong path and then points ``answer --file`` at the right
+    one hands over whatever that file still holds: the previous turn's orders. Two signs:
+    the file is older than the pending request, or it says exactly what the last answer
+    taken said.
+    """
+    d = Path(directory)
+    try:
+        if Path(source).stat().st_mtime < (d / REQUEST_JSON).stat().st_mtime:
+            return (f"{source} was last written before request {(pending(d) or {}).get('seq')} "
+                    "arrived, so it is probably the previous answer")
+    except OSError:
+        pass
+    try:
+        last = json.loads((d / RESPONSE_JSON).read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+    if isinstance(last, dict) and isinstance(answer, dict) and (
+            (last.get("text", ""), last.get("calls", []))
+            == (answer.get("text", ""), answer.get("calls", []))):
+        return f"{source} is identical to the last answer taken (request {last.get('seq')})"
+    return None
+
+
+def write_answer(directory: str | Path, answer: dict, *, source: str | Path | None = None,
+                 force: bool = False) -> tuple[int | None, list[str]]:
+    """Check an answer against the pending request and hand it over. Returns (seq, problems).
+
+    ``source`` is the file the answer was read from; with it, a stale file is refused
+    unless ``force``.
+    """
     req = pending(directory)
     if req is None:
         return None, ["no request is waiting for an answer"]
+    if source is not None and not force:
+        why = stale_reason(directory, answer, source)
+        if why:
+            return req.get("seq"), [why + "; write this turn's answer to the file again, "
+                                    "or pass --force if it is the answer you mean"]
     problems = check_answer(req, answer)
     if problems:
         return req.get("seq"), problems

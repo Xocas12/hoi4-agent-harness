@@ -566,6 +566,9 @@ class AgentLoop:
             results: list[ToolResult] = []
             end_turn = False
             round_start = len(taken)
+            # A read sent in the same answer as advance_time would end the turn before
+            # the player ever saw the result (#128): hold the clock, answer the read.
+            asked_to_read = any(c.name in catalog.QUERY_ACTIONS for c in response.tool_calls)
             for call in response.tool_calls:
                 # The model's prose for this round is its stated rationale; a
                 # human asked to approve an irreversible call gets to see it.
@@ -582,6 +585,14 @@ class AgentLoop:
                     results.append(ToolResult(call_id=call.id, name=call.name,
                                               content=answer.as_tool_content(),
                                               is_error=not answer.ok))
+                    continue
+                if action.name == "advance_time" and asked_to_read:
+                    results.append(ToolResult(
+                        call_id=call.id, name=call.name, is_error=True,
+                        content=("advance_time was not run: this answer also asked to read "
+                                 "(list_decisions / describe_action), and the turn would have "
+                                 "ended before you saw the result. The results are above; "
+                                 "call advance_time again when you have read them.")))
                     continue
                 if self.advisor:
                     # Intercepted: recorded, shown to the player, never executed.
