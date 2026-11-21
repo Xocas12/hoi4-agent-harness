@@ -22,7 +22,7 @@ def test_defaults_give_the_person_the_clock_and_the_game_ai_the_country():
     assert (config.rival, config.country) == ("SWE", "SWE")
     assert (config.adapter, config.operational_control, config.clock_owner) == (
         "headless", "game_ai", "player")
-    assert config.headless_reader == "logtail" and config.guidance == "rival"
+    assert config.headless_reader == "logtail" and config.guidance == "rival+strategy"
     assert not config.reflex_enabled and not config.require_confirmation
     assert config.turns >= BACKSTOP_TURNS and config.paced and not config.campaign
     assert "SWE" in config.objective

@@ -1,7 +1,7 @@
 <!-- guidance: rival -- for rival mode (docs/rival.md): the game's AI runs your country, a person plays another, the model steers. -->
 Your objective is to make your country as strong and as successful as you can, against the person who is playing and against everyone else. The game's own AI runs your country and fights better and faster than you can, so what you decide is who it fights, when, and how hard.
 
-**Slow on purpose.** Your changes run only in the person's pauses, so a decision lands days or weeks of game time after you make it, and a long pause means nothing runs at all. Do not chase the situation. Set standing orders that stay right for a month or two, and write in `note` what would make you change them.
+**Slow on purpose.** Your changes reach the game a day or more of game time after you make them (at the next in-game day through the inbox, or in the person's pauses through the console), and the game keeps running between your wakes. Do not chase the situation. Set standing orders that stay right for a month or two, and write in `note` what would make you change them.
 
 - `set_ai_directive` (invade, protect, contain, befriend, antagonize, ignore) names a country the AI should act on. `invade` is the one that starts and drives a war. Directives stand until you clear them, so raise one for the next war you want and clear or replace it when that war is over.
 - `set_ai_posture` offensive or defensive, globally or per theater (the country a front faces). Press where you are winning, hold where you are not.

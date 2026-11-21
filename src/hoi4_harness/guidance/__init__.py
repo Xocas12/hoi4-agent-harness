@@ -15,10 +15,16 @@ Built-in packs:
     coach          a prescriptive checklist, for weaker or smaller models
     world-conquest the unattended campaign: the game's AI executes, the model steers
     rival          rival mode: the game's AI runs a country a person is not playing
+    strategy       how 1.20 works and what plays well now (a knowledge sheet, not a
+                   role): combine it with another, ``rival+strategy``
 
-Any path to a text file works too, so a project can ship its own doctrine:
+Packs combine with ``+``, in order. Any path to a text file works too, so a project
+can ship its own doctrine:
 
     hoi4-harness play --guidance ./my-doctrine.md
+
+``strategy`` is also the Claude Code skill ``.claude/skills/hoi4-strategy/SKILL.md``,
+generated from the same file (``skill_text``) so the two cannot drift.
 """
 
 from __future__ import annotations
@@ -26,7 +32,21 @@ from __future__ import annotations
 from pathlib import Path
 
 BUILTIN_DIR = Path(__file__).parent
-BUILTIN = ("none", "unconstrained", "minimal", "doctrine", "historical", "coach", "world-conquest", "rival")
+BUILTIN = ("none", "unconstrained", "minimal", "doctrine", "historical", "coach", "world-conquest", "rival",
+           "strategy")
+SKILL_PATH = Path(".claude") / "skills" / "hoi4-strategy" / "SKILL.md"
+_SKILL_DESCRIPTION = (
+    "How Hearts of Iron IV 1.20 works and what plays well now -- economy, laws, combat width, "
+    "doctrines after the 1.17 rework, the 1.18-1.20 balance changes, balance of power, custom mod "
+    "windows, the game AI's weak spots, and a do-not list. Use before steering or playing a HOI4 "
+    "country with the harness (rival, campaign, mailbox player), or when judging a HOI4 strategy, "
+    "so the play is not an outdated meta."
+)
+SKILL_FRONTMATTER = (
+    f"---\nname: hoi4-strategy\ndescription: {_SKILL_DESCRIPTION}\n---\n\n"
+    "<!-- GENERATED from src/hoi4_harness/guidance/strategy.md by hoi4_harness.guidance.skill_text. "
+    "Edit that file, then run: python -m hoi4_harness.guidance --write-skill -->\n"
+)
 
 
 def available() -> list[str]:
@@ -34,7 +54,9 @@ def available() -> list[str]:
 
 
 def load(name_or_path: str | Path | None) -> str:
-    """Return guidance text. ``None`` or empty means no guidance at all."""
+    """Return guidance text. ``None`` or empty means no guidance at all; ``a+b`` is both."""
+    if isinstance(name_or_path, str) and "+" in name_or_path and not Path(name_or_path).exists():
+        return "\n\n".join(text for part in name_or_path.split("+") if (text := load(part.strip())))
     if name_or_path in (None, "", "none"):
         if name_or_path == "none":
             return _read(BUILTIN_DIR / "none.md")
@@ -52,6 +74,18 @@ def load(name_or_path: str | Path | None) -> str:
         f"No guidance pack {name_or_path!r}. Built-ins: {', '.join(available())}; "
         "or pass a path to a text file."
     )
+
+
+def skill_text() -> str:
+    """The Claude Code skill: the strategy sheet behind the skill's frontmatter."""
+    return SKILL_FRONTMATTER + "\n" + _read(BUILTIN_DIR / "strategy.md") + "\n"
+
+
+def write_skill(root: Path) -> Path:
+    target = Path(root) / SKILL_PATH
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(skill_text(), encoding="utf-8", newline="\n")
+    return target
 
 
 def _read(path: Path) -> str:
