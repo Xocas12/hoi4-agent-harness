@@ -62,6 +62,7 @@ from .eval.runner import PlaysetMismatch
 from .guidance import available as guidance_packs
 from .keepawake import keep_awake_for
 from .replay import ReplayError, list_turns, replay_turn
+from .skills import SkillError
 
 
 def _read_control_map(value: str):
@@ -185,6 +186,10 @@ def _config_from_args(args: argparse.Namespace) -> HarnessConfig:
         config.run_dir = Path(args.run_dir)
     if getattr(args, "guidance", None):
         config.guidance = args.guidance
+    if getattr(args, "skill_names", None):
+        config.skills = [*config.skills, *args.skill_names]
+    if getattr(args, "skills_dirs", None):
+        config.skills_dirs = [Path(d) for d in args.skills_dirs]
     if getattr(args, "system_prompt", None):
         config.system_prompt_path = Path(args.system_prompt)
     if getattr(args, "objective", None):
@@ -1391,6 +1396,54 @@ def cmd_prompt(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_skills(args: argparse.Namespace) -> int:
+    from . import skills as sk
+
+    if args.skills_command == "new":
+        directory = Path(args.new_dir) if args.new_dir else sk.harness_home() / "skills"
+        print(f"wrote {sk.scaffold(args.name, directory, args.new_mods or (), args.new_tags or ())}")
+        return 0
+    config = _config_from_args(args)
+    if config.game_dir is not None:
+        mods = config.build_index().playset.mods
+    else:
+        from .identifiers import Mod
+
+        mods = [Mod.load(Path(m)) for m in config.mod_dirs]
+    found = sk.discover(config.skills_dirs, mods)
+    tag = config.country
+    if args.skills_command == "show":
+        match = next((s for s in found if s.name.lower() == args.name.lower()), None)
+        if match is None:
+            raise sk.SkillError(f"No skill named {args.name!r}. Found: "
+                                f"{', '.join(s.name for s in found) or 'none'}")
+        reason = sk.why(match, mods, tag, config.skills)
+        print(f"{match.name}  ({match.path}, from {match.source}, ~{match.tokens} tokens)")
+        print(f"applies: {reason or 'no' + ('' if match.has_harness_keys else ' (Claude Code skill only)')}")
+        print()
+        print(match.body)
+        return 0
+    chosen = sk.select(found, mods, tag, config.skills)
+    selection = sk.fit(chosen, config.skill_tokens, config.guidance)
+    reasons = {s.name: r for s, r in chosen}
+    if not found:
+        print("no skills found. Searched:")
+    for source, folder in sk.search_paths(config.skills_dirs, mods):
+        print(f"  {source:<14}{folder}")
+    for s in found:
+        if s in selection.included:
+            state = f"INCLUDED ({reasons[s.name]})"
+        elif s in selection.left_out:
+            state = f"left out for space ({reasons[s.name]})"
+        elif s in selection.duplicates:
+            state = "skipped: the strategy guidance pack is already in the prompt"
+        else:
+            state = "not applied" + ("" if s.has_harness_keys else " (Claude Code skill only)")
+        print(f"{s.name:<24} ~{s.tokens:>5} tok  {s.source:<14} {state}")
+        print(f"    {s.path}")
+    return 0
+
+
 def calibration_targets(config: HarnessConfig) -> list[str]:
     """What to calibrate when the operator names nothing: every concrete target
     the recorded UI scripts click, else the default panel list. A templated
@@ -1568,6 +1621,10 @@ def build_parser() -> argparse.ArgumentParser:
         p.add_argument("--guidance", metavar="NAME|PATH",
                        help="how much to coach the model: " + ", ".join(guidance_packs())
                             + ", or a path to your own file")
+        p.add_argument("--skill", dest="skill_names", action="append", metavar="NAME",
+                       help="include this skill pack in the prompt (repeatable; docs/skills.md)")
+        p.add_argument("--skills-dir", dest="skills_dirs", action="append", metavar="PATH",
+                       help="look for skill packs here first (repeatable)")
         p.add_argument("--system-prompt", dest="system_prompt", metavar="PATH",
                        help="replace the entire system prompt, mechanics included")
         p.add_argument("--objective", help="the standing objective given every turn")
@@ -1658,6 +1715,25 @@ def build_parser() -> argparse.ArgumentParser:
     prompt = sub.add_parser("prompt", help="print the system prompt a run would use")
     common(prompt)
     prompt.set_defaults(func=cmd_prompt)
+
+    skills = sub.add_parser("skills", help="skill packs: list, new, show (docs/skills.md)")
+    skills_sub = skills.add_subparsers(dest="skills_command", required=True)
+    s_list = skills_sub.add_parser("list", help="found skills, where, and which apply to this run")
+    common(s_list)
+    s_list.set_defaults(func=cmd_skills)
+    s_new = skills_sub.add_parser("new", help="write a template SKILL.md")
+    s_new.add_argument("name")
+    s_new.add_argument("--mod", dest="new_mods", action="append", metavar="NAME",
+                       help="a mod name or workshop id the skill is for (repeatable)")
+    s_new.add_argument("--tag", dest="new_tags", action="append", metavar="TAG",
+                       help="a country tag the skill is for (repeatable)")
+    s_new.add_argument("--dir", dest="new_dir", metavar="PATH",
+                       help="where to put it (default: ~/.hoi4-harness/skills)")
+    s_new.set_defaults(func=cmd_skills)
+    s_show = skills_sub.add_parser("show", help="print a skill and why it does or does not apply")
+    s_show.add_argument("name")
+    common(s_show)
+    s_show.set_defaults(func=cmd_skills)
 
     observe = sub.add_parser("observe", help="print one situation brief")
     common(observe)
@@ -2077,6 +2153,9 @@ def main(argv: list[str] | None = None) -> int:
     try:
         return args.func(args)
     except ControlError as exc:
+        print(f"{args.command}: {exc}", file=sys.stderr)
+        return 2
+    except SkillError as exc:
         print(f"{args.command}: {exc}", file=sys.stderr)
         return 2
     except PlaysetMismatch as exc:

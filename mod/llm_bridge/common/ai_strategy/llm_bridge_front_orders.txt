@@ -10,6 +10,8 @@ llmb_front_push = {
 	abort = { OR = { llm_bridge_is_harness = no NOT = { any_state = { has_state_flag = llmb_front_push } } } }
 	ai_strategy = { type = front_control state_trigger = { has_state_flag = llmb_front_push } ratio = 0 priority = 300 ordertype = front execution_type = rush execute_order = yes manual_attack = yes }
 	ai_strategy = { type = front_unit_request state_trigger = { has_state_flag = llmb_front_push } value = 150 }
+	ai_strategy = { type = force_concentration_target_weight state_trigger = { has_state_flag = llmb_front_push } value = 300 }
+	ai_strategy = { type = force_concentration_front_factor state_trigger = { has_state_flag = llmb_front_push } ratio = 0 value = 150 }
 }
 
 llmb_front_attack = {
@@ -17,6 +19,8 @@ llmb_front_attack = {
 	abort = { OR = { llm_bridge_is_harness = no NOT = { any_state = { has_state_flag = llmb_front_attack } } } }
 	ai_strategy = { type = front_control state_trigger = { has_state_flag = llmb_front_attack } ratio = 0 priority = 300 ordertype = front execution_type = balanced execute_order = yes manual_attack = yes }
 	ai_strategy = { type = front_unit_request state_trigger = { has_state_flag = llmb_front_attack } value = 80 }
+	ai_strategy = { type = force_concentration_target_weight state_trigger = { has_state_flag = llmb_front_attack } value = 120 }
+	ai_strategy = { type = force_concentration_front_factor state_trigger = { has_state_flag = llmb_front_attack } ratio = 0 value = 60 }
 }
 
 llmb_front_probe = {
@@ -24,6 +28,7 @@ llmb_front_probe = {
 	abort = { OR = { llm_bridge_is_harness = no NOT = { any_state = { has_state_flag = llmb_front_probe } } } }
 	ai_strategy = { type = front_control state_trigger = { has_state_flag = llmb_front_probe } ratio = 0 priority = 300 ordertype = front execution_type = careful execute_order = yes manual_attack = yes }
 	ai_strategy = { type = front_unit_request state_trigger = { has_state_flag = llmb_front_probe } value = 30 }
+	ai_strategy = { type = force_concentration_target_weight state_trigger = { has_state_flag = llmb_front_probe } value = 40 }
 }
 
 llmb_front_hold = {
@@ -31,4 +36,6 @@ llmb_front_hold = {
 	abort = { OR = { llm_bridge_is_harness = no NOT = { any_state = { has_state_flag = llmb_front_hold } } } }
 	ai_strategy = { type = front_control state_trigger = { has_state_flag = llmb_front_hold } ratio = 0 priority = 300 ordertype = front execution_type = careful execute_order = no manual_attack = no }
 	ai_strategy = { type = front_unit_request state_trigger = { has_state_flag = llmb_front_hold } value = 60 }
+	ai_strategy = { type = force_concentration_target_weight state_trigger = { has_state_flag = llmb_front_hold } value = -80 }
+	ai_strategy = { type = force_concentration_front_factor state_trigger = { has_state_flag = llmb_front_hold } ratio = 0 value = -60 }
 }

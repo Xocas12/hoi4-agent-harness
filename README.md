@@ -122,7 +122,8 @@ answers for them (`--allow-all`, `--confirm`), the wake rules, the pacing, the
 budget ceilings, and the game
 start. Three worked profiles ship in [profiles/](profiles/). Full list:
 [docs/customization.md](docs/customization.md) and
-[docs/guidance.md](docs/guidance.md).
+[docs/guidance.md](docs/guidance.md). Players and modders can add their own
+notes as skill packs (SKILL.md folders): [docs/skills.md](docs/skills.md).
 
 The agent's in-game conduct is not policed. The only structural limits are
 schema validation (a malformed call is a bug, not a strategy), the confirmation

@@ -25,13 +25,26 @@ def test_the_mod_ships_one_block_per_order_keyed_on_a_state_flag():
         assert f"type = front_unit_request state_trigger = {{ has_state_flag = {flag} }}" in text
     assert "execution_type = rush execute_order = yes" in text
     assert "execute_order = no manual_attack = no" in text           # hold stops the attack
+    # push aims the AI's concentrated offensives at the flagged state
+    assert ("type = force_concentration_target_weight state_trigger = { has_state_flag = "
+            "llmb_front_push } value = 300") in text
+
+
+def test_reserve_blocks_are_generated_per_state_and_committed_for_vanilla():
+    text = front_orders.reserves(["12", "3"])
+    assert text.index("llmb_reserve_3 =") < text.index("llmb_reserve_12 =")
+    assert "enable = { llm_bridge_is_harness = yes 12 = { has_state_flag = llmb_front_reserve } }" in text
+    assert "type = put_unit_buffers ratio = 0.1 order_id = 12 states = { 12 }" in text
+    committed = (MOD / front_orders.RESERVES_FILE).read_text(encoding="utf-8")
+    assert committed.count("type = put_unit_buffers") > 900          # every vanilla state
+    assert front_orders.effect(7, "reserve").endswith("set_state_flag = llmb_front_reserve }")
     assert text.count("{") == text.count("}")
 
 
 def test_an_order_leaves_one_flag_on_the_state_and_clear_leaves_none():
     assert front_orders.effect(42, "push").endswith("set_state_flag = llmb_front_push }")
     clear = front_orders.effect(42, "clear")
-    assert "set_state_flag" not in clear and clear.count("clr_state_flag") == 4
+    assert "set_state_flag" not in clear and clear.count("clr_state_flag") == 5
 
 
 def test_front_orders_are_steering_so_a_game_ai_country_can_give_them():

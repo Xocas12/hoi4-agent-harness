@@ -424,8 +424,9 @@ class ConsoleChannel:
         from .. import front_orders
 
         order = str(args["order"]).lower()
-        if order not in (*front_orders.ORDERS, "clear"):
-            raise Refused(f"{order!r} is not a front order (push, attack, probe, hold, clear)")
+        if order not in (*front_orders.ALL_ORDERS, "clear"):
+            raise Refused(f"{order!r} is not a front order (push, attack, probe, hold, reserve, "
+                          "clear)")
         index = self._need_index("finding the state")
         found = index.resolve_state(str(args["state"]))
         if found is None or not str(found.id).isdigit():

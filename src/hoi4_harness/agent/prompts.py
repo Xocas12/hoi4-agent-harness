@@ -276,6 +276,7 @@ def build_system(
     campaign_hands: dict | None = None,
     control_map=None,
     instruction: str = "",
+    skills_text: str = "",
 ) -> str:
     """Assemble the system prompt.
 
@@ -316,6 +317,8 @@ def build_system(
     text = load_guidance(guidance)
     if text:
         parts.append(text)
+    if skills_text:
+        parts.append(skills_text)
     if extra:
         parts.append(extra.strip())
     if instruction and instruction.strip():
@@ -360,7 +363,10 @@ def system_for(config, index=None) -> str:
             index, config.country, max_tokens=config.mod_context_tokens,
             cache_dir=config.mod_context_cache_dir, offline=not config.mod_context_fetch,
             tools="list_decisions" not in set(config.disabled_actions))
+    from ..skills import skills_section
+
     return build_system(
+        skills_text=skills_section(config, index),
         guidance=config.guidance,
         extra=config.system_prompt_extra,
         system_prompt_path=config.system_prompt_path,

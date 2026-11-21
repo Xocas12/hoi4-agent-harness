@@ -561,9 +561,19 @@ def generate_probe(index: IdentifierIndex) -> GeneratedFile:
     return GeneratedFile(PROBE_PATH, "\n".join(out))
 
 
+def generate_reserves(index: IdentifierIndex) -> GeneratedFile:
+    """The reserve blocks (front_orders.reserves), one per state of the playset."""
+    from . import front_orders
+
+    ids = [s for s in index.states if str(s).isdigit()]
+    return GeneratedFile(front_orders.RESERVES_FILE, front_orders.reserves(ids))
+
+
 def write_probe(mod_dir: Path, index: IdentifierIndex) -> Path:
-    item = generate_probe(index)
-    target = mod_dir / item.path
-    target.parent.mkdir(parents=True, exist_ok=True)
-    target.write_text(item.text, encoding="utf-8", newline="\n")
+    """The playset-specific files: the focus/research/bop probe and the reserve blocks."""
+    target = mod_dir / PROBE_PATH
+    for item in (generate_probe(index), generate_reserves(index)):
+        out = mod_dir / item.path
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(item.text, encoding="utf-8", newline="\n")
     return target
