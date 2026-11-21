@@ -323,12 +323,21 @@ class RivalSupervisor(Supervisor):
         turn = self.loop.report.turns if self.loop else 0
         self.tracker.events(state.events, state.date)
         self.tracker.record(state, spend, turn)
+        chat = getattr(self.session.env, "chat", None)
+        if chat is not None and self.loop is not None:
+            why = chat.wake_reason()
+            if why:
+                self.log.line(f"chat: {why}")
+            self.loop.policy.pending_wake = why
         return None
 
     def after_turn(self, state: GameState, *, woke: bool, reason: str, actions: list[str],
                    tokens: int) -> None:
         if woke:
             self.tracker.reviewed()
+            chat = getattr(self.session.env, "chat", None)
+            if chat is not None:
+                chat.mark_seen()
         queued = len(self.session.queue.pending) if self.session.queue is not None else 0
         wars = ", ".join(w.against for w in state.wars) or "none"
         marker = f"wake: {reason}" if woke else "ai plays"
@@ -400,6 +409,15 @@ def run_rival(
     log = CampaignLog(run_dir / RIVAL_LOG, None if quiet else out)
     env = env or _env_from_config(config)
     session = build_session(env, config, log)
+    if config.chat and env.chat is None:
+        from ..chat import ChatChannel, ChatLog
+
+        env.attach_chat(ChatChannel(ChatLog(config.chat_path), config.rival,
+                                    run_dir / "chat_seen.json"))
+    if config.observe_world and env.world is None:
+        from ..world import build_observer
+
+        env.attach_world(build_observer(config, env.index, getattr(env.adapter, "fake_game", None)))
     queue = env.handover
     if resume:
         if (restored := queue.restore()):

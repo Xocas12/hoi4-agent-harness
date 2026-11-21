@@ -1,6 +1,6 @@
 # The action catalog
 
-The catalog is the agent's entire vocabulary. It is small on purpose: 30 verbs,
+The catalog is the agent's entire vocabulary. It is small on purpose: 33 verbs,
 listed by `hoi4-harness actions` (add `--json` for schemas).
 
 | Action | Category | Notes |
@@ -19,6 +19,9 @@ listed by `hoi4-harness actions` (add `--json` for schemas).
 | `take_decision` | politics | Console path guarded by the decision's own conditions and cost (`docs/mods.md`) |
 | `click_gui_button` | politics | Presses a scripted GUI button: its click effect inside the window's and button's own conditions, through the inbox or the console (`docs/mods.md`) |
 | `list_gui_buttons` | query | Read-only; the custom-window buttons a country can press, with the game AI's weights and refusal reasons. Needs `--mod-context` |
+| `set_front_order` | steer | Steers the front at one state (push, attack, probe, hold, clear) through the game's own `front_control`; inbox or console (`docs/observation.md`) |
+| `send_message` | memory | Single-player chat with the person and other LLM countries; free, never touches the game (`docs/chat.md`) |
+| `inspect_world` | query | Read-only; the map and armies from the newest text save, other countries through intel (`docs/observation.md`) |
 | `list_decisions` | query | Read-only; answered from the playset's files, never reaches the game. Needs `--mod-context` |
 | `describe_action` | query | Read-only; a decision, focus, new tech or idea in full. Needs `--mod-context` |
 | `diplomacy` | diplomacy | Confirmation-gated; includes `declare_war` |

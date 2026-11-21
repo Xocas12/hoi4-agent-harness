@@ -111,6 +111,8 @@ class GeneratedFile:
 
 
 def generate(tags: tuple[str, ...] | list[str] = DEFAULT_TAGS) -> list[GeneratedFile]:
+    from . import front_orders
+
     tags = tuple(dict.fromkeys(tag.strip().upper() for tag in tags if tag.strip()))
     for tag in tags:
         if not (len(tag) == 3 and tag.isalnum()):
@@ -123,6 +125,7 @@ def generate(tags: tuple[str, ...] | list[str] = DEFAULT_TAGS) -> list[Generated
         GeneratedFile("common/scripted_effects/llm_bridge_targets.txt", _effects(tags)),
         GeneratedFile("common/decisions/llm_bridge_target_decisions.txt", _decisions(tags)),
         GeneratedFile("common/scripted_effects/llm_bridge_cadence.txt", _cadence_effects()),
+        GeneratedFile(front_orders.FILE, front_orders.strategies()),
         GeneratedFile("events/llm_bridge_cadence_events.txt", _cadence_events()),
         # The empty inbox: the game must know both events at load. The harness rewrites the
         # INSTALLED copies while it runs (inbox.py); this repo copy stays empty.

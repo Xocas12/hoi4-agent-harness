@@ -14,7 +14,7 @@ import json
 from collections.abc import Callable, Iterable
 
 from .actions import registry
-from .actions.catalog import QUERY_ACTIONS
+from .actions.catalog import PLAYSET_QUERIES, QUERY_ACTIONS
 from .adapters.base import GameAdapter
 from .adapters.input_driver import InputInterrupted
 from .config import HarnessConfig
@@ -29,7 +29,7 @@ from .types import ActionCall, ActionResult, GameEvent, GameState, Observation
 #: Calls the per-turn action cap does not count: a note only writes to the
 #: journal, and advance_time hands the clock back -- the prompt asks for "up to
 #: N actions, then advance_time", and refusing it would not stop the turn.
-UNCAPPED_ACTIONS = frozenset({"note", "advance_time"}) | QUERY_ACTIONS
+UNCAPPED_ACTIONS = frozenset({"note", "advance_time", "send_message"}) | QUERY_ACTIONS
 
 
 class HOI4Env:
@@ -64,16 +64,39 @@ class HOI4Env:
         #: Callables ``(state) -> lines`` whose output ends every brief (campaign mode adds
         #: the conquest numbers this way).
         self.brief_hooks: list[Callable[[GameState], list[str]]] = []
+        #: The map and armies from the newest save (world.WorldObserver, #139); None: off.
+        self.world = None
+        #: This country's end of the single-player chat (chat.ChatChannel, #133); None: off.
+        self.chat = None
+
+    def attach_chat(self, channel) -> None:
+        """Give the brief a messages section and the model the send_message tool."""
+        self.chat = channel
+        self.brief_hooks.append(channel.brief_lines)
+
+    def attach_world(self, observer) -> None:
+        """Give the brief a forces-and-map section and the model the inspect_world tool."""
+        self.world = observer
+        self.brief_hooks.append(observer.brief_lines)
 
     # --- observation ---------------------------------------------------------
 
     @property
     def allowed_actions(self) -> set[str]:
         """Adapter capability, narrowed by the operator's whitelist/blacklist."""
-        supported = set(self.adapter.supported_actions)
-        if self.queries_enabled:
-            supported |= QUERY_ACTIONS
+        supported = set(self.adapter.supported_actions) | self.available_queries
         return self.config.allowed_actions(supported)
+
+    @property
+    def available_queries(self) -> set[str]:
+        """The read-only tools this run can answer: the playset's (mod context) and the
+        world's (a save observer)."""
+        out = set(PLAYSET_QUERIES) if self.queries_enabled else set()
+        if self.world is not None:
+            out.add("inspect_world")
+        if self.chat is not None:
+            out.add("send_message")
+        return out
 
     @property
     def script_actions(self) -> set[str]:
@@ -102,6 +125,18 @@ class HOI4Env:
             return ActionResult(ok=False, action=call.name, call_id=call.call_id, message=message,
                                 error_kind="unsupported")
 
+        if call.name == "inspect_world":
+            if self.world is None:
+                return fail("this run has no save observer (observe_world is off)")
+            problem = registry.check(call, QUERY_ACTIONS)
+            if problem is not None:
+                return problem
+            args = call.arguments
+            data = self.world.query(self.adapter.read_state(), str(args.get("view", "divisions")),
+                                    args.get("id"), int(args.get("limit", 60)))
+            return ActionResult(ok="error" not in data, action=call.name, call_id=call.call_id,
+                                message=json.dumps(data, sort_keys=True, ensure_ascii=False),
+                                error_kind=None if "error" not in data else "invalid_args")
         if not self.queries_enabled:
             return fail("this run has no playset files to answer from (mod context is off)")
         problem = registry.check(call, QUERY_ACTIONS)
@@ -200,6 +235,8 @@ class HOI4Env:
         """
         if call.name in QUERY_ACTIONS:
             return self.query(call)
+        if call.name == "send_message":
+            return self._send_message(call, date)
         if self.config.advisor:
             # The hard edge of advisor mode. The loop routes calls to the
             # advisor instead of here, but the env refusing is what makes the
@@ -358,6 +395,20 @@ class HOI4Env:
             ),
             error_kind="budget",
         )
+
+    def _send_message(self, call: ActionCall, date: str) -> ActionResult:
+        def result(ok: bool, message: str) -> ActionResult:
+            return ActionResult(ok=ok, action=call.name, call_id=call.call_id, message=message,
+                                error_kind=None if ok else "invalid_args")
+
+        if self.chat is None:
+            return result(False, "this run has no chat")
+        try:
+            sent = self.chat.send(str(call.arguments.get("to", "")),
+                                  str(call.arguments.get("text", "")), date or None)
+        except ValueError as exc:
+            return result(False, f"not sent: {exc}")
+        return result(True, f"sent to {sent.to} (message #{sent.id})")
 
     def act_many(self, calls: list[ActionCall], date: str = "", *,
                  auto: bool = False) -> list[ActionResult]:

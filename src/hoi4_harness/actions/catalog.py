@@ -269,6 +269,40 @@ ACTIONS += [
         ),
     ),
     ActionSpec(
+        name="set_front_order",
+        category="army",
+        description=(
+            "Tell your armies what to do on the stretch of front at one state, and the game's AI "
+            "carries it out: push (all-out attack, more divisions), attack (a steady offensive), "
+            "probe (careful, small attacks), hold (no attacks, more defenders), clear (drop the "
+            "order). It stands until changed. Pick states from the Forces and map section or "
+            "inspect_world view=borders; an order on an enemy state facing your line works best."
+        ),
+        parameters=_schema(
+            {"state": {"type": "string", "description": "State id (or name)."},
+             "order": {"type": "string", "enum": ["push", "attack", "probe", "hold", "clear"]}},
+            ["state", "order"],
+        ),
+    ),
+    ActionSpec(
+        name="inspect_world",
+        category="query",
+        description=(
+            "Read-only: the map and the armies as your country sees them, from the newest save. "
+            "view=divisions lists every one of your divisions (template, state, province, terrain, "
+            "organisation, manpower, entrenchment); view=state id=<state id> shows one state, both "
+            "sides; view=country id=<TAG> shows what your intelligence knows of a country (army, "
+            "factories, production: exact, estimated or unknown by your intel); view=borders lists "
+            "the states across your borders. The result comes back on your next call."
+        ),
+        parameters=_schema(
+            {"view": {"type": "string", "enum": ["divisions", "state", "country", "borders"]},
+             "id": {"type": "string", "description": "State id for view=state, tag for view=country."},
+             "limit": {"type": "integer", "minimum": 1, "maximum": 120}},
+            ["view"],
+        ),
+    ),
+    ActionSpec(
         name="list_decisions",
         category="query",
         description=(
@@ -351,6 +385,21 @@ ACTIONS += [
         ),
     ),
     ActionSpec(
+        name="send_message",
+        category="memory",
+        description=(
+            "Say something in the single-player chat: to the person playing (person), to every "
+            "country's strategist and the person (global), or to one LLM country (its tag). Free, "
+            "and nothing happens in the game: talk binds nobody, and what you do is what counts. "
+            "Answer a message addressed to you here."
+        ),
+        parameters=_schema(
+            {"to": {"type": "string", "description": "person, global, or a country tag."},
+             "text": {"type": "string", "maxLength": 800}},
+            ["to", "text"],
+        ),
+    ),
+    ActionSpec(
         name="note",
         category="memory",
         description=(
@@ -363,7 +412,9 @@ ACTIONS += [
 ]
 
 #: Read-only tools the harness answers from the playset's files; the game is not touched.
-QUERY_ACTIONS = frozenset({"list_decisions", "describe_action", "list_gui_buttons"})
+QUERY_ACTIONS = frozenset({"list_decisions", "describe_action", "list_gui_buttons", "inspect_world"})
+#: The queries answered from the playset's files (mod context); inspect_world reads the save.
+PLAYSET_QUERIES = frozenset({"list_decisions", "describe_action", "list_gui_buttons"})
 
 BY_NAME: dict[str, ActionSpec] = {spec.name: spec for spec in ACTIONS}
 

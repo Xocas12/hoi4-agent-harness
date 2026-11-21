@@ -465,6 +465,13 @@ class HarnessConfig:
     # default: it changes the prompt. The Workshop pages it summarises are read from
     # the cache unless ``mod_context_fetch`` lets the run fetch a missing one.
     mod_context: bool = False
+    #: The forces-and-map brief section and inspect_world, from the newest text save (#139).
+    #: Rival and native runs turn it on.
+    observe_world: bool = False
+    #: The single-player chat (#133): the brief's messages and send_message. Rival and native
+    #: runs turn it on. chat_path: the shared log, default ~/.hoi4-harness/chat.jsonl or HOI4_CHAT.
+    chat: bool = False
+    chat_path: Path | None = None
     mod_context_fetch: bool = False
     mod_context_tokens: int = 900
     mod_context_cache_dir: Path | None = None
@@ -561,6 +568,7 @@ class HarnessConfig:
             elif key in {"run_dir", "save_dir", "log_path", "system_prompt_path", "game_dir",
                          "ui_scripts_path", "calibration_path", "console_dir", "camera_path",
                          "fake_game_dir", "fake_game_files", "mod_context_cache_dir", "inbox_dir",
+                         "chat_path",
                          "fake_human_script"} and value is not None:
                 setattr(self, key, Path(value))
             elif key == "mod_dirs":

@@ -281,6 +281,9 @@ class GameState:
     faction: str | None = None
     #: Balance of power bars active for the country (schema v5 ``bop`` lines); [] is none.
     power_balances: list[PowerBalance] = field(default_factory=list)
+    #: What the country's intelligence knows of others (schema v5 ``intel`` lines, weekly):
+    #: tag -> {"civilian", "army", "navy", "air"}, each 0..1.
+    intel: dict[str, dict[str, float]] = field(default_factory=dict)
     #: Whether the game's AI runs this country (the state line's ``ai=``, schema v5):
     #: None is "not observed". Campaign mode checks it after the console's ``human_ai``.
     ai_controlled: bool | None = None

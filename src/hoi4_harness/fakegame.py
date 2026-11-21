@@ -444,6 +444,8 @@ class FakeGame:
         self.speed_log: list[int] = []
         # --- saves: the console's savegame command writes one a few seconds later
         self.save_dir = self.user_dir / "save games"
+        #: State flags the inbox set (set_front_order): state id -> flags.
+        self.state_flags: dict[str, set[str]] = {}
         #: Wall-clock seconds from the command to the file appearing.
         self.save_delay = save_delay
         #: A test's way to make the next saves fail like a misconfigured game:
@@ -1242,6 +1244,12 @@ class FakeGame:
                 self.world.state.political_power += _number(str(entry.value))
             elif key == "activate_decision":
                 self._scripted(self._decision_effect(str(entry.value)))
+            elif key in ("set_state_flag", "clr_state_flag"):
+                state = scope.get("state")
+                if state is None:
+                    raise ScriptError(f"{key} needs a state scope")
+                flags = self.state_flags.setdefault(str(state.id), set())
+                (flags.add if key == "set_state_flag" else flags.discard)(str(entry.value))
             elif key == "add_power_balance_value":
                 self._move_balance(entry)
             elif key == "set_country_flag":

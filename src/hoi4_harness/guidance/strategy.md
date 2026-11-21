@@ -5,6 +5,25 @@ Part 1 is the engine: the dynamics that hold in vanilla and in mods (Kaiserreich
 
 In a mod, trust Part 1 and check Part 2 against what the playset says. The brief, the "This playset" section, `describe_action`, `list_decisions` and `list_gui_buttons` show the playset's real ids, costs and conditions. When they disagree with this sheet, the game is right.
 
+# The game in brief
+
+Hearts of Iron IV is a real-time grand strategy game of the Second World War era (mods move it to other eras and worlds). You lead one country. Time runs in hours and days at a speed the player sets, and can be paused. There is no turn order: every country acts at once, and the game's AI runs every country nobody plays.
+
+A country's life runs in a loop. Political power, earned daily, pays for laws, advisors and decisions. Those set what the economy and army can do. Factories build more factories and produce equipment, and equipment fills divisions. Divisions fight wars. Wars are won by taking victory points until the enemy surrenders.
+
+The words that recur:
+- **State and province.** The map's units: a province is a tile, and a state is a group of them holding factories, resources and manpower. A state has an owner; the country occupying it in a war is its controller.
+- **National focus.** One step on the country's own tree of goals, about 70 days each. It grants factories, claims, wars, alliances and spirits. Most of a country's story is in its focus tree.
+- **Decisions.** Actions bought with political power, sometimes timed, often specific to a country. Missions are timed challenges the game gives you.
+- **Ideas.** Laws (economy, trade, conscription), advisors and national spirits: standing modifiers on the country.
+- **Civilian factory** (builds and trades), **military factory** (equipment), **dockyard** (ships).
+- **Division and template.** A division is a unit on the map. Its template is the recipe of battalions and support companies, and it decides cost, width and stats.
+- **Organization and strength.** How long a division keeps fighting, and how much of it is left.
+- **War support and stability.** How willing the people are to fight, and how content they are. Both gate laws and wars.
+- **World tension.** How close the world is to war. Aggression raises it, and some actions (notably for democracies) need it high.
+- **Faction.** An alliance with a leader. Members share wars.
+- **Victory points.** Cities and capitals; losing them drives surrender.
+
 # Part 1: the engine (any playset)
 
 ## How a battle is decided

@@ -52,6 +52,7 @@ on_actions = {
 			if = {
 				limit = { llm_bridge_is_harness = yes }
 				llm_bridge_emit_campaign = yes
+				llm_bridge_emit_intel = yes
 			}
 		}
 	}
