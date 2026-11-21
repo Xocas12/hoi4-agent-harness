@@ -347,6 +347,12 @@ class HarnessConfig:
     #: (research, division orders, handing an army to the game's AI); ``none`` keeps the
     #: keyboard-and-console-only run. The game-AI campaign ignores it. docs/campaign.md.
     campaign_input: str = "mouse"
+    #: Event and news windows in an independent campaign (adapters/event_windows.py, issue #125):
+    #: ``{"probes": {"country": {"x", "y", "rgb", "tolerance"}, "news": {...}}, "answers": {...},
+    #: "attempts": 3, "settle": 0.5}``. With probes, every mouse tool first closes the windows that
+    #: are open and refuses to click while one is; without them nothing knows a window is open
+    #: (the start log says so). The points and colours are measured in the live game.
+    event_windows: dict = field(default_factory=dict)
     #: What the independent campaign found live or refused at its start (set by the adapter and
     #: ``campaign.runner.begin``, read by the prompt). Not a setting.
     campaign_hands: dict = field(default_factory=dict, repr=False)

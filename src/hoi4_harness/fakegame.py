@@ -383,7 +383,9 @@ class FakeGame:
         self.screen = (1920, 1080)
         #: Where the research panel's controls are, for a test that wants the mouse path:
         #: ``{"slot": (x, y), "tabs": {folder: (x, y)}, "techs": {tech: (folder, (x, y))}}``,
-        #: with ``tolerance`` px. None: no research clicks do anything. The points are the
+        #: with ``tolerance`` px. ``confirm`` and ``mio`` make it the 1.20 screen (a popup after
+        #: the technology, then the chooser, each answered by a click only).
+        #: None: no research clicks do anything. The points are the
         #: test's own (what the real game would put there), not computed by the harness.
         self.research_ui: dict | None = None
         self._research = {"stage": "panel", "tab": None, "tech": None}
@@ -400,6 +402,17 @@ class FakeGame:
         #: do anything. A DRAFT model of a screen nobody has driven in the real game.
         self.production_ui: dict | None = None
         self._production = {"row": None, "picker": False}
+        #: Event and news windows (issue #125). ``events_open`` is the stack on screen, topmost
+        #: last; while one is open it takes every click, and only a click on its answer closes it:
+        #: ``event_ui = {"option1": (x, y), "news_close": (x, y), "tolerance": px}`` (the test's
+        #: own points). ``event_script`` opens a window on a date: ``{iso date: (kind, title)}``.
+        #: ``event_answers`` records each window closed; ``event_swallowed`` each click an open
+        #: window took that was meant for something else.
+        self.events_open: list[dict] = []
+        self.event_ui: dict | None = None
+        self.event_script: dict[str, tuple[str, str]] = {}
+        self.event_answers: list[dict] = []
+        self.event_swallowed: list[tuple[int, int]] = []
         #: Every click the screens above took or ignored, for a person reading a test.
         self.ui_log: list[str] = []
         self.search: str | None = None        # the text field that has the keyboard, if any
@@ -581,10 +594,41 @@ class FakeGame:
     def _near(point, target, tolerance: float) -> bool:
         return abs(point[0] - target[0]) <= tolerance and abs(point[1] - target[1]) <= tolerance
 
+    def open_event(self, kind: str = "news", title: str = "") -> None:
+        """An event (``country``) or news (``news``) window opens over the screen."""
+        self.events_open.append({"kind": kind, "title": title or kind, "date": self.date})
+        self.ui_log.append(f"event: a {kind} window opened ({title or kind})")
+
+    def event_probe(self):
+        """What the guard's probe sees: the topmost window, or None."""
+        from .adapters.event_windows import EventSighting
+
+        if not self.events_open:
+            return None
+        top = self.events_open[-1]
+        return EventSighting(top["kind"], top["title"])
+
+    def _event_click(self, pos) -> bool:
+        """A click while a window is open: only its answer closes it, anything else is taken by
+        the window (that is what a click under an event does in the game)."""
+        top, ui = self.events_open[-1], self.event_ui or {}
+        point = ui.get("option1" if top["kind"] == "country" else "news_close")
+        if point is not None and self._near(pos, point, ui.get("tolerance", 12)):
+            self.events_open.pop()
+            self.event_answers.append({**top, "answered": "option 1" if top["kind"] == "country"
+                                       else "closed", "at": self.date})
+            self.ui_log.append(f"event: the {top['kind']} window was answered")
+        else:
+            self.event_swallowed.append(tuple(pos))
+            self.ui_log.append(f"event: click {pos} went to the open {top['kind']} window")
+        return True
+
     def ui_click(self, pos, button: str) -> bool:
         """A click at ``pos``: True when a screen of the fake took it (even to ignore it)."""
         if button != "left":
             return False
+        if self.events_open:
+            return self._event_click(pos)
         ui = self.research_ui
         if ui is not None and self.panel == "research":
             tol, stage = ui.get("tolerance", 12), self._research["stage"]
@@ -595,6 +639,25 @@ class FakeGame:
                 else:
                     self.ui_log.append(f"research: click {pos} hit nothing on the slot list")
                 return True
+            if stage == "popup":
+                # 1.20: the technology's details popup. Its Research button starts the
+                # technology; a click anywhere else leaves the popup as it was.
+                if "confirm" in ui and self._near(pos, ui["confirm"], tol):
+                    tech = self._research["tech"]
+                    result = self.world.apply(ActionCall("start_research", {"technology": tech}))
+                    self.ui_log.append(f"research: popup Research -> {result.message}")
+                    self._research["stage"] = "chooser"
+                else:
+                    self.ui_log.append(f"research: click {pos} hit nothing on the popup")
+                return True
+            if stage == "chooser" and "mio" in ui:
+                if self._near(pos, ui["mio"], tol):
+                    self.panel = None
+                    self._research.update(stage="panel", tab=None, tech=None)
+                    self.ui_log.append("research: chooser answered without an organisation")
+                else:
+                    self.ui_log.append(f"research: click {pos} hit nothing on the chooser")
+                return True
             if stage == "tree":
                 for folder, point in ui["tabs"].items():
                     if self._near(pos, point, tol):
@@ -604,6 +667,8 @@ class FakeGame:
                 for tech, (folder, point) in ui["techs"].items():
                     if folder == self._research["tab"] and self._near(pos, point, tol):
                         self._research["tech"] = tech
+                        if "confirm" in ui:
+                            self._research["stage"] = "popup"
                         self.ui_log.append(f"research: {tech} selected")
                         return True
                 self.ui_log.append(f"research: click {pos} hit nothing on the tree")
@@ -710,6 +775,8 @@ class FakeGame:
         research = self._research
         if self.panel != "research" or self.research_ui is None:
             return
+        if "confirm" in self.research_ui:
+            return                      # 1.20: Return presses neither the popup nor the chooser
         if research["stage"] == "tree" and research["tech"]:
             result = self.world.apply(ActionCall("start_research",
                                                  {"technology": research["tech"]}))
@@ -745,6 +812,9 @@ class FakeGame:
         """One in-game day: the model moves, and the mod logs it."""
         self.world.date += dt.timedelta(days=1)
         self.world._tick_one_day()
+        opened = self.event_script.pop(self.date, None)
+        if opened is not None:
+            self.open_event(*opened)
         scripted = self.war_script.pop(self.date, None)
         if scripted is not None:
             action, enemy, divisions = scripted

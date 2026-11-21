@@ -21,7 +21,7 @@ from __future__ import annotations
 import re
 import time
 from collections.abc import Callable
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 
 from ..calibration import load_calibration, screen_size
@@ -30,6 +30,7 @@ from ..paths import find_game_dir
 from ..types import ActionCall, ActionResult, GameState
 from ..uilayout import DisplaySettings, Geometry, LayoutRefused, geometry_for, read_display_settings
 from .base import AdapterInfo, GameAdapter
+from .event_windows import EventOpen
 from .keys import GuiKeys, ScanCodeKeys, text_chords
 from .ui_resolve import Unresolvable, is_computed, resolve
 from .ui_scripts import Step, placeholders, unsafe_escape, verify
@@ -218,6 +219,10 @@ class InputDriverAdapter(GameAdapter):
         #: Rival mode's guard (``rival.safety.KeyWatch``): asked before every key and every
         #: typed character, it may raise ``InputInterrupted``. None: no guard.
         self.key_watch = None
+        #: Clears the event and news windows before a mouse tool runs (event_windows.py); None
+        #: when no probe is configured, in which case nothing here knows a window is open.
+        self.event_guard = None
+        self._in_event_steps = False
 
     def geometry(self) -> Geometry:
         """The window computed click points are placed in. Raises LayoutRefused.
@@ -307,10 +312,29 @@ class InputDriverAdapter(GameAdapter):
             if self.key_watch is not None:
                 self.key_watch.after("press", key)
 
+    def _event_gate(self, what: str) -> None:
+        """Refuse a click while an event window is known to be open (a window that opened in the
+        middle of a click path stops the rest of it). Not for the guard's own answering."""
+        if self.event_guard is None or self._in_event_steps or self.dry_run:
+            return
+        sighting = self.event_guard.probe()
+        if sighting is not None:
+            raise EventOpen(f"a {sighting.kind} event window is open: {what} was not clicked")
+
+    def run_event_steps(self, steps: list[Step]) -> None:
+        """The guard's answer to a window: its steps, without the gate that would refuse them."""
+        self._in_event_steps = True
+        try:
+            for step in steps:
+                self._run_step(step)
+        finally:
+            self._in_event_steps = False
+
     def click(self, target: str) -> None:
         if not self.config.mouse:
             raise MouseDisabled(f"click {target}: this driver has no mouse (headless)")
         self._require_focus()
+        self._event_gate(f"click {target}")
         point = self._computed.get(target) or self.config.coordinates.get(target)
         if point is None:
             raise KeyError(f"No calibrated coordinate for {target!r}. Run: hoi4-harness calibrate")
@@ -337,6 +361,7 @@ class InputDriverAdapter(GameAdapter):
             raise MouseDisabled(f"{button}-click at {point}: this driver has no mouse (headless)")
         x, y = self._checked_point(point)
         self._require_focus()
+        self._event_gate(f"click {label or 'point'} at ({x}, {y})")
         self.log.append(f"{'shift+' if shift else ''}{button}-click {label or 'point'} at ({x}, {y})")
         if self.dry_run:
             return
@@ -526,7 +551,8 @@ class InputDriverAdapter(GameAdapter):
     def apply(self, call: ActionCall) -> ActionResult:
         try:
             return self._apply(call)
-        except (NotFocused, MouseDisabled, ClockUnobservable, KeyError, ValueError) as exc:
+        except (NotFocused, MouseDisabled, ClockUnobservable, EventOpen, KeyError,
+                ValueError) as exc:
             # The same contract as every other adapter failure: report it, do not
             # pretend the action happened. The agent can read this and wait.
             return ActionResult(
@@ -560,6 +586,36 @@ class InputDriverAdapter(GameAdapter):
         if call.name == "advance_time":
             return ActionResult(ok=True, action=call.name, call_id=call.call_id,
                                 message="Clock handed back to the harness.")
+        notes = self._clear_events(call)
+        result = self._dispatch_mouse(call)
+        if notes:
+            result = replace(
+                result, message=("Before this, " + "; ".join(
+                    f"a {n['kind']} event window was open and I {n['answer']}"
+                    for n in notes) + ". " + result.message),
+                changed={**result.changed, "events_answered": notes})
+        return result
+
+    def _uses_mouse(self, call: ActionCall) -> bool:
+        if call.name in self.scripts:
+            return any(step.kind == "click" for step in self.scripts[call.name])
+        for executor in (self.production_executor, self.plan_executor):
+            if (executor is not None and call.name in executor.actions
+                    and call.name in self.supported_actions):
+                return True
+        return self.order_executor is not None and call.name in self.supported_actions
+
+    def _clear_events(self, call: ActionCall) -> list[dict]:
+        """Close the event windows that are open before a mouse tool clicks (event_windows.py).
+        Raises EventOpen when one cannot be closed, with nothing clicked."""
+        if self.event_guard is None or self.dry_run or not self._uses_mouse(call):
+            return []
+        if not self.config.mouse:
+            return []
+        self._require_focus()
+        return self.event_guard.clear(self, call.name)
+
+    def _dispatch_mouse(self, call: ActionCall) -> ActionResult:
         if call.name in self.scripts:
             return self._scripted(call)
         if (self.production_executor is not None and call.name in self.production_executor.actions

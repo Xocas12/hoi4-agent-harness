@@ -5,12 +5,20 @@ driver's mouse to the headless adapter, for the three jobs the console has no ef
 
 * ``start_research``: press ``y`` then ``w`` (the panel hotkeys toggle, so the production panel
   first makes sure the research one opens rather than closes), click a free slot, the folder
-  tab, the technology's computed grid cell, then Return twice (the second answers the
-  military-industrial-organisation chooser some technologies raise). Verified live on
-  2026-11-19 through the input driver; the points come from the interface files
-  (``uilayout.py``, ``techtree.py``), the rotated tabs with their +40 GUI units.
+  tab, the technology's computed grid cell, then the two answers: on 1.19 Return twice (the
+  second answers the military-industrial-organisation chooser some technologies raise), on 1.20
+  a click on the details popup's Research button and one on the chooser's "without an
+  organisation" row (Return does neither there). Verified live: the 1.19 path on 2026-11-19, the
+  1.20 path on 2026-11-21. The path follows the game's version (``research_path_for``); the
+  points come from the interface files (``uilayout.py``, ``techtree.py``), the rotated tabs with
+  their +40 GUI units, and the two 1.20 buttons from their measured 1080p positions scaled by
+  ``ui_resolve.reference_point`` (a recorded ``research.confirm`` / ``research.mio_choice``
+  wins).
 * ``move_division`` / ``attack_province``: orders by click on the map (``unit_orders.py``,
   docs/unit-orders.md). Built against the fake game only.
+* event and news windows (``event_windows.py``): nothing in this mode answers them and a click
+  under one goes to the event, so every mouse tool first closes what is open, when a probe is
+  configured (``event_windows`` in the profile), and refuses to click while one is open.
 * ``delegate_army_to_ai``: hand an army to the game's AI, or take it back. The click path
   below is a DRAFT: the interface files do not say where the toggle is, so its points are
   recorded by a person (``hoi4-harness calibrate``), not computed. Built against the fake game
@@ -35,7 +43,7 @@ HAND_ACTIONS = frozenset({"start_research"}) | ARMY_ACTIONS
 #: (``battle_plans = true``) and NOT live-verified, so not in HAND_ACTIONS.
 PLAN_ACTIONS = ("draw_front_line", "draw_offensive", "assign_battle_plan")
 
-#: The live-verified research click path (the same steps as profiles/ui_scripts.1.19.json).
+#: The live-verified 1.19 research click path (the same steps as profiles/ui_scripts.1.19.json).
 RESEARCH_SCRIPT = [
     {"press": "production"}, {"wait": 0.5}, {"press": "research"}, {"wait": 0.8},
     {"click": "research.free_slot"}, {"wait": 0.8},
@@ -43,14 +51,31 @@ RESEARCH_SCRIPT = [
     {"click": "research.tech_point"}, {"wait": 0.8},
     {"press": "enter"}, {"wait": 0.8}, {"press": "enter"},
 ]
+#: The 1.20 path (the same steps as profiles/ui_scripts.1.20.json): the technology opens a details
+#: popup whose Research button Return does not press, then the MIO chooser, which ignores Return.
+RESEARCH_SCRIPT_120 = RESEARCH_SCRIPT[:-3] + [
+    {"click": "research.confirm"}, {"wait": 0.8},
+    {"click": "research.mio_choice"}, {"wait": 0.5},
+]
+#: The version the 1.20 path is for.
+RESEARCH_PATH_120 = "1.20.0"
 #: The DRAFT delegation path: select the army in the army list, then press the AI toggle.
 #: ``army.<name>`` and ``army.ai_control_toggle`` are recorded points (nothing computes them).
 DELEGATE_TOGGLE = "army.ai_control_toggle"
 DELEGATE_SCRIPT = [{"click": "army.{army}"}, {"wait": 0.5}, {"click": DELEGATE_TOGGLE}]
 
 
-def research_steps() -> list[Step]:
-    return parse_steps(RESEARCH_SCRIPT)
+def research_path_for(version: str | None) -> str:
+    """``"1.20"`` for a 1.20 game, else ``"1.19"`` (an unknown version keeps the old path)."""
+    from ..baseai import same_minor
+
+    return "1.20" if version and same_minor(version, RESEARCH_PATH_120) else "1.19"
+
+
+def research_steps(version: str | None = None) -> list[Step]:
+    """The research click path for the game's version (``baseai.game_version``)."""
+    return parse_steps(RESEARCH_SCRIPT_120 if research_path_for(version) == "1.20"
+                       else RESEARCH_SCRIPT)
 
 
 def delegate_steps() -> list[Step]:
@@ -76,6 +101,11 @@ class Hands:
     #: The production click path (adapters/production_ui.py): recorded points and what is missing;
     #: empty when it was not wired.
     production: dict = field(default_factory=dict)
+    #: Which research click path was chosen ("1.19" or "1.20") and why, for the start log.
+    research_path: str = ""
+    #: What the event-window guard does (adapters/event_windows.py): ``{"guarded": bool,
+    #: "missing": [recorded points the answers click that are not recorded], "why": str}``.
+    events: dict = field(default_factory=dict)
 
     def refuse(self, actions, reason: str) -> None:
         for action in ([actions] if isinstance(actions, str) else actions):
@@ -99,6 +129,9 @@ class Hands:
             out.append("delegate_army_to_ai is UNVERIFIED against the real game (draft click path, "
                        f"recorded points for: {', '.join(self.armies)}); the toggle cannot be read "
                        "back, so every result is 'unverified'")
+        if self.research_path and "start_research" in live:
+            out.append(f"research path: {self.research_path}")
+        out.extend(self.event_lines())
         out.extend(self.production_lines(offered))
         plans = sorted(set(PLAN_ACTIONS) & set(offered))
         if plans:
@@ -108,6 +141,23 @@ class Hands:
             out.append(f"battle plans not offered: {self.refused[PLAN_ACTIONS[0]]}")
         if {"move_division", "attack_province"} & set(live):
             out.append("division orders are UNVERIFIED against the real game (docs/unit-orders.md)")
+        return out
+
+    def event_lines(self) -> list[str]:
+        """The start-log lines for event and news windows (issue #125)."""
+        if not self.events:
+            return []
+        if not self.events.get("guarded"):
+            return ["event windows: NOT guarded: " + self.events.get("why", "")
+                    + "; nothing answers an event or closes a news window in this mode, and the "
+                    "mouse tools click under one (docs/live-session.md section 14c)"]
+        out = ["event windows: guarded (UNVERIFIED against the real game): every mouse tool "
+               "first closes an open window (country: the first option; news: closed) and "
+               "refuses to click while one is open; answers are in events.jsonl"]
+        if self.events.get("missing"):
+            out.append("event windows: a window that opens cannot be closed until these points "
+                       "are recorded, and the mouse tools refuse meanwhile: "
+                       + ", ".join(self.events["missing"]))
         return out
 
     def production_lines(self, offered) -> list[str]:

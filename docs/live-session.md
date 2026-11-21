@@ -974,15 +974,21 @@ Return twice) fails on 1.20 at the last two steps: a technology opens a details 
 Research button Return does not press, and the military-industrial-organisation chooser that
 follows ignores Return (closing it cancels the research). The slot, the tabs (now a horizontal
 strip) and the technology cells the harness computes were all where the screen has them. Use
-`profiles/ui_scripts.1.20.json` (copy it to `<run-dir>/ui_scripts.json`) and record
-`research.confirm` (the popup's Research button, 750,252 at 1920x1080) and `research.mio_choice`
-(the chooser's "Research without a Military Industrial Organization" row, 1207,345). Clicked by
-hand, that sequence started Improved Infantry Equipment I. Through the harness it was not yet
-seen to work, for two reasons that are not the click path: the technologies asked for were not
-researchable yet (Radio needs Electronic Mechanical Engineering; the popup opens, its button does
-nothing), and an event window (the Rhineland news) lay over the popup's Research button.
-**Independent mode does not answer or close event windows**, and every click under one goes to
-the event: that is the next thing to build for this mode.
+`profiles/ui_scripts.1.20.json`'s path, which the harness now **chooses by itself when the game is
+1.20** (`launcher-settings.json` in `game_dir` says `1.20.x`; the start log reads `research path:
+1.20 click path`; on 1.19, or when the version cannot be read, it keeps the Return-twice path).
+Its two extra points are computed, not recorded: `research.confirm` (the popup's Research button,
+750,252 at 1920x1080 UI scale 1) and `research.mio_choice` (the chooser's "Research without a
+Military Industrial Organization" row, 1207,345), scaled from the screen's centre the way
+`uilayout.Geometry` scales GUI units (both are on centred popups). Only 1920x1080 at scale 1 was
+measured: at any other size or UI scale they are an extrapolation, so record them there
+(`hoi4-harness calibrate research.confirm research.mio_choice`; a recorded point wins). A
+`ui_scripts.json` in the run dir still overrides the path (do not leave a 1.19 one there on 1.20).
+Clicked by hand, that sequence started Improved Infantry Equipment I. Through the harness it was
+not yet seen to work, for two reasons that are not the click path: the technologies asked for
+were not researchable yet (Radio needs Electronic Mechanical Engineering; the popup opens, its
+button does nothing), and an event window (the Rhineland news) lay over the popup's Research
+button. The second is what section 14c is for.
 
 **3. Research is picked and verified.** In the first wake (`no national focus` or `research slot(s)
 idle`) the model should call `start_research`. Watch the game: the research panel opens, a free slot
@@ -1013,6 +1019,56 @@ west"`. The next wake should name it, and the model should mention it in its not
 send nothing (no clicks, no keys in the other window), and continue when you bring the game back.
 Check `runs/hands-1/campaign.log` for `STOP:` lines when you end it, and that the game was left
 paused.
+
+### 14c. Event and news windows in independent mode (#125)
+
+In `--control llm` nothing answers a country event or closes a news window (`human_ai` is not
+sent), and every mouse tool clicks fixed points an open window covers. What was found about
+answering them without a click: the game has **no on_action for an event reaching a country**
+(so the mod cannot log one), the save has no pending-event list, and the console's `event <id>
+<TAG>` only *fires* an event; no console command or effect picks an option of one already open.
+So the window is closed the way a person does, by a click, guarded
+(`src/hoi4_harness/adapters/event_windows.py`): before every mouse tool the driver probes for an
+open window, answers it (country event: its first option; news: the close control), records the
+answer, and refuses to click while one is open; each click of a tool checks again. The fake game
+shows this works (`tests/test_event_windows.py`); the real game needs three things measured, and
+until they are in the profile the start log says `event windows: NOT guarded`.
+
+**1. The probe.** For each kind, one pixel that is a fixed colour while that window is open and
+something else without it. Open the window (or wait for the Rhineland news, GER, early 1936, and
+leave it open), aim the mouse at the pixel, and read its colour **without clicking**:
+
+```bash
+PYTHONPATH=src python scripts/sample_pixel.py --wait 5      # prints x,y and r,g,b under the mouse
+```
+
+Take it on the window's frame or header, not on text or the map. Check the same pixel with the
+window closed (the colour must differ by more than the tolerance) and with another panel open
+(research, production). Put the result in the profile (the zeros are the numbers to measure; the
+points are screen pixels at the resolution you run):
+
+```json
+"event_windows": {"probes": {
+  "news":    {"x": 0, "y": 0, "rgb": [0, 0, 0], "tolerance": 24},
+  "country": {"x": 0, "y": 0, "rgb": [0, 0, 0], "tolerance": 24}}}
+```
+
+**2. The answers.** `hoi4-harness calibrate event.news_close event.option1`: aim at the news
+window's close control, and at where the first option of a country event usually is (its position
+depends on the text; pick a spot every first option covers, or give a kind a different step list
+under `event_windows.answers`, for instance a key press if Return or Space closes it, which nobody
+has tried). Leave `settle` at 0.5 s, or raise it if the window fades out.
+
+**3. Check it.** Start as in step 2 with the profile above and read the start log: `event windows:
+guarded` and no `a window that opens cannot be closed` line. With the Rhineland news open, run
+`start_research`: the news window closes first, then the research runs, and `events.jsonl` in the
+run dir has one line (`kind`, `answer`, `closed`); the tool's result in `transcript.jsonl` starts
+`Before this, a news event window was open and I ...` and carries `events_answered`. Then leave a
+country event open and repeat: the first option is taken (say which event it was, and whether the
+first option is a choice you are content to have made for the model; the harness cannot tell the
+events apart). Then rename the profile's `event_windows` key and confirm the old failure is back,
+so the check can fail. If the probe fires with no window open, or never fires with one, say where
+the pixel was and its colour in both states.
 
 ### 14b. Production by click: edit a line, never duplicate it (#112)
 

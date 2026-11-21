@@ -29,6 +29,7 @@ import time
 from collections.abc import Callable
 from pathlib import Path
 
+from ..baseai import game_version
 from ..config import HarnessConfig
 from ..types import ActionCall, ActionResult, GameState
 from .base import AdapterInfo, GameAdapter
@@ -42,6 +43,7 @@ from .hands import (
     Hands,
     delegable_armies,
     delegate_steps,
+    research_path_for,
     research_steps,
 )
 from .input_driver import ClockUnobservable, InputConfig, InputDriverAdapter
@@ -405,7 +407,14 @@ def build_headless(config: HarnessConfig, fake=None) -> CompositeAdapter:
     scripts: dict[str, list[Step]] = {"set_national_focus": parse_steps(FOCUS_SCRIPT)}
     user_scripts = config.ui_scripts_path or Path(config.run_dir) / DEFAULT_FILENAME
     if hands.mouse:
-        scripts["start_research"] = research_steps()
+        version = game_version(config.game_dir)
+        path = research_path_for(version)
+        scripts["start_research"] = research_steps(version)
+        hands.research_path = (
+            f"{path} click path (game version {version or 'unknown'}"
+            + ("" if version else ": the 1.19 path is kept") + ")"
+            + ("; research.confirm and research.mio_choice are scaled from the measured 1920x1080 "
+               "points unless recorded" if path == "1.20" else ""))
         scripts["delegate_army_to_ai"] = delegate_steps()
         if Path(user_scripts).exists():
             recorded = load_scripts(Path(user_scripts))
@@ -586,11 +595,31 @@ def _wire_hands(driver, console, config: HarnessConfig, hands: Hands, fake):
         enable_battle_plans(driver, orders_ok.layer, orders_ok._camera, orders_ok.centre,
                             unattended=bool(config.campaign))
     _wire_production(driver, console, config, hands, driver.index)
+    _wire_events(driver, config, hands, fake)
     if "start_research" in driver.scripts:
         config.wake_on_free_research_slot = True
         if not config.dry_run:
             driver.after_input = _refresh_after_input(console, config)
     return ledger
+
+
+def _wire_events(driver, config: HarnessConfig, hands: Hands, fake) -> None:
+    """The event-window guard (adapters/event_windows.py): needs a probe, which only the profile
+    (or the fake game's window) can give; without one the start log says nothing guards it."""
+    from .event_windows import guard_from_config
+
+    if not config.event_windows:
+        hands.events = {"guarded": False, "why": "no event_windows probes in the profile"}
+        return
+    try:
+        guard = guard_from_config(
+            config.event_windows, config.run_dir, sleep=driver._sleep,
+            probe=fake.event_probe if fake is not None else None)
+    except (ValueError, RuntimeError) as exc:
+        hands.events = {"guarded": False, "why": str(exc)}
+        return
+    driver.event_guard = guard
+    hands.events = {"guarded": True, "missing": guard.missing(driver.config.coordinates)}
 
 
 def _wire_production(driver, console, config: HarnessConfig, hands: Hands, index) -> None:
