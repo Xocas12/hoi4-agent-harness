@@ -33,7 +33,7 @@ understands:
 ```
 delegate_army_to_ai {army, delegate}          hand an army over, or take it back
 set_ai_posture      {posture, theater?}       defensive | balanced | offensive
-set_ai_directive    {directive, target, weight}  invade | protect | contain | befriend | antagonize | ignore
+set_ai_directive    {directive, target, weight}  invade | protect | contain | befriend | antagonize | ignore | prepare_war | declare_war | volunteers | lend_lease | ally | spy_on | sabotage | steal_tech
 clear_ai_directives {}                        stand everything down
 ```
 

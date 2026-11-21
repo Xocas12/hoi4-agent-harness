@@ -42,7 +42,8 @@ OPERATIONAL_ACTIONS = frozenset({
 #: Actions that only make sense when the native AI is executing.
 DIRECTIVE_ACTIONS = frozenset(
     {"delegate_army_to_ai", "set_ai_posture", "set_ai_directive", "clear_ai_directives",
-     "set_front_order", "set_region_order"}
+     "set_front_order", "set_region_order", "steer_production", "steer_intelligence", "steer_research",
+     "steer_navy", "steer_air"}
 )
 
 #: What the game's AI does for itself once it runs the whole country (the console's
@@ -133,7 +134,9 @@ def describe(mode: str, campaign: bool = False, hands=None) -> str:
             "the research, builds and produces, designs and deploys divisions and runs "
             "every front. You are the grand strategist above it. You steer it with "
             "set_ai_directive, set_ai_posture (globally or per theater), take_decision "
-            "and hire_advisor; you do not start research, queue construction or "
+            "and hire_advisor, and you change laws (change_law, set_occupation_law); you steer what it "
+            "builds and researches with steer_production, steer_intelligence and steer_research; "
+            "you do not start research, queue construction or "
             "production, or order units, because the AI would undo or double it."
         )
     if mode == "ai":

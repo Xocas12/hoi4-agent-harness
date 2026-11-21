@@ -886,8 +886,11 @@ class WorldObserver:
 
         pic = self.picture(state)
         lines = brief_lines(pic, self.index, self.layer) if pic is not None else []
+        from .steering import Standing as SteerStanding
+
         standing = Standing(self.run_dir).line(lambda s: _state_name(self.index, s))
-        return lines + ([standing] if standing else [])
+        steers = SteerStanding(self.run_dir).line()
+        return lines + [line for line in (standing, steers) if line]
 
     def query(self, state: GameState, view: str, ident: str | None, limit: int = 60) -> dict:
         pic = self.picture(state)

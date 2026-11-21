@@ -205,6 +205,34 @@ DEMO_FILES = {
 	artillery_equipment_1 = { archetype = artillery_equipment }
 }
 """,
+    "common/ideas/swe_laws.txt": """ideas = {
+	economy = {
+		law = yes
+		civilian_economy = { cost = 100 default = yes }
+		partial_economic_mobilisation = { cost = 100 available = { has_war_support > 0.2 } }
+		war_economy = { cost = 120 available = { has_war_support > 0.5 }
+			allowed_to_remove = { has_war_support > 0.1 } }
+		isolation = { allowed = { always = no } }
+		unpriced_law = { allowed = { always = yes } }
+	}
+	trade_laws = {
+		law = yes
+		export_focus = { cost = 100 default = yes }
+		free_trade = { cost = 100 visible = { has_war_support > 0.1 } available = { has_war_support > 0.9 } }
+	}
+	mobilization_laws = {
+		law = yes
+		volunteer_only = { cost = 100 default = yes allowed_to_remove = { has_war_support > 0.99 } }
+		limited_conscription = { cost = 100 available = { has_war_support > 0.1 } }
+	}
+}
+""",
+    "common/occupation_laws/demo.txt": """no_garrison = { visible = { has_war_support > 0.1 } }
+martial_law_occupation = { }
+military_governor_occupation = { starting_law = yes }
+colonial_police = { visible = { FROM = { original_tag = ITA } } }
+hidden_fallback = { visible = { always = no } }
+""",
     "history/states/10-Svealand.txt":
         'state = { id = 10 name = "STATE_10" history = { owner = SWE } }',
     "history/states/11-Norrland.txt":
@@ -446,6 +474,18 @@ class FakeGame:
         self.save_dir = self.user_dir / "save games"
         #: State flags the inbox set (set_front_order): state id -> flags.
         self.state_flags: dict[str, set[str]] = {}
+        #: Politics the effects can change (laws, factions, guarantees, occupation laws); a model
+        #: of the few triggers and effects the harness writes, not of the game's own rules.
+        self.ideas: set[str] = {"civilian_economy", "export_focus", "volunteer_only"}
+        self.war_support = 0.6
+        self.faction: str | None = "demo_faction"
+        self.faction_leader = False
+        self.guaranteed: set[str] = set()
+        self.at_war_with: set[str] = set()
+        self.existing_countries = {"GER", "POL", "FIN", "ENG", "SOV", "FRA", "ITA", "USA", "JAP"}
+        self.occupied_countries: set[str] = {"POL"}
+        self.occupation_law = "military_governor_occupation"
+        self.occupation_overrides: dict[str, str] = {}
         #: Wall-clock seconds from the command to the file appearing.
         self.save_delay = save_delay
         #: A test's way to make the next saves fail like a misconfigured game:
@@ -1273,6 +1313,30 @@ class FakeGame:
                 (flags.add if key == "set_state_flag" else flags.discard)(str(entry.value))
             elif key == "add_power_balance_value":
                 self._move_balance(entry)
+            elif key in ("add_ideas", "remove_ideas"):
+                (self.ideas.add if key == "add_ideas" else self.ideas.discard)(str(entry.value))
+            elif key == "deactivate_advisor":
+                for seated in self.advisors.values():
+                    if str(entry.value) in seated:
+                        seated.remove(str(entry.value))
+                        self.world._advisor_pp_bonus -= 0.15
+            elif key == "give_guarantee":
+                self.guaranteed.add(str(entry.value))
+            elif key == "leave_faction":
+                if self.faction is None or self.faction_leader:
+                    raise ScriptError("leave_faction: not a member of a faction")
+                self.faction = None
+            elif key == "set_occupation_law":
+                law = str(entry.value)
+                tag = scope.get("country_tag")
+                if tag is None:
+                    self.occupation_law = law
+                elif law == "default_law":
+                    self.occupation_overrides.pop(tag, None)
+                else:
+                    self.occupation_overrides[tag] = law
+            elif re.fullmatch(r"[A-Z][A-Z0-9]{2}", key) and isinstance(entry.value, list):
+                self._effects(entry.value, {**scope, "country_tag": key})
             elif key == "set_country_flag":
                 self.flags.add(str(entry.value))
             elif key == "clr_country_flag":
@@ -1343,6 +1407,34 @@ class FakeGame:
                             _number(str(size.value)))
         if key == "has_country_flag":
             return self._flag(str(entry.value))
+        if key in ("AND", "OR"):
+            results = [self._trigger(e, scope) for e in entry.value]
+            return all(results) if key == "AND" else any(results)
+        if key == "has_idea":
+            idea = str(entry.value)
+            if idea in self.ideas:
+                return True
+            char = self.index.advisor_character(idea) if self.index else None
+            return char is not None and any(char in seated for seated in self.advisors.values())
+        if key == "has_war_support":
+            return _compare(self.war_support, entry.op, _number(str(entry.value)))
+        if key in ("original_tag", "tag"):
+            return str(entry.value) == self.country
+        if key == "has_dlc":
+            return True
+        if key == "has_war_with":
+            return str(entry.value) in self.at_war_with
+        if key == "has_guaranteed":
+            return str(entry.value) in self.guaranteed
+        if key == "country_exists":
+            return str(entry.value) in self.existing_countries
+        if key == "is_in_faction":
+            return (self.faction is not None) == (entry.value == "yes")
+        if key == "is_faction_leader":
+            return self.faction_leader == (entry.value == "yes")
+        if key == "any_occupied_country":
+            inner = _get(entry.value, "tag")
+            return inner is not None and str(inner.value) in self.occupied_countries
         raise ScriptError(f"Unknown trigger: {key}")
 
     def _flag(self, flag: str) -> bool:

@@ -223,6 +223,7 @@ def test_the_catalog_gets_strict_on_exactly_the_fully_required_tools():
         "set_naval_mission", "describe_action", "set_trade", "set_game_speed", "note",
         "delegate_army_to_ai", "clear_ai_directives", "assign_battle_plan",
         "change_production_equipment", "click_gui_button", "set_front_order", "send_message",
+        "change_law", "steer_research", "steer_navy", "steer_air",
         "set_region_order",
     }
 
