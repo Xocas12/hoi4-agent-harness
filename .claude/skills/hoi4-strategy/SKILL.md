@@ -1,13 +1,115 @@
 ---
 name: hoi4-strategy
-description: How Hearts of Iron IV 1.20 works and what plays well now -- economy, laws, combat width, doctrines after the 1.17 rework, the 1.18-1.20 balance changes, balance of power, custom mod windows, the game AI's weak spots, and a do-not list. Use before steering or playing a HOI4 country with the harness (rival, campaign, mailbox player), or when judging a HOI4 strategy, so the play is not an outdated meta.
+description: How Hearts of Iron IV works and how to play a country well, in vanilla or any mod: the engine dynamics (organization and strength, combat width, supply, production efficiency, research, political power), judging a country and choosing a style, reading a mod's decisions, custom windows and balance of power bars; then vanilla 1.20's exact numbers, the 1.17-1.20 changes and a do-not list. Use before steering or playing a HOI4 country with the harness (rival, campaign, mailbox player), or when judging a HOI4 strategy.
 ---
 
 <!-- GENERATED from src/hoi4_harness/guidance/strategy.md by hoi4_harness.guidance.skill_text. Edit that file, then run: python -m hoi4_harness.guidance --write-skill -->
 
-# Hearts of Iron IV 1.20: how the game works and what plays well now
+# Hearts of Iron IV: how the game works, and how to play a country well
 
-Sources are marked. **[files]**: read from the 1.20 game files, so exact. **[notes]**: from patch notes for 1.17 to 1.20. **[community]**: the common view of experienced players. It is a sound default, not a law, and some of it is older than the latest balance patches. When the brief or a tool result contradicts this sheet, the game is right.
+Part 1 is the engine: the dynamics that hold in vanilla and in mods (Kaiserreich, TNO, Millennium Dawn, Old World Blues, Road to 56 and the rest), because mods change the content and the numbers, not the machine. Part 2 is vanilla 1.20: exact numbers and what plays well now.
+
+In a mod, trust Part 1 and check Part 2 against what the playset says. The brief, the "This playset" section, `describe_action`, `list_decisions` and `list_gui_buttons` show the playset's real ids, costs and conditions. When they disagree with this sheet, the game is right.
+
+# Part 1: the engine (any playset)
+
+## How a battle is decided
+
+- **Organization and strength.** Every division has organization (how long it keeps fighting) and strength (its men and equipment, its HP).
+  - Attacks hit both, and a division at zero organization retreats, whatever its strength. So most battles are won by draining organization, not by killing.
+  - Strength decides what survives and how fast a division comes back.
+  - High-organization divisions hold lines. High-attack, low-organization divisions break them but cannot hold for long.
+- **Attack against defense; breakthrough against attack.**
+  - A defender's defense, and an attacker's breakthrough, decide how many incoming attacks are absorbed. Attacks beyond that hit far harder.
+  - So infantry holds by defense, entrenchment and terrain, and tanks attack with breakthrough.
+  - Soft attack hurts unarmoured targets and hard attack hurts armour. Armour that the enemy's piercing cannot beat takes and deals much better trades.
+- **Combat width.** Each battle has a frontage set by the terrain, and wider again for each extra direction the attack comes from.
+  - Divisions that fit the width fight at full strength. Width over the limit is penalised. Width left unfilled is wasted.
+  - So division size is chosen to fit the terrain where you fight. Attacking from several directions at once is how a big army brings more of itself to bear.
+- **Terrain, rivers, forts, weather.**
+  - Attacking into mountains, marshes, forests, cities, across rivers or into forts costs heavily.
+  - Winter, mud and heat add attrition. Night favours the side with better equipment for it.
+  - The defender chooses where to stand. A front along a river or a mountain line holds with fewer men.
+- **Entrenchment and planning.** Divisions dig in while they hold, and plans gain a bonus while they are drawn up. Both are lost by moving. A rushed attack throws away the planning bonus; a defender who has been sitting on a line for months is much harder to move.
+- **Air.** Air superiority over a region multiplies everything below it.
+  - Enemy close air support and bombers hit divisions and supply.
+  - Losing the air slows reinforcement and lowers combat performance.
+  - Fighters for superiority come first, ground attack second.
+- **Experience and leaders.** Generals' traits and skill, and the army's experience and doctrine, change the numbers. Doctrine is a long commitment that shapes which templates work.
+
+## Supply, the thing that ends offensives
+
+- Supply flows from the capital along railways to hubs, then to the front by trucks or horses. A front past its hubs, or cut off by enemy control, loses organization and strength every day.
+- Ports, rails, hubs and trucks are what keep an advance moving, not more divisions. An advance that outruns its rail stalls and then breaks.
+- Fuel is separate. Motorised, mechanised and armoured divisions, planes and ships burn it, and a country that runs dry stops moving.
+- Islands and overseas fronts live on convoys. Convoys sunk on the way are supply that never arrives.
+
+## Production, construction and research
+
+- **Construction.** Civilian factories build: more factories, infrastructure, rail, forts, refineries. A civilian factory spent on construction compounds. Trade, consumer goods and some laws or spirits take civilian factories away from it.
+- **Production.**
+  - Military factories make equipment and dockyards make ships.
+  - Each line builds efficiency over time, so switching a line throws efficiency away.
+  - A line short of a resource slows down.
+  - Equipment unproduced is equipment unreinforced: a large army without the factories behind it is a hollow one.
+- **The core trade-off.** Factories built early compound; factories built late come too late. The longer the peace, the more building pays. The nearer the war, the more each civilian factory should have been a military one. Know when your war starts.
+- **Research.**
+  - Each slot researches one tech at a time. Techs ahead of their year cost much more; techs behind it cost less.
+  - Industry and construction techs pay back across everything, so they come early. Then equipment you actually produce, the doctrine you committed to, and air.
+  - Research nothing you will not build. An idle slot is the most common waste in the game.
+- **Manpower.** Conscription laws set how much of the population can be drafted. Losses drain it. Training divisions holds manpower before they reach the front.
+
+## Politics: political power, stability, war support
+
+- **Political power** pays for laws, advisors, decisions and war goals. It is the scarcest currency early, and a decision that compounds (a factory, a construction bonus, a research bonus) is worth more taken now than later.
+- **Stability** keeps factory output and political power up and prevents unrest.
+- **War support** gates mobilisation laws and war declarations, and sets how readily people accept losses.
+- Both move with focuses, decisions, events, ideology and war. A democracy at peace usually cannot mobilise or declare war freely.
+- **Ideology.** Governments differ in what they can do: justify war goals, join factions, use some laws, puppet and annex. Mods often add their own ideologies and coups. A country's government constrains its plan before anything else does.
+
+## Diplomacy and war
+
+- **War goals and world tension.** Starting a war usually needs a war goal: justified with political power and time, or given by a focus or decision. Aggression raises world tension, and democracies react to it. Guarantees and factions turn one war into several.
+- **Factions** share research and intelligence, and drag every member into the leader's wars. Joining a faction that cannot reach you only adds enemies.
+- **Surrender** comes from losing victory points (the capital and the big cities) more than from losing ground. Take those, and an enemy falls; hold a line in empty land, and it does not.
+- **Occupation.** Occupied land needs garrisons. Resistance cuts the factories and resources taken, and compliance grows slowly.
+
+## Judging your country and choosing a plan
+
+Before choosing a plan, read your country:
+
+1. **Size.** Factories, manpower and resources against your neighbours'. A country with half its rival's industry cannot win a long war against it, and needs allies, terrain, or a short war on its own terms.
+2. **Geography.** Coast or landlocked, an island or a land border, what terrain the border runs through, how many neighbours could attack at once. Mountains, rivers and sea are a minor's best army.
+3. **Government and focus tree.** What the tree is built to do (rearm, unify, expand, survive), what it gives (claims, wars, factories, spirits) and when. In mods the tree is often the whole plot, and its decisions and custom windows are where the country's mechanics live.
+4. **Timeline.** When the big war comes to you, and who will be on which side. Plan the economy to peak when it is needed.
+5. **The other players.** Who the person plays, and who the AI's strong countries are.
+
+Then choose a style that fits, and keep to it unless the situation changes:
+
+- **Builder.** Build long, stay out of wars until strong. Best for large, safe economies far from the first war (the US, the Soviet Union early on, distant minors).
+- **Early aggressor.** Strike weaker neighbours before they or their friends are ready. It needs a war goal, war support and the industry lead now, not later.
+- **Opportunist.** Wait for a neighbour to be busy or losing, then take claims. It needs good timing, and a war goal ready when the moment comes.
+- **Fortress / survivor.** For minors next to great powers: forts and good terrain, a strong defensive line, guarantees or a faction that can actually reach you. Make attacking you more expensive than it is worth.
+- **Maritime.** For islands and coastal empires: navy and convoys first, an army sized to defend the homeland and strike where the navy can land it.
+- **Faction member.** Feed the faction's war where it matters most (a front, lend-lease, research), not where your own glory is.
+
+A plan says what to build toward, the next war you want and why you can win it, and what would make you change course. Write it down with `note` and judge it by results: surrender progress, victory points held, factories gained.
+
+## Reading a mod
+
+- **Content and numbers change; the machine does not.** Organization, width, supply, efficiency and political power work the same. Expect different start dates, ideologies, factions, tech trees, unit types and resources.
+- **Read the playset section and use the tools.**
+  - `list_decisions` shows the country's decisions.
+  - `list_gui_buttons` shows the buttons in its custom windows, with how the game's AI weighs each.
+  - `describe_action` shows any decision, focus, window, button or balance of power bar in full.
+  - A mod's mechanics are usually there: elections, cabinets, factions, economy programmes, unification, crises.
+- **Weigh what the game's AI does.** `ai_weights` on a button and `ai_will_do` on a decision are what the mod's authors think the AI should do. They are a good guide to what a mechanic is for, not a command.
+- **Balance of power bars** run between two sides, with bands that each carry a modifier, and the outer bands often run effects or unlock focuses. They move through the decisions in their category, focuses and events, never by a click on the bar. Choose the band you want; the extremes usually cost as well as give.
+- **Global and other-country buttons.** Some windows change the rules for everyone (settings menus, cheat menus, world events). The harness refuses those clicks unless the run allows it, because they would change the other players' game.
+
+# Part 2: vanilla 1.20
+
+Sources are marked. **[files]**: read from the 1.20 game files, so exact. **[notes]**: from patch notes for 1.17 to 1.20. **[community]**: the common view of experienced players. It is a sound default, not a law, and some of it is older than the latest balance patches.
 
 ## What changed recently (do not play an old meta)
 
@@ -16,10 +118,9 @@ Sources are marked. **[files]**: read from the 1.20 game files, so exact. **[not
 - **1.19 (Jun 2026), with balance passes in Sep and Oct [notes].** It added a regimental support row in the division designer, Special Forces and Dispersed Operations doctrines, and nerfs to tank destroyers, SPGs and self-propelled AA (less HP and breakthrough). Line tanks gained HP at high reliability, and line artillery gained breakthrough. "Spam heavy tank destroyers" and "7/2 is dead" both date from before these changes.
 - **1.20 (Nov 2026) [notes].** A small balance patch with Romania's new tree. The Soviet Desperate Measures spirit doubled to +50% mobilisation speed, the Stalin Line got land forts, and France starts 1936 with Stronghold Network. Expect a sturdier USSR in 1941 and a slightly harder France.
 
-## Economy
+## Numbers
 
-- **Factories.** Civilian factories build; military factories produce equipment; dockyards build ships. A civilian factory takes about a year to repay its cost, so building civilian factories pays until roughly 1938. After that, every civilian built is a military one not built for the war that is coming [community].
-- **Opener.** Civilians first in 1936 and 1937, military factories from 1938 (earlier if a war is close), and refineries or synthetic plants only if short of oil or rubber. Build infrastructure where a factory slot or supply needs it, not everywhere. Production efficiency builds up over time, so keep lines running steadily rather than switching them [community].
+- **Combat width [files].** Plains, hills and desert 70; forest and jungle 60; mountain and marsh 50; urban 80. Each extra attack direction adds half the base again (35 on plains). Width over the limit costs 1% per point, up to -33%. Infantry, tank and motorised battalions are 2 wide, line artillery 3, support companies 0. Divisions of about 20 and 25-30 width fit most terrain well [community].
 - **Economy laws [files].** Each step frees civilian factories and makes conversion cheaper:
 
   | Law | Consumer goods | Needs war support |
@@ -50,37 +151,25 @@ Sources are marked. **[files]**: read from the 1.20 game files, so exact. **[not
   | Scraping the Barrel | 25% |
 
   The higher laws cost factory output. Raise the law before manpower runs out, not after.
-- **Resources.** Steel, aluminium, rubber, oil, tungsten and chromium. A shortage cuts the output of every line that uses the resource. Fuel runs out in long wars, and an army without fuel stops moving.
-- **Political power.** Spend it in this order [community]:
-  1. economy and trade laws;
+- **War goals [files].** A war with a claim or core raises world tension by 10, one without by 14. Annexing states raises it further.
+
+## What plays well [community]
+
+- **Economy opener.** Civilian factories in 1936 and 1937, military factories from 1938 (earlier if a war is close). Refineries or synthetic plants only if short of oil or rubber. Infrastructure where a factory slot or supply needs it, not everywhere. A civilian factory repays itself in about a year.
+- **Political power.** Spend it in this order:
+  1. the economy and trade laws;
   2. an advisor that adds factories or construction speed;
   3. research or army advisors.
 
-  Keep some in reserve for a war goal or an urgent decision.
-
-## Combat and the army
-
-- **Combat width [files].** Plains, hills and desert 70; forest and jungle 60; mountain and marsh 50; urban 80. Each extra attack direction adds half the base again (35 on plains). Width over the limit costs 1% per point, up to -33%. Infantry, tank and motorised battalions are 2 wide, line artillery 3, support companies 0. Divisions of about 20 and 25-30 width fit most terrain well [community].
-- **Organisation and strength.** Organisation decides who keeps fighting; strength (HP) decides who dies. A division at zero organisation retreats. Breakthrough protects an attacker the way defense protects a defender. Tanks win by breakthrough and soft attack; infantry holds by defense, entrenchment and terrain [community].
-- **Templates [community, after 1.19].**
-  - Holding infantry: about 20 width, with engineers, support artillery and anti-tank or anti-air as the enemy demands, plus heavy weapons in the new regimental row.
+  Keep a reserve for a war goal or an urgent decision.
+- **Templates (after 1.19).**
+  - Holding infantry: about 20 width, with engineers, support artillery and anti-tank or anti-air as the enemy demands, plus heavy weapons in the regimental row.
   - Assault infantry or armour: 25-35 width, with recon, engineers, logistics and a field hospital.
   - Garrison: the cheapest template, with military police.
 
   Two or three templates are enough. Many templates split the equipment and the AI handles them badly.
-- **Air.** Air superiority first: without it every other mission is weaker, and enemy CAS and bombers punish your divisions. Fighters before CAS [community].
-- **Supply.** Supply flows from the capital along railways to supply hubs, then by truck. A front far past the last hub and the trains attrits and stalls. Rail, hubs and trucks are what keep an offensive going, not more divisions [community].
-- **Winter, terrain, rivers.** Attacking across rivers, into mountains, marshes or cities, or in Russian winter without preparation bleeds an army. Entrenched defenders in good terrain need far more strength to break [community].
-- **Naval invasions.** They need naval superiority in the sea zones crossed (dominance 60% since 1.17) and run under a division cap per plan. The AI rarely invades well [notes].
-
-## War, diplomacy and politics
-
-- **War goals.** Justifying a war goal costs political power and time, and raises world tension (10 for a war with a claim or core, 14 without) [files]. Democracies usually need world tension high, or a threat, before they can justify. Focus trees often give claims or wars that skip justification.
-- **Surrender.** A country surrenders as its victory points fall. Take the capital and the big cities, not just ground. Since 1.18 war score rewards taking and holding territory over sinking ships and joining late [notes].
-- **Factions.** Joining one drags you into its wars. In a faction you get access to its research and intelligence, and since 1.17 the leader sets goals. A small country's best protection is a guarantee or a faction that can actually reach it [community].
-- **Occupation.** Occupied states need garrisons. Rising resistance cuts their factories and resources, and compliance builds slowly under a gentle occupation law [community].
-- **Balance of power [files].** Some countries (Italy, Sweden, Switzerland, Finland, Brazil, China and others, plus many mod countries) have a bar between two sides. Each band of the bar has its own modifier, and the outer bands often run effects or unlock focuses. Nothing on screen moves the bar directly. It moves through the decisions in its category, focuses and events. Read where it stands and the band you want, then push with those decisions. The extremes usually bring a cost with the bonus.
-- **Custom windows (mods).** Mods put whole mechanics in custom windows: elections, factions, cabinets, economic programmes. Often they are the main way to play that country, and the game's AI presses them by its own weights. Expert AI's settings window changes global rules, and the harness refuses those clicks unless the run allows it.
+- **Air and navy.** Fighters for superiority before close air support. A navy only where the country lives by the sea. Naval invasions need the sea zones held, and the AI rarely invades well.
+- **Balance of power, vanilla [files].** Italy, Sweden, Switzerland, Finland, Brazil, Communist China, Czechoslovakia, Denmark and Ethiopia have bars. The brief shows where the bar stands and which category moves it.
 
 ## The game's AI: what it does well and badly
 
@@ -97,4 +186,4 @@ Sources are marked. **[files]**: read from the 1.20 game files, so exact. **[not
 5. Do not change laws or advisors for small gains: every change costs political power that a war goal or a decision needed.
 6. Do not open a second front by accident: a guarantee or a faction can declare it for you.
 7. Do not judge a war by how long it has run. Judge it by surrender progress, and by the victory points taken and held.
-8. Do not trust this sheet over the brief: if the game shows something else, the game is right.
+8. Do not carry vanilla numbers into a mod without checking them, and do not trust this sheet over the brief: if the game shows something else, the game is right.

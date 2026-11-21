@@ -23,14 +23,24 @@ GAME = Path(os.environ.get("HOI4_GAME_DIR")
 def test_packs_combine_in_order_with_a_plus():
     both = guidance.load("rival+strategy")
     assert guidance.load("rival") in both and guidance.load("strategy") in both
-    assert both.index(guidance.load("rival")[:40]) < both.index("Hearts of Iron IV 1.20")
-    assert "Hearts of Iron IV 1.20" in build_system(guidance="rival+strategy")
+    assert both.index(guidance.load("rival")[:40]) < both.index("Hearts of Iron IV: how the game works")
+    assert "Hearts of Iron IV: how the game works" in build_system(guidance="rival+strategy")
 
 
 def test_the_committed_skill_is_the_sheet_behind_its_frontmatter():
     committed = (ROOT / guidance.SKILL_PATH).read_text(encoding="utf-8")
     assert committed == guidance.skill_text()
     assert committed.startswith("---\nname: hoi4-strategy\ndescription: ")
+
+
+def test_the_sheet_has_a_general_part_for_any_playset_and_a_vanilla_part():
+    sheet = guidance.load("strategy")
+    general, vanilla = sheet.split("# Part 2: vanilla 1.20")
+    for idea in ("Organization and strength", "Combat width", "Supply", "Production",
+                 "Research", "Judging your country and choosing a plan", "Reading a mod"):
+        assert idea in general, idea
+    # the general part carries no vanilla numbers; those belong to Part 2
+    assert "urban 80" not in general and "urban 80" in vanilla
 
 
 def test_the_sheet_names_only_doctrines_the_game_has():

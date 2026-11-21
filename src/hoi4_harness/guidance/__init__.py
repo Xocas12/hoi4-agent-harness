@@ -36,11 +36,12 @@ BUILTIN = ("none", "unconstrained", "minimal", "doctrine", "historical", "coach"
            "strategy")
 SKILL_PATH = Path(".claude") / "skills" / "hoi4-strategy" / "SKILL.md"
 _SKILL_DESCRIPTION = (
-    "How Hearts of Iron IV 1.20 works and what plays well now -- economy, laws, combat width, "
-    "doctrines after the 1.17 rework, the 1.18-1.20 balance changes, balance of power, custom mod "
-    "windows, the game AI's weak spots, and a do-not list. Use before steering or playing a HOI4 "
-    "country with the harness (rival, campaign, mailbox player), or when judging a HOI4 strategy, "
-    "so the play is not an outdated meta."
+    "How Hearts of Iron IV works and how to play a country well, in vanilla or any mod: the engine "
+    "dynamics (organization and strength, combat width, supply, production efficiency, research, "
+    "political power), judging a country and choosing a style, reading a mod's decisions, custom "
+    "windows and balance of power bars; then vanilla 1.20's exact numbers, the 1.17-1.20 changes "
+    "and a do-not list. Use before steering or playing a HOI4 country with the harness (rival, "
+    "campaign, mailbox player), or when judging a HOI4 strategy."
 )
 SKILL_FRONTMATTER = (
     f"---\nname: hoi4-strategy\ndescription: {_SKILL_DESCRIPTION}\n---\n\n"
