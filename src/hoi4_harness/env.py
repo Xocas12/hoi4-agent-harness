@@ -113,6 +113,10 @@ class HOI4Env:
             args = call.arguments
             data = ctx.list_decisions(country, args.get("category"), args.get("query"),
                                       int(args.get("limit", 25)))
+        elif call.name == "list_gui_buttons":
+            args = call.arguments
+            data = ctx.list_gui_buttons(country, args.get("gui"), args.get("query"),
+                                        int(args.get("limit", 40)))
         else:
             data = ctx.describe(str(call.arguments["id"]), country)
             if data is None:

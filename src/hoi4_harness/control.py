@@ -63,7 +63,7 @@ DOMAIN_ACTIONS: dict[str, frozenset[str]] = {
     "construction": frozenset({"queue_construction"}),
     "production": frozenset({"set_production", "change_production_equipment", "set_trade",
                              "design_division_template", "deploy_divisions"}),
-    "politics": frozenset({"hire_advisor", "take_decision"}),
+    "politics": frozenset({"hire_advisor", "take_decision", "click_gui_button"}),
     "diplomacy": frozenset({"diplomacy"}),
     "army": frozenset({"set_army_order", "move_division", "attack_province",
                        "draw_front_line", "draw_offensive", "assign_battle_plan"}),
@@ -75,7 +75,8 @@ STEER_ACTIONS = frozenset({"set_ai_directive", "set_ai_posture", "clear_ai_direc
 DELEGATE_ACTION = "delegate_army_to_ai"
 CLOCK_ACTION = "set_game_speed"
 #: Never narrowed by control: notes, the clock handed back, the read-only playset queries.
-ALWAYS = frozenset({"note", "advance_time", "list_decisions", "describe_action"})
+ALWAYS = frozenset({"note", "advance_time", "list_decisions", "describe_action",
+                    "list_gui_buttons"})
 
 #: Domains with a deterministic controller in ``hoi4_harness.auto``. Diplomacy has none: no
 #: rule is sound without knowing who the country's neighbours and rivals are, and a script that

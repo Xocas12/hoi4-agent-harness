@@ -52,6 +52,13 @@ def _decision_lines(ctx: ModContext, country: str, tools: bool) -> list[tuple[in
         out.append((2, "Take one with take_decision(decision_id); describe_action(id) shows its "
                        "conditions, cost and whether the harness can take it. Missions are the game's "
                        "to activate and cannot be taken."))
+        windows = ctx.guis_for(country)
+        if windows:
+            out.append((4, f"Custom windows for {country}: {len(windows)} "
+                           f"({', '.join(w.id for w in windows[:6])}"
+                           + (", ..." if len(windows) > 6 else "")
+                           + "). list_gui_buttons shows their buttons; click_gui_button presses "
+                           "one, checked by the window's own conditions."))
     return out
 
 

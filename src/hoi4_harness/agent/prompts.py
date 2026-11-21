@@ -79,7 +79,8 @@ it. What you have is the layer above:
 - set_ai_directive and clear_ai_directives say who the AI should act on (invade, protect,
   contain, befriend, antagonize, ignore). set_ai_posture sets how hard it presses, for every
   front or for the front facing one country (theater). take_decision takes a decision the AI does
-  not; hire_advisor fills a slot it left empty.
+  not; click_gui_button presses a button in a custom window (list_gui_buttons shows them, with
+  how the game's AI weighs each); hire_advisor fills a slot it left empty.
 - note keeps a plan across wakes. You are woken only for a scheduled review (weeks apart) or when
   a war starts or ends; the game runs between wakes without you.
 - advance_time days sets how long the clock runs until your next scheduled review (7 to 90 days).
@@ -200,7 +201,10 @@ tools for it are not offered. What you have is the layer above:
 - set_ai_directive and clear_ai_directives say who the AI should act on (invade, protect,
   contain, befriend, antagonize, ignore). set_ai_posture sets how hard it presses, for every
   front or for the front facing one country (theater). take_decision takes a decision the AI does
-  not; hire_advisor fills a slot it left empty, with {tag}'s political power.
+  not; click_gui_button presses a button in a custom window (list_gui_buttons shows them, with
+  how the game's AI weighs each); hire_advisor fills a slot it left empty, with {tag}'s
+  political power. A balance of power line in the brief says where the bar stands and which
+  decision category moves it.
 - note keeps a plan across wakes. advance_time days says how long until your next scheduled
   review (7 to 90 days). You are also woken when a war starts or ends.
 

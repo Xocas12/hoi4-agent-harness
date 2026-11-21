@@ -1,0 +1,65 @@
+# Invented windows for the custom GUI tests (#136). Ids are made up.
+scripted_gui = {
+	SWE_reform_opener = {
+		context_type = player_context
+		window_name = "swe_opener_window"
+		visible = { tag = SWE }
+		effects = {
+			swe_open_click = {
+				set_country_flag = swe_reform_open
+				swe_refresh_gui = yes
+			}
+		}
+	}
+
+	SWE_reform_window = {
+		context_type = player_context
+		window_name = "swe_reform_window"
+		visible = { has_country_flag = swe_reform_open }
+		dynamic_lists = {
+			swe_row_grid = { array = swe_rows entry_container = swe_row_entry }
+		}
+		effects = {
+			swe_fund_click = {
+				add_political_power = -25
+				set_country_flag = swe_funded
+			}
+			swe_fund_right_click = {
+				clr_country_flag = swe_funded
+			}
+			swe_decree_click = {
+				set_global_flag = swe_decree_for_everyone
+			}
+			swe_helper_click = {
+				swe_reach_everyone = yes
+			}
+			swe_states_click = {
+				every_owned_state = { limit = { is_owned_by = PREV } add_extra_state_shared_building_slots = 1 }
+			}
+			swe_prev_click = {
+				PREV = { add_political_power = 1 }
+			}
+			swe_row_click = {
+				set_variable = { swe_pick = v }
+			}
+		}
+		triggers = {
+			swe_fund_click_enabled = { has_political_power > 30 }
+			swe_row_click_enabled = { check_variable = { v > 0 } }
+		}
+		ai_enabled = { tag = SWE }
+		ai_weights = {
+			swe_fund_click = {
+				ai_will_do = { base = 5 }
+			}
+		}
+	}
+
+	SWE_state_window = {
+		context_type = selected_state_context
+		window_name = "swe_state_window"
+		effects = {
+			swe_state_click = { add_political_power = 1 }
+		}
+	}
+}

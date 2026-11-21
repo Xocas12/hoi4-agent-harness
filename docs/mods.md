@@ -37,10 +37,22 @@ That is a superset of what is on screen at any moment: conditions only the game 
 evaluate (`available`, scripted triggers) are shown, not decided. Decisions drawn
 only in debug mode (`is_debug = yes`) are left out.
 
-**Excluded: custom GUIs.** `common/scripted_guis` (and the interface files behind
-it) are not read. A decision category that names a `scripted_gui` is flagged
-`custom GUI` in the report; its decisions are still listed, because they are
-ordinary decisions.
+**Custom GUIs (#136).** `common/scripted_guis` is read too: every window's buttons,
+their `_click_enabled` and `_visible` triggers, the window's own `visible`, and the
+`ai_weights` the game's AI presses them by. `list_gui_buttons` shows them (labels come
+from the `interface` files and localisation) and `click_gui_button(gui, button)` presses
+one, as `if = { limit = { <window visible> <button visible> <click enabled> } <click> }`
+in the country's scope, with a marker logged inside the guard as the proof. Refused,
+with the reason: windows scoped to a selected state or country or a map icon, buttons
+in list rows (they read the row's `v`/`i`), FROM/PREV, and anything that changes more
+than the country (global flags, every/random country or state, another country's scope,
+also inside the scripted effects a click calls) unless `gui_allow_global` is set. A
+decision category that names a `scripted_gui` is still flagged `custom GUI`; its
+decisions are ordinary decisions.
+
+**Balance of power (#135).** `common/bop` is read for each bar's sides, ranges,
+modifiers and decision category; the probe logs the active bar's value, and the brief
+shows where it stands, the band it is in and what moves it.
 
 ## Taking a decision headless
 

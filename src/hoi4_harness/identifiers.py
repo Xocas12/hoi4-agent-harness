@@ -520,6 +520,8 @@ class IdentifierIndex:
                 return self._reject(call, f"There is no state '{state}' in this playset", state, names)
         if call.name == "take_decision":
             return self.mod_context().check_take(call, country)
+        if call.name == "click_gui_button":
+            return self.mod_context().check_click(call, country)
         argument = TAG_ARGUMENTS.get(call.name)
         if argument and self.tags:
             tag = str(args.get(argument, ""))

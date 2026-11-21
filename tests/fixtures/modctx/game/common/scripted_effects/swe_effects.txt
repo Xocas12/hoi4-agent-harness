@@ -1,0 +1,6 @@
+swe_reach_everyone = {
+	every_country = { add_political_power = 1 }
+}
+swe_refresh_gui = {
+	set_country_flag = swe_redraw
+}

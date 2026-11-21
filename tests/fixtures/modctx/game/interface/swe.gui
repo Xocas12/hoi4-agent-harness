@@ -1,0 +1,13 @@
+guiTypes = {
+	containerWindowType = {
+		name = "swe_reform_window"
+		buttonType = {
+			name = "swe_fund"
+			buttonText = "swe_fund_label"
+		}
+		buttonType = {
+			name = "swe_decree"
+			pdx_tooltip = "swe_decree_tt_key"
+		}
+	}
+}
