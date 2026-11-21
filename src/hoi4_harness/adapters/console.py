@@ -60,7 +60,7 @@ from .ui_scripts import verify
 CONSOLE_ACTIONS = frozenset({
     "queue_construction", "set_production", "hire_advisor",
     "set_ai_directive", "set_ai_posture", "clear_ai_directives", "take_decision",
-    "click_gui_button",
+    "click_gui_button", "set_front_order",
 })
 #: The console for every action it has a faithful effect for: settled live on
 #: 1.19.5 (run reads the user directory, needs no -debug, and eval_effect takes
@@ -222,6 +222,10 @@ class ConsoleChannel:
         self.inbox = None
         #: click_gui_button: the marker each planned click logs inside its guard.
         self.click_markers: dict[int, str] = {}
+        #: set_front_order: what each planned order sets, and the orders the game confirmed.
+        self.front_pending: dict[int, tuple[int, str]] = {}
+        from ..front_orders import Standing
+        self.front_standing = Standing(getattr(self.config, 'archive_dir', None))
 
     @property
     def transport(self) -> str:
@@ -246,6 +250,8 @@ class ConsoleChannel:
             return self._plan_decision(call, args, country, state)
         if call.name == "click_gui_button":
             return self._plan_click(call, args, country)
+        if call.name == "set_front_order":
+            return self._plan_front(call, args, country)
         return self._plan_hybrid(call, args, country)
 
     def _country(self, state: GameState) -> str:
@@ -412,6 +418,26 @@ class ConsoleChannel:
         self.click_markers[id(call)] = plan.nonce
         return Planned(call, [plan.line], plan.unchecked)
 
+    def _plan_front(self, call, args, country) -> Planned:
+        import secrets
+
+        from .. import front_orders
+
+        order = str(args["order"]).lower()
+        if order not in (*front_orders.ORDERS, "clear"):
+            raise Refused(f"{order!r} is not a front order (push, attack, probe, hold, clear)")
+        index = self._need_index("finding the state")
+        found = index.resolve_state(str(args["state"]))
+        if found is None or not str(found.id).isdigit():
+            raise Refused(f"there is no state {args['state']!r} in this playset")
+        nonce = "f" + secrets.token_hex(5)
+        self.click_markers[id(call)] = nonce
+        self.front_pending[id(call)] = (int(found.id), order)
+        body = f'{front_orders.effect(int(found.id), order)} log = "LLMB|v5|click|{nonce}"'
+        return Planned(call, [self._inline(country, body)],
+                       ["whether the state lies on a front: an order away from any front is "
+                        "harmless and does nothing"])
+
     def _verify_click(self, call: ActionCall):
         """The click logs its marker only inside its guard, so the line in the log is the
         proof that the game let it through; its absence once the batch ran is a refusal."""
@@ -430,6 +456,11 @@ class ConsoleChannel:
             except OSError:
                 tail = ""
             if nonce and f"|click|{nonce}" in tail:
+                pending = self.front_pending.pop(id(call), None)
+                if pending is not None:
+                    self.front_standing.record(*pending)
+                    return True, None, (f"front order {pending[1]} set on state {pending[0]}: the "
+                                        "game's AI steers that front by it from now on")
                 return True, None, "pressed: the game ran the click (its conditions held)"
             if waited >= self.verify_timeout:
                 break
@@ -704,7 +735,7 @@ class ConsoleChannel:
                 ok, kind, message = console._verify_decision(p.call, before, p)
                 out[i] = _result(p.call, ok, kind, message, lines=p.lines, unchecked=p.unchecked)
                 continue
-            if p.call.name == "click_gui_button":
+            if p.call.name in ("click_gui_button", "set_front_order"):
                 ok, kind, message = console._verify_click(p.call)
                 out[i] = _result(p.call, ok, kind, message, lines=p.lines, unchecked=p.unchecked)
                 continue
@@ -753,7 +784,7 @@ class ConsoleChannel:
         for i, (console, before, p) in enumerate(flat):
             if p.call.name == "take_decision":
                 ok, kind, message = console._verify_decision(p.call, before, p)
-            elif p.call.name == "click_gui_button":
+            elif p.call.name in ("click_gui_button", "set_front_order"):
                 ok, kind, message = console._verify_click(p.call)
             else:
                 outcome = verify(p.verify_call or p.call, before, console._read_state,

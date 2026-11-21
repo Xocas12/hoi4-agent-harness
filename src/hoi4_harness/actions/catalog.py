@@ -269,6 +269,22 @@ ACTIONS += [
         ),
     ),
     ActionSpec(
+        name="set_front_order",
+        category="army",
+        description=(
+            "Tell your armies what to do on the stretch of front at one state, and the game's AI "
+            "carries it out: push (all-out attack, more divisions), attack (a steady offensive), "
+            "probe (careful, small attacks), hold (no attacks, more defenders), clear (drop the "
+            "order). It stands until changed. Pick states from the Forces and map section or "
+            "inspect_world view=borders; an order on an enemy state facing your line works best."
+        ),
+        parameters=_schema(
+            {"state": {"type": "string", "description": "State id (or name)."},
+             "order": {"type": "string", "enum": ["push", "attack", "probe", "hold", "clear"]}},
+            ["state", "order"],
+        ),
+    ),
+    ActionSpec(
         name="inspect_world",
         category="query",
         description=(

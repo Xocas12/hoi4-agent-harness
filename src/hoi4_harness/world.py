@@ -581,7 +581,8 @@ def build_observer(config, index, fake=None) -> WorldObserver:
         except Exception:  # noqa: BLE001 - no map files: divisions without states, no contact
             layer = None
     me = (getattr(config, "rival", None) or getattr(config, "country", None) or "").upper()
-    return WorldObserver(me, Path(save_dir) if save_dir else None, index=index, layer=layer)
+    return WorldObserver(me, Path(save_dir) if save_dir else None, index=index, layer=layer,
+                         run_dir=Path(config.run_dir))
 
 
 class WorldObserver:
@@ -589,7 +590,9 @@ class WorldObserver:
     answers the brief and ``inspect_world`` from it."""
 
     def __init__(self, me: str, save_dir: Path | None, *, index=None, layer=None,
-                 others: tuple[str, ...] = (), player: str | None = None):
+                 others: tuple[str, ...] = (), player: str | None = None,
+                 run_dir: Path | None = None):
+        self.run_dir = run_dir
         self.me = me
         self.save_dir = save_dir
         self.index = index
@@ -629,8 +632,12 @@ class WorldObserver:
         return picture(world, self.me, intel_from(state), self.layer)
 
     def brief_lines(self, state: GameState) -> list[str]:
+        from .front_orders import Standing
+
         pic = self.picture(state)
-        return brief_lines(pic, self.index, self.layer) if pic is not None else []
+        lines = brief_lines(pic, self.index, self.layer) if pic is not None else []
+        standing = Standing(self.run_dir).line(lambda s: _state_name(self.index, s))
+        return lines + ([standing] if standing else [])
 
     def query(self, state: GameState, view: str, ident: str | None, limit: int = 60) -> dict:
         pic = self.picture(state)

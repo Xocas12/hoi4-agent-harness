@@ -406,7 +406,7 @@ def test_the_console_is_the_default_for_the_actions_verified_live():
     assert CONSOLE_ACTIONS == {
         "queue_construction", "set_production", "hire_advisor",
         "set_ai_directive", "set_ai_posture", "clear_ai_directives", "take_decision",
-        "click_gui_button"}
+        "click_gui_button", "set_front_order"}
     opted_in = resolve_channels({name: "console" for name in CONSOLE_ACTIONS})
     assert {n for n, c in opted_in.items() if c == "console"} == CONSOLE_ACTIONS
     assert DEFAULT_CHANNELS["delegate_army_to_ai"] == "ui"

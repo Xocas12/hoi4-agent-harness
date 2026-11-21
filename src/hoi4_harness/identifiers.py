@@ -522,6 +522,11 @@ class IdentifierIndex:
             return self.mod_context().check_take(call, country)
         if call.name == "click_gui_button":
             return self.mod_context().check_click(call, country)
+        if call.name == "set_front_order" and self.states:
+            state = str(args.get("state", ""))
+            if self.resolve_state(state) is None:
+                names = [s.name for s in self.states.values()] + list(self.states)
+                return self._reject(call, f"There is no state '{state}' in this playset", state, names)
         argument = TAG_ARGUMENTS.get(call.name)
         if argument and self.tags:
             tag = str(args.get(argument, ""))
