@@ -54,6 +54,10 @@ def forces_lines(state: GameState, limit: int = 5) -> list[str]:
     stale = f", {age} days old" if age is not None and age > STALE_DAYS else ""
     head = f"Front picture ({state.state_forces_date or state.date}{stale}): "
     head += f"own {own} vs foe {foe} in {len(picture)} state(s)"
+    if not own:
+        # The picture lists only enemy-held ground and your states beside it, so "own 0"
+        # means no division of yours is on or next to it, not that you have none (#128).
+        head += " (no division of yours is in or beside these states; the rest of your army is not listed)"
     # Contact first (both sides present), then by the size of what is there.
     ranked = sorted(picture, key=lambda f: (not (f.own and f.foe), -(f.own + f.foe), f.state))
     lines = [head, *(_line(f) for f in ranked[:limit])]

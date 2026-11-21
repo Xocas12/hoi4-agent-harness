@@ -119,6 +119,11 @@ class ProgressTracker:
         lines += self._capitulation_lines(state)
         if camp is not None and camp.owned_states is not None:
             held = f"You hold {camp.owned_states} states"
+            if camp.controlled_states is not None:
+                # Occupied land is not owned until the peace deal: owned alone reads as
+                # "no progress" through two years of a winning war (#128).
+                held = (f"You hold {camp.owned_states} states owned / "
+                        f"{camp.controlled_states} controlled")
             if camp.state_share is not None:
                 held += f" ({camp.state_share * 100:.1f}% of the world's {camp.world_states})"
             held += _since(camp.owned_states, "owned_states", self.start, " since the start")

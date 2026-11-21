@@ -259,6 +259,8 @@ class CampaignSupervisor(Supervisor):
         held = "?"
         if camp is not None and camp.owned_states is not None:
             held = str(camp.owned_states)
+            if camp.controlled_states is not None:
+                held += f" owned / {camp.controlled_states} controlled"
             if camp.state_share is not None:
                 held += f" ({camp.state_share * 100:.1f}%)"
         spend = self.loop.budget.summary() if self.loop else {}

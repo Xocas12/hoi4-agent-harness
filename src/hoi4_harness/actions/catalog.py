@@ -242,7 +242,8 @@ ACTIONS += [
         description=(
             "Read-only: the decisions your country can have in this playset, with category, "
             "cost and duration. Filter by category id or a word in the id or name; "
-            "nothing happens in the game."
+            "nothing happens in the game. The result comes back on your next call, so do "
+            "not send advance_time with it."
         ),
         parameters=_schema(
             {"category": {"type": "string"}, "query": {"type": "string"},
@@ -307,7 +308,9 @@ ACTIONS += [
         description=(
             "End the turn and run the game forward. Call this when there is nothing "
             "worth doing yet; it is the cheapest action available and the correct "
-            "default in peacetime."
+            "default in peacetime. Do not send it in the same answer as "
+            "list_decisions or describe_action: the turn would end before you saw the "
+            "result, so the harness skips advance_time and returns the read first."
         ),
         parameters=_schema(
             {"days": {"type": "integer", "minimum": 1, "maximum": 90},
