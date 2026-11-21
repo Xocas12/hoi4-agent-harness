@@ -39,6 +39,7 @@ import datetime as dt
 import difflib
 import hashlib
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -282,8 +283,32 @@ def find_user_dir(explicit: str | None) -> Path:
     return found
 
 
+def default_game_dir(explicit: str | None) -> Path | None:
+    for candidate in (explicit, os.environ.get("HOI4_GAME_DIR"),
+                      "C:/Program Files (x86)/Steam/steamapps/common/Hearts of Iron IV"):
+        if candidate and (Path(candidate) / "common").is_dir():
+            return Path(candidate)
+    return None
+
+
+def regenerate_playset(user_dir: Path, installed_mod: Path, game_dir: Path | None) -> str:
+    """The probe, reserve and region files, regenerated for the mods the launcher enables: a mod
+    that redraws states or sea regions needs its own ids (src/hoi4_harness/playset_files.py)."""
+    if game_dir is None:
+        return ("playset files: NOT regenerated (no game folder: pass --game-dir or set "
+                "HOI4_GAME_DIR); the installed copy is the repo's, built for vanilla")
+    sys.path.insert(0, str(REPO / "src"))
+    from hoi4_harness.playset_files import regenerate
+
+    try:
+        return regenerate(installed_mod, user_dir, game_dir)
+    except Exception as exc:  # noqa: BLE001 - say so; the vanilla copy stays installed
+        return f"playset files: NOT regenerated ({type(exc).__name__}: {exc}); the vanilla copy stays"
+
+
 def prepare(user_dir: Path, *, apply: bool, expert_ai: bool, repo_mod: Path,
-            lister: Callable[[], list[str]], out=print, now: dt.datetime | None = None) -> int:
+            lister: Callable[[], list[str]], out=print, now: dt.datetime | None = None,
+            game_dir: Path | None = None) -> int:
     refuse_if_running(lister)
     mod_dir = user_dir / "mod"
     mods = ModPlan(repo_mod, mod_dir / MOD_NAME, mod_dir / f"{MOD_NAME}.mod")
@@ -300,6 +325,7 @@ def prepare(user_dir: Path, *, apply: bool, expert_ai: bool, repo_mod: Path,
         diff = unified(name, before, after)
         out(diff.rstrip("\n") if diff else f"{name}: no change")
     if not apply:
+        out("playset files (probe, reserves, regions): regenerated for the launcher's mods on --apply")
         out("\ndry run: nothing was written. Re-run with --apply to make these changes.")
         return 0
 
@@ -309,6 +335,7 @@ def prepare(user_dir: Path, *, apply: bool, expert_ai: bool, repo_mod: Path,
     for name, (before, after) in changes.items():
         if before != after:
             _write(user_dir / name, after)
+    out(regenerate_playset(user_dir, mod_dir / MOD_NAME, game_dir))
     out("applied. Next: hoi4-harness campaign-check; afterwards: "
         f"python scripts/live_setup.py restore --apply   (backup: {backup.name})")
     return 0
@@ -371,6 +398,9 @@ def build_parser() -> argparse.ArgumentParser:
         p.add_argument("--user-dir", metavar="PATH",
                        help="the Hearts of Iron IV folder (default: found like the harness finds it)")
         if name == "prepare":
+            p.add_argument("--game-dir", metavar="PATH",
+                           help="the HOI4 install, to regenerate the playset files (default: "
+                                "HOI4_GAME_DIR or the Steam folder)")
             p.add_argument("--expert-ai", action="store_true",
                            help=f"also enable Expert AI (Workshop {EXPERT_AI_ID}), just before llm_bridge")
         else:
@@ -386,7 +416,7 @@ def main(argv: list[str] | None = None, *, lister: Callable[[], list[str]] = lis
         user_dir = find_user_dir(args.user_dir)
         if args.command == "prepare":
             return prepare(user_dir, apply=args.apply, expert_ai=args.expert_ai, repo_mod=repo_mod,
-                           lister=lister, out=out)
+                           lister=lister, out=out, game_dir=default_game_dir(args.game_dir))
         return restore(user_dir, apply=args.apply, backup_name=args.backup, lister=lister, out=out)
     except SetupError as exc:
         print(f"live_setup: {exc}", file=sys.stderr)

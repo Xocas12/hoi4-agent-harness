@@ -44,7 +44,7 @@ def test_reserve_blocks_are_generated_per_state_and_committed_for_vanilla():
 def test_an_order_leaves_one_flag_on_the_state_and_clear_leaves_none():
     assert front_orders.effect(42, "push").endswith("set_state_flag = llmb_front_push }")
     clear = front_orders.effect(42, "clear")
-    assert "set_state_flag" not in clear and clear.count("clr_state_flag") == 5
+    assert "set_state_flag" not in clear and clear.count("clr_state_flag") == 6
 
 
 def test_front_orders_are_steering_so_a_game_ai_country_can_give_them():
@@ -86,14 +86,15 @@ def test_on_the_fake_game_an_order_lands_through_the_inbox_and_stands(tmp_path):
     game, channel, index = _channel(tmp_path)
     result = _order(channel, "Norrland", "push")
     assert result.ok, result.message
-    assert "front order push set on state 11" in result.message
+    assert "order push set on state 11" in result.message
     assert game.state_flags["11"] == {"llmb_front_push"}
     assert game.keylog == []
     # a new order replaces it; the brief lists what stands
     assert _order(channel, "11", "hold").ok
     assert game.state_flags["11"] == {"llmb_front_hold"}
     observer = WorldObserver("SWE", None, index=index, run_dir=tmp_path / "run")
-    assert observer.brief_lines(GameState(country="SWE")) == ["  Front orders standing: hold Norrland"]
+    assert observer.brief_lines(GameState(country="SWE")) == [
+        "  Front and region orders standing: hold Norrland"]
     assert _order(channel, "11", "clear").ok
     assert game.state_flags["11"] == set()
     assert observer.brief_lines(GameState(country="SWE")) == []

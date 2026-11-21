@@ -275,7 +275,8 @@ ACTIONS += [
             "Tell your armies what to do on the stretch of front at one state, and the game's AI "
             "carries it out: push (all-out attack, more divisions), attack (a steady offensive), "
             "probe (careful, small attacks), hold (no attacks, more defenders), reserve (keep a "
-            "tenth of the army stationed in that state, behind the line), clear (drop the order). "
+            "tenth of the army stationed in that state, behind the line), invade (aim the naval "
+            "invasion planner at that coastal state), clear (drop the order). "
             "push and attack also aim the AI's concentrated offensives at that state. It stands "
             "until changed. Pick states from the Forces and map section or "
             "inspect_world view=borders; an order on an enemy state facing your line works best."
@@ -283,8 +284,25 @@ ACTIONS += [
         parameters=_schema(
             {"state": {"type": "string", "description": "State id (or name)."},
              "order": {"type": "string",
-                       "enum": ["push", "attack", "probe", "hold", "reserve", "clear"]}},
+                       "enum": ["push", "attack", "probe", "hold", "reserve", "invade", "clear"]}},
             ["state", "order"],
+        ),
+    ),
+    ActionSpec(
+        name="set_region_order",
+        category="army",
+        description=(
+            "Tell your navy or air force where to fight, by strategic region (sea or land area), "
+            "and the game's AI carries it out: dominate (contest the sea region), raid_convoys "
+            "(hunt convoys there), avoid (keep the fleet out), home_base (base the strike force "
+            "there), air_superiority (send fighters to win the air over the region), clear. It "
+            "stands until changed. Regions are named in the brief and inspect_world."
+        ),
+        parameters=_schema(
+            {"region": {"type": "string", "description": "Strategic region id or name."},
+             "order": {"type": "string", "enum": ["dominate", "raid_convoys", "avoid",
+                                                  "home_base", "air_superiority", "clear"]}},
+            ["region", "order"],
         ),
     ),
     ActionSpec(
