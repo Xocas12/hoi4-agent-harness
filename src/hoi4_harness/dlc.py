@@ -61,7 +61,7 @@ class DlcSet:
     disabled: tuple[str, ...] = ()
     #: None: unknown (no ``dlc/`` folder and no explicit list), so nothing is filtered.
     active: frozenset[str] | None = None
-    source: str = "unknown"           # "explicit", "installed", "unknown"
+    source: str = "unknown"           # "explicit", "game log", "installed", "unknown"
     notes: tuple[str, ...] = field(default=())
 
     @property
@@ -158,12 +158,52 @@ def explicit(names: Iterable[str]) -> DlcSet:
                   notes=tuple(notes))
 
 
+def read_game_log(user_dir: Path | None) -> tuple[list[str], str] | None:
+    """The DLCs the game itself reported active at its last start (``logs/system.log``: ``Active
+    DLC Count: N`` then one ``Active DLC: <name>`` line each), and when. This is the game's own
+    answer, so it beats the folder scan: a DLC can be owned with an empty folder (content shipped
+    in the base game) or have a folder and not be owned or enabled. None when there is no list."""
+    if user_dir is None:
+        return None
+    path = Path(user_dir) / "logs" / "system.log"
+    try:
+        text = path.read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return None
+    start = text.rfind("Active DLC Count:")
+    if start < 0:
+        return None
+    names = []
+    for line in text[start:].splitlines()[1:]:
+        if "Active DLC:" not in line:
+            if names:
+                break
+            continue
+        names.append(line.split("Active DLC:", 1)[1].strip())
+    stamp = __import__("time").strftime("%Y-%m-%d %H:%M",
+                                        __import__("time").localtime(path.stat().st_mtime))
+    return names, stamp
+
+
 def detect(game_dir: Path | None, user_dir: Path | None = None,
            override: Iterable[str] | None = None) -> DlcSet:
-    """The active DLC set. ``override`` (an explicit list, empty for "none") wins; else the
-    install minus the launcher's disabled list; else unknown."""
+    """The active DLC set. ``override`` (an explicit list, empty for "none") wins; then the
+    game's own list from its last start (``logs/system.log``); else the install minus the
+    launcher's disabled list; else unknown."""
     if override is not None:
         return explicit(override)
+    reported = read_game_log(user_dir)
+    if reported is not None:
+        names, stamp = reported
+        installed = read_installed(Path(game_dir)) if game_dir is not None else None
+        entries, note = read_disabled(user_dir)
+        notes = [f"from the game's own list at its last start ({stamp}, logs/system.log); a "
+                 "launcher change since takes effect at the next start"]
+        if note:
+            notes.append(note)
+        return DlcSet(installed=tuple(d.name for d in installed) if installed else tuple(names),
+                      disabled=tuple(entries), active=frozenset(names), source="game log",
+                      notes=tuple(notes))
     if game_dir is None:
         return DlcSet()
     installed = read_installed(Path(game_dir))
