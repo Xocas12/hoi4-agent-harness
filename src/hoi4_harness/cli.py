@@ -26,6 +26,9 @@
     hoi4-harness save-inspect               what a save contains, for mapping it
     hoi4-harness check-scripts              pre-flight the input driver's scripts and calibration
     hoi4-harness chat --to POL "..."        talk to the LLM countries in a single-player game
+    hoi4-harness setup                      a window: who plays which country, with which model
+    hoi4-harness start --setup FILE         run what the setup window runs (no window)
+    hoi4-harness chat-gui                   a window: talk to the LLM countries
     hoi4-harness map --state 141            where a state or province is, in map pixels
     hoi4-harness mod-directives --tags ...  regenerate the mod's per-target directives
     hoi4-harness mod-probe                  regenerate the focus/research probe from the install
@@ -59,6 +62,7 @@ from .eval.runner import PlaysetMismatch
 from .guidance import available as guidance_packs
 from .keepawake import keep_awake_for
 from .replay import ReplayError, list_turns, replay_turn
+from .skills import SkillError
 
 
 def _read_control_map(value: str):
@@ -78,10 +82,67 @@ def _read_control_map(value: str):
     return value
 
 
+def _apply_setup_file(config: HarnessConfig, args: argparse.Namespace) -> None:
+    """``--setup FILE``: what the setup window would run (setup_model.py). The flags come after."""
+    from .setup_model import Setup
+
+    try:
+        setup = Setup.load(Path(args.setup))
+    except (FileNotFoundError, ValueError) as exc:
+        raise SystemExit(f"--setup: {exc}") from exc
+    problems = setup.problems()
+    if problems:
+        raise SystemExit("--setup: " + " ".join(problems))
+    setup.apply_to(config)
+
+
+#: ``--player-<flag> TAG=VALUE`` -> the key in HarnessConfig.rival_players.
+_PLAYER_FLAGS = (("player_provider", "provider"), ("player_model", "model"),
+                 ("player_base_url", "base_url"), ("player_key_env", "api_key_env"),
+                 ("player_max_usd", "max_usd"), ("player_instruction", "instruction"),
+                 ("player_price", "price"))
+
+
+def _apply_player_flags(config: HarnessConfig, args: argparse.Namespace) -> None:
+    """Per-country settings from the flags, and the run-wide model flags laid over the countries
+    a ``--setup`` file listed (a flag beats the file)."""
+    players = config.rival_players
+    for attr, key in (("provider", "provider"), ("model", "model"), ("base_url", "base_url")):
+        if getattr(args, attr, None):
+            for row in players.values():
+                row[key] = getattr(args, attr)
+                if attr == "provider":
+                    row.pop("model", None)
+                    row["base_url"] = getattr(args, "base_url", None) or ""
+                    row.pop("api_key_env", None)
+    if getattr(args, "max_usd", None) is not None:
+        for row in players.values():
+            row.pop("max_usd", None)
+    for attr, key in _PLAYER_FLAGS:
+        for item in getattr(args, attr, None) or []:
+            tag, sep, value = item.partition("=")
+            tag = tag.strip().upper()
+            if not sep or not tag:
+                raise SystemExit(f"--{attr.replace('_', '-')} wants TAG=VALUE, not {item!r}")
+            row = players.setdefault(tag, {})
+            try:
+                if key == "max_usd":
+                    row[key] = float(value)
+                elif key == "price":
+                    low, _, high = value.partition(",")
+                    row["usd_per_m_input"], row["usd_per_m_output"] = float(low), float(high or 0)
+                else:
+                    row[key] = value
+            except ValueError:
+                raise SystemExit(f"--{attr.replace('_', '-')} {item!r}: not a number") from None
+
+
 def _config_from_args(args: argparse.Namespace) -> HarnessConfig:
     # Precedence, lowest first: defaults -> environment -> profile file -> flags.
     profile = getattr(args, "profile", None)
     config = HarnessConfig.from_file(profile) if profile else HarnessConfig.from_env()
+    if getattr(args, "setup", None):
+        _apply_setup_file(config, args)
     if getattr(args, "adapter", None):
         config.adapter = args.adapter
     if getattr(args, "provider", None):
@@ -125,6 +186,10 @@ def _config_from_args(args: argparse.Namespace) -> HarnessConfig:
         config.run_dir = Path(args.run_dir)
     if getattr(args, "guidance", None):
         config.guidance = args.guidance
+    if getattr(args, "skill_names", None):
+        config.skills = [*config.skills, *args.skill_names]
+    if getattr(args, "skills_dirs", None):
+        config.skills_dirs = [Path(d) for d in args.skills_dirs]
     if getattr(args, "system_prompt", None):
         config.system_prompt_path = Path(args.system_prompt)
     if getattr(args, "objective", None):
@@ -240,6 +305,9 @@ def _config_from_args(args: argparse.Namespace) -> HarnessConfig:
         config.rival_exit_wait_seconds = args.rival_exit_wait
     if getattr(args, "fake_human_script", None):
         config.fake_human_script = Path(args.fake_human_script)
+    if getattr(args, "instruction", None):
+        config.instruction = args.instruction
+    _apply_player_flags(config, args)
     if config.rival:
         from .rival.setup import RivalConfigError
         from .rival.setup import apply_defaults as apply_rival
@@ -385,9 +453,12 @@ def cmd_rival(args: argparse.Namespace, config: HarnessConfig) -> int:
     def echo(line: str) -> None:
         print(line, file=sys.stderr)
 
+    from .players import RunMark
+
     try:
-        _, summary = run_rival(config, resume=bool(getattr(args, "resume", False)),
-                               quiet=args.quiet, echo=echo, until=getattr(args, "until", None))
+        with RunMark(_run_tags(config), _player_describe(config), config.run_dir):
+            _, summary = run_rival(config, resume=bool(getattr(args, "resume", False)),
+                                   quiet=args.quiet, echo=echo, until=getattr(args, "until", None))
     except RivalStartError as exc:
         print(f"rival: {exc}", file=sys.stderr)
         return 2
@@ -466,6 +537,20 @@ def cmd_chat(args: argparse.Namespace) -> int:
         return 0
 
 
+def cmd_setup(args: argparse.Namespace) -> int:
+    """``setup``: the window for who plays which country, with which model (docs/setup.md)."""
+    from .setup_gui import run
+
+    return run()
+
+
+def cmd_chat_gui(args: argparse.Namespace) -> int:
+    """``chat-gui``: the chat window (docs/chat.md)."""
+    from .chat_gui import run
+
+    return run(Path(args.chat) if args.chat else None)
+
+
 def cmd_guide(args: argparse.Namespace) -> int:
     """``guide``: leave advice for a running campaign, or list / clear what stands."""
     from .campaign import inbox
@@ -527,6 +612,10 @@ def cmd_play(args: argparse.Namespace) -> int:
     except (FileNotFoundError, RuntimeError) as exc:
         print(f"play: {exc}", file=sys.stderr)
         return 1
+    if config.multiplayer:
+        from .adapters.mp_chat import attach as attach_mp_chat
+
+        attach_mp_chat(env, config)         # send_message to a human goes to the game's own chat
     if config.telemetry_hours is not None and config.adapter == "headless":
         tag = (config.country or first.state.country or "").strip()
         tag = "" if tag == "___" else tag
@@ -891,18 +980,82 @@ def cmd_inbox(args: argparse.Namespace) -> int:
     return 1
 
 
+def _run_tags(config: HarnessConfig) -> list[str]:
+    return list(config.rivals) if len(config.rivals) > 1 else [config.rival]
+
+
+def _player_describe(config: HarnessConfig):
+    from .rival.setup import planner_config_for
+
+    def describe(tag: str) -> tuple[str, str]:
+        planner = planner_config_for(config, tag)
+        return planner.provider, planner.model
+    return describe
+
+
+def _adopt_setup(args: argparse.Namespace) -> None:
+    """``native --setup FILE``: the file's run options where a flag did not say otherwise, and its
+    saved keys into this process's environment (never argv, never printed)."""
+    from .setup_model import Setup, inject_environment
+
+    try:
+        setup = Setup.load(Path(args.setup))
+    except (FileNotFoundError, ValueError) as exc:
+        raise SystemExit(f"--setup: {exc}") from exc
+    args.launch = bool(getattr(args, "launch", False) or setup.launch_game)
+    args.keep_running = bool(getattr(args, "keep_running", False) or setup.keep_running)
+    if not getattr(args, "until", None) and setup.until:
+        args.until = setup.until
+    if not getattr(args, "game_dir", None) and setup.game_dir:
+        args.game_dir = setup.game_dir
+    if not getattr(args, "my_country", None) and setup.my_country:
+        args.my_country = setup.my_country
+    inject_environment(setup)
+
+
+def cmd_start(args: argparse.Namespace) -> int:
+    """``start --setup FILE``: exactly what the setup window's Start runs."""
+    if not getattr(args, "setup", None):
+        print("start: --setup FILE is required (hoi4-harness setup writes "
+              "~/.hoi4-harness/setup.json)", file=sys.stderr)
+        return 2
+    return cmd_native(args)
+
+
 def cmd_native(args: argparse.Namespace) -> int:
     """``native --rival TAG``: rival mode through the inbox, following the game's lifetime."""
     from . import native, paths
     from .inbox import default_mod_dir
+    from .players import RunMark
 
     def echo(line: str) -> None:
         print(line, file=sys.stderr, flush=True)
 
     args.transport, args.live, args.rival_act_when = "inbox", True, "inbox"
+    for name in ("launch", "keep_running", "no_debug_check"):
+        if not hasattr(args, name):
+            setattr(args, name, False)
+    if getattr(args, "setup", None):
+        _adopt_setup(args)
+    elif not getattr(args, "rival", None):
+        print("native: --rival TAG[,TAG...] (or --setup FILE) says which countries the LLM plays",
+              file=sys.stderr)
+        return 2
     if not getattr(args, "provider", None):
         args.provider = "claude-cli"
     base = _config_from_args(args)
+    tags = _run_tags(base)
+    mine = (getattr(args, "my_country", None) or "").strip().upper()
+    if mine and mine in tags:
+        echo(f"native: {mine} is the country you play; the LLM cannot play it too")
+        return 2
+    with RunMark(tags, _player_describe(base), base.run_dir, status="waiting") as mark:
+        code = _native_loop(args, base, echo, mark, native, paths, default_mod_dir)
+        mark.status = "finished" if code == 0 else "stopped"
+        return code
+
+
+def _native_loop(args, base, echo, mark, native, paths, default_mod_dir) -> int:
     mod_dir = base.inbox_dir or default_mod_dir(paths.find_game_dir())
     problems = native.installed_mod_problems(mod_dir)
     if problems:
@@ -913,6 +1066,7 @@ def cmd_native(args: argparse.Namespace) -> int:
     process = base.campaign_game_process
     code = 0
     while True:
+        mark.set("waiting")
         if args.launch and not native.game_running(process):
             if base.game_dir is None:
                 echo("native: --launch needs --game-dir (the HOI4 install)")
@@ -1242,6 +1396,54 @@ def cmd_prompt(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_skills(args: argparse.Namespace) -> int:
+    from . import skills as sk
+
+    if args.skills_command == "new":
+        directory = Path(args.new_dir) if args.new_dir else sk.harness_home() / "skills"
+        print(f"wrote {sk.scaffold(args.name, directory, args.new_mods or (), args.new_tags or ())}")
+        return 0
+    config = _config_from_args(args)
+    if config.game_dir is not None:
+        mods = config.build_index().playset.mods
+    else:
+        from .identifiers import Mod
+
+        mods = [Mod.load(Path(m)) for m in config.mod_dirs]
+    found = sk.discover(config.skills_dirs, mods)
+    tag = config.country
+    if args.skills_command == "show":
+        match = next((s for s in found if s.name.lower() == args.name.lower()), None)
+        if match is None:
+            raise sk.SkillError(f"No skill named {args.name!r}. Found: "
+                                f"{', '.join(s.name for s in found) or 'none'}")
+        reason = sk.why(match, mods, tag, config.skills)
+        print(f"{match.name}  ({match.path}, from {match.source}, ~{match.tokens} tokens)")
+        print(f"applies: {reason or 'no' + ('' if match.has_harness_keys else ' (Claude Code skill only)')}")
+        print()
+        print(match.body)
+        return 0
+    chosen = sk.select(found, mods, tag, config.skills)
+    selection = sk.fit(chosen, config.skill_tokens, config.guidance)
+    reasons = {s.name: r for s, r in chosen}
+    if not found:
+        print("no skills found. Searched:")
+    for source, folder in sk.search_paths(config.skills_dirs, mods):
+        print(f"  {source:<14}{folder}")
+    for s in found:
+        if s in selection.included:
+            state = f"INCLUDED ({reasons[s.name]})"
+        elif s in selection.left_out:
+            state = f"left out for space ({reasons[s.name]})"
+        elif s in selection.duplicates:
+            state = "skipped: the strategy guidance pack is already in the prompt"
+        else:
+            state = "not applied" + ("" if s.has_harness_keys else " (Claude Code skill only)")
+        print(f"{s.name:<24} ~{s.tokens:>5} tok  {s.source:<14} {state}")
+        print(f"    {s.path}")
+    return 0
+
+
 def calibration_targets(config: HarnessConfig) -> list[str]:
     """What to calibrate when the operator names nothing: every concrete target
     the recorded UI scripts click, else the default panel list. A templated
@@ -1379,6 +1581,25 @@ def cmd_calibrate(args: argparse.Namespace) -> int:
     return 0
 
 
+def _run_options(p: argparse.ArgumentParser) -> None:
+    """The setup window's fields as flags (docs/setup.md); play, native and start share them."""
+    p.add_argument("--setup", metavar="FILE",
+                   help="a setup file written by `hoi4-harness setup` (~/.hoi4-harness/setup.json): "
+                        "the countries, models, instructions and options it holds; flags win")
+    p.add_argument("--instruction", metavar="TEXT",
+                   help="a standing instruction for the whole run, e.g. 'go alt-history Germany "
+                        "and ally the UK' (per country: --player-instruction)")
+    for flag, what in (("provider", "anthropic, openai, google, claude-cli"),
+                       ("model", "a model name"), ("base-url", "a local OpenAI-compatible server"),
+                       ("key-env", "the environment variable holding that country's key"),
+                       ("max-usd", "its spend cap in dollars"),
+                       ("price", "IN,OUT dollars per million tokens, what the cap counts with"),
+                       ("instruction", "its own standing instruction")):
+        p.add_argument(f"--player-{flag}", dest=f"player_{flag.replace('-', '_')}",
+                       action="append", metavar="TAG=VALUE",
+                       help=f"one country's {what} (repeatable)")
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="hoi4-harness", description=__doc__)
     parser.add_argument("--version", action="version", version=__version__)
@@ -1400,6 +1621,10 @@ def build_parser() -> argparse.ArgumentParser:
         p.add_argument("--guidance", metavar="NAME|PATH",
                        help="how much to coach the model: " + ", ".join(guidance_packs())
                             + ", or a path to your own file")
+        p.add_argument("--skill", dest="skill_names", action="append", metavar="NAME",
+                       help="include this skill pack in the prompt (repeatable; docs/skills.md)")
+        p.add_argument("--skills-dir", dest="skills_dirs", action="append", metavar="PATH",
+                       help="look for skill packs here first (repeatable)")
         p.add_argument("--system-prompt", dest="system_prompt", metavar="PATH",
                        help="replace the entire system prompt, mechanics included")
         p.add_argument("--objective", help="the standing objective given every turn")
@@ -1491,6 +1716,25 @@ def build_parser() -> argparse.ArgumentParser:
     common(prompt)
     prompt.set_defaults(func=cmd_prompt)
 
+    skills = sub.add_parser("skills", help="skill packs: list, new, show (docs/skills.md)")
+    skills_sub = skills.add_subparsers(dest="skills_command", required=True)
+    s_list = skills_sub.add_parser("list", help="found skills, where, and which apply to this run")
+    common(s_list)
+    s_list.set_defaults(func=cmd_skills)
+    s_new = skills_sub.add_parser("new", help="write a template SKILL.md")
+    s_new.add_argument("name")
+    s_new.add_argument("--mod", dest="new_mods", action="append", metavar="NAME",
+                       help="a mod name or workshop id the skill is for (repeatable)")
+    s_new.add_argument("--tag", dest="new_tags", action="append", metavar="TAG",
+                       help="a country tag the skill is for (repeatable)")
+    s_new.add_argument("--dir", dest="new_dir", metavar="PATH",
+                       help="where to put it (default: ~/.hoi4-harness/skills)")
+    s_new.set_defaults(func=cmd_skills)
+    s_show = skills_sub.add_parser("show", help="print a skill and why it does or does not apply")
+    s_show.add_argument("name")
+    common(s_show)
+    s_show.set_defaults(func=cmd_skills)
+
     observe = sub.add_parser("observe", help="print one situation brief")
     common(observe)
     observe.set_defaults(func=cmd_observe)
@@ -1498,6 +1742,7 @@ def build_parser() -> argparse.ArgumentParser:
     play = sub.add_parser("play", help="run the agent loop")
     common(play)
     play.add_argument("--turns", type=int)
+    _run_options(play)
     play.add_argument("--advisor", action="store_true",
                       help="recommend, never act: every tool call is shown to the player instead")
     play.add_argument("--handover", action="store_true",
@@ -1669,8 +1914,11 @@ def build_parser() -> argparse.ArgumentParser:
         "native", help="you play; an LLM plays another country through the inbox, with no "
                        "keyboard, console or focus (docs/inbox.md)")
     common(native)
-    native.add_argument("--rival", metavar="TAG[,TAG...]", required=True,
-                        help="the country (or countries) the LLM plays")
+    _run_options(native)
+    native.add_argument("--rival", metavar="TAG[,TAG...]",
+                        help="the country (or countries) the LLM plays (or give --setup)")
+    native.add_argument("--my-country", dest="my_country", metavar="TAG",
+                        help="the country you play: refused as an LLM country, and labelled in chat-gui")
     native.add_argument("--keep-running", dest="keep_running", action="store_true",
                         help="when the game quits, wait for the next start and play again")
     native.add_argument("--launch", action="store_true",
@@ -1680,6 +1928,27 @@ def build_parser() -> argparse.ArgumentParser:
     native.add_argument("--until", metavar="YYYY-MM-DD", help="stop at this in-game date")
     native.add_argument("--quiet", action="store_true", help="no per-turn progress line on stderr")
     native.set_defaults(func=cmd_native)
+
+    start = sub.add_parser(
+        "start", help="run what the setup window runs: `start --setup FILE` is `native` with the "
+                      "countries, models and instructions read from the file (docs/setup.md)")
+    common(start)
+    _run_options(start)
+    start.add_argument("--rival", metavar="TAG[,TAG...]", help="only these countries of the file")
+    start.add_argument("--my-country", dest="my_country", metavar="TAG", help=argparse.SUPPRESS)
+    for flag in ("--keep-running", "--launch", "--no-debug-check"):
+        start.add_argument(flag, dest=flag[2:].replace("-", "_"), action="store_true",
+                           help="as for native")
+    start.add_argument("--until", metavar="YYYY-MM-DD", help="stop at this in-game date")
+    start.add_argument("--quiet", action="store_true", help="no per-turn progress line on stderr")
+    start.set_defaults(func=cmd_start)
+
+    sub.add_parser("setup", help="open the setup window: who plays which country, with which "
+                                 "model (docs/setup.md)").set_defaults(func=cmd_setup)
+    cgui = sub.add_parser("chat-gui", help="open the chat window: talk to the LLM countries "
+                                           "(docs/chat.md)")
+    cgui.add_argument("--chat", metavar="PATH", help="the chat file (default ~/.hoi4-harness/chat.jsonl)")
+    cgui.set_defaults(func=cmd_chat_gui)
 
     inbox_p = sub.add_parser("inbox", help="the inbox transport: what is posted, and a live probe")
     inbox_p.add_argument("verb", choices=["status", "probe", "clear"])
@@ -1884,6 +2153,9 @@ def main(argv: list[str] | None = None) -> int:
     try:
         return args.func(args)
     except ControlError as exc:
+        print(f"{args.command}: {exc}", file=sys.stderr)
+        return 2
+    except SkillError as exc:
         print(f"{args.command}: {exc}", file=sys.stderr)
         return 2
     except PlaysetMismatch as exc:

@@ -48,6 +48,12 @@ refusal).
 5. Only the host saves. Production and construction verification fall back to the log on a
    client (`log+save` loses its on-demand save).
 
+## Talking to the other player
+
+In a multiplayer game (`--mp-client` / `--mp-human`) the person is in the game, not at a chat file, so the model's `send_message` to a human (`person`, `global` or a country in `--mp-human`) is typed into the **game's own chat**: Enter opens the chat box, the line goes in as `[FRA to GER] text`, Enter sends it (`adapters/mp_chat.py`, behind the input driver, so the focus check, the key guard and dry-run all apply). `send_message` to another LLM country still goes to the file chat when the run has one; single-player runs are unchanged.
+
+**UNVERIFIED.** Nothing here has run in a live multiplayer game. Unconfirmed: that Enter opens and sends in the chat box on a client, the line length it accepts (200 characters is a guess), characters beyond plain ASCII, and whether a line typed while the host has the game paused is taken. The two keys are `OPEN_KEY` and `SEND_KEY` in `mp_chat.py`. Reading the other player's chat back is not built: the model only sends. Tested with a fake driver in `tests/test_chat.py`.
+
 ## What needs a live session
 
 Stage 0 of #91 is a table, filled by running each channel from a non-host client of a real

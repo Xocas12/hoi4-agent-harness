@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import json
 
+import pytest
+
 from hoi4_harness.adapters.mock import MockAdapter
 from hoi4_harness.chat import ChatChannel, ChatLog
 from hoi4_harness.cli import main
@@ -98,3 +100,107 @@ def test_a_rival_is_woken_by_a_message_and_answers_it(tmp_path):
     assert "chat: a message from person" in log
     texts = [(m.frm, m.to, m.text) for m in ChatLog(config.chat_path).messages()]
     assert (config.rival, "person", "No. We keep to ourselves.") in texts
+
+
+# --- multiplayer: the game's own chat (adapters/mp_chat.py) -----------------------------------
+
+
+class FakeDriver:
+    def __init__(self):
+        self.calls = []
+
+    def press(self, key):
+        self.calls.append(("press", key))
+
+    def type_text(self, text):
+        self.calls.append(("type", text))
+
+
+def _mp_env(tmp_path, driver=None, file_chat=False):
+    from hoi4_harness.adapters.mp_chat import MultiplayerChat
+
+    config = HarnessConfig(multiplayer=True, country="FRA", mp_human_tags=["GER"],
+                           clock_owner="player")
+    env = HOI4Env(MockAdapter(), config)
+    driver = driver or FakeDriver()
+    env.attach_mp_chat(MultiplayerChat(driver, "FRA", ["GER"], sleep=lambda _s: None))
+    if file_chat:
+        env.attach_chat(ChatChannel(ChatLog(tmp_path / "chat.jsonl"), "FRA"))
+    return env, driver
+
+
+def test_multiplayer_send_message_types_into_the_games_chat(tmp_path):
+    env, driver = _mp_env(tmp_path, file_chat=True)
+    assert "send_message" in env.allowed_actions
+    result = env.act(ActionCall("send_message", {"to": "GER", "text": "Let us talk"}), "1936-03-01")
+    assert result.ok and "sent to GER" in result.message
+    assert driver.calls == [("press", "enter"), ("type", "[FRA to GER] Let us talk"), ("press", "enter")]
+    assert ChatLog(tmp_path / "chat.jsonl").messages() == []       # not the file chat
+
+
+def test_multiplayer_person_and_global_mean_the_game_chat_too(tmp_path):
+    env, driver = _mp_env(tmp_path)
+    for target in ("person", "global"):
+        assert env.act(ActionCall("send_message", {"to": target, "text": "hello"}), "").ok
+    assert ("type", "[FRA to everyone] hello") in driver.calls
+
+
+def test_multiplayer_talk_to_another_llm_stays_in_the_file_chat(tmp_path):
+    env, driver = _mp_env(tmp_path, file_chat=True)
+    assert env.act(ActionCall("send_message", {"to": "ENG", "text": "Alliance?"}), "").ok
+    assert driver.calls == []
+    assert [(m.frm, m.to) for m in ChatLog(tmp_path / "chat.jsonl").messages()] == [("FRA", "ENG")]
+
+
+def test_multiplayer_refuses_a_target_it_cannot_reach(tmp_path):
+    env, driver = _mp_env(tmp_path)
+    result = env.act(ActionCall("send_message", {"to": "ENG", "text": "Alliance?"}), "")
+    assert not result.ok and "not available" in result.message and driver.calls == []
+
+
+def test_a_multiplayer_run_with_no_driver_says_so(tmp_path):
+    env = HOI4Env(MockAdapter(), HarnessConfig(multiplayer=True, country="FRA", mp_human_tags=["GER"],
+                                               clock_owner="player"))
+    result = env.act(ActionCall("send_message", {"to": "GER", "text": "hi"}), "")
+    assert not result.ok and "not available" in result.message
+
+
+def test_single_player_still_uses_the_file_chat(tmp_path):
+    env = HOI4Env(MockAdapter(), HarnessConfig())
+    env.attach_chat(ChatChannel(ChatLog(tmp_path / "chat.jsonl"), "SWE"))
+    driver = FakeDriver()
+    from hoi4_harness.adapters.mp_chat import MultiplayerChat
+
+    env.attach_mp_chat(MultiplayerChat(driver, "SWE", ["GER"]))      # present but multiplayer is off
+    assert env.act(ActionCall("send_message", {"to": "GER", "text": "hi"}), "").ok
+    assert driver.calls == [] and len(ChatLog(tmp_path / "chat.jsonl").messages()) == 1
+
+
+def test_the_sender_checks_its_input():
+    from hoi4_harness.adapters.mp_chat import MAX_CHARS, MultiplayerChat
+
+    driver = FakeDriver()
+    chat = MultiplayerChat(driver, "fra", ["ger"], sleep=lambda _s: None)
+    assert chat.reaches("GER") and chat.reaches("Person") and not chat.reaches("ENG")
+    with pytest.raises(ValueError, match="empty"):
+        chat.send("GER", "  ")
+    with pytest.raises(ValueError, match="not a person"):
+        chat.send("ENG", "hi")
+    assert driver.calls == []
+    chat.send("GER", "x" * 1000)
+    assert len(driver.calls[1][1]) == MAX_CHARS
+
+
+def test_the_sender_goes_through_the_input_driver_and_its_guards():
+    from hoi4_harness.adapters.input_driver import InputDriverAdapter
+    from hoi4_harness.adapters.mp_chat import attach, find_driver
+
+    driver = InputDriverAdapter(dry_run=True)
+    config = HarnessConfig(multiplayer=True, country="FRA", mp_human_tags=["GER"], clock_owner="player")
+    env = HOI4Env(driver, config)
+    assert find_driver(driver) is driver
+    sender = attach(env, config)
+    assert sender is not None and env.mp_chat is sender
+    assert env.act(ActionCall("send_message", {"to": "GER", "text": "Peace?"}), "").ok
+    assert driver.log[-3:] == ["press enter", "type [FRA to GER] Peace?", "press enter"]
+    assert attach(HOI4Env(MockAdapter(), config), config) is None        # nothing to type with

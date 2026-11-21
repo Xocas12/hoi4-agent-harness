@@ -150,6 +150,15 @@ class HarnessConfig:
     # replaces the whole prompt, mechanics included.
     guidance: str = "doctrine"
     system_prompt_extra: str = ""
+    #: The person's standing instruction ("go alt-history Germany and ally the UK"): free text put
+    #: in the system prompt, so it holds for the whole run. ``rival_players`` (below) can give a
+    #: country its own.
+    instruction: str = ""
+    # Skill packs (docs/skills.md): SKILL.md folders from these directories, the home
+    # folder, the repo and the active mods; `skills` names ones to include anyway.
+    skills: list[str] = field(default_factory=list)
+    skills_dirs: list[Path] = field(default_factory=list)
+    skill_tokens: int = 3000
     system_prompt_path: Path | None = None
     objective: str = (
         "Build a defensible economy, keep stability and war support healthy, and do not "
@@ -417,6 +426,10 @@ class HarnessConfig:
     #: and a share of ``budget.max_usd`` (``rival_shares``: tag -> weight, default equal).
     rivals: list[str] = field(default_factory=list)
     rival_shares: dict[str, float] = field(default_factory=dict)
+    #: Per-country settings from the setup window / ``--setup`` file (setup_model.py), keyed by
+    #: tag: any of ``provider``, ``model``, ``base_url``, ``api_key_env``, ``max_usd``,
+    #: ``instruction``. A country not listed here uses the shared ``planner`` and ``instruction``.
+    rival_players: dict[str, dict] = field(default_factory=dict)
     #: The most actions one window types across all the rivals together (a window is
     #: seconds at the person's keyboard); the rest wait for the next, taken in turn.
     rival_window_cap: int = 12
@@ -487,6 +500,7 @@ class HarnessConfig:
             budget=BudgetConfig.from_env(),
             guidance=os.environ.get("HOI4_GUIDANCE", "doctrine").strip(),
             system_prompt_extra=os.environ.get("HOI4_SYSTEM_PROMPT_EXTRA", ""),
+            instruction=os.environ.get("HOI4_INSTRUCTION", ""),
             system_prompt_path=Path(system_prompt_path) if system_prompt_path else None,
             objective=os.environ.get("HOI4_OBJECTIVE") or cls.objective,
             require_confirmation=_env_bool("HOI4_REQUIRE_CONFIRMATION", True),
@@ -571,8 +585,8 @@ class HarnessConfig:
                          "chat_path",
                          "fake_human_script"} and value is not None:
                 setattr(self, key, Path(value))
-            elif key == "mod_dirs":
-                self.mod_dirs = [Path(v) for v in value]
+            elif key in ("mod_dirs", "skills_dirs"):
+                setattr(self, key, [Path(v) for v in value])
             elif hasattr(self, key):
                 setattr(self, key, value)
             else:

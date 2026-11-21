@@ -68,6 +68,12 @@ class HOI4Env:
         self.world = None
         #: This country's end of the single-player chat (chat.ChatChannel, #133); None: off.
         self.chat = None
+        #: Multiplayer: the in-game chat for messages to a human (adapters/mp_chat.py); None: off.
+        self.mp_chat = None
+
+    def attach_mp_chat(self, sender) -> None:
+        """Route send_message to a human through the game's own chat (multiplayer runs)."""
+        self.mp_chat = sender
 
     def attach_chat(self, channel) -> None:
         """Give the brief a messages section and the model the send_message tool."""
@@ -94,7 +100,7 @@ class HOI4Env:
         out = set(PLAYSET_QUERIES) if self.queries_enabled else set()
         if self.world is not None:
             out.add("inspect_world")
-        if self.chat is not None:
+        if self.chat is not None or self.mp_chat is not None or self.config.multiplayer:
             out.add("send_message")
         return out
 
@@ -401,11 +407,21 @@ class HOI4Env:
             return ActionResult(ok=ok, action=call.name, call_id=call.call_id, message=message,
                                 error_kind=None if ok else "invalid_args")
 
-        if self.chat is None:
+        to, text = str(call.arguments.get("to", "")), str(call.arguments.get("text", ""))
+        channel = self.chat
+        if self.config.multiplayer:
+            # Multiplayer: a human reads the game's chat, so a line to one goes there (UNVERIFIED
+            # key path, adapters/mp_chat.py); the file chat stays for single player and for talk
+            # between LLM countries.
+            if self.mp_chat is not None and self.mp_chat.reaches(to):
+                channel = self.mp_chat
+            elif channel is None:
+                return result(False, "multiplayer chat is not available here (no input driver to "
+                                     "type with), or that is not a person in this game")
+        if channel is None:
             return result(False, "this run has no chat")
         try:
-            sent = self.chat.send(str(call.arguments.get("to", "")),
-                                  str(call.arguments.get("text", "")), date or None)
+            sent = channel.send(to, text, date or None)
         except ValueError as exc:
             return result(False, f"not sent: {exc}")
         return result(True, f"sent to {sent.to} (message #{sent.id})")
