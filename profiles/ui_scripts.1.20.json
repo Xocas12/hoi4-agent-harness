@@ -1,0 +1,50 @@
+{
+  "_comment": "HOI4 1.20, measured live 2026-11-21: the 1.19 research path up to the technology click, then two clicks where 1.19 pressed Return twice. In 1.20 a technology opens a details popup whose Research button Return does not press, and the military-industrial-organisation chooser that follows ignores Return (closing it cancels the research). Record research.confirm on the popup's Research button (1920x1080, UI scale 1: 750,252) and research.mio_choice on the chooser's 'Research without a Military Industrial Organization' row (1207,345).",
+  "schema": 1,
+  "scripts": {
+    "start_research": [
+      {
+        "press": "production"
+      },
+      {
+        "wait": 0.5
+      },
+      {
+        "press": "research"
+      },
+      {
+        "wait": 0.8
+      },
+      {
+        "click": "research.free_slot"
+      },
+      {
+        "wait": 0.8
+      },
+      {
+        "click": "research.tab.{tech_folder}"
+      },
+      {
+        "wait": 0.5
+      },
+      {
+        "click": "research.tech_point"
+      },
+      {
+        "wait": 0.8
+      },
+      {
+        "click": "research.confirm"
+      },
+      {
+        "wait": 0.8
+      },
+      {
+        "click": "research.mio_choice"
+      },
+      {
+        "wait": 0.5
+      }
+    ]
+  }
+}

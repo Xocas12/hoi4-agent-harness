@@ -228,8 +228,8 @@ def test_the_equipment_change_is_not_offered_without_its_points_and_the_log_says
     offered = env.adapter.supported_actions
     assert "set_production" in offered and "change_production_equipment" not in offered
     log = env.adapter.hands.lines(offered)
-    assert any("change_production_equipment not offered: record production.equipment.change, "
-               "production.equipment.<equipment>" in line for line in log)
+    assert any("change_production_equipment not offered: record production.equipment.<equipment>"
+               in line for line in log)
     assert any(line.startswith("production by mouse live: set_production edits") for line in log)
 
 
@@ -388,3 +388,61 @@ def test_both_are_catalog_actions(name):
     from hoi4_harness.actions.catalog import ACTIONS
 
     assert name in {a.name for a in ACTIONS}
+
+
+# --- the 1.20 layout, seen live 2026-11-21: -, + and remove on every line ------------------------
+
+ROW_BUTTONS = {n: {"minus": (x - 90, y), "plus": (x - 40, y), "remove": (x, y)}
+               for n, (x, y) in {1: (630, 480), 2: (630, 620), 3: (630, 760)}.items()}
+PER_ROW = {
+    **{pu.row_point(n): p for n, p in ROWS.items()},
+    **{pu.row_button(n, b): pt for n, buttons in ROW_BUTTONS.items() for b, pt in buttons.items()},
+    **{pu.pick_point(e): p for e, p in PICKER.items()},
+}
+TWO_LINES = (("infantry_equipment_1", 3), ("support_equipment_1", 1))
+
+
+def make_120(tmp_path, points=PER_ROW, lines=TWO_LINES, factories=8):
+    env, fake = make(tmp_path, points=points, lines=lines, factories=factories)
+    fake.production_ui = {"rows": ROWS, "row_buttons": ROW_BUTTONS, "row_opens_picker": True,
+                          "picker": PICKER}
+    return env, fake
+
+
+def test_a_rows_own_plus_edits_that_row_not_row_1(tmp_path):
+    env, fake = make_120(tmp_path)
+    result = do(env, "set_production", equipment="support_equipment_1", factories=3)
+    assert result.ok, result.message
+    assert held(fake) == [("infantry_equipment_1", 3), ("support_equipment_1", 3)]
+    assert not any("selected" in line or "list opened" in line for line in fake.ui_log)
+    assert not add_effects(fake)
+
+
+def test_a_rows_own_minus_and_remove(tmp_path):
+    env, fake = make_120(tmp_path)
+    assert do(env, "set_production", equipment="infantry_equipment_1", factories=1).ok
+    assert held(fake)[0] == ("infantry_equipment_1", 1)
+    assert do(env, "set_production", equipment="support_equipment_1", factories=0).ok
+    assert held(fake) == [("infantry_equipment_1", 1)]
+
+
+def test_without_shared_buttons_the_row_buttons_are_enough_to_offer_editing(tmp_path):
+    assert pu.missing_for_edit(PER_ROW) == []
+    assert pu.recorded_summary(PER_ROW)["row_buttons"] == [1, 2, 3]
+
+
+def test_a_row_with_no_own_button_and_no_shared_one_is_refused_by_name(tmp_path):
+    points = {k: v for k, v in PER_ROW.items() if not k.startswith("production.line.2.")}
+    env, fake = make_120(tmp_path, points=points)
+    result = do(env, "set_production", equipment="support_equipment_1", factories=2)
+    assert not result.ok and "production.factories.plus" in result.message
+    assert fake.ui_log == []
+
+
+def test_equipment_change_clicks_the_row_then_the_pick_when_no_change_button_is_recorded(tmp_path):
+    env, fake = make_120(tmp_path)
+    result = do(env, "change_production_equipment", from_equipment="support_equipment_1",
+                to_equipment="artillery_equipment_1")
+    assert result.ok, result.message
+    assert held(fake) == [("infantry_equipment_1", 3), ("artillery_equipment_1", 1)]
+    assert "production: the equipment list opened" in fake.ui_log
