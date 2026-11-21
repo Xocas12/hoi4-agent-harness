@@ -44,7 +44,7 @@ from ..adapters.window import FocusCheck
 #: How much of the end of game.log is read to find the in-game date. The log can be many MB.
 TAIL_BYTES = 65536
 
-POLICIES = ("paused", "handover", "never")
+POLICIES = ("paused", "handover", "never", "inbox")
 
 
 # --- what the person is doing -------------------------------------------------------
@@ -199,6 +199,17 @@ class NeverPolicy(WindowPolicy):
 
     def check(self) -> Gate:
         return Gate(False, "never", "rival_act_when is never: the harness does not type")
+
+
+class InboxPolicy(WindowPolicy):
+    """Always open: the inbox transport (inbox.py) writes a mod file and sends no input at
+    all, so there is nothing the person's keyboard, mouse or focus could collide with. The
+    orders land at the game's next in-game day, while the person plays."""
+
+    name = "inbox"
+
+    def check(self) -> Gate:
+        return Gate(True)
 
 
 class HandoverPolicy(WindowPolicy):

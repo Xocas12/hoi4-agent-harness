@@ -32,6 +32,15 @@ on_actions = {
 				limit = { llm_bridge_is_harness = yes }
 				llm_bridge_daily_tick = yes
 			}
+			# The inbox (docs/inbox.md): once a day run the orders the harness has written
+			# into llm_bridge_inbox_events.txt since the game last reloaded it. Fired by every
+			# harness country (the person's, or one under human_ai with the flag, or a marked
+			# rival): each batch's flag lets it run once however many fire it. Empty most
+			# days: two hidden events that do nothing.
+			if = {
+				limit = { llm_bridge_is_harness = yes }
+				country_event = { id = llmb_inbox.1 }
+			}
 		}
 	}
 

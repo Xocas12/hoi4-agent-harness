@@ -124,6 +124,9 @@ def generate(tags: tuple[str, ...] | list[str] = DEFAULT_TAGS) -> list[Generated
         GeneratedFile("common/decisions/llm_bridge_target_decisions.txt", _decisions(tags)),
         GeneratedFile("common/scripted_effects/llm_bridge_cadence.txt", _cadence_effects()),
         GeneratedFile("events/llm_bridge_cadence_events.txt", _cadence_events()),
+        # The empty inbox: the game must know both events at load. The harness rewrites the
+        # INSTALLED copies while it runs (inbox.py); this repo copy stays empty.
+        *(GeneratedFile(rel, text) for rel, text in _empty_inbox().items()),
         GeneratedFile(
             "localisation/english/llm_bridge_targets_l_english.yml", _localisation(tags), bom=True
         ),
@@ -447,6 +450,12 @@ def _cadence_effects() -> str:
             "",
         ]
     return "\n".join(out)
+
+
+def _empty_inbox() -> dict[str, str]:
+    from .inbox import render
+
+    return render([])
 
 
 def _cadence_events() -> str:

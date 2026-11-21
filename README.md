@@ -102,7 +102,10 @@ run) — see [docs/co-op.md](docs/co-op.md). In a single-player game, `play --ri
 makes the model the grand strategist of an AI country while you play another: it
 decides whenever it likes and its orders are typed only in your pauses, after checks
 that you are away from the keyboard (`--rival FRA,ENG,SOV` steers several at once) — see
-[docs/rival.md](docs/rival.md).
+[docs/rival.md](docs/rival.md). `hoi4-harness native --rival POL` does the same with no
+keyboard at all: orders go into a mod file the game reloads by itself in `-debug_mode`, the
+model runs through the Claude Code CLI on your subscription, and you just play — see
+[docs/inbox.md](docs/inbox.md).
 
 Also configurable: which actions exist at all (`--actions`, `--without`), whether
 the reflex layer runs (`--no-reflex` hands every decision to the model), whether
