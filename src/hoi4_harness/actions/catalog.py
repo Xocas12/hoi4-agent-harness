@@ -274,13 +274,16 @@ ACTIONS += [
         description=(
             "Tell your armies what to do on the stretch of front at one state, and the game's AI "
             "carries it out: push (all-out attack, more divisions), attack (a steady offensive), "
-            "probe (careful, small attacks), hold (no attacks, more defenders), clear (drop the "
-            "order). It stands until changed. Pick states from the Forces and map section or "
+            "probe (careful, small attacks), hold (no attacks, more defenders), reserve (keep a "
+            "tenth of the army stationed in that state, behind the line), clear (drop the order). "
+            "push and attack also aim the AI's concentrated offensives at that state. It stands "
+            "until changed. Pick states from the Forces and map section or "
             "inspect_world view=borders; an order on an enemy state facing your line works best."
         ),
         parameters=_schema(
             {"state": {"type": "string", "description": "State id (or name)."},
-             "order": {"type": "string", "enum": ["push", "attack", "probe", "hold", "clear"]}},
+             "order": {"type": "string",
+                       "enum": ["push", "attack", "probe", "hold", "reserve", "clear"]}},
             ["state", "order"],
         ),
     ),
