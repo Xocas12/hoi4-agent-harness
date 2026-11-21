@@ -25,6 +25,8 @@ def never_the_real_machine(monkeypatch):
         raise AssertionError("a test reached the real machine (discovery or process list)")
 
     monkeypatch.setattr(ls, "list_processes", boom)
+    # The real install is the real machine too: no test regenerates from it.
+    monkeypatch.setattr(ls, "default_game_dir", lambda explicit=None: Path(explicit) if explicit else None)
     monkeypatch.setattr(ls.paths, "game_dirs", boom)
     monkeypatch.setattr(ls.paths, "documents_roots", boom)
     original = ls.paths.find_game_dir

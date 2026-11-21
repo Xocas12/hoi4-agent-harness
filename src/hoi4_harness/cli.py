@@ -1062,6 +1062,11 @@ def _native_loop(args, base, echo, mark, native, paths, default_mod_dir) -> int:
         echo("native: the installed mod has no inbox yet: " + "; ".join(problems))
         echo("native: with the game CLOSED, install it: python scripts/live_setup.py prepare --apply")
         return 2
+    from .playset_files import stale
+
+    why = stale(mod_dir, paths.find_game_dir()) if paths.find_game_dir() else None
+    if why:
+        echo(f"native: WARNING: {why}")
     base_run = Path(base.run_dir)
     process = base.campaign_game_process
     code = 0
