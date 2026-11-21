@@ -1093,6 +1093,22 @@ def _native_loop(args, base, echo, mark, native, paths, default_mod_dir) -> int:
         else:
             config = _config_from_args(args)
             config.run_dir = native.session_dir(base_run)
+            if getattr(args, "breakaway", False):
+                from .adapters.logtail import find_log
+                from .late import wait_for_breakaway
+
+                found = wait_for_breakaway(
+                    config.log_path or find_log(), config.rival, args.breakaway_ideology, echo,
+                    alive=lambda: native.game_running(process))
+                if found is None:
+                    echo("native: the game quit before the breakaway appeared")
+                    if not args.keep_running:
+                        return 1
+                    continue
+                config.rival = found.tag
+            if getattr(args, "wait_for_country", False) or getattr(args, "breakaway", False):
+                # A late country: no deadline on the start (the game runs the mark when it exists).
+                config.rival_start_wait_minutes = 10 ** 6
             echo(f"native: playing {config.rival} in the background; run folder {config.run_dir}")
             with keep_awake_for(config, echo):
                 code = cmd_rival(args, config)
@@ -1983,6 +1999,16 @@ def build_parser() -> argparse.ArgumentParser:
     native.add_argument("--no-debug-check", dest="no_debug_check", action="store_true",
                         help="play even when the game seems to run without -debug_mode")
     native.add_argument("--until", metavar="YYYY-MM-DD", help="stop at this in-game date")
+    native.add_argument("--breakaway", action="store_true",
+                        help="--rival TAG is the country a civil war splits: play the side that "
+                             "breaks away from it (a new D01-D50 tag), once it exists "
+                             "(docs/late-countries.md)")
+    native.add_argument("--breakaway-ideology", dest="breakaway_ideology", metavar="IDEOLOGY",
+                        help="with --breakaway: the side whose ruling ideology matches (fascism, "
+                             "communism, democratic, neutrality)")
+    native.add_argument("--wait-for-country", dest="wait_for_country", action="store_true",
+                        help="the rival does not exist yet (released later): wait for it with no "
+                             "deadline")
     native.add_argument("--quiet", action="store_true", help="no per-turn progress line on stderr")
     native.set_defaults(func=cmd_native)
 

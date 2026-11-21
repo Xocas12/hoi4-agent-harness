@@ -107,7 +107,10 @@ class Batch:
 def render(batches: list[Batch]) -> dict[str, str]:
     """The two files for ``batches`` (relative path -> text). No batches: the empty inbox."""
     tags = list(dict.fromkeys(b.tag for b in batches))
-    dispatch = [f"\t\t{tag} = {{ country_event = {{ id = {NAMESPACE}.2 }} }}" for tag in tags]
+    # A country that does not exist yet (a release, a civil war's side) is skipped, and its orders
+    # wait in the file until it does.
+    dispatch = [f"\t\tif = {{ limit = {{ country_exists = {tag} }} "
+                f"{tag} = {{ country_event = {{ id = {NAMESPACE}.2 }} }} }}" for tag in tags]
     events = [HEADER, f"add_namespace = {NAMESPACE}", "",
               "# Fired once a day by on_daily for each harness country (llm_bridge_on_actions.txt).",
               "country_event = {", f"\tid = {NAMESPACE}.1", "\thidden = yes", "\tis_triggered_only = yes",
