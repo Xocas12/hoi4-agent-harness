@@ -89,7 +89,7 @@ class World:
 
 
 def make_world(tmp_path, *, camera="fresh", research_points=True, army_points=True, army=True,
-               version=None, **options) -> World:
+               version=None, points=None, **options) -> World:
     """A campaign config and fake game for SWE on the grid map, the mouse tools wired as the
     options say. ``camera``: fresh, stale (3 days old, no fingerprint), fingerprinted (3 days old
     with a matching display fingerprint), moved (a fingerprint from another UI scale), missing."""
@@ -116,6 +116,7 @@ def make_world(tmp_path, *, camera="fresh", research_points=True, army_points=Tr
         coordinates.update({"research.free_slot": SLOT, "research.tab.infantry_folder": INFANTRY_TAB})
     if army_points:
         coordinates.update(ARMY_POINTS)
+    coordinates.update(points or {})
     if coordinates:
         save_calibration(Calibration(SCREEN, coordinates), tmp_path / "run" / "calibration.json")
     env = build_env(config)

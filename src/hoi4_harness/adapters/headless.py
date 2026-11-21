@@ -595,11 +595,31 @@ def _wire_hands(driver, console, config: HarnessConfig, hands: Hands, fake):
         enable_battle_plans(driver, orders_ok.layer, orders_ok._camera, orders_ok.centre,
                             unattended=bool(config.campaign))
     _wire_production(driver, console, config, hands, driver.index)
+    _wire_events(driver, config, hands, fake)
     if "start_research" in driver.scripts:
         config.wake_on_free_research_slot = True
         if not config.dry_run:
             driver.after_input = _refresh_after_input(console, config)
     return ledger
+
+
+def _wire_events(driver, config: HarnessConfig, hands: Hands, fake) -> None:
+    """The event-window guard (adapters/event_windows.py): needs a probe, which only the profile
+    (or the fake game's window) can give; without one the start log says nothing guards it."""
+    from .event_windows import guard_from_config
+
+    if not config.event_windows:
+        hands.events = {"guarded": False, "why": "no event_windows probes in the profile"}
+        return
+    try:
+        guard = guard_from_config(
+            config.event_windows, config.run_dir, sleep=driver._sleep,
+            probe=fake.event_probe if fake is not None else None)
+    except (ValueError, RuntimeError) as exc:
+        hands.events = {"guarded": False, "why": str(exc)}
+        return
+    driver.event_guard = guard
+    hands.events = {"guarded": True, "missing": guard.missing(driver.config.coordinates)}
 
 
 def _wire_production(driver, console, config: HarnessConfig, hands: Hands, index) -> None:

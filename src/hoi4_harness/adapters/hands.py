@@ -16,6 +16,9 @@ driver's mouse to the headless adapter, for the three jobs the console has no ef
   wins).
 * ``move_division`` / ``attack_province``: orders by click on the map (``unit_orders.py``,
   docs/unit-orders.md). Built against the fake game only.
+* event and news windows (``event_windows.py``): nothing in this mode answers them and a click
+  under one goes to the event, so every mouse tool first closes what is open, when a probe is
+  configured (``event_windows`` in the profile), and refuses to click while one is open.
 * ``delegate_army_to_ai``: hand an army to the game's AI, or take it back. The click path
   below is a DRAFT: the interface files do not say where the toggle is, so its points are
   recorded by a person (``hoi4-harness calibrate``), not computed. Built against the fake game
@@ -100,6 +103,9 @@ class Hands:
     production: dict = field(default_factory=dict)
     #: Which research click path was chosen ("1.19" or "1.20") and why, for the start log.
     research_path: str = ""
+    #: What the event-window guard does (adapters/event_windows.py): ``{"guarded": bool,
+    #: "missing": [recorded points the answers click that are not recorded], "why": str}``.
+    events: dict = field(default_factory=dict)
 
     def refuse(self, actions, reason: str) -> None:
         for action in ([actions] if isinstance(actions, str) else actions):
@@ -125,6 +131,7 @@ class Hands:
                        "back, so every result is 'unverified'")
         if self.research_path and "start_research" in live:
             out.append(f"research path: {self.research_path}")
+        out.extend(self.event_lines())
         out.extend(self.production_lines(offered))
         plans = sorted(set(PLAN_ACTIONS) & set(offered))
         if plans:
@@ -134,6 +141,23 @@ class Hands:
             out.append(f"battle plans not offered: {self.refused[PLAN_ACTIONS[0]]}")
         if {"move_division", "attack_province"} & set(live):
             out.append("division orders are UNVERIFIED against the real game (docs/unit-orders.md)")
+        return out
+
+    def event_lines(self) -> list[str]:
+        """The start-log lines for event and news windows (issue #125)."""
+        if not self.events:
+            return []
+        if not self.events.get("guarded"):
+            return ["event windows: NOT guarded: " + self.events.get("why", "")
+                    + "; nothing answers an event or closes a news window in this mode, and the "
+                    "mouse tools click under one (docs/live-session.md section 14c)"]
+        out = ["event windows: guarded (UNVERIFIED against the real game): every mouse tool "
+               "first closes an open window (country: the first option; news: closed) and "
+               "refuses to click while one is open; answers are in events.jsonl"]
+        if self.events.get("missing"):
+            out.append("event windows: a window that opens cannot be closed until these points "
+                       "are recorded, and the mouse tools refuse meanwhile: "
+                       + ", ".join(self.events["missing"]))
         return out
 
     def production_lines(self, offered) -> list[str]:

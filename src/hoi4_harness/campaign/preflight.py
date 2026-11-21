@@ -377,6 +377,19 @@ def check_hands(config: HarnessConfig, now: Callable[[], datetime] = datetime.no
         out.append(Check(WARN, "delegation", f"no recorded points for {DELEGATE_TOGGLE} and "
                          "army.<name> in calibration.json: delegate_army_to_ai will not be offered "
                          "(hoi4-harness calibrate ...)"))
+    from ..adapters.event_windows import ANSWER_POINTS
+
+    if not config.event_windows:
+        out.append(Check(WARN, "event windows", "no event_windows probes in the profile: nothing "
+                         "answers an event or closes a news window in this mode, and the mouse "
+                         "tools click under one (docs/live-session.md section 14c)"))
+    else:
+        gone = [p for p in ANSWER_POINTS.values() if p not in recorded]
+        out.append(Check(WARN, "event windows", "probes set, but a window cannot be closed until "
+                         f"{', '.join(gone)} are recorded (hoi4-harness calibrate ...)")
+                   if gone else Check(INFO, "event windows", "the mouse tools close an open event "
+                                      "or news window first (the first option of a country event); "
+                                      "UNVERIFIED in the real game"))
     from ..adapters import production_ui as pu
 
     edit, change = pu.missing_for_edit(recorded), pu.missing_for_equipment(recorded)
