@@ -288,16 +288,27 @@ ACTIONS += [
         name="inspect_world",
         category="query",
         description=(
-            "Read-only: the map and the armies as your country sees them, from the newest save. "
-            "view=divisions lists every one of your divisions (template, state, province, terrain, "
-            "organisation, manpower, entrenchment); view=state id=<state id> shows one state, both "
-            "sides; view=country id=<TAG> shows what your intelligence knows of a country (army, "
-            "factories, production: exact, estimated or unknown by your intel); view=borders lists "
-            "the states across your borders. The result comes back on your next call."
+            "Read-only: everything a player of your country sees, from the newest save. "
+            "view=divisions lists every one of your divisions; view=state id=<state id> shows one "
+            "state, both sides; view=country id=<TAG> shows what your intelligence knows of a country "
+            "(army, factories, production: exact, estimated or unknown by your intel); view=borders "
+            "lists the states across your borders. The other panels: view=faction (members, leader, "
+            "goals, rules; id=TAG for another country's), intel (agency upgrades, operatives and "
+            "missions, network strength per country, your intel levels), projects (special projects, "
+            "facilities, scientists), navy and air (your fleets and wings, or id=TAG as your intel "
+            "allows), politics (parties, laws, spirits, advisors), economy (fuel, manpower, "
+            "stockpile, trade), diplomacy (wars with their score, guarantees, puppets, lend-lease), "
+            "research (slots, doctrines, decisions, focus), occupation (resistance, victory points), "
+            "supply (hubs, railways, trucks, divisions short of supply), commanders (generals, "
+            "marshals and admirals with skills and traits). The result comes back on your next call."
         ),
         parameters=_schema(
-            {"view": {"type": "string", "enum": ["divisions", "state", "country", "borders"]},
-             "id": {"type": "string", "description": "State id for view=state, tag for view=country."},
+            {"view": {"type": "string", "enum": [
+                "divisions", "state", "country", "borders", "faction", "intel", "projects", "navy",
+                "air", "politics", "economy", "diplomacy", "research", "occupation", "supply",
+                "commanders"]},
+             "id": {"type": "string", "description": "State id for view=state; a country tag for "
+                    "country, faction, navy, air, politics, economy and diplomacy."},
              "limit": {"type": "integer", "minimum": 1, "maximum": 120}},
             ["view"],
         ),

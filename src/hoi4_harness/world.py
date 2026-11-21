@@ -68,6 +68,13 @@ class StatePicture:
     mil: int = 0
     dock: int = 0
     infra: int = 0
+    #: Manpower available and locked in the state's pool, and the state's occupation block
+    #: (resistance, compliance) when it has one.
+    manpower: int = 0
+    locked: int = 0
+    resistance: dict | None = None
+    #: Who holds the state when it is not its owner (the state's own ``controller``).
+    controller: str | None = None
 
 
 @dataclass
@@ -75,6 +82,8 @@ class CountryPicture:
     tag: str
     divisions: list[Division] = field(default_factory=list)
     production: list[ProductionLine] = field(default_factory=list)
+    #: Everything but the army (world_full.FullCountry); None where it was not read.
+    full: object | None = None
 
 
 @dataclass
@@ -87,6 +96,13 @@ class World:
     controllers: dict[int, str] = field(default_factory=dict)
     countries: dict[str, CountryPicture] = field(default_factory=dict)
     seconds: float = 0.0
+    #: Victory points by province, and the shared parts of the other panels (factions, the
+    #: country's intelligence networks): world_full.FullWorld.
+    vp: dict[int, int] = field(default_factory=dict)
+    #: Supply hub and railway levels by province (the logistics screen): province -> (hub, rail).
+    logistics: dict[int, tuple[int, int]] = field(default_factory=dict)
+    full: object | None = None
+    full_error: str | None = None
 
     def owner_of(self, province: int, layer) -> str | None:
         state = layer.state_of(province) if layer is not None else None
@@ -147,17 +163,45 @@ def read_states(text: str) -> dict[int, StatePicture]:
         if isinstance(buildings, dict):
             for name, attribute in _BUILDINGS.items():
                 setattr(picture, attribute, _level(buildings.get(name)))
+        pool = block.get("manpower_pool")
+        if isinstance(pool, dict):
+            picture.manpower = _int(pool.get("available")) or 0
+            picture.locked = _int(pool.get("locked")) or 0
+        if isinstance(block.get("resistance"), dict) and block["resistance"]:
+            picture.resistance = block["resistance"]
+        if isinstance(block.get("controller"), str):
+            picture.controller = block["controller"]
         out[ident] = picture
     return out
 
 
-def read_controllers(text: str) -> dict[int, str]:
-    out: dict[int, str] = {}
+def read_provinces(text: str) -> tuple[dict[int, str], dict[int, int], dict[int, tuple[int, int]]]:
+    """``provinces={ N={ controller=TAG victory_points=V buildings={ supply_node={ level } } } }``:
+    who holds a province that is not its state's owner's, the victory points (the map's numbers),
+    and the supply hubs and railways (province buildings, not state ones)."""
+    controllers: dict[int, str] = {}
+    points: dict[int, int] = {}
+    logistics: dict[int, tuple[int, int]] = {}
     for pid, block in (sg.top_block(text, "provinces") or {}).items():
         ident = _int(pid)
-        if ident is not None and isinstance(block, dict) and isinstance(block.get("controller"), str):
-            out[ident] = block["controller"]
-    return out
+        if ident is None or not isinstance(block, dict):
+            continue
+        if isinstance(block.get("controller"), str):
+            controllers[ident] = block["controller"]
+        value = block.get("victory_points")
+        value = value.get("_items", [None])[0] if isinstance(value, dict) else value
+        if _int(value):
+            points[ident] = _int(value)
+        buildings = block.get("buildings")
+        if isinstance(buildings, dict):
+            hub, rail = _level(buildings.get("supply_node")), _level(buildings.get("rail_way"))
+            if hub or rail:
+                logistics[ident] = (hub, rail)
+    return controllers, points, logistics
+
+
+def read_controllers(text: str) -> dict[int, str]:
+    return read_provinces(text)[0]
 
 
 def read_templates(text: str) -> dict[str, dict[str, str]]:
@@ -247,6 +291,29 @@ def _provinces(layer, state: int) -> list[int]:
     return list(getattr(found, "provinces", []) or [])
 
 
+def _read_shared(text: str, world: World, me: str, layer, names):
+    """The parts of the other panels that belong to no one country: factions, the country order,
+    the air bases, the characters index, and the own country's intelligence networks."""
+    from . import world_full as F
+
+    try:
+        shared = F.FullWorld()
+        spans = sg.top_level_spans(text)
+        shared.order = F.country_order(text, spans)
+        shared.factions = F.read_factions(text, spans)
+        shared.air_top = F.top(text, spans, "strategic_air")
+        shared.base_state = F.read_air_bases(shared.air_top)
+        shared.chars = F.Characters(text, spans)
+        shared.doctrine_top = F.top(text, spans, "doctrine")
+        index = shared.order.index(me) + 1 if me in shared.order else None
+        shared.networks = F.read_networks(F.top(text, spans, "strategic_operatives"), index)
+        shared.supply = F.read_supply(F.top(text, spans, "supply_system_2"), me)
+        return shared
+    except Exception as exc:  # noqa: BLE001
+        world.full_error = f"shared: {type(exc).__name__}: {exc}"
+        return None
+
+
 def read_world(path: Path, me: str, *, layer=None, also: tuple[str, ...] = ()) -> World:
     """The save at ``path``, read for country ``me``: its own block, and the countries next to it
     or named in ``also`` (its enemies, the person's country), up to MAX_COUNTRIES."""
@@ -262,18 +329,41 @@ def read_world(path: Path, me: str, *, layer=None, also: tuple[str, ...] = ()) -
                   path=path, player=head.get("player") if isinstance(head.get("player"), str) else None)
     world.date = sg.save_date(world.date) if world.date else None
     world.states = read_states(text)
-    world.controllers = read_controllers(text)
+    world.controllers, world.vp, world.logistics = read_provinces(text)
     templates = read_templates(text)
     names = sg._equipment_names_fast(text) or sg._equipment_names(sg.top_block(text, "equipments") or {})
-    wanted = [me] + [t for t in (*also, world.player) if t and t != me]
+    from . import world_full as F
+
+    shared = _read_shared(text, world, me, layer, names)
+    mine = sg.country_block(text, me)
+    members = []
+    enemies: list[str] = []
+    if mine is not None and shared is not None:
+        enemies = [t for t, r in F.read_relations(mine, me)[0].items() if "war" in r]
+        found = shared.faction_of(me)
+        members = [m for m in (found["members"] if found else []) if m != me]
+    wanted = [me] + [t for t in (*also, world.player, *enemies) if t and t != me]
     wanted += [t for t in neighbours_of(me, world.states, world.controllers, layer) if t not in wanted]
+    wanted += [t for t in members if t not in wanted]
     for tag in wanted[:MAX_COUNTRIES + 1]:
-        block = sg.country_block(text, tag)
+        block = mine if tag == me else sg.country_block(text, tag)
         if block is None:
             continue
-        world.countries[tag] = CountryPicture(
-            tag, read_divisions(block, tag, templates.get(tag, {}), layer),
-            read_production(block, names))
+        country = CountryPicture(tag, read_divisions(block, tag, templates.get(tag, {}), layer),
+                                 read_production(block, names))
+        world.countries[tag] = country
+        if shared is not None:
+            try:
+                owned = [st for st in world.states.values() if st.owner == tag]
+                country.full = shared.countries[tag] = F.read_country(
+                    block, tag, names=names, chars=shared.chars, air_top=shared.air_top,
+                    base_state=shared.base_state, states_owned=owned, layer=layer,
+                    doctrine_top=shared.doctrine_top if tag == me else None,
+                    index=(shared.order.index(tag) + 1 if tag in shared.order else None),
+                    province_state=(layer.state_of if layer is not None else None), own=tag == me)
+            except Exception as exc:  # noqa: BLE001 - a panel that cannot be read must not cost the army
+                world.full_error = f"{tag}: {type(exc).__name__}: {exc}"
+    world.full = shared
     world.seconds = round(time.time() - started, 2)
     return world
 
@@ -303,6 +393,9 @@ class Picture:
     #: The country's own factories and production lines, from the same save.
     industry: dict[str, int] = field(default_factory=dict)
     production: list[ProductionLine] = field(default_factory=list)
+    #: The save and the intel readings this picture was filtered from, for the other panels.
+    world: World | None = None
+    intel: dict[str, Intel] = field(default_factory=dict)
 
 
 def picture(world: World, me: str, intel: dict[str, Intel], layer) -> Picture:
@@ -336,7 +429,7 @@ def picture(world: World, me: str, intel: dict[str, Intel], layer) -> Picture:
         foreign[tag] = _foreign(world, country, near, intel.get(tag) or Intel(
             DEFAULT_INTEL, DEFAULT_INTEL, DEFAULT_INTEL, DEFAULT_INTEL, assumed=True))
     return Picture(me, world.date, list(mine.divisions), contact, foreign, borders,
-                   world.factories(me), list(mine.production))
+                   world.factories(me), list(mine.production), world, dict(intel))
 
 
 def _foreign(world: World, country: CountryPicture, near: list[Division], intel: Intel) -> dict:
@@ -465,6 +558,11 @@ def brief_lines(pic: Picture, index=None, layer=None, *, states: int = 6, countr
             fac = f"{fac['civ']} civ / {fac['mil']} mil / {fac['dock']} dock"
         lines.append(f"  {tag}: divisions {info['divisions']}" + (f" ({seen} in contact)" if seen else "")
                      + f"; factories {fac}; producing {prod}{note}")
+    full = getattr(pic.world, "full", None)
+    if full is not None:
+        from . import world_full
+
+        lines += world_full.brief_lines(full, pic.me, pic.intel)
     return lines
 
 
@@ -475,6 +573,10 @@ def _ranked(pic: Picture) -> dict[str, dict]:
 
 def query(pic: Picture, view: str, ident: str | None, index=None, layer=None, limit: int = 60) -> dict:
     view = (view or "divisions").lower()
+    from . import world_full
+
+    if view in world_full.NEW_VIEWS:
+        return world_full.query(pic, view, ident, layer, limit)
     if view == "divisions":
         rows = sorted(pic.own, key=lambda d: (d.state or 0, d.template, d.id))
         return {"view": "divisions", "date": pic.date, "count": len(rows), "shown": min(limit, len(rows)),
@@ -504,7 +606,8 @@ def query(pic: Picture, view: str, ident: str | None, index=None, layer=None, li
         return {"view": "borders", "borders": [
             {"state": s, "name": _state_name(index, s), "held_by": h, "terrain": t}
             for s, (h, t) in sorted(pic.borders.items(), key=lambda kv: (kv[1][0], kv[0]))][:limit]}
-    return {"error": f"unknown view {view!r}: divisions, state, country or borders"}
+    return {"error": f"unknown view {view!r}: divisions, state, country, borders, "
+                     + ", ".join(world_full.NEW_VIEWS)}
 
 
 def _division(d: Division, index) -> dict:
