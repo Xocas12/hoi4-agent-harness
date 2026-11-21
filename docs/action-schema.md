@@ -1,6 +1,6 @@
 # The action catalog
 
-The catalog is the agent's entire vocabulary. It is small on purpose: 49 verbs,
+The catalog is the agent's entire vocabulary. It is small on purpose: 52 verbs,
 listed by `hoi4-harness actions` (add `--json` for schemas).
 
 | Action | Category | Notes |
@@ -8,6 +8,7 @@ listed by `hoi4-harness actions` (add `--json` for schemas).
 | `set_national_focus` | politics | One at a time |
 | `start_research` | research | Fails when no slot is free |
 | `queue_construction` | economy | Enum of buildings (state buildings; province buildings are `queue_province_building`) |
+| `design_equipment` | economy | Designs a tank, ship or plane variant as the designer screen does (No Step Back / Man the Guns / By Blood Alone): the chassis, the modules by slot (checked against the slot, what a turret opens, the count limits, the unlocking technology), upgrade levels, an optional parent design; guarded by the DLC, every unlock and `has_<army\|navy\|air>_experience`, charged in the same `if` with the matching negative effect, a marker inside. The price is an upper bound (`docs/designers.md`). Console/inbox |
 | `queue_province_building` | economy | Fortification, coastal fortification, naval base, supply hub in one province, under the game's own `free_building_slots` rule for that province; one guarded block per level, a marker each (`docs/interaction.md` row 74). Railways are not offered |
 | `set_production` | economy | Declarative: total factories on a line. Edits a line that exists (by click, section 14b of `docs/live-session.md`), opens one only when none exists; a new line is guarded by `has_tech` of the technology that unlocks the equipment |
 | `change_production_equipment` | economy | Change the equipment of an existing line without duplicating it; by click, NOT live-verified |
@@ -36,6 +37,8 @@ listed by `hoi4-harness actions` (add `--json` for schemas).
 | `send_message` | memory | Single-player chat with the person and other LLM countries; free, never touches the game (`docs/chat.md`) |
 | `set_region_order` | steer | Steers the navy or air force by strategic region (dominate, raid_convoys, avoid, home_base, air_superiority) through the game's own AI; inbox or console (`docs/front-control.md`) |
 | `inspect_world` | query | Read-only; the map, armies and every other panel (faction, intel, projects, navy, air, politics, economy, diplomacy, research, occupation, supply, commanders) from the newest text save, other countries through intel (`docs/observation.md`) |
+| `list_designs` | query | Read-only; your own tank, ship or plane designs from the newest text save: name, type, version (the `parent` for `design_equipment`), modules, upgrades, obsolete, parent |
+| `describe_design_option` | query | Read-only; what a designer offers, from the files: the overview, one chassis (slots, categories, limits, defaults, stats, upgrades), module (stats, resources, `xp_cost`, conversions, unlocking technology, fit), module category or upgrade |
 | `read_event` | query | Read-only; the event window open in the player's seat, read from the screen (Windows OCR) and matched to the playset's events: id, title, description, every option with its effects, the match confidence, how long it has been open; with `id` an event from the files. Independent campaign with the mouse (`docs/events.md`) |
 | `choose_event_option` | events | Clicks one option of the open event window, as a person does, where the option's text was read; refused with nothing clicked when no window is open, it could not be matched, or the option is not shown to the country; verified by the window closing. NOT live-verified (`docs/events.md`) |
 | `list_decisions` | query | Read-only; answered from the playset's files, never reaches the game. Needs `--mod-context` |

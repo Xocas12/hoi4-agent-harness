@@ -411,7 +411,7 @@ def test_the_console_is_the_default_for_the_actions_verified_live():
         "click_gui_button", "set_front_order", "set_region_order", "change_law", "set_occupation_law",
         "diplomacy_act", "fire_advisor", "steer_production", "steer_intelligence", "steer_research",
         "steer_navy", "steer_air", "queue_province_building", "design_division_template",
-        "steer_spending", "steer_market", "steer_army"}
+        "design_equipment", "steer_spending", "steer_market", "steer_army"}
     opted_in = resolve_channels({name: "console" for name in CONSOLE_ACTIONS})
     assert {n for n, c in opted_in.items() if c == "console"} == CONSOLE_ACTIONS
     assert DEFAULT_CHANNELS["delegate_army_to_ai"] == "ui"

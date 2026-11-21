@@ -173,6 +173,45 @@ ACTIONS: list[ActionSpec] = [
         ),
     ),
     ActionSpec(
+        name="design_equipment",
+        category="economy",
+        description=(
+            "Design a tank, ship or plane variant, as the designer screen does (tank: No Step "
+            "Back, ship: Man the Guns, plane: By Blood Alone; refused without that DLC). kind, "
+            "base (a chassis type such as medium_tank_chassis_2, ship_hull_light_3, "
+            "small_plane_airframe_2), a name (letters, digits, space, underscore, hyphen), the "
+            "modules to change as {slot: module id} (a slot you leave out keeps the parent's "
+            "module; \"empty\" clears it) and upgrades as {upgrade: level} (levels only go up). "
+            "parent is an existing design of the same chassis, by version number or name "
+            "(list_designs); without it the design starts from the chassis' default design. Every "
+            "module is checked against the slot (the chassis' categories, plus what a turret "
+            "opens), the count limits and the technology that unlocks it, and the design must "
+            "fill every required slot. It costs army experience (tanks), navy experience (ships) "
+            "or air experience (planes): the add / replace / convert / remove price of each "
+            "changed slot from the game's defines plus the new module's xp_cost, and the upgrade "
+            "levels; the result states the cost and that it is an upper bound. Nothing is spent "
+            "if the game's own test (the tech, the DLC, enough experience) fails. obsolete_older "
+            "marks the older designs of the same family obsolete, so the game's AI builds the new "
+            "one. describe_design_option reads the slots, modules, stats and costs; list_designs "
+            "shows what you have."
+        ),
+        parameters=_schema(
+            {
+                "kind": {"type": "string", "enum": ["tank", "ship", "plane"]},
+                "base": {"type": "string", "description": "Chassis type id."},
+                "name": {"type": "string", "maxLength": 40},
+                "modules": {"type": "object", "additionalProperties": {"type": "string"},
+                            "description": "Slot id -> module id (or \"empty\")."},
+                "upgrades": {"type": "object", "additionalProperties": {"type": "integer"},
+                             "description": "Upgrade id -> target level."},
+                "parent": {"type": "string", "description": "Version number or name of a design "
+                           "of the same chassis."},
+                "obsolete_older": {"type": "boolean"},
+            },
+            ["kind", "base", "name"],
+        ),
+    ),
+    ActionSpec(
         name="deploy_divisions",
         category="army",
         description="Send divisions of a template into training/deployment.",
@@ -395,6 +434,35 @@ ACTIONS += [
         ),
     ),
     ActionSpec(
+        name="list_designs",
+        category="query",
+        description=(
+            "Read-only: your own tank, ship or plane designs from the newest save: name, "
+            "chassis type, version (the number design_equipment takes as parent), modules by "
+            "slot, upgrade levels, whether the design is obsolete and which one it was made "
+            "from. kind=tank|ship|plane. Says it does not exist when the designer's DLC is off. "
+            "The result comes back on your next call."
+        ),
+        parameters=_schema({"kind": {"type": "string", "enum": ["tank", "ship", "plane"]}}, ["kind"]),
+    ),
+    ActionSpec(
+        name="describe_design_option",
+        category="query",
+        description=(
+            "Read-only: what a designer offers, from the game's files. kind=tank|ship|plane "
+            "alone: the chassis (year, unlocking technology, slots), the module categories and "
+            "the upgrades. With id: one chassis (slots with their categories and defaults, "
+            "count limits, base stats, upgrades), one module (stats, resources, xp_cost, what it "
+            "converts from, the technology that unlocks it, the chassis it fits), one module "
+            "category (its modules) or one upgrade (levels, cost, technologies). Nothing happens "
+            "in the game. The result comes back on your next call."
+        ),
+        parameters=_schema(
+            {"kind": {"type": "string", "enum": ["tank", "ship", "plane"]},
+             "id": {"type": "string", "description": "A chassis, module, module category or upgrade."}},
+            ["kind"]),
+    ),
+    ActionSpec(
         name="describe_action",
         category="query",
         description=(
@@ -490,7 +558,7 @@ ACTIONS += [
 
 #: Read-only tools the harness answers from the playset's files; the game is not touched.
 QUERY_ACTIONS = frozenset({"list_decisions", "describe_action", "list_gui_buttons", "inspect_world",
-                           "read_event"})
+                           "read_event", "list_designs", "describe_design_option"})
 #: The queries answered from the playset's files (mod context); inspect_world reads the save.
 PLAYSET_QUERIES = frozenset({"list_decisions", "describe_action", "list_gui_buttons"})
 #: ``read_event`` is answered from the screen (adapters/event_choice.py) and the playset's events.
@@ -711,7 +779,7 @@ BY_NAME = {spec.name: spec for spec in ACTIONS}
 # Each is guarded by the game's own conditions and charged what the screen charges (docs/interaction.md).
 
 DIPLOMACY_ACTS = [*DIPLOMACY, "military_access", "leave_faction"]
-STEER_PRODUCTION_KINDS = ["equipment", "units", "building", "garrison", "min_factories",
+STEER_PRODUCTION_KINDS = ["equipment", "units", "building", "garrison", "min_factories", "variant",
                           "military_share", "dockyard_share", "air_balance", "surplus"]
 STEER_INTEL_KINDS = ["branch", "factories", "mission", "spymaster"]
 STEER_SPENDING_KINDS = ["land_xp", "air_xp", "navy_xp", "pp", "pp_amount"]
@@ -801,7 +869,10 @@ ACTIONS += [
             "more = 3, much_more = 10), military_share (no id: military factories against civilian "
             "ones), dockyard_share (no id: dockyards against military factories), air_balance (no "
             "id: how much of its factory share aircraft get), surplus (no id: how big a stockpile "
-            "surplus it keeps before shifting factories off). Level less/more/much_more or clear "
+            "surplus it keeps before shifting factories off), variant (id: a chassis family such as "
+            "medium_tank_chassis or small_plane_airframe: how much of that family the AI builds, "
+            "so it favours the designs you made; equipment_variant_production_factor). Level "
+            "less/more/much_more or clear "
             "(drop it); a kind has only the levels it makes sense at, and the result says which. "
             "It stands until changed."
         ),

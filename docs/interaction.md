@@ -141,7 +141,7 @@ An audit (`C:/dev/audit-table.md`, outside the repo) walked 122 actions a player
 * **missing**: no faithful route known (no effect, no token with documented syntax, or the other side's answer), or
   built on another branch (the event rows 1, 2 and 4).
 
-Now: **40** covered, **33** steered only, **13** refused, **27** needs recording, **9** missing (122). Before: 35 covered, 21 steered only, 11 refused, 55 missing. Row 119 and row 48 are mixed rows: the seat route covers the part
+Now: **43** covered, **33** steered only, **13** refused, **24** needs recording, **9** missing (122); rows 39 to 41 moved from needs recording to covered with the designers (`docs/designers.md`). Before: 35 covered, 21 steered only, 11 refused, 55 missing. Row 119 and row 48 are mixed rows: the seat route covers the part
 the table names first (hubs, forts) and refuses the rest (railways); the class is the better route.
 
 | # | Screen | Action | Audit | Now | How |
@@ -184,10 +184,10 @@ the table names first (hubs, forts) and refuses the rest (railways); the class i
 | 36 | Production | Pick a MIO for a line | REFUSED | REFUSED |  |
 | 37 | Production | MIO traits, funding, policy | REFUSED | REFUSED |  |
 | 38 | Equipment | Upgrade equipment variant (nation-wide upgrade designer) | MISSING | STEERED ONLY | steer_spending equipment_variant (the AI's desire to spend XP on upgrades); the designer is mouse-only |
-| 39 | Equipment | Design tank variant (chassis/modules) | MISSING | NEEDS RECORDING | tank designer: mouse only, no effect charges what the designer charges |
-| 40 | Equipment | Design ship variant | MISSING | NEEDS RECORDING | ship designer: mouse only |
-| 41 | Equipment | Design plane variant | MISSING | NEEDS RECORDING | plane designer: mouse only |
-| 42 | Equipment | Set default design, rename, remove variants | MISSING | NEEDS RECORDING | designer: mouse only |
+| 39 | Equipment | Design tank variant (chassis/modules) | MISSING | COVERED | `design_equipment kind=tank` (`console._plan_design`, `designers.py`, `docs/designers.md`): `create_equipment_variant`, guarded by the No Step Back DLC, `has_tech` of the chassis and of every changed module, the slot / category / count-limit rules read from the files, and `has_army_experience > cost`, charged with `army_experience = -cost` in the same `if`; a marker inside. The cost is an UPPER BOUND (the files do not say how a module's own `xp_cost` combines with the four `EQUIPMENT_MODULE_*_XP_COST` defines) |
+| 40 | Equipment | Design ship variant | MISSING | COVERED | `design_equipment kind=ship`: as row 39 with Man the Guns and navy experience (no ship module carries an `xp_cost`, so the defines alone price it) |
+| 41 | Equipment | Design plane variant | MISSING | COVERED | `design_equipment kind=plane`: as row 39 with By Blood Alone and air experience. Rival mode: `steer_production kind=variant` (`equipment_variant_production_factor`, id = a chassis family) and `obsolete_older` steer the AI to the newest design |
+| 42 | Equipment | Set default design, rename, remove variants | MISSING | NEEDS RECORDING | designer: mouse only. Only `obsolete_older` (marks the older designs of the family obsolete when a design is made) and the read side (`list_designs`) exist |
 | 43 | Equipment | Convert stockpile equipment to another variant | MISSING | NEEDS RECORDING | stockpile conversion: mouse only |
 | 44 | Market | Buy equipment on the international market | MISSING | STEERED ONLY | steer_market buy / buy_from / trade_desire / spend |
 | 45 | Market | Sell equipment / put on market | MISSING | STEERED ONLY | steer_market sell |
@@ -269,9 +269,9 @@ the table names first (hubs, forts) and refuses the rest (railways); the class i
 | 121 | Meta | Journal note | COVERED | COVERED |  |
 | 122 | Meta | Look up a decision/focus/tech in full | COVERED | COVERED |  |
 
-**Needs live recording** (rows 20, 22, 23, 31, 39, 40, 41, 42, 43, 49, 53, 55, 56, 57, 58, 59, 60, 68, 69, 72, 73, 76, 78, 85, 105, 108, 113): the focus cancel button, the research dialog's MIO row and
-cancel, the production screen's priority, order, target and efficiency, the equipment, tank, ship and plane
-designers and the stockpile conversion, the construction queue's cancel and reorder, divisions (upgrade, reinforcement
+**Needs live recording** (rows 20, 22, 23, 31, 42, 43, 49, 53, 55, 56, 57, 58, 59, 60, 68, 69, 72, 73, 76, 78, 85, 105, 108, 113): the focus cancel button, the research dialog's MIO row and
+cancel, the production screen's priority, order, target and efficiency, the designers' default / rename / remove
+and the stockpile conversion (the tank, ship and plane designers themselves are built: row 39 to 41), the construction queue's cancel and reorder, divisions (upgrade, reinforcement
 priority, disband, reserve), armies and groups, generals and admirals (recruit, traits, assign), command power,
 paratroops and the other special orders, stances, task forces, wing rebasing, carrier wings, the attache, operative
 recruiting and extraction, and breakthrough points. Each is a `ui_scripts` recording or a click executor
@@ -301,6 +301,12 @@ for members are not readable) and 40.
   guarded and the result says the effect pays it. Cost modifiers are named, not applied: the base cost is charged.
 * **`queue_province_building`** (`console._plan_province_building`): row 74.
 * **`design_division_template`** (`console._plan_template`): row 50.
+* **`design_equipment`** (`console._plan_design`, `designers.plan_design`), **`list_designs`** and
+  **`describe_design_option`**: rows 39 to 41, `docs/designers.md`. One `if` in the country's scope: the designer's
+  DLC (`has_dlc`), `has_tech` for the chassis and each changed module, `has_<army|navy|air>_experience > cost`;
+  body `create_equipment_variant` then the negative experience effect, then the marker. Slots, allowed categories
+  (including what a turret opens), count limits, required slots and upgrade levels are checked harness-side and
+  refused with the reason. A module nothing unlocks is refused, not guessed.
 * **`set_occupation_law state=`** (`policy_effects.plan_occupation_law`): row 65.
 * **`steer_spending`, `steer_market`, `steer_army`** and the new kinds of `steer_production` and `steer_intelligence`
   (`steering.py`): rows 12, 13, 18, 23, 47, 51, 69, 70.

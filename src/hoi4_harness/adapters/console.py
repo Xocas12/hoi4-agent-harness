@@ -60,7 +60,7 @@ from .ui_scripts import verify
 #: skip the time and cost a player pays, which is a different game.
 CONSOLE_ACTIONS = frozenset({
     "queue_construction", "set_production", "hire_advisor",
-    "queue_province_building", "design_division_template",
+    "queue_province_building", "design_division_template", "design_equipment",
     "set_ai_directive", "set_ai_posture", "clear_ai_directives", "take_decision",
     "click_gui_button", "set_front_order", "set_region_order",
     "change_law", "set_occupation_law", "diplomacy_act", "fire_advisor",
@@ -72,8 +72,8 @@ CONSOLE_ACTIONS = frozenset({
 MARKED_ACTIONS = frozenset({
     "click_gui_button", "set_front_order", "set_region_order", "change_law", "set_occupation_law",
     "diplomacy_act", "hire_advisor", "queue_province_building", "design_division_template",
-    "fire_advisor", "steer_production", "steer_intelligence", "steer_research", "steer_navy",
-    "steer_air", "steer_spending", "steer_market", "steer_army",
+    "design_equipment", "fire_advisor", "steer_production", "steer_intelligence", "steer_research",
+    "steer_navy", "steer_air", "steer_spending", "steer_market", "steer_army",
 })
 #: Marked actions the telemetry can also show: when the marker line cannot be found (keys
 #: transport, no inbox log), the state read-back decides, as before the marker existed.
@@ -264,6 +264,9 @@ class ConsoleChannel:
         #: queue_province_building: the levels each planned call asked for.
         self.click_levels: dict[int, int] = {}
         self.steer_pending: dict[int, tuple[str, str]] = {}
+        #: The country's own designs, for design_equipment's parent: the world observer
+        #: (``variants(state)``), attached by ``Environment.attach_world``. None: no save reader.
+        self.designs = None
         from ..steering import Standing as SteerStanding
         self.steer_standing = SteerStanding(getattr(self.config, 'archive_dir', None))
 
@@ -288,6 +291,8 @@ class ConsoleChannel:
             return self._plan_province_building(call, args, country)
         if call.name == "design_division_template":
             return self._plan_template(call, args, country)
+        if call.name == "design_equipment":
+            return self._plan_design(call, args, country, state)
         if call.name == "hire_advisor":
             return self._plan_advisor(call, args, country, state)
         if call.name == "take_decision":
@@ -524,6 +529,69 @@ class ConsoleChannel:
         if not plan.executable:
             raise Refused(plan.reason)
         return self._marked(call, plan.nonce, plan.line, plan.done, plan.unchecked)
+
+    def _plan_design(self, call, args, country, state) -> Planned:
+        """Design a tank, ship or plane variant: the designer's own rules (the DLC, the chassis'
+        and modules' unlocks, the slots, the count limits) and the experience it charges, in one
+        guarded effect with a marker inside. ``designers.plan_design`` has the rules and the price."""
+        from .. import designers, policy_effects
+
+        name = str(args["name"])
+        if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9 _\-]{0,39}", name):
+            raise Refused("a design name is 1 to 40 letters, digits, spaces, underscores or hyphens")
+        kind, base = str(args["kind"]), str(args["base"])
+        index = self._need_index("reading the designer's chassis and modules")
+        data = index.designers()
+        for text in [*[str(m) for m in (args.get("modules") or {}).values()],
+                     *[str(m) for m in (args.get("modules") or {})], *(args.get("upgrades") or {}), base]:
+            if not _SAFE_ID.match(text):
+                raise Refused(f"{text!r} has characters the harness will not write into script")
+        variants: list = []
+        if self.designs is not None:
+            try:
+                variants = list(self.designs.variants(state))
+            except Exception:  # noqa: BLE001 - a save that cannot be read leaves the chassis defaults
+                variants = []
+        parent = None
+        default = None
+        if args.get("parent") not in (None, ""):
+            if not variants:
+                raise Refused("a parent design is read from the newest text save, and none could be "
+                              "read: leave parent out to start from the chassis' default design")
+            try:
+                parent = designers.find_parent(variants, base, args["parent"])
+            except designers.DesignRefused as exc:
+                raise Refused(str(exc)) from None
+        else:
+            frame = designers.default_design(variants, base)
+            default = dict(frame.modules) if frame is not None else None
+        try:
+            plan = designers.plan_design(
+                data, kind, base, dict(args.get("modules") or {}), dict(args.get("upgrades") or {}),
+                parent=parent, default_modules=default, active=index.playset.dlcs)
+        except designers.DesignRefused as exc:
+            raise Refused(str(exc)) from None
+        for tech in [t for group in plan.tech_groups for t in group]:
+            if not _SAFE_ID.match(tech):
+                raise Refused(f"a technology that unlocks part of this design ({tech!r}) has "
+                              "characters the harness will not write into script")
+        spent = f"{plan.cost:g} {plan.experience} experience"
+        done = (f"design {name} created from {plan.parent_label}: {kind} {plan.chassis.id}, "
+                f"{len(plan.changes)} module change(s)"
+                + (f", {len(plan.steps)} upgrade(s)" if plan.steps else "")
+                + f"; {spent} taken (an upper bound: the screen may have asked less)")
+        typed = self.transport != "inbox"
+        unchecked = list(plan.unchecked)
+        if typed:
+            unchecked.append("the DLC is tested by the harness only: a DLC name has spaces, which the "
+                             "typed console cannot carry inside quotes (the inbox tests has_dlc in the "
+                             "game); a design name with spaces is refused on this transport")
+        out = policy_effects.finish(
+            country, plan.guard(dlc_test=not typed), plan.body(name, bool(args.get("obsolete_older"))),
+            plan.cost, unchecked, done, self.config.effect_command, typed)
+        if not out.executable:
+            raise Refused(out.reason)
+        return self._marked(call, out.nonce, out.line, out.done, out.unchecked)
 
     def _plan_advisor(self, call, args, country, state) -> Planned:
         from .. import policy_effects

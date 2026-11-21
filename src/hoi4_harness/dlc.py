@@ -243,13 +243,16 @@ FEATURES: tuple[Feature, ...] = (
     Feature("tank_designer", "Tank designer (modules, variants)", ("No Step Back",),
             'common/units/equipment/modules/00_tank_modules.txt opens with equipment_modules = '
             '{ limit = { has_dlc = "No Step Back" } }; common/defines/00_defines.lua '
-            '(DEFAULT_MODULE_VARIANT_CREATION_XP_CUTOFF_LAND): "the tank designer DLC feature"'),
+            '(DEFAULT_MODULE_VARIANT_CREATION_XP_CUTOFF_LAND): "the tank designer DLC feature"',
+            used_by=("design_equipment kind=tank", "list_designs", "describe_design_option")),
     Feature("ship_designer", "Ship designer (modules, variants)", ("Man the Guns",),
             'common/units/equipment/modules/00_ship_modules.txt opens with equipment_modules = '
-            '{ limit = { has_dlc = "Man the Guns" } }'),
+            '{ limit = { has_dlc = "Man the Guns" } }',
+            used_by=("design_equipment kind=ship", "list_designs", "describe_design_option")),
     Feature("plane_designer", "Plane designer (modules, variants)", ("By Blood Alone",),
             'common/units/equipment/modules/00_plane_modules.txt opens with equipment_modules = '
-            '{ limit = { has_dlc = "By Blood Alone" } }'),
+            '{ limit = { has_dlc = "By Blood Alone" } }',
+            used_by=("design_equipment kind=plane", "list_designs", "describe_design_option")),
 )
 
 #: Balance of power bars (``common/bop``), by the DLC the script that sets each one up is tied

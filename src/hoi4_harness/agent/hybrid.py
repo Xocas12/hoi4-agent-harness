@@ -56,8 +56,8 @@ GAME_AI_OWNED = frozenset({
     "set_national_focus", "start_research", "queue_construction", "queue_province_building",
     "set_production",
     "change_production_equipment",
-    "design_division_template", "deploy_divisions", "delegate_army_to_ai", "set_trade",
-    "set_game_speed", "diplomacy",
+    "design_division_template", "design_equipment", "deploy_divisions", "delegate_army_to_ai",
+    "set_trade", "set_game_speed", "diplomacy",
 })
 
 MODES = ("llm", "ai", "game_ai")

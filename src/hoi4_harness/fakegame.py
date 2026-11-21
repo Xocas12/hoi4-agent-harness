@@ -410,6 +410,12 @@ class FakeGame:
         #: The division templates the country holds (name -> its regiments and support), and the
         #: occupation law set per state.
         self.templates: dict[str, dict] = {}
+        #: Experience by branch (``army_experience`` / ``navy_experience`` / ``air_experience``
+        #: effects, ``has_*_experience`` triggers), the equipment variants
+        #: ``create_equipment_variant`` made, and the DLCs ``has_dlc`` answers for (None: all).
+        self.experience: dict[str, float] = {"army": 0.0, "navy": 0.0, "air": 0.0}
+        self.variants: list[dict] = []
+        self.dlcs: set[str] | None = None
         self.state_occupation_laws: dict[str, str] = {}
         #: Global flags set through the console (llm_bridge_strong_directives).
         self.global_flags: set[str] = set()
@@ -937,7 +943,11 @@ class FakeGame:
                 name, sep, rest = script.partition(" = ")
                 line = (f"effect {batch.tag} {name}" if sep and rest == "yes" and " " not in name
                         else f"eval_effect {batch.tag} = {{ {script} }}")
-                self._console(line)
+                self._in_inbox = True
+                try:
+                    self._console(line)
+                finally:
+                    self._in_inbox = False
             self._write(self._llmb("inbox", tag=batch.tag, id=batch.id, via="event"))
 
     def _finish_province_queue(self) -> None:
@@ -1305,7 +1315,9 @@ class FakeGame:
                               "is modelled)")
 
     def _eval_effect(self, rest: str) -> None:
-        for quoted in re.findall(r'"([^"]*)"', rest):
+        for quoted in ([] if getattr(self, "_in_inbox", False) else re.findall(r'"([^"]*)"', rest)):
+            # The inbox runs in the mod as an ordinary event effect: quoted text with spaces is fine
+            # there (only the typed console splits it).
             if " " in quoted or "=" in quoted:
                 # Seen on 1.19.5: the console splits on spaces and '=' inside quotes,
                 # and takes the second piece for an effect.
@@ -1332,6 +1344,10 @@ class FakeGame:
                 self._add_production(entry)
             elif key == "division_template":
                 self._division_template(entry)
+            elif key == "create_equipment_variant":
+                self._create_variant(entry)
+            elif key in ("army_experience", "navy_experience", "air_experience"):
+                self.experience[key.removesuffix("_experience")] += _number(str(entry.value))
             elif key == "activate_advisor":
                 self._activate_advisor(str(entry.value))
             elif key == "add_political_power":
@@ -1483,8 +1499,10 @@ class FakeGame:
             return _compare(self.war_support, entry.op, _number(str(entry.value)))
         if key in ("original_tag", "tag"):
             return str(entry.value) == self.country
+        if key in ("has_army_experience", "has_navy_experience", "has_air_experience"):
+            return _compare(self.experience[key.split("_")[1]], entry.op, _number(str(entry.value)))
         if key == "has_dlc":
-            return True
+            return self.dlcs is None or str(entry.value) in self.dlcs
         if key == "has_war_with":
             return str(entry.value) in self.at_war_with
         if key == "has_guaranteed":
@@ -1536,6 +1554,40 @@ class FakeGame:
         self.templates[str(name.value)] = {
             "regiments": [k for k, _x, _y in slots],
             "support": [e.key for e in (support.value if support else [])]}
+
+    def _create_variant(self, entry: Entry) -> None:
+        """``create_equipment_variant``: records the design (the type must be a modular chassis of
+        the playset when there is one), numbering its version within the type."""
+        body = entry.value if isinstance(entry.value, list) else []
+        kind = _get(body, "type")
+        if kind is None or not str(kind.value):
+            raise ScriptError("create_equipment_variant needs a type")
+        chassis = str(kind.value)
+        if self.index is not None:
+            known = self.index.designers().chassis
+            if known and (chassis not in known or known[chassis].is_archetype):
+                raise ScriptError(f"create_equipment_variant: {chassis} is not an equipment type "
+                                  "(an archetype is not one)")
+
+        def mapping(key: str) -> dict[str, str]:
+            block = _get(body, key)
+            return {e.key: str(e.value) for e in (block.value if block else [])
+                    if not isinstance(e.value, list)}
+
+        def text(key: str, default=None):
+            found = _get(body, key)
+            return str(found.value) if found is not None else default
+
+        version = 1 + max([v["version"] for v in self.variants if v["type"] == chassis], default=0)
+        self.variants.append({
+            "type": chassis, "name": text("name"), "version": version,
+            "parent_version": int(text("parent_version", "0")), "obsolete": text("obsolete") == "yes",
+            "mark_older_equipment_obsolete": text("mark_older_equipment_obsolete") == "yes",
+            "modules": mapping("modules"), "upgrades": mapping("upgrades")})
+        if text("mark_older_equipment_obsolete") == "yes":
+            for v in self.variants[:-1]:
+                if v["type"] == chassis:
+                    v["obsolete"] = True
 
     def _add_construction(self, entry: Entry, scope: dict) -> None:
         state = scope.get("state")
