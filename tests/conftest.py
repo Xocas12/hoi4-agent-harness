@@ -54,3 +54,11 @@ def _no_real_display(monkeypatch):
     test pins it (or injects the readers) instead of depending on this machine."""
     monkeypatch.setattr("hoi4_harness.adapters.input_driver.default_display_settings", lambda: None)
     monkeypatch.setattr("hoi4_harness.adapters.input_driver.client_rect", lambda: None)
+
+
+@pytest.fixture(autouse=True)
+def _own_harness_home(monkeypatch, tmp_path_factory):
+    """Nothing in a test may touch the real ~/.hoi4-harness (setup.json, players.json, chat)."""
+    home = tmp_path_factory.mktemp("harness-home")
+    monkeypatch.setenv("HOI4_HARNESS_HOME", str(home))
+    monkeypatch.delenv("HOI4_CHAT", raising=False)

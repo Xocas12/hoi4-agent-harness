@@ -10,6 +10,7 @@ person's behaviour makes safe (``rival/safety.py``).
 
 from __future__ import annotations
 
+import copy
 import re
 from pathlib import Path
 
@@ -122,6 +123,29 @@ def share_weights(config: HarnessConfig, tags: list[str]) -> dict[str, float]:
     return weights
 
 
+def planner_config_for(config: HarnessConfig, tag: str):
+    """``tag``'s model settings: the shared planner with that country's own provider, model, base
+    URL and key variable from ``rival_players`` laid over it. A copy; ``config`` is not touched."""
+    planner = copy.deepcopy(config.planner)
+    own = config.rival_players.get(tag.upper()) or {}
+    if own.get("provider"):
+        planner.switch_provider(own["provider"])
+        planner.base_url = own.get("base_url") or None
+    elif "base_url" in own:
+        planner.base_url = own["base_url"] or None
+    if own.get("model"):
+        planner.model = own["model"]
+    if own.get("api_key_env"):
+        planner.api_key_env = own["api_key_env"]
+    return planner
+
+
+def instruction_for(config: HarnessConfig, tag: str) -> str:
+    """``tag``'s standing instruction: its own when it has one, else the run's."""
+    own = (config.rival_players.get(tag.upper()) or {}).get("instruction", "")
+    return own.strip() or config.instruction
+
+
 def apply_defaults(config: HarnessConfig) -> HarnessConfig:
     """Make ``config`` a rival run's. Idempotent."""
     tags = _several(config)
@@ -142,6 +166,19 @@ def apply_defaults(config: HarnessConfig) -> HarnessConfig:
         raise RivalConfigError("--rival has its own queue and policy (--rival-act-when); "
                                "--advisor and --handover do not combine with it")
     config.rival, config.country = tag, tag
+    own = config.rival_players.get(tag)
+    if own is not None:
+        # This country's own model, cap and instruction. New objects: a several-country run
+        # checks one country on a shallow copy, and must not change the shared ones.
+        config.planner = planner_config_for(config, tag)
+        config.instruction = instruction_for(config, tag)
+        prices = {k: own[k] for k in ("usd_per_m_input", "usd_per_m_output") if own.get(k) is not None}
+        if "max_usd" in own or prices:
+            config.budget = copy.deepcopy(config.budget)
+            if "max_usd" in own:
+                config.budget.max_usd = own["max_usd"]
+            for key, value in prices.items():
+                setattr(config.budget, key, float(value))
     config.adapter = "headless"
     config.operational_control = "game_ai"
     config.clock_owner = "player"          # the person's clock: never paused, resumed or set

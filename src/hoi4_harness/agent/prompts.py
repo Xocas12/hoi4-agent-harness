@@ -250,6 +250,15 @@ def playset_note(name: str) -> str:
     )
 
 
+INSTRUCTION = (
+    "The person who set up this run gave you a standing instruction. It holds for the whole run, "
+    "not one turn: treat it as the strategic direction you are playing toward, and keep to it "
+    "unless the game makes it impossible, in which case say so with `note` and follow its spirit. "
+    "It does not override the tools' rules or what the game allows. "
+    "Instruction: {text}"
+)
+
+
 def build_system(
     guidance: str | Path | None = "doctrine",
     extra: str = "",
@@ -266,6 +275,7 @@ def build_system(
     campaign_control: str = "game_ai",
     campaign_hands: dict | None = None,
     control_map=None,
+    instruction: str = "",
 ) -> str:
     """Assemble the system prompt.
 
@@ -308,6 +318,8 @@ def build_system(
         parts.append(text)
     if extra:
         parts.append(extra.strip())
+    if instruction and instruction.strip():
+        parts.append(INSTRUCTION.format(text=instruction.strip()))
     return "\n\n".join(parts)
 
 
@@ -364,6 +376,7 @@ def system_for(config, index=None) -> str:
         campaign_control=getattr(config, "campaign_control", "game_ai"),
         campaign_hands=_hands_for(config),
         control_map=config.control_map() if hasattr(config, "control_map") else None,
+        instruction=getattr(config, "instruction", ""),
     )
 
 
