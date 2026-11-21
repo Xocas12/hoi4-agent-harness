@@ -47,11 +47,12 @@ import time
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from . import fakesave, modgen
+from . import cadence, fakesave, modgen
 from .actions.catalog import AI_DIRECTIVES
 from .adapters.keys import key_name
 from .adapters.mock import MockAdapter
 from .adapters.window import FocusCheck
+from .cadence import DAILY_HOURS
 from .fakearmy import FakeArmy, FakeGui
 from .fakecampaign import FakeAI
 from .identifiers import IdentifierIndex, Playset
@@ -364,6 +365,14 @@ class FakeGame:
         self.flags: set[str] = set()
         #: Global flags set through the console (llm_bridge_strong_directives).
         self.global_flags: set[str] = set()
+        #: Hours between two telemetry ticks (cadence.py), set through the console like the
+        #: mod's ``llm_bridge_telemetry_every_<H>h``: 24 once a day (the default), below that
+        #: several ticks a day, a multiple of 24 every N days. ``_tick_left`` counts the days
+        #: to the next tick in the slow mode, as the mod's ``llmb_tick_left`` does.
+        self.telemetry_hours = DAILY_HOURS
+        self._tick_left = 1
+        #: The in-game hour the log lines are stamped with (the daily tick runs at TICK_HOUR).
+        self._hour = TICK_HOUR
         #: A game that is not running writes nothing and ticks no day (``kill``).
         self.alive = True
         #: Whether the game is the focused window, and the wall-clock second it comes
@@ -470,7 +479,7 @@ class FakeGame:
 
     def _stamp(self) -> str:
         d = self.world.date
-        return f"[{time.strftime('%H:%M:%S')}][{d.year}.{d.month:02d}.{d.day:02d}.{TICK_HOUR:02d}]"
+        return f"[{time.strftime('%H:%M:%S')}][{d.year}.{d.month:02d}.{d.day:02d}.{self._hour:02d}]"
 
     def _write(self, *lines: str) -> None:
         with self.log_path.open("a", encoding="utf-8", newline="\n") as handle:
@@ -515,7 +524,7 @@ class FakeGame:
         tag = self.country
         lines = [self._llmb(
             "state",
-            date=f" {TICK_HOUR}:00, {d.day} {MONTHS[d.month - 1]}, {d.year}", tag=tag,
+            date=f" {self._hour}:00, {d.day} {MONTHS[d.month - 1]}, {d.year}", tag=tag,
             pp=f"{s.political_power:.4f}", stab=f"{s.stability * 100:.3f}",
             ws=f"{s.war_support * 100:.0f}", civ=s.civilian_factories, mil=s.military_factories,
             doc=s.dockyards, owned=s.civilian_factories + s.military_factories + s.dockyards,
@@ -827,10 +836,34 @@ class FakeGame:
         if self.human_ai:
             self.ai.tick_day()
         if self.visible:
-            self.emit_state()
-            self.emit_front()
+            self._telemetry_ticks()
             if self.date_ordinal % 7 == 0:
                 self.emit_campaign()
+
+    def _telemetry_ticks(self) -> None:
+        """The mod's cadence for one in-game day: ``llm_bridge_daily_tick`` (daily, or every N
+        days) or the hidden event chain (``hours`` below 24: a tick every H hours, stamped with
+        the hour it fires at). The world only moves once a day, so the sub-daily ticks of a day
+        carry the same numbers; what differs is the hour on the lines."""
+        hours = self.telemetry_hours
+        if hours < DAILY_HOURS:
+            first = TICK_HOUR % hours
+            for hour in range(first, 24, hours):
+                self._hour = hour
+                self.emit_tick()
+            self._hour = TICK_HOUR
+        elif hours == DAILY_HOURS:
+            self.emit_tick()
+        else:
+            self._tick_left -= 1
+            if self._tick_left < 1:
+                self._tick_left = hours // DAILY_HOURS
+                self.emit_tick()
+
+    def emit_tick(self) -> None:
+        """The mod's ``llm_bridge_emit_tick``: the state line, then the front picture."""
+        self.emit_state()
+        self.emit_front()
 
     def _built(self, item: ConstructionItem) -> None:
         """A finished building leaves the queue and takes its slot for good."""
@@ -1311,6 +1344,13 @@ class FakeGame:
             return self.emit_front()
         if name == "llm_bridge_emit_campaign":
             return self.emit_campaign()
+        if name.startswith("llm_bridge_telemetry_every_") and name.endswith("h"):
+            try:
+                hours = cadence.validate(name.removeprefix("llm_bridge_telemetry_every_")[:-1])
+            except ValueError:
+                raise ScriptError(f"Unknown scripted effect: {name}") from None
+            self.telemetry_hours, self._tick_left = hours, 1
+            return self._event(modgen.EVENT_TELEMETRY_CADENCE, str(hours))
         if name == "llm_bridge_mark_harness":
             self.flags.add("llmb_harness")
             return self._event(16)

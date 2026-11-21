@@ -118,6 +118,9 @@ def test_every_effect_the_decisions_call_exists(path):
 
 def test_every_effect_an_effect_calls_exists():
     defined = _defined_effects()
+    # An effect may also test a scripted trigger (``limit = { llm_bridge_is_harness = yes }``).
+    for path in (MOD / "common" / "scripted_triggers").glob("*.txt"):
+        defined |= set(re.findall(r"^(\w+) = \{", path.read_text(encoding="utf-8"), flags=re.M))
     for path in (MOD / "common" / "scripted_effects").glob("*.txt"):
         body = strip_comments(path.read_text(encoding="utf-8"))
         for called in re.findall(r"\b(llm_bridge_\w+) = yes", body):

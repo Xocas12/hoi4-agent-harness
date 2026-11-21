@@ -39,6 +39,7 @@ from typing import TYPE_CHECKING
 
 from .actions.catalog import AI_DIRECTIVES
 from .adapters.logtail import SCHEMA_VERSION
+from .cadence import DAILY_HOURS, SUBDAILY_HOURS, SUPPORTED_HOURS
 
 if TYPE_CHECKING:
     from .identifiers import IdentifierIndex
@@ -87,6 +88,8 @@ STRONG_POSTURE_BOOST = 1000
 EVENT_TARGET_SELECTED = 13
 EVENT_DIRECTIVE_RAISED = 14
 EVENT_THEATER_POSTURE = 15
+#: The telemetry cadence was set (cadence.py); detail is the hours between two ticks.
+EVENT_TELEMETRY_CADENCE = 20
 
 #: Theater posture -> the front_unit_request value it raises against the tag.
 #: Mirrors the global posture blocks in llm_bridge_directives.txt, which use 50
@@ -119,6 +122,8 @@ def generate(tags: tuple[str, ...] | list[str] = DEFAULT_TAGS) -> list[Generated
         GeneratedFile("common/ai_strategy/llm_bridge_targets.txt", _strategies(tags)),
         GeneratedFile("common/scripted_effects/llm_bridge_targets.txt", _effects(tags)),
         GeneratedFile("common/decisions/llm_bridge_target_decisions.txt", _decisions(tags)),
+        GeneratedFile("common/scripted_effects/llm_bridge_cadence.txt", _cadence_effects()),
+        GeneratedFile("events/llm_bridge_cadence_events.txt", _cadence_events()),
         GeneratedFile(
             "localisation/english/llm_bridge_targets_l_english.yml", _localisation(tags), bom=True
         ),
@@ -318,6 +323,152 @@ def _localisation(tags: tuple[str, ...]) -> str:
             'the selected target."'
         )
     return "\n".join(lines) + "\n"
+
+
+# --- the telemetry cadence (cadence.py) ----------------------------------------
+
+
+def _cadence_effects() -> str:
+    """The telemetry tick and the effects that set how often it runs.
+
+    ``llm_bridge_daily_tick`` is what ``on_daily`` calls for the player: once a day it either
+    prints (the default, and every N days when slower) or leaves the printing to the event
+    chain (below 24 hours) and only checks that the chain is alive. The chain is one hidden
+    event per supported hour count, because ``hours`` in ``country_event`` is a literal (no
+    vanilla file passes a variable, and the documentation shows no variable form). Per value N
+    the country keeps ``llmb_tick_inflight_N``, the number of events of that chain waiting to
+    fire, and the rules that make it idempotent are these three:
+
+    * a chain is started only while ``inflight_N < 1``, so setting the same cadence twice, or
+      A -> B -> A before A's event has fired, never leaves two events of one chain waiting;
+    * an event that fires re-schedules itself only while ``llmb_tick_hours`` still equals its N,
+      so changing the cadence ends the old chain at its next firing with nothing to cancel;
+    * ``inflight`` and ``llmb_tick_hours`` are country variables, so both survive a save and
+      load with the scheduled event itself.
+
+    The daily tick restarts a chain whose event was lost (a country that stopped existing): every
+    firing sets ``llmb_tick_alive`` and the tick clears it, so a day without a firing, which a
+    live chain never has, resets the stuck counter and starts the chain again. That takes one
+    to two days after the loss.
+    """
+    gate = "llm_bridge_is_harness = yes"
+    out = [
+        HEADER,
+        "# Telemetry cadence. llmb_tick_hours: 0 or 24 = once a day (the default), 1..12 = the",
+        "# event chain, a multiple of 24 = every N days. Set with `effect <TAG> llm_bridge_",
+        "# telemetry_every_<H>h` (hoi4-harness: --telemetry-hours). See docs/mod-bridge.md.",
+        "",
+        "# One tick: the state line (with its army, war and probe lines) and the front picture.",
+        "llm_bridge_emit_tick = {",
+        "\tllm_bridge_emit_state = yes",
+        "\tllm_bridge_emit_front = yes",
+        "}",
+        "",
+        "# on_daily, in the player's scope. The three limits are mutually exclusive.",
+        "llm_bridge_daily_tick = {",
+        "\tif = {",
+        "\t\tlimit = { check_variable = { llmb_tick_hours > 24 } }",
+        "\t\tsubtract_from_variable = { llmb_tick_left = 1 }",
+        "\t\tif = {",
+        "\t\t\tlimit = { check_variable = { llmb_tick_left < 1 } }",
+        "\t\t\tset_variable = { llmb_tick_left = llmb_tick_days }",
+        "\t\t\tllm_bridge_emit_tick = yes",
+        "\t\t}",
+        "\t}",
+        "\tif = {",
+        f"\t\tlimit = {{ check_variable = {{ llmb_tick_hours > 0 }} "
+        f"check_variable = {{ llmb_tick_hours < {DAILY_HOURS} }} }}",
+        "\t\t# The event chain prints. Every firing sets llmb_tick_alive; a day with none means",
+        "\t\t# the event was lost (the country stopped existing), so forget the stuck counter and",
+        "\t\t# start the chain again. A live chain fires at least twice a day: never doubled.",
+        "\t\tif = {",
+        "\t\t\tlimit = { check_variable = { llmb_tick_alive < 1 } }",
+    ]
+    for hours in SUBDAILY_HOURS:
+        out += [
+            "\t\t\tif = {",
+            f"\t\t\t\tlimit = {{ check_variable = {{ llmb_tick_hours = {hours} }} }}",
+            f"\t\t\t\tset_variable = {{ llmb_tick_inflight_{hours} = 0 }}",
+            f"\t\t\t\tllm_bridge_tick_schedule_{hours} = yes",
+            "\t\t\t}",
+        ]
+    out += [
+        "\t\t}",
+        "\t\tset_variable = { llmb_tick_alive = 0 }",
+        "\t}",
+        "\tif = {",
+        f"\t\tlimit = {{ OR = {{ check_variable = {{ llmb_tick_hours < 1 }} "
+        f"check_variable = {{ llmb_tick_hours = {DAILY_HOURS} }} }} }}",
+        "\t\tllm_bridge_emit_tick = yes",
+        "\t}",
+        "}",
+        "",
+    ]
+    for hours in SUBDAILY_HOURS:
+        out += [
+            f"llm_bridge_tick_schedule_{hours} = {{",
+            f"\tadd_to_variable = {{ llmb_tick_inflight_{hours} = 1 }}",
+            f"\tcountry_event = {{ id = llmb_tick.{hours} hours = {hours} }}",
+            "}",
+            "",
+            f"llm_bridge_tick_fire_{hours} = {{",
+            f"\tsubtract_from_variable = {{ llmb_tick_inflight_{hours} = 1 }}",
+            "\tif = {",
+            f"\t\tlimit = {{ check_variable = {{ llmb_tick_hours = {hours} }} }}",
+            "\t\tset_variable = { llmb_tick_alive = 1 }",
+            f"\t\tif = {{ limit = {{ {gate} }} llm_bridge_emit_tick = yes }}",
+            f"\t\tllm_bridge_tick_schedule_{hours} = yes",
+            "\t}",
+            "}",
+            "",
+        ]
+    for hours in SUPPORTED_HOURS:
+        out.append(f"llm_bridge_telemetry_every_{hours}h = {{")
+        out.append(f"\tset_variable = {{ llmb_tick_hours = {hours} }}")
+        if hours in SUBDAILY_HOURS:
+            out += [
+                "\tif = {",
+                f"\t\tlimit = {{ check_variable = {{ llmb_tick_inflight_{hours} < 1 }} }}",
+                f"\t\tllm_bridge_tick_schedule_{hours} = yes",
+                "\t}",
+                "\tset_variable = { llmb_tick_alive = 1 }",
+            ]
+        else:
+            out += [
+                f"\tset_variable = {{ llmb_tick_days = {max(hours // 24, 1)} }}",
+                "\tset_variable = { llmb_tick_left = 1 }",
+            ]
+        out += [
+            f"\tset_variable = {{ llmb_event_kind = {EVENT_TELEMETRY_CADENCE} }}",
+            f"\tset_variable = {{ llmb_event_detail = {hours} }}",
+            "\tllm_bridge_emit_event = yes",
+            "\tset_variable = { llmb_event_detail = 0 }",
+            "}",
+            "",
+        ]
+    return "\n".join(out)
+
+
+def _cadence_events() -> str:
+    out = [
+        HEADER,
+        "# The hidden events of the sub-daily telemetry chain: one per supported hour count,",
+        "# because the delay of country_event is a literal. See llm_bridge_cadence.txt.",
+        "",
+        "add_namespace = llmb_tick",
+        "",
+    ]
+    for hours in SUBDAILY_HOURS:
+        out += [
+            "country_event = {",
+            f"\tid = llmb_tick.{hours}",
+            "\thidden = yes",
+            "\tis_triggered_only = yes",
+            f"\timmediate = {{ llm_bridge_tick_fire_{hours} = yes }}",
+            "}",
+            "",
+        ]
+    return "\n".join(out)
 
 
 # --- the focus / research probe (#2) -----------------------------------------

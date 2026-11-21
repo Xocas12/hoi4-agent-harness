@@ -369,6 +369,12 @@ class HarnessConfig:
     #: Workshop mod; the campaign then turns on the strong directive weights, because its own
     #: plans would drown the normal ones) or ``auto`` (read dlc_load.json at the start).
     base_ai: str = "auto"
+    #: How often the mod writes its telemetry (cadence.py, docs/mod-bridge.md): hours between two
+    #: ticks. None (the default): the run does not touch it, so the mod keeps once a day, or
+    #: whatever a loaded save was set to. 24 sets once a day explicitly; 1, 2, 3, 4, 6, 8 or 12
+    #: a tick several times a day; a multiple of 24 (48, 72, ... 720) every N days. Sent through
+    #: the console at the start of a headless run (play, campaign, rival).
+    telemetry_hours: int | None = None
 
     # --- rival mode (rival/, docs/rival.md) -----------------------------------------
     # One human, one single-player game: the harness steers an AI country (``rival``,

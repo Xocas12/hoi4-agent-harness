@@ -42,7 +42,7 @@ import sys
 from contextlib import nullcontext
 from pathlib import Path
 
-from . import __version__
+from . import __version__, cadence
 from .actions import catalog
 from .adapters import ADAPTERS, build_adapter
 from .agent.llm import PROVIDERS, build_llm
@@ -167,6 +167,13 @@ def _config_from_args(args: argparse.Namespace) -> HarnessConfig:
         config.headless_reader = args.headless_reader
     if getattr(args, "save_days", None) is not None:
         config.headless_save_days = args.save_days
+    if getattr(args, "telemetry_hours", None) is not None:
+        config.telemetry_hours = args.telemetry_hours
+    if config.telemetry_hours is not None:
+        try:
+            config.telemetry_hours = cadence.validate(config.telemetry_hours)
+        except ValueError as exc:
+            raise ControlError(str(exc)) from None
     if getattr(args, "fake_game", False) or getattr(args, "fake_game_dir", None):
         config.fake_game = True
     if getattr(args, "fake_game_dir", None):
@@ -475,10 +482,15 @@ def cmd_play(args: argparse.Namespace) -> int:
         return 2
     try:
         env = _env_from_config(config)
-        env.reset()
+        first = env.reset()
     except (FileNotFoundError, RuntimeError) as exc:
         print(f"play: {exc}", file=sys.stderr)
         return 1
+    if config.telemetry_hours is not None and config.adapter == "headless":
+        tag = (config.country or first.state.country or "").strip()
+        tag = "" if tag == "___" else tag
+        cadence.apply(cadence.console(env.adapter), tag, config.telemetry_hours,
+                      lambda line: print(line, file=sys.stderr))
     run_dir = config.run_dir
     resume = bool(getattr(args, "resume", False))
 
@@ -1297,6 +1309,11 @@ def build_parser() -> argparse.ArgumentParser:
         p.add_argument("--save-days", dest="save_days", type=int, metavar="N",
                        help="with log+save: at most one periodic save per N in-game days "
                             "(0: only at the start and around verified actions)")
+        p.add_argument("--telemetry-hours", dest="telemetry_hours", type=int, metavar="H",
+                       help="with --headless: how often the mod writes its telemetry, in "
+                            "in-game hours: 1, 2, 3, 4, 6, 8 or 12 (several a day), 24 (once a "
+                            "day) or a multiple of 24 (every N days). Default: leave the game "
+                            "as it is (once a day). docs/mod-bridge.md has the cost")
         p.add_argument("--fake-game", dest="fake_game", action="store_true",
                        help="with --headless: run against a fake game in this process, no HOI4")
         p.add_argument("--fake-game-dir", dest="fake_game_dir", metavar="PATH",

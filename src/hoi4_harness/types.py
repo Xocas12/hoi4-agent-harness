@@ -230,6 +230,9 @@ class GameState:
     """
 
     date: str = "1936-01-01"
+    #: The in-game hour (0-23) of the line ``date`` came from; None where the source has none.
+    #: Several state lines share a date when the telemetry cadence is below a day.
+    hour: int | None = None
     country: str = "___"
     country_name: str = "Unknown"
     speed: int = 0                      # 0 = paused

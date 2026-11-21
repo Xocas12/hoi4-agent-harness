@@ -1,9 +1,11 @@
 # LLM Bridge -- when telemetry fires.
 #
 # Daily is the default because the harness decides its own cadence and would
-# rather throw away lines than miss a transition. If logging volume becomes a
-# problem, move llm_bridge_emit_state to on_weekly and keep the event hooks
-# daily: events are what wake the planner early, and they are cheap.
+# rather throw away lines than miss a transition. The cadence is configurable
+# both ways (llm_bridge_cadence.txt, docs/mod-bridge.md): `effect <TAG>
+# llm_bridge_telemetry_every_<H>h` sets it, faster than daily through a
+# self-rescheduling hidden event, slower as every N days. The event hooks stay
+# as they are: events are what wake the planner early, and they are cheap.
 
 on_actions = {
 	on_startup = {
@@ -20,12 +22,15 @@ on_actions = {
 	# on_daily fires once per country, spread over the day's hours, with ROOT
 	# set to that country. Emit only on the player's own tick; looping
 	# every_country here logged the player's numbers once per country per day,
-	# under the ticking country's tag.
+	# under the ticking country's tag. llm_bridge_daily_tick prints the state
+	# line and the front picture (it used to be a second on_daily block in its
+	# own file) unless the cadence has been set below daily, when the event
+	# chain prints and this only checks the chain is alive.
 	on_daily = {
 		effect = {
 			if = {
 				limit = { llm_bridge_is_harness = yes }
-				llm_bridge_emit_state = yes
+				llm_bridge_daily_tick = yes
 			}
 		}
 	}

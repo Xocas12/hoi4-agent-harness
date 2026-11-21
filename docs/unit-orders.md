@@ -48,9 +48,10 @@ LLMB|v5|div|tag=SWE|state=64|ctl=GER|own=3|own_weak=1|foe=5|foe_weak=0
 LLMB|v5|divend|tag=SWE|n=7
 ```
 
-Two hooks call it: `llm_bridge_front_on_actions.txt` (a second `on_daily` block for the
-player only; the install's own on_actions are split over a dozen files that each define
-`on_daily`/`on_startup`, so the game runs every block it finds) and, on demand, the
+Two hooks call it: the telemetry tick (`llm_bridge_emit_tick` in `llm_bridge_cadence.txt`, which
+`on_daily` runs for the player through `llm_bridge_daily_tick`, or the sub-daily event chain when
+the cadence is set below a day: docs/mod-bridge.md, #130; this used to be a second `on_daily` block
+in `llm_bridge_front_on_actions.txt`) and, on demand, the
 console refresh (`effect SWE llm_bridge_emit_front`, the first line of a refresh run).
 Not counted: allies' divisions, divisions in a state neither listed nor adjacent to one
 the enemy holds. Nothing is printed in peacetime except `divend n=0`, which is what tells
@@ -218,7 +219,7 @@ against the game.
 | file | what |
 |---|---|
 | `mod/llm_bridge/common/scripted_effects/llm_bridge_divisions.txt` | `llm_bridge_emit_front` |
-| `mod/llm_bridge/common/on_actions/llm_bridge_front_on_actions.txt` | the daily hook (new file; `llm_bridge_on_actions.txt` is untouched) |
+| `mod/llm_bridge/common/scripted_effects/llm_bridge_cadence.txt` | the tick that prints the front with the state line (generated) |
 | `observation/forces.py` | the brief's front and order lines |
 | `adapters/unit_orders.py` | plan, camera record, gestures, ledger, executor |
 | `adapters/input_driver.py` | `click_at`, `drag`, `enable_unit_orders` |

@@ -27,6 +27,7 @@ from collections.abc import Callable
 from datetime import date
 from pathlib import Path
 
+from .. import cadence
 from ..adapters.base import GameLost
 from ..adapters.clock import days_between
 from ..adapters.savegame import read_historical_ai
@@ -396,6 +397,7 @@ def begin(env: HOI4Env, config: HarnessConfig, log: CampaignLog,
     if not tag:
         raise CampaignStartError("the player's country tag is not known; pass --country")
     _base_ai(config, log, console, tag, run_dir)
+    cadence.apply(console, tag, config.telemetry_hours, log.line)
     if config.campaign_control == "llm":
         cmap = config.control_map()
         not_game = {d for d, c in cmap.domains.items() if c in ("llm", "script")}

@@ -123,6 +123,15 @@ def test_the_mod_prints_what_the_reader_parses():
     assert "every_state_division" in code and "location" not in code
 
 
-def test_the_daily_hook_is_the_players_and_lives_in_its_own_file():
-    hook = (MOD / "common" / "on_actions" / "llm_bridge_front_on_actions.txt").read_text(encoding="utf-8")
-    assert "llm_bridge_is_harness = yes" in hook and "llm_bridge_emit_front = yes" in hook
+def test_the_front_is_printed_with_every_telemetry_tick_for_the_player_only():
+    """The front picture rides the state line's tick (llm_bridge_emit_tick), which the daily
+    hook and the sub-daily event chain both call, and only for the player's own country."""
+    tick = (MOD / "common" / "scripted_effects" / "llm_bridge_cadence.txt").read_text(encoding="utf-8")
+    block = tick[tick.index("llm_bridge_emit_tick = {"):]
+    block = block.split("}")[0]
+    assert "llm_bridge_emit_front = yes" in block and "llm_bridge_emit_state = yes" in block
+    hook = (MOD / "common" / "on_actions" / "llm_bridge_on_actions.txt").read_text(encoding="utf-8")
+    daily = hook[hook.index("on_daily = {"):]
+    daily = daily.split("on_weekly")[0]
+    assert "llm_bridge_is_harness = yes" in daily and "llm_bridge_daily_tick = yes" in daily
+    assert not (MOD / "common" / "on_actions" / "llm_bridge_front_on_actions.txt").exists()

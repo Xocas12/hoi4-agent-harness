@@ -27,7 +27,8 @@
 # documentation.md l.629, l.645). A token the game does not expand prints
 # literally, which the reader treats as a bad line and drops.
 #
-# Called from on_daily for the player (llm_bridge_front_on_actions.txt) and on
+# Called with the state line on every telemetry tick (llm_bridge_emit_tick, in
+# llm_bridge_cadence.txt) and on
 # demand: `effect <TAG> llm_bridge_emit_front`.
 
 llm_bridge_emit_front = {
