@@ -36,7 +36,9 @@ CONCENTRATION: dict[str, tuple[int, int]] = {
 #: Reserve: a share of the army buffered in the flagged state (put_unit_buffers takes explicit
 #: states, not a trigger, so one block per state is generated from the playset).
 RESERVE_RATIO = 0.1
-ALL_ORDERS = (*ORDERS, "reserve")
+#: Invade: the AI's naval invasion planner aims at the flagged (coastal, enemy) state.
+INVADE = ("ordertype = invasion execution_type = rush execute_order = yes", 200)
+ALL_ORDERS = (*ORDERS, "reserve", "invade")
 FLAG = "llmb_front_{order}"
 PRIORITY = 300
 FILE = "common/ai_strategy/llm_bridge_front_orders.txt"
@@ -69,6 +71,19 @@ def strategies() -> str:
             "}",
             "",
         ]
+    flag = FLAG.format(order="invade")
+    out += [
+        "llmb_front_invade = {",
+        f"\tenable = {{ llm_bridge_is_harness = yes any_state = {{ has_state_flag = {flag} }} }}",
+        f"\tabort = {{ OR = {{ llm_bridge_is_harness = no "
+        f"NOT = {{ any_state = {{ has_state_flag = {flag} }} }} }} }}",
+        f"\tai_strategy = {{ type = front_control state_trigger = {{ has_state_flag = {flag} }} "
+        f"ratio = 0 priority = {PRIORITY} {INVADE[0]} }}",
+        f"\tai_strategy = {{ type = invasion_unit_request state_trigger = {{ has_state_flag = {flag} }} "
+        f"value = {INVADE[1]} }}",
+        "}",
+        "",
+    ]
     return "\n".join(out)
 
 
@@ -127,7 +142,8 @@ class Standing:
             except (OSError, ValueError):
                 self.orders = {}
 
-    def record(self, state: int, order: str) -> None:
+    def record(self, state, order: str) -> None:
+        """``state`` is a state id, or ``region:<id>`` for a region order."""
         if order == "clear":
             self.orders.pop(str(state), None)
         else:
@@ -140,7 +156,10 @@ class Standing:
         if not self.orders:
             return None
         parts = []
-        for sid, order in sorted(self.orders.items(), key=lambda kv: (kv[1], int(kv[0]))):
-            name = names(int(sid)) if names else f"state {sid}"
+        for key, order in sorted(self.orders.items(), key=lambda kv: (kv[1], kv[0])):
+            if key.startswith("region:"):
+                parts.append(f"{order} in region {key.split(':', 1)[1]}")
+                continue
+            name = names(int(key)) if names else f"state {key}"
             parts.append(f"{order} {name}")
-        return "  Front orders standing: " + "; ".join(parts)
+        return "  Front and region orders standing: " + "; ".join(parts)

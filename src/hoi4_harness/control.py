@@ -72,7 +72,7 @@ DOMAIN_ACTIONS: dict[str, frozenset[str]] = {
 }
 #: The steering vocabulary of the game's AI.
 STEER_ACTIONS = frozenset({"set_ai_directive", "set_ai_posture", "clear_ai_directives",
-                           "set_front_order"})
+                           "set_front_order", "set_region_order"})
 DELEGATE_ACTION = "delegate_army_to_ai"
 CLOCK_ACTION = "set_game_speed"
 #: Never narrowed by control: notes, the clock handed back, the read-only playset queries.
