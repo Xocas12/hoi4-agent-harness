@@ -31,6 +31,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from types import SimpleNamespace
 
+from .. import cadence
 from ..actions import registry
 from ..adapters.base import GameLost
 from ..adapters.clock import days_between, wait_for_days
@@ -410,6 +411,12 @@ def begin(members: list[Member], config: HarnessConfig, log: CampaignLog,
     if not todo:
         return False
     lines = [f"effect {m.tag} llm_bridge_mark_harness" for m in todo]
+    if config.telemetry_hours is not None:
+        for m in todo:
+            lines += cadence.lines(m.tag, config.telemetry_hours)
+        log.line(f"telemetry cadence: {cadence.describe(config.telemetry_hours)} "
+                 f"for {', '.join(m.tag for m in todo)}")
+    typed = list(lines)        # what a person types under policy "never": no refresh lines
     for m in todo:
         lines += m.console.refresh_lines(m.tag)
     timeout = config.rival_start_wait_minutes * 60
@@ -417,7 +424,7 @@ def begin(members: list[Member], config: HarnessConfig, log: CampaignLog,
     sent = False
     if session.policy.advice_only:
         log.line("policy never: type these in the game's console to start (" + names
-                 + " must be marked): " + "; ".join(lines[:len(todo)]))
+                 + " must be marked): " + "; ".join(typed))
     else:
         log.line(f"marking {names}: {len(todo)} mark line(s) in one window (waiting for a safe "
                  + (f"window: pause the game and leave the keyboard alone for "
@@ -427,7 +434,7 @@ def begin(members: list[Member], config: HarnessConfig, log: CampaignLog,
             raise RivalStartError(
                 f"no safe window in {config.rival_start_wait_minutes:g} minutes to mark {names}. "
                 "Pause the game and leave the keyboard alone, or type "
-                + "; ".join(f"`{ln}`" for ln in lines[:len(todo)]) + " in the game's console "
+                + "; ".join(f"`{ln}`" for ln in typed) + " in the game's console "
                 "yourself and start again")
         sent = True
     deadline = session.now() + (timeout if session.policy.advice_only else VERIFY_TRIES * VERIFY_SECONDS)

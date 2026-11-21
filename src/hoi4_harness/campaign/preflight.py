@@ -454,6 +454,25 @@ def check_base_ai(config: HarnessConfig, user_dir: Path | None) -> list[Check]:
     return out
 
 
+def check_cadence(config: HarnessConfig) -> list[Check]:
+    """The telemetry cadence the run will set (cadence.py); nothing when it is left alone."""
+    from .. import cadence
+
+    if config.telemetry_hours is None:
+        return []
+    try:
+        hours = cadence.validate(config.telemetry_hours)
+    except ValueError as exc:
+        return [Check(FAIL, "telemetry cadence", str(exc))]
+    if hours >= cadence.DAILY_HOURS:
+        return [Check(INFO, "telemetry cadence", cadence.describe(hours))]
+    ticks = 24 // hours
+    return [Check(INFO, "telemetry cadence", f"{cadence.describe(hours)}: {ticks} state ticks a "
+                  "game day in game.log (each with its army, war, probe and front lines), so the "
+                  "log grows that much faster; the first live use needs the check in "
+                  "docs/live-session.md (the chain's events and the game speed)")]
+
+
 def resolve_user_dir(config: HarnessConfig, explicit: Path | None) -> Path | None:
     if explicit is not None:
         return explicit if explicit.is_dir() else None
@@ -474,5 +493,5 @@ def run_checks(config: HarnessConfig, *, user_dir: Path | None = None, max_usd: 
         *check_mod(root, repo_mod), *check_playset(root), *check_paths(config, save_dir),
         *check_disk(config, save_dir, disk_usage), *check_key(config, env),
         *check_budget(config, max_usd), *check_power(platform, query), *check_focus_policy(config),
-        *check_hands(config), *check_base_ai(config, root),
+        *check_hands(config), *check_base_ai(config, root), *check_cadence(config),
     ]

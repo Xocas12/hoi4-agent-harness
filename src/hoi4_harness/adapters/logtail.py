@@ -35,7 +35,8 @@ SCHEMA_VERSION = 5
 PREFIX = "LLMB|"
 LINE = re.compile(r"LLMB\|v(?P<version>\d+)\|(?P<kind>\w+)\|(?P<fields>.*)$")
 #: The engine stamps every line with the in-game date: [hh:mm:ss][Y.M.D.H][file:line].
-ENGINE_DATE = re.compile(r"^\[\d{2}:\d{2}:\d{2}\]\[(?P<date>\d{4}\.\d{1,2}\.\d{1,2})\.\d{1,2}\]")
+ENGINE_DATE = re.compile(
+    r"^\[\d{2}:\d{2}:\d{2}\]\[(?P<date>\d{4}\.\d{1,2}\.\d{1,2})\.(?P<hour>\d{1,2})\]")
 
 
 
@@ -60,6 +61,9 @@ EVENT_CODES = {
     # The strong directive weights for Expert AI as the base AI (docs/expert-ai.md).
     "18": ("strong_directives_on", "info"),
     "19": ("strong_directives_off", "info"),
+    # The telemetry cadence was set (cadence.py, modgen.EVENT_TELEMETRY_CADENCE); detail is
+    # the hours between two ticks.
+    "20": ("telemetry_cadence", "info"),
 }
 
 #: Counters on the state line that only ever go up. The game has no on_action
@@ -167,6 +171,8 @@ def _event_text(event_kind: str, detail: str, fields: dict[str, str] | None = No
         if event_kind == "capitulation" and tag:
             return f"capitulation: {tag}" + (f" (to {other})" if other else "")
         return label
+    if event_kind == "telemetry_cadence":
+        return f"telemetry cadence: every {detail} in-game hours"
     if event_kind == "directive_target_selected":
         return f"target selected: {detail}"
     if event_kind == "directive_raised":
@@ -184,6 +190,13 @@ def engine_date(line: str) -> str | None:
     """
     match = ENGINE_DATE.match(line.strip())
     return parse_date(match.group("date")) if match else None
+
+
+def engine_hour(line: str) -> int | None:
+    """The in-game hour (0-23) from a log line's own prefix: with the telemetry cadence below
+    a day, several state lines share a date and only this tells them apart."""
+    match = ENGINE_DATE.match(line.strip())
+    return int(match.group("hour")) if match else None
 
 
 def parse_line(line: str) -> tuple[str, dict[str, str]] | None:
@@ -314,6 +327,7 @@ class LogTailAdapter(GameAdapter):
                     stamped = engine_date(line)
                     if stamped:
                         fields.setdefault("_engine_date", stamped)
+                        fields.setdefault("_engine_hour", str(engine_hour(line)))
                     self._apply(kind, fields)
                     applied += 1
             self._offset = handle.tell()
@@ -347,6 +361,10 @@ class LogTailAdapter(GameAdapter):
             )
             if iso:
                 state.date = iso
+                # The hour belongs to the date it came with; a date from the printed token
+                # has none, and a stale hour beside a new date would mislead.
+                state.hour = (int(fields["_engine_hour"]) if fields.get("_engine_date")
+                              and fields.get("_engine_hour", "").isdigit() else None)
             for key, (attribute, convert) in FIELDS.items():
                 if key in fields:
                     try:

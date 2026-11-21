@@ -24,6 +24,7 @@ import traceback
 from collections.abc import Callable
 from pathlib import Path
 
+from .. import cadence
 from ..adapters.base import GameLost
 from ..adapters.clock import days_between
 from ..adapters.input_driver import InputInterrupted, NotFocused
@@ -229,12 +230,20 @@ def begin(env: HOI4Env, config: HarnessConfig, log: CampaignLog, session: RivalS
     state = _read_rival(env)
     if _flowing(state, session):
         log.line(f"{tag} already reports to the log: marking skipped")
+        if config.telemetry_hours is not None:
+            log.line("telemetry_hours is set but the country is already marked, so nothing is "
+                     f"sent; type `{cadence.lines(tag, config.telemetry_hours)[0]}` in the "
+                     "game's console to set it")
         return state
     lines = [f"effect {tag} llm_bridge_mark_harness", *session.console.refresh_lines(tag)]
+    if config.telemetry_hours is not None:
+        # In the same run file as the mark: one window, and the cadence is set from the start.
+        lines = [lines[0], *cadence.lines(tag, config.telemetry_hours), *lines[1:]]
+        log.line(f"telemetry cadence: {cadence.describe(config.telemetry_hours)} ({lines[1]})")
     timeout = config.rival_start_wait_minutes * 60
     if session.policy.advice_only:
         log.line(f"policy never: type these in the game's console to start ({tag} must be marked): "
-                 + "; ".join(lines[:1]))
+                 + "; ".join(lines[:len(lines) - len(session.console.refresh_lines(tag))]))
     else:
         log.line(f"marking {tag}: {lines[0]} (waiting for a safe window: pause the game and "
                  f"leave the keyboard alone for {config.rival_idle_seconds:g}s)"

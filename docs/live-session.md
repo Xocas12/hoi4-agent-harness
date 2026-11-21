@@ -99,6 +99,41 @@ hoi4-harness observe --adapter logtail
   war support, factories and manpower. #1's acceptance is that brief plus the
   `verify-bridge` output.
 
+### 3a. The telemetry cadence (#130)
+
+The cadence below a day is a chain of hidden events that the generated mod schedules; whether the
+game accepts them, fires them at the hour asked, keeps them through a save and load, and how much
+they cost, is only known in the game. Needs the mod copied by `live_setup` (the cadence files are
+new: `common/scripted_effects/llm_bridge_cadence.txt`, `events/llm_bridge_cadence_events.txt`),
+the game loaded and paused, the country marked as in step 2. Do not touch the keyboard while a
+run is typing. Everything here goes through the console.
+
+1. Check the mod loaded: `error.log` has no line naming `llm_bridge_cadence` or `llmb_tick`.
+2. Baseline, nothing set: unpause at speed 5 for 3 game days, pause. Read the state lines in
+   `game.log`: one per day, hour 21 or so. Note the wall-clock seconds the 3 days took.
+3. `hoi4-harness play --headless --telemetry-hours 6 ...` (any short headless run, or by hand:
+   `effect <TAG> llm_bridge_telemetry_every_6h` in the console). `game.log` gets
+   `LLMB|v5|evt|...|kind=20|detail=6`; the run's log says `telemetry cadence: every 6 in-game hours`.
+4. Unpause 3 days, pause. Expect four state lines per day, six in-game hours apart (the engine
+   prefix `[hh:mm:ss][Y.M.D.H]` shows the hour), each followed by its `army`, `war`, `focus`,
+   `research` and `divend` lines, and the first line 6 hours after the set. No two lines with the
+   same hour. Note the seconds the 3 days took against step 2: the cost of 4 ticks a day.
+5. Set `1` (`--telemetry-hours 1` or `effect <TAG> llm_bridge_telemetry_every_1h`), unpause 2 days:
+   24 lines a day, an hour apart, and none at the old 6-hour marks beyond the first firing that
+   ends the old chain. Note the seconds per day and the size `game.log` grew by per day.
+6. With 1 set, save, load that save, unpause a day: the chain continues, still one line per hour
+   (the scheduled event is in the save); a doubled hour means the idempotence failed. Then set `6`
+   and `1` and `6` again in a row with the game paused, unpause: still one chain.
+7. Set `24` (`--telemetry-hours 24`): after at most one more firing there are no more sub-daily
+   lines, and the next days print once a day again. Then `72`: one tick every 3 days.
+8. Do the negative: take the generated cadence file out of the installed mod copy (or rename
+   `llm_bridge_cadence.txt`), restart, and confirm step 3 now errors in `error.log` and prints no
+   `kind=20` line, so the check can fail.
+
+Report: the hours on the lines for steps 4 and 5, seconds per game day at speed 5 for 24, 6 and 1,
+`game.log` growth per game day for each, and whether step 6 doubled anything. Any `hours =`
+rejection or unknown-effect line in `error.log` goes in verbatim.
+
 ## 4. Directives through the mod (#7, #8)
 
 In the decisions tab: *Target: POL*, then *Directive: protect*. Then *Directive:
@@ -683,7 +718,8 @@ Order matters: camera validation first, then one move, then one attack. Stop at 
 first step that does not give the expected result and paste what you saw into #85.
 
 **A. The front picture (no input).** With the mod reloaded (the new files are
-`llm_bridge_divisions.txt` and `llm_bridge_front_on_actions.txt`), unpause two days, pause.
+`llm_bridge_divisions.txt`; since #130 the daily hook is `llm_bridge_daily_tick` in
+`llm_bridge_cadence.txt`), unpause two days, pause.
 
 ```bash
 grep "LLMB|v5|div" "$HOI4_LOG_PATH" | tail -12

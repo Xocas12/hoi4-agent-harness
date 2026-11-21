@@ -47,8 +47,9 @@ LLMB|v5|divend|tag=SWE|n=7
 ```
 
 The `div` and `divend` lines are the front picture (divisions per state, at war only; one
-closing `divend` a day whatever happens). They come from their own effect and on_actions
-file, and the reader keeps a picture only when `n` of them arrived: see
+closing `divend` per tick whatever happens). They come from their own effect, called with the
+state line on every tick (see "Telemetry cadence" below), and the reader keeps a picture only when
+`n` of them arrived: see
 [unit-orders.md](unit-orders.md).
 
 Rules the parser holds to, all of them tested in
@@ -95,6 +96,73 @@ Rules the parser holds to, all of them tested in
   a game a person has been playing do not wake turn 1 for old wars, including
   ones a previous run already answered. Only that read's events: anything
   logged after it is news.
+
+## Telemetry cadence: how often the mod prints (#130)
+
+The state line (with its `army`, `war`, `focus` and `research` lines) and the front picture
+(`div` / `divend`) are one **tick**. By default the mod prints one tick per in-game day, from
+`on_daily`; the `camp` line stays weekly and the `evt` lines happen when they happen. The cadence
+is configurable both ways with one number, the hours between two ticks:
+
+| `telemetry_hours` | what the mod does | ticks per game day |
+|---|---|---|
+| unset (default) | nothing is sent; the mod prints once a day, or whatever the loaded save was set to | 1 |
+| 1, 2, 3, 4, 6, 8, 12 | a hidden event reschedules itself every H hours | 24, 12, 8, 6, 4, 3, 2 |
+| 24 | once a day, set explicitly (also undoes an earlier setting) | 1 |
+| 48, 72, 96, 120, 144, 168, 240, 336, 720 | every N days (2, 3, 4, 5, 6, 7, 10, 14, 30), counted in the daily tick | 1/N |
+
+Any other value is refused when the run starts, with this list. Set it with the config key
+`telemetry_hours` (a profile) or `--telemetry-hours H` on `play` (so on `--campaign` and
+`--rival` runs too). It needs a headless run: the harness sends
+`effect <TAG> llm_bridge_telemetry_every_<H>h` through the console at the start (campaign: after the
+mark and the base-AI step; rival: in the same run file as the mark), says what it set in its log
+(`campaign.log` for a campaign or a rival), and the mod answers with an `evt` line of kind 20
+(`telemetry cadence: every H in-game hours` in the brief's events), so `game.log` shows it took. The
+same line can be typed in the game's console by hand. `campaign-check` lists the cadence a profile
+will set.
+
+**How the sub-daily chain works.** HOI4 has no hourly `on_action`, but `country_event = { id = ..
+hours = N }` fires an event N game hours later. The documentation shows `hours` only as a literal
+and no vanilla file passes a variable, so `modgen.py` writes one hidden event per supported value
+(`events/llm_bridge_cadence_events.txt`, ids `llmb_tick.N`) and the effects in
+`common/scripted_effects/llm_bridge_cadence.txt`. The player's country keeps `llmb_tick_hours` (the
+cadence) and, per value N, `llmb_tick_inflight_N` (events of that chain waiting to fire):
+
+- setting a cadence schedules the first event only while none of that value is waiting, so the same
+  setting twice, or A then B then A before A's event fires, leaves exactly one chain;
+- an event that fires prints a tick and schedules the next only while `llmb_tick_hours` still equals
+  its N, so changing the cadence ends the old chain at its next firing, nothing to cancel;
+- the variables and the scheduled event are in the save, so a save and load continues the chain;
+- each firing sets `llmb_tick_alive` and the daily tick clears it: a day without a firing (a lost
+  event) restarts the chain within one to two days. A live chain fires at least twice a day, so it is
+  never restarted by mistake;
+- cost per firing: two variable checks, plus the tick when the country is the player's.
+
+`tests/test_130_telemetry_cadence.py` runs the generated script in a small interpreter through these
+cases (same value twice, A-B-A, a change to daily and to every N days, a lost event).
+
+**What it costs.** A tick is the whole state line plus its probe (one trigger per focus and
+technology the install defines, run for the player's country) and the front picture, so a tick costs
+what the daily tick costs today and the cost is linear in ticks per day:
+
+- *game.log*: roughly 0.5 to 1 KB per tick in peace (a state line, an army line, the probe lines of
+  what is running, a `divend`), several KB at war (a `div` line per front state, a `war` line per
+  enemy). At 1 hour that is 24 times a day: order of 15 to 25 MB per game year in peace and well
+  beyond that in a big war. A multi-year campaign at 1 hour should expect hundreds of MB. These are
+  estimates from the line formats, not measurements: the live step below records the real ones. 6
+  hours is 4 times today's volume.
+- *game speed*: the extra work is the tick's script, the same as one daily tick, 24 times a day at 1
+  hour. How much that slows a game day at speed 5 depends on the playset (the probe is the long
+  part in a big mod). Not measured; the live step records days per second with and without.
+- *the reader*: every state line closes the previous tick, so a war, a focus or a research that ends
+  is still reported once, now up to 24 times a day. `state.date` stays the in-game day and
+  `state.hour` is the in-game hour of the line it came from (the engine's `[Y.M.D.H]` prefix).
+
+Slower is free: every N days prints 1/N of today's volume, but a focus or research that starts and
+finishes between two ticks is never seen, and a war the length of the gap goes unreported by its
+`war` lines (the `evt` lines for a declaration still arrive).
+
+The line format is unchanged, so the schema stays v5; the only addition is the `evt` kind 20.
 
 ## What needs verifying before you trust a run
 
