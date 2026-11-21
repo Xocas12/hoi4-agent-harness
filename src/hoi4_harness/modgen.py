@@ -510,8 +510,9 @@ def generate_probe(index: IdentifierIndex) -> GeneratedFile:
 
     out = [
         HEADER.replace("hoi4-harness mod-directives", "hoi4-harness mod-probe"),
-        "# Daily probe: one `focus` line for the focus being worked on and one",
-        "# `research` line per technology being researched. Called from",
+        "# Daily probe: one `focus` line for the focus being worked on, one `bop` line",
+        "# per active balance of power bar and one `research` line per technology",
+        "# being researched. Called from",
         "# llm_bridge_emit_state, right after the state line.",
         "",
         "llm_bridge_emit_probe = {",
@@ -531,6 +532,23 @@ def generate_probe(index: IdentifierIndex) -> GeneratedFile:
         out.append(f"\tif = {{ limit = {{ OR = {{ {users} }} }}")
         out += [focus_block(f, "\t\t") for f in shared]
         out.append("\t}")
+    # Balance of power (#135): the active bar's value and weekly change, x100 like stab/ws.
+    # power_balance_value and power_balance_weekly are country-scope dynamic variables in
+    # 1.20's dynamic_variables_documentation.md. UNVERIFIED in the live game.
+    try:
+        bars = sorted(b for b in index.mod_context().balances() if ok(b))
+    except Exception:  # noqa: BLE001 - a playset without readable bop files has no bars
+        bars = []
+    for bar in bars:
+        out.append(
+            f"	if = {{ limit = {{ has_power_balance = {{ id = {bar} }} }} "
+            "set_variable = { llmb_bop = power_balance_value } "
+            "multiply_variable = { llmb_bop = 100 } "
+            "set_variable = { llmb_bop_w = power_balance_weekly } "
+            "multiply_variable = { llmb_bop_w = 100 } "
+            f'log = "LLMB|v{SCHEMA_VERSION}|bop|tag=[THIS.GetTag]|id={bar}|value=[?llmb_bop]'
+            f'|weekly=[?llmb_bop_w]" }}'
+        )
     for tech in sorted(t for t in index.technologies if ok(t)):
         out.append(
             f"\tif = {{ limit = {{ is_researching_technology = {tech} }} "

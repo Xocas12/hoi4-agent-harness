@@ -342,6 +342,35 @@ class ModContext:
     def find_decision(self, decision_id: str) -> Decision | None:
         return self.decisions().get(decision_id)
 
+    # --- balance of power --------------------------------------------------------
+
+    def balances(self) -> dict:
+        """Every balance of power bar in the playset (``common/bop``), by id."""
+        from .bop import parse_balance
+
+        def build() -> dict:
+            found = {}
+            for path in self._files("common/bop"):
+                source = self._source(path)
+                for key, _op, body in self._read(path):
+                    if key and isinstance(body, list):
+                        found[key] = parse_balance(key, body, source)
+            return found
+
+        return self._memo("balances", build)  # type: ignore[return-value]
+
+    def balance_lines(self, readings) -> list[str]:
+        """The brief's lines for the bars the mod logged (``GameState.power_balances``)."""
+        from .bop import brief_line
+
+        bars = self.balances()
+        keys: set[str] = set()
+        for reading in readings:
+            if reading.id in bars:
+                keys |= bars[reading.id].keys()
+        names = self.names(keys) if keys else {}
+        return [brief_line(bars.get(r.id), r.id, r.value, r.weekly, names) for r in readings]
+
     # --- focus tree ------------------------------------------------------------
 
     def focus_details(self, tag: str) -> dict[str, FocusInfo]:
@@ -710,6 +739,11 @@ class ModContext:
                 if plan.executable and plan.unchecked:
                     out["unchecked"] = plan.unchecked
             return out
+        bar = self.balances().get(ident)
+        if bar is not None:
+            from .bop import describe as describe_bar
+
+            return describe_bar(bar, self.names(bar.keys()))
         focus = self.focus_details(tag).get(ident)
         if focus is not None:
             names = self.names({ident, f"{ident}_desc"})
