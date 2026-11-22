@@ -685,7 +685,11 @@ def brief_lines(pic: Picture, index=None, layer=None, *, states: int = 6, countr
         fac = info["factories"]
         if isinstance(fac, dict):
             fac = f"{fac['civ']} civ / {fac['mil']} mil / {fac['dock']} dock"
-        lines.append(f"  {tag}: divisions {info['divisions']}" + (f" ({seen} in contact)" if seen else "")
+        # "In contact" read as a war to the model: a peacetime Germany "fought" CZE, POL and FRA
+        # for eight months in its notes (overnight campaign, 2026-11-22). Say which it is.
+        enemies = getattr(pic.world, "enemies", None) or set()
+        where = "in contact, at war" if tag in enemies else "at the border, at peace"
+        lines.append(f"  {tag}: divisions {info['divisions']}" + (f" ({seen} {where})" if seen else "")
                      + f"; factories {fac}; producing {prod}{note}")
     full = getattr(pic.world, "full", None)
     if full is not None:

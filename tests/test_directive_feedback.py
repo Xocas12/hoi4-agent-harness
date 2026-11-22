@@ -187,3 +187,14 @@ def test_a_visible_part_still_reports_when_the_other_is_unknown():
     assert tracker.render(still)[1].strip() == (
         "invade DEN, raised 14d ago: effect not observable with this reader (fronts unknown)"
     )
+
+
+def test_declare_war_with_no_war_says_a_war_goal_is_needed():
+    # Overnight campaign 2026-11-22: declare_war CZE stood 222 days with no war and the line
+    # said only "effect not observable"; the AI declares only with a war goal.
+    env = _env()
+    assert _directive(env, "declare_war", "DEN").ok
+    env.advance(30)
+    brief = env.observe().brief
+    assert "declare_war DEN, raised 30d ago: not at war yet" in brief
+    assert "prepare_war DEN" in brief
