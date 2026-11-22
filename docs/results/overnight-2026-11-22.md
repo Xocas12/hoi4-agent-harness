@@ -41,4 +41,17 @@ Haiku through `claude -p`, rival mode on the breakaway, `idle` policy (orders ty
 
 ## Phase 2: campaign (Germany 1936-1948)
 
+`play --campaign --profile profiles/overnight-ger-haiku.json --live`: the game's AI plays Germany (`human_ai`), Haiku through `claude -p` steers it at wakes every 45-60 game days, world observer on, recovery saves every six months. Started 01:38 at 1936-01-01.
+
+**Progress at 02:55:** 1938-10-01, 30 states (Anschluss done by the game's AI), 94 divisions, no wars, 23 model calls of about 30k tokens each. That pace is about 2.3 real minutes per game month.
+
+**Actions in the first 33 game months:** 24 `advance_time`, 16 `note`, 11 `inspect_world`, 9 `set_ai_posture`, 4 `set_ai_directive`, 3 `steer_production`, 2 `steer_army`, 1 each of `list_decisions`, `clear_ai_directives` and `take_decision`. No diplomacy was attempted.
+
+**Mistakes:**
+
+- **It believed it was at war when it was not.** The model's text at 1938-10 read "Multi-front war ongoing ~8 months; divisions in active contact across borders confirm CZE/POL/FRA fronts". The brief's war line said "at war with 0", but each neighbour line read "CZE: divisions at least 25 seen (25 in contact)", and the model took "in contact" for a front. Fix: neighbour lines now say "at the border, at peace" or "in contact, at war" (from the save's war relations).
+- **declare_war without a war goal.** `set_ai_directive declare_war CZE` stood for 222 days with no war, and the directive-effect line said only "effect not observable with this reader (fronts unknown)". The game's AI declares only with a war goal. Fix: that line now says "not at war yet", and that prepare_war justifies one. The world-conquest pack gains a **War and peace** paragraph.
+- **A decision refused for political power** (`GER_reestablish_the_black_reichswehr`: 25 needed, 6.99 held). The game's AI spends PP as it arrives. Fix: both packs now have a **Political power** paragraph (check PP; steer the AI's spending with `steer_spending kind=pp_amount id=idea level=less` before saving for a decision).
+- **Steer ids it guessed:** `motorized_equipment`, `oil_refinery`. Fix: `steering.normalise` (strips `_equipment`, applies aliases such as oil_refinery -> synthetic_refinery). The running campaign still uses the code it loaded at 01:38, so these fixes apply from the next run.
+
 ## Mistakes and fixes
