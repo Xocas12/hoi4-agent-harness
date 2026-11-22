@@ -101,6 +101,9 @@ HEAD_BYTES = 256
 NOT_EMITTED = [
     "research", "production", "construction", "fronts", "wars", "national_focus",
     "completed_focuses",
+    # No LLMB line carries the fuel stockpile or the convoy count: unread, not zero (the
+    # overnight campaign's brief said "fuel 0" for a Germany holding 408k, 2026-11-22).
+    "fuel", "convoys",
     # Hybrid control: the mod raises flags but reports only posture changes, as
     # events. Posture becomes known the first time one arrives.
     "posture", "ai_directives", "delegated_armies",
