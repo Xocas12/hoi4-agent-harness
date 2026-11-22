@@ -112,7 +112,9 @@ def render_full(state: GameState, max_events: int = 6, max_fronts: int = 3) -> s
 
     lines.append(
         "PP {pp} | stability {stab} | war support {ws} | manpower {mp}".format(
-            pp=_val(state, "political_power", lambda v: f"{v:.0f}"),
+            pp=_val(state, "political_power", lambda v: f"{v:.0f}") + (
+                f" (net {state.pp_per_day:+.1f}/day over {state.pp_trend_days} days, after what "
+                f"the AI spent)" if getattr(state, "pp_per_day", None) is not None else ""),
             stab=_val(state, "stability", _pct),
             ws=_val(state, "war_support", _pct),
             mp=_val(state, "manpower", lambda v: f"{v:,}"),
