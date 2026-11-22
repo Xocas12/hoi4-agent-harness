@@ -852,7 +852,10 @@ class ConsoleChannel:
             raise Refused(f"{order!r} is not a region order ({', '.join(R.ORDERS)}, clear)")
         region = R.resolve(self.regions(), str(args["region"]))
         if region is None:
-            raise Refused(f"there is no strategic region {args['region']!r} in this playset")
+            near = R.near(self.regions(), str(args["region"]))
+            raise Refused(f"there is no strategic region {args['region']!r} in this playset"
+                          + (f"; nearest by name: {', '.join(near)} (use the name or the number)"
+                             if near else ""))
         if order != "clear" and R.ORDERS[order][2] and not region.sea:
             raise Refused(f"{region.name or region.id} is a land region: {order} is a naval order "
                           "and needs a sea region")

@@ -787,6 +787,12 @@ class IdentifierIndex:
             law = str(args.get("law", ""))
             known = self.mod_context().occupation_laws()
             if known and law not in known:
+                # A unique name inside a real one ("civilian_oversight" for
+                # "foreign_civilian_oversight", live 2026-11-22).
+                inside = [k for k in known if law and law in k]
+                if len(inside) == 1:
+                    args["law"] = law = inside[0]
+            if known and law not in known:
                 return self._reject(call, f"There is no occupation law '{law}' in this playset",
                                     law, known)
         if call.name in ("steer_production", "steer_intelligence", "steer_navy", "steer_air",
@@ -796,6 +802,12 @@ class IdentifierIndex:
             area = call.name.removeprefix("steer_")
             kind, ident = (("importance", args.get("region")) if call.name == "steer_air"
                            else (str(args.get("kind", "")), args.get("id")))
+            if call.name != "steer_air" and ident:
+                # The alias step ran only in the console's planner, after this check had
+                # already refused "motorized_equipment" (overnight campaign, 2026-11-22).
+                fixed = steering.normalise(area, kind, str(ident))
+                if fixed != ident:
+                    args["id"] = ident = fixed
             why = steering.refusal(area, kind, ident, str(args.get("level", "")),
                                    steering.known_ids(self))
             if why:
