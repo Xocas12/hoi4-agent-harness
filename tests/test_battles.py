@@ -211,8 +211,8 @@ def test_the_brief_has_a_battles_part_with_own_first(tmp_path, grid):
     text = "\n".join(W.brief_lines(pic, layer=grid))
     assert "Battles (2 yours, 1 seen; the bar is an estimate" in text
     assert ("* state 11 [plains]: GER attack 2 div (2 Infanterie) vs SWE 2 div (2 Infantry), 30h; "
-            "damage dealt 5 vs 20; tactics basic attack/basic defend; you are clearly winning "
-            "(attacker 22%)") in text
+            "damage dealt: attacker 5, defender 20; tactics basic attack/basic defend; "
+            "you are clearly winning (attacker 22%)") in text
     assert "naval, GER attack 2 submarine vs SWE 1 destroyer, 2 convoys, 40h" in text
     # the third-party battle is a dash, with no templates and no tactics
     line = next(x for x in text.splitlines() if "[hills]" in x)

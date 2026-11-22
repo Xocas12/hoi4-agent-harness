@@ -78,6 +78,8 @@ class Division:
     equipment_missing: int | None = None
     #: How far the division has adapted to the climate it stands in, 0..1 (None: no block).
     acclimatisation: float | None = None
+    #: Share of the template's combat battalions that are tanks (None: composition not in the save).
+    armour: float | None = None
 
 
 @dataclass
@@ -104,6 +106,9 @@ class CountryPicture:
     production: list[ProductionLine] = field(default_factory=list)
     #: Everything but the army (world_full.FullCountry); None where it was not read.
     full: object | None = None
+    #: The country has surrendered (its ``diplomacy`` block says ``capitulated=yes``; an exile
+    #: keeps a few divisions and is still "at war").
+    capitulated: bool = False
 
 
 @dataclass
@@ -240,6 +245,43 @@ def read_templates(text: str) -> dict[str, dict[str, str]]:
     return out
 
 
+def _capitulated(block: dict) -> bool:
+    """``diplomacy={ capitulated=yes }`` in a country's block (checked on a 1943 save: NOR, HOL,
+    FRA and POL have it, SOV and GER do not)."""
+    diplomacy = block.get("diplomacy") if isinstance(block, dict) else None
+    value = diplomacy.get("capitulated") if isinstance(diplomacy, dict) else None
+    return str(value).lower() in ("yes", "true")
+
+
+def _is_armour(kind: str) -> bool:
+    kind = kind.lower()
+    return (("armor" in kind or "armour" in kind or "tank" in kind) and "destroyer" not in kind
+            and "anti" not in kind)
+
+
+def read_template_armour(text: str) -> dict[str, dict[str, float]]:
+    """country -> template id -> share of the template's combat battalions that are tanks."""
+    out: dict[str, dict[str, float]] = {}
+    templates = sg.top_block(text, "division_templates") or {}
+    for t in sg._as_list(templates.get("division_template")):
+        if not isinstance(t, dict) or not isinstance(t.get("country"), str):
+            continue
+        regiments = t.get("regiments")
+        if not isinstance(regiments, dict):
+            continue
+        total = armour = 0
+        for kind, value in regiments.items():
+            if kind.startswith("_"):
+                continue
+            n = len(sg._as_list(value))
+            total += n
+            if _is_armour(kind):
+                armour += n
+        if total:
+            out.setdefault(t["country"], {})[sg._ident(t.get("id"))] = armour / total
+    return out
+
+
 def _ratio(block, value_key: str, need_key: str) -> float | None:
     if not isinstance(block, dict):
         return None
@@ -304,7 +346,8 @@ def _acclimatisation(block) -> float | None:
     return max(0.0, min(1.0, max(values) / limit)) if values else None
 
 
-def read_divisions(country: dict, tag: str, templates: dict[str, str], layer) -> list[Division]:
+def read_divisions(country: dict, tag: str, templates: dict[str, str], layer,
+                   armour: dict[str, float] | None = None) -> list[Division]:
     units = country.get("units") if isinstance(country, dict) else None
     out = []
     if not isinstance(units, dict):
@@ -336,7 +379,8 @@ def read_divisions(country: dict, tag: str, templates: dict[str, str], layer) ->
             last_combat=d.get("last_combat_date") if isinstance(d.get("last_combat_date"), str) else None,
             str_damage=sg._number(d.get("str_damage")), org_damage=sg._number(d.get("org_damage")),
             equipment_held=_equipment_held(d), equipment_missing=_equipment_missing(d.get("requests")),
-            acclimatisation=_acclimatisation(d.get("acclimatization"))))
+            acclimatisation=_acclimatisation(d.get("acclimatization")),
+            armour=(armour or {}).get(sg._ident(d.get("division_template_id")))))
     return out
 
 
@@ -412,6 +456,10 @@ def read_world(path: Path, me: str, *, layer=None, also: tuple[str, ...] = ()) -
     world.states = read_states(text)
     world.controllers, world.vp, world.logistics = read_provinces(text)
     templates = read_templates(text)
+    try:
+        armour = read_template_armour(text)
+    except Exception:  # noqa: BLE001 - template composition is an extra; the army reads without it
+        armour = {}
     names = sg._equipment_names_fast(text) or sg._equipment_names(sg.top_block(text, "equipments") or {})
     from . import world_full as F
 
@@ -443,8 +491,10 @@ def read_world(path: Path, me: str, *, layer=None, also: tuple[str, ...] = ()) -
         block = mine if tag == me else sg.country_block(text, tag)
         if block is None:
             continue
-        country = CountryPicture(tag, read_divisions(block, tag, templates.get(tag, {}), layer),
-                                 read_production(block, names))
+        country = CountryPicture(tag, read_divisions(block, tag, templates.get(tag, {}), layer,
+                                                   armour.get(tag)),
+                                 read_production(block, names),
+                                 capitulated=_capitulated(block))
         world.countries[tag] = country
         if shared is not None:
             try:
@@ -721,7 +771,8 @@ def _feature_gap(index, view: str, me: str) -> str:
     return index.mod_context().feature_gap(key, me)
 
 
-def query(pic: Picture, view: str, ident: str | None, index=None, layer=None, limit: int = 60) -> dict:
+def query(pic: Picture, view: str, ident: str | None, index=None, layer=None, limit: int = 60,
+          history=None) -> dict:
     view = (view or "divisions").lower()
     from . import world_full
 
@@ -739,6 +790,11 @@ def query(pic: Picture, view: str, ident: str | None, index=None, layer=None, li
         from . import battles as B
 
         return B.view(pic.battles, lambda state: _state_name(index, state), limit)
+    if view == "fronts":
+        from . import frontreport as FR
+
+        name_of = lambda state: _state_name(index, state)  # noqa: E731
+        return FR.view(FR.report(history, pic, layer, name_of), history, limit)
     if view == "divisions":
         from . import condition as C
 
@@ -774,7 +830,7 @@ def query(pic: Picture, view: str, ident: str | None, index=None, layer=None, li
         return {"view": "borders", "borders": [
             {"state": s, "name": _state_name(index, s), "held_by": h, "terrain": t}
             for s, (h, t) in sorted(pic.borders.items(), key=lambda kv: (kv[1][0], kv[0]))][:limit]}
-    return {"error": f"unknown view {view!r}: divisions, battles, state, country, borders, "
+    return {"error": f"unknown view {view!r}: divisions, battles, fronts, state, country, borders, "
                      + ", ".join(world_full.NEW_VIEWS)}
 
 
@@ -889,6 +945,7 @@ class WorldObserver:
         self._key: tuple | None = None
         self.world: World | None = None
         self.error: str | None = None
+        self._history = None
 
     def _me(self, state: GameState) -> str:
         tag = (state.country or "").upper()
@@ -907,10 +964,26 @@ class WorldObserver:
                 self.world = read_world(path, self.me, layer=self.layer,
                                         also=enemies + tuple(self.others))
                 self.error = None
+                self._record_fronts(self.world)
             except (OSError, ValueError) as exc:
                 self.error = str(exc)
             self._key = key
         return self.world
+
+    @property
+    def history(self):
+        """What the observer has seen of the fronts across saves (frontreport.py)."""
+        if self._history is None:
+            from .frontreport import FrontHistory
+
+            self._history = FrontHistory.for_run(self.run_dir)
+        return self._history
+
+    def _record_fronts(self, world: World) -> None:
+        try:
+            self.history.record(world, self.me, self.layer)
+        except Exception as exc:  # noqa: BLE001 - a history that cannot be kept must not cost the brief
+            world.full_error = world.full_error or f"fronts: {type(exc).__name__}: {exc}"
 
     def picture(self, state: GameState) -> Picture | None:
         world = self.refresh(state)
@@ -923,6 +996,10 @@ class WorldObserver:
 
         pic = self.picture(state)
         lines = brief_lines(pic, self.index, self.layer) if pic is not None else []
+        if pic is not None:
+            from . import frontreport as FR
+
+            lines += FR.brief_lines(FR.report(self.history, pic, self.layer))
         from .steering import Standing as SteerStanding
 
         standing = Standing(self.run_dir).line(lambda s: _state_name(self.index, s))
@@ -940,7 +1017,7 @@ class WorldObserver:
             return {"error": "no text save of this campaign yet: the game autosaves monthly "
                              "(save_as_binary=no); until then only the brief's own numbers exist"
                              + (f" ({self.error})" if self.error else "")}
-        data = query(pic, view, ident, self.index, self.layer, limit)
+        data = query(pic, view, ident, self.index, self.layer, limit, history=self.history)
         if "error" not in data and (not ident or ident.upper() == self.me):
             from .observation.mechanics import view_extras
 

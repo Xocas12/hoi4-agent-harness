@@ -417,6 +417,9 @@ ACTIONS += [
             "strength, supply, days out of supply, entrenchment, equipment fill and whether it is "
             "encircled or in a battle; view=battles lists the battles you are in and the ones you "
             "can see (sides, divisions, tactics, damage, an estimate of who is winning); "
+            "view=fronts is the report per enemy front: how the line moved since the last save and "
+            "over about 90 days, the battles over the period (won and lost by side, piecemeal "
+            "attacks), the force in contact, and why a front is stuck and what addresses it; "
             "view=state id=<state id> shows one "
             "state, both sides; view=country id=<TAG> shows what your intelligence knows of a country "
             "(army, factories, production: exact, estimated or unknown by your intel); view=borders "
@@ -435,7 +438,8 @@ ACTIONS += [
         ),
         parameters=_schema(
             {"view": {"type": "string", "enum": [
-                "divisions", "battles", "state", "country", "borders", "faction", "intel", "projects",
+                "divisions", "battles", "fronts", "state", "country", "borders", "faction", "intel",
+                "projects",
                 "navy",
                 "air", "politics", "economy", "diplomacy", "research", "occupation", "supply",
                 "commanders"]},
