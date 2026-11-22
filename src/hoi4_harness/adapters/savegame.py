@@ -38,6 +38,17 @@ TOKEN = re.compile(r'"[^"]*"|[{}=]|[^\s{}=]+')
 
 
 
+def read_text(path: Path) -> str:
+    """A save's text. 1.20 writes some names in a single-byte code page (a live Spanish save had
+    "Divisi\xf3n"), so UTF-8 is tried strictly first and Windows-1252 is the fallback."""
+    data = Path(path).read_bytes()
+    try:
+        text = data.decode("utf-8")
+    except UnicodeDecodeError:
+        text = data.decode("cp1252", errors="replace")
+    return text.replace("\r\n", "\n")        # as read_text's newline translation did
+
+
 def find_save_dir(explicit: Path | None = None) -> Path | None:
     """Locate the save folder, including a Documents redirected into OneDrive."""
     return find_in_game_dir("save games", explicit=explicit)
@@ -244,7 +255,7 @@ def read_save(path: Path) -> dict:
             f"{path.name} is a binary save (starts {magic[:7]!r}). Set save_as_binary=no in "
             "settings.txt and save again: this adapter reads text saves only."
         )
-    text = path.read_text(encoding="utf-8", errors="replace")
+    text = read_text(path)
     raw = _head(text)
     player = raw.get("player")
     if not isinstance(player, str):
@@ -654,7 +665,7 @@ def inspect(path: Path, limit: int = 60) -> str:
     player country's own keys with a sample of each value -- so that work
     starts from the file rather than from memory.
     """
-    text = Path(path).read_text(encoding="utf-8", errors="replace")
+    text = read_text(Path(path))
     spans = top_level_spans(text)
     head = extract(text, {"date", "player"})
     lines = [

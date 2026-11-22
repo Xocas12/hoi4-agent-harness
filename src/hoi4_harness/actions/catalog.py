@@ -552,7 +552,7 @@ ACTIONS += [
             "into later turns. Use it for intent that outlives this turn: what you "
             "are building toward and what would change your mind."
         ),
-        parameters=_schema({"text": {"type": "string", "maxLength": 500}}, ["text"]),
+        parameters=_schema({"text": {"type": "string"}}, ["text"]),
     ),
 ]
 

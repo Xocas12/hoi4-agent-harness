@@ -404,7 +404,7 @@ def read_world(path: Path, me: str, *, layer=None, also: tuple[str, ...] = ()) -
         magic = handle.read(8)
     if magic.startswith(b"HOI4bin") or bytes(1) in magic:
         raise ValueError(f"{path.name} is a binary save: set save_as_binary=no in settings.txt")
-    text = path.read_text(encoding="utf-8", errors="replace")
+    text = sg.read_text(path)
     head = sg._head(text)
     world = World(date=head.get("date") if isinstance(head.get("date"), str) else None,
                   path=path, player=head.get("player") if isinstance(head.get("player"), str) else None)
