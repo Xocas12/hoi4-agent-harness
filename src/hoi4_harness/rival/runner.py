@@ -39,6 +39,7 @@ from ..handover import GRANT_FILENAME
 from ..types import GameState
 from .safety import (
     HandoverPolicy,
+    IdlePolicy,
     InboxPolicy,
     KeyWatch,
     LogClock,
@@ -173,8 +174,9 @@ def build_policy(config: HarnessConfig, adapter, fake, now: Callable[[], float])
         return InboxPolicy()
     driver = adapter.writer.router.driver
     watch = fake.input_watch() if fake is not None else system_input_watch()
-    return PausedPolicy(LogClock(getattr(adapter.reader, "log_path", config.log_path), now), watch,
-                        driver.focus, config.rival_paused_seconds, config.rival_idle_seconds)
+    kind = IdlePolicy if config.rival_act_when == "idle" else PausedPolicy
+    return kind(LogClock(getattr(adapter.reader, "log_path", config.log_path), now), watch,
+                driver.focus, config.rival_paused_seconds, config.rival_idle_seconds)
 
 
 def build_session(env: HOI4Env, config: HarnessConfig, log: CampaignLog) -> RivalSession:

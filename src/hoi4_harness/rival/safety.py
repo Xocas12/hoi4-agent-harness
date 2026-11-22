@@ -44,7 +44,7 @@ from ..adapters.window import FocusCheck
 #: How much of the end of game.log is read to find the in-game date. The log can be many MB.
 TAIL_BYTES = 65536
 
-POLICIES = ("paused", "handover", "never", "inbox")
+POLICIES = ("paused", "handover", "never", "inbox", "idle")
 
 
 # --- what the person is doing -------------------------------------------------------
@@ -354,3 +354,34 @@ class KeyWatch:
         leave it held. This is what catches a keypress that falls inside one of our chords."""
         if self.active and self.tripped is None:
             self.tripped = self.policy.interrupted()
+
+
+class IdlePolicy(PausedPolicy):
+    """Nobody is at the keyboard (an unattended run, or a person away): act when the keyboard and
+    mouse have been idle and the game is in front, whether or not the game is paused. The console
+    runs a file's effects at once either way. For a person actually playing, use ``paused``."""
+
+    name = "idle"
+
+    def check(self) -> Gate:
+        focus = self.focus()
+        if not focus.focused:
+            return Gate(False, "not in front", "the game window is not in front"
+                        + (f" ({focus.reason})" if focus.reason else ""))
+        if not self.watch.supported:
+            return Gate(False, "no idle clock", "this platform cannot say when the keyboard was "
+                        "last used: use --rival-act-when handover")
+        idle = self.watch.idle_seconds()
+        if idle is None or idle < self.idle_seconds:
+            return Gate(False, "typing",
+                        f"there was keyboard or mouse input {0 if idle is None else idle:.0f}s ago "
+                        f"({self.idle_seconds:g}s of quiet wanted)")
+        return Gate(True)
+
+    def interrupted(self) -> str | None:
+        tick = self.watch.tick()
+        if tick is not None and tick != self._expect:
+            return "someone started using the keyboard or mouse"
+        if not self.focus().focused:
+            return "the game window lost the focus"
+        return None

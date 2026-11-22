@@ -52,6 +52,7 @@ Naval fights use the damage dealt, else ``forces_compare``.
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 
 from .adapters import savegame as sg
@@ -150,7 +151,8 @@ def _participants(block) -> list[str]:
         if isinstance(node, dict):
             items = node.get("_items")
             if isinstance(items, list) and len(items) == 2 and isinstance(items[0], str) \
-                    and not isinstance(items[1], (dict, list)) and items[0].isalpha():
+                    and not isinstance(items[1], (dict, list)) \
+                    and re.fullmatch(r"[A-Z][A-Z0-9]{2}", items[0]):
                 pairs.append((items[0], _num(items[1])))
             else:
                 stack.extend(items or [])

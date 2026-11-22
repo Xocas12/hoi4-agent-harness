@@ -193,8 +193,11 @@ def _mod_text() -> str:
 
 def test_the_mod_logs_every_kind_the_reader_knows_and_runs_weekly():
     text = _mod_text()
-    for kind in ("obsbegin", "res", "tension", "equip", "garrison", "peace", "fac", "vol", "collab"):
+    for kind in ("obsbegin", "res", "tension", "equip", "garrison"):
         assert f"LLMB|v5|{kind}|" in text, kind
+    # Removed after the first live run (2026-11-22): the game crashed right after this effect.
+    for kind in ("peace", "fac", "vol", "collab"):
+        assert f"LLMB|v5|{kind}|" not in text, kind
     hooks = (MOD / "common" / "on_actions" / "llm_bridge_on_actions.txt").read_text(encoding="utf-8")
     assert "llm_bridge_emit_observe = yes" in hooks[hooks.index("on_weekly"):]
 
@@ -225,7 +228,6 @@ def test_the_tokens_are_the_ones_the_installed_documentation_lists():
               and not t.isdigit()}
     assert {"resource_produced", "resource_consumed", "resource_imported", "resource_exported",
             "threat", "num_equipment", "num_equipment_in_armies", "num_target_equipment_in_armies",
-            "garrison_manpower_need", "foreign_manpower", "pc_current_score", "pc_total_score",
-            "faction_influence_score"} <= wanted
+            "garrison_manpower_need", "foreign_manpower"} <= wanted
     for token in wanted:
         assert re.search(rf"^#+ {re.escape(token)}$", known, re.M), f"{token} is not in the documentation"

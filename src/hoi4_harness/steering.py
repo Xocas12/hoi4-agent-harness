@@ -208,10 +208,6 @@ AREAS: dict[str, dict[str, Spec]] = {
                              {"less": -30, "more": 30, "much_more": 100}, source="tag",
                              what="how much the AI wants to trade with that country (raises its "
                                   "acceptance of purchases and market access)"),
-        "sell": Spec("equipment_market_for_sale_factor", (), {"less": -50, "more": 50, "much_more": 100},
-                     source="archetype",
-                     what="how much of its surplus in that equipment the AI puts up for sale (a "
-                          "factor on the game's default ratio)"),
         "spend": Spec("equipment_market_spend_factories", (),
                       {"less": -50, "more": 20, "much_more": 100},
                       what="how many civilian factories the AI will spend buying equipment "
@@ -288,6 +284,34 @@ def known_ids(index) -> dict[str, set[str]]:
 
 def spec_for(area: str, kind: str) -> Spec | None:
     return AREAS.get(area, {}).get(kind)
+
+
+#: Names a model uses for a steer id the game spells otherwise (live 2026-11-22: Haiku sent
+#: "oil_refinery" and "motorized_equipment").
+ALIASES = {"oil_refinery": "synthetic_refinery", "refinery": "synthetic_refinery",
+           "civilian_factory": "industrial_complex", "civ": "industrial_complex",
+           "military_factory": "arms_factory", "mil": "arms_factory", "factory": "arms_factory",
+           "radar": "radar_station", "anti_air": "anti_air_building", "airbase": "air_base",
+           "supply_hub": "supply_node", "tank": "armor", "tanks": "armor", "armour": "armor"}
+
+
+def normalise(area: str, kind: str, ident: str | None) -> str | None:
+    """The id the game uses for what the model wrote: an alias, or the name without a trailing
+    ``_equipment`` when the steer's ids are short names. Unchanged when nothing fits."""
+    spec = spec_for(area, kind)
+    if spec is None or not ident or not spec.ids or ident in spec.ids:
+        return ident
+    # A production line's own id ("medium_tank_chassis_2", "small_plane_airframe_1", from the
+    # brief's Industry line) names the archetype the steer wants (live, 2026-11-22).
+    base = re.sub(r"_\d+$", "", ident).removesuffix("_equipment")
+    line = ("armor" if base.endswith("_tank_chassis") or base.endswith("tank_destroyer_chassis")
+            else None)
+    for candidate in (ALIASES.get(ident), ident.removesuffix("_equipment"),
+                      ALIASES.get(ident.removesuffix("_equipment")), base, ALIASES.get(base), line):
+        if candidate and candidate in spec.ids and not (area == "production" and kind == "building"
+                                                         and candidate == "anti_air"):
+            return candidate
+    return ident
 
 
 def refusal(area: str, kind: str, ident: str | None, level: str,

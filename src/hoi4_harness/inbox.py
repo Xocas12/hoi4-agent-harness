@@ -36,7 +36,6 @@ scripted effects from a mod folder in Documents, and how long after the write it
 
 from __future__ import annotations
 
-import os
 import re
 import time
 from collections.abc import Callable
@@ -219,11 +218,13 @@ class Inbox:
         for rel, text in render(self.pending).items():
             target = self.mod_dir / rel
             target.parent.mkdir(parents=True, exist_ok=True)
-            tmp = self.mod_dir / f".{target.name}.tmp"
-            tmp.write_text(text, encoding="utf-8", newline="\n")
+            # In place, not tmp + rename: the game's file watcher in -debug_mode may react to a
+            # modification and not to the rename an atomic replace makes (first live run,
+            # 2026-11-22: no batch acknowledged after an atomic replace).
             for attempt in range(20):
                 try:
-                    os.replace(tmp, target)
+                    with open(target, "w", encoding="utf-8", newline="\n") as fh:
+                        fh.write(text)
                     break
                 except PermissionError:
                     # The game is reading the file: it holds it for milliseconds.

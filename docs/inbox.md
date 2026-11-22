@@ -1,5 +1,15 @@
 # The inbox: an LLM plays a country with no keyboard, console or focus
 
+> **Live result, 2026-11-22: this does not work in HOI4 1.20.** Started with `-debug_mode`, with a
+> harness country marked and its daily hook running, the game never ran a posted batch: not after
+> an atomic replace, not after an in-place write, over 50+ in-game days. It logged no reload of the
+> file, and 1.20's documented console reloads cover the interface, technologies, OOBs and textures,
+> not events or scripted effects. `native` therefore defaults to the console (keys) acting in the
+> person's pauses (`--rival-act-when paused`), or whenever the keyboard is idle (`idle`, unattended
+> runs). The inbox stays in the code, opt-in with `--transport inbox`, for a future patch or a mod
+> setup where the reload happens. See docs/results/overnight-2026-11-22.md.
+
+
 `hoi4-harness native --rival POL` makes an LLM the strategist of Poland while you play
 another country in the same single-player game. The harness never sends a key, never opens
 the console, never needs the game window in front and never waits for you to pause. You

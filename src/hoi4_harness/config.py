@@ -349,11 +349,21 @@ class HarnessConfig:
     #: ``SetForegroundWindow``). Off by default: the harness waits and never takes the
     #: keyboard from whatever the person is doing.
     campaign_take_focus: bool = False
+    #: ...and only once the keyboard and mouse have been idle this long, so it never pulls
+    #: the game over a window someone is using (a relaunch left VS Code in front, 2026-11-22).
+    campaign_take_focus_idle_seconds: float = 120.0
     #: The game's process name, for the death check (empty: no check).
     campaign_game_process: str = "hoi4.exe"
     #: What an exhausted budget does: ``stop`` (leave the game paused, resumable) or
     #: ``coast`` (the AI plays on to the end date with no model calls).
     campaign_on_budget: str = "stop"
+    #: HOI4 leaks memory over a long run (78 GB private after three hours on 2026-11-22; the
+    #: run before crashed in 1944 at the same point). Past this many GB of the game's private
+    #: memory, a recovery save is taken at the next turn and then ``campaign_on_memory``
+    #: applies: ``stop`` (a clean, resumable stop: restart the game, load the save, --resume)
+    #: or ``warn`` (a log line each turn). 0 turns the check off.
+    campaign_memory_limit_gb: float = 48.0
+    campaign_on_memory: str = "stop"
     #: Stop, with a reason, at the next turn boundary once the PLAYER's own country
     #: capitulates. Off (the default): play on in exile. A capitulated country lives on in
     #: HOI4 (government in exile, whatever states it still holds), so the run wakes the

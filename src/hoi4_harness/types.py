@@ -279,6 +279,11 @@ class GameState:
     #: Verification uses it to tell "unchanged" from "not looked at again yet".
     telemetry_ticks: int | None = None
     political_power: float = 0.0
+    #: Net political power a day over the last days the reader saw (gain minus what was
+    #: spent), and over how many days; None where no reader keeps the history. Without it a
+    #: model invented a "-13/day bleed from occupation" (overnight campaign, 2026-11-22).
+    pp_per_day: float | None = None
+    pp_trend_days: int | None = None
     stability: float = 0.0
     war_support: float = 0.0
     manpower: int = 0

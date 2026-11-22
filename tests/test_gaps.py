@@ -388,9 +388,10 @@ def test_the_market_steers_take_an_archetype_a_country_or_nothing(tmp_path):
     assert _do(channel, "steer_market", kind="buy_from", id="GER", level="much_more").ok
     assert _do(channel, "steer_market", kind="trade_desire", id="POL", level="less").ok
     assert _do(channel, "steer_market", kind="spend", level="more").ok
-    assert _do(channel, "steer_market", kind="sell", id="artillery_equipment", level="less").ok
-    assert game.flags >= {"llmb_steer_market_sell_artillery_equipment_less",
-                          "llmb_steer_market_buy_infantry_equipment_more",
+    # sell was dropped after the first live run: equipment_market_for_sale_factor takes the game's
+    # own category tokens (armor, train), not archetypes, and 138 lines failed to load.
+    assert not _do(channel, "steer_market", kind="sell", id="artillery_equipment", level="less").ok
+    assert game.flags >= {"llmb_steer_market_buy_infantry_equipment_more",
                           "llmb_steer_market_buy_from_GER_much_more",
                           "llmb_steer_market_trade_desire_POL_less", "llmb_steer_market_spend_any_more"}
     for arguments, why in (({"kind": "buy", "id": "nonsense_equipment", "level": "more"},
@@ -455,9 +456,9 @@ def test_every_new_steer_has_documented_syntax_and_is_in_the_shipped_mod():
         assert line in text, line
     for line in ("type = equipment_market_buy equipment_type = infantry_equipment value = 100",
                  "type = equipment_market_buy seller = GER value = 200",
-                 "type = equipment_market_trade_desire id = POL value = 30",
-                 "type = equipment_market_for_sale_factor id = train_equipment value = 100"):
+                 "type = equipment_market_trade_desire id = POL value = 30"):
         assert line in regions, line
+    assert "equipment_market_for_sale_factor" not in regions        # dropped after the live run
     assert modgen.drift(MOD) == []
 
 

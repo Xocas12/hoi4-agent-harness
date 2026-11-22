@@ -111,11 +111,23 @@ def resolve(regions: dict[int, Region], value: str) -> Region | None:
     text = str(value).strip()
     if text.isdigit():
         return regions.get(int(text))
-    low = text.lower()
+    low = text.lower().replace("_", " ")     # "baltic_sea", an id-shaped guess (2026-11-22)
     for r in regions.values():
         if low in (r.name.lower(), r.name_key.lower()):
             return r
-    return None
+    # A partial name the LLM would type ("Western Mediterranean" for "Western Mediterranean Sea"):
+    # accepted only when exactly one region contains it.
+    hits = [r for r in regions.values() if low and low in r.name.lower()]
+    return hits[0] if len(hits) == 1 else None
+
+
+def near(regions: dict[int, Region], value: str, limit: int = 8) -> list[str]:
+    """Region names sharing a word with ``value`` ("Baltic" for "baltic_sea"), for a refusal."""
+    words = [w for w in str(value).lower().replace("_", " ").split() if len(w) > 3 and w != "seas"]
+    words = [w for w in words if w != "sea"] or words
+    hits = sorted({f"{r.name} ({r.id})" for r in regions.values()
+                   if any(w in r.name.lower() for w in words)})
+    return hits[:limit]
 
 
 def write(mod_dir: Path, regions: dict[int, Region]) -> Path:

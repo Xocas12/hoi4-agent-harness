@@ -106,6 +106,7 @@ that you are away from the keyboard (`--rival FRA,ENG,SOV` steers several at onc
 keyboard at all: orders go into a mod file the game reloads by itself in `-debug_mode`, the
 model runs through the Claude Code CLI on your subscription, and you just play — see
 [docs/inbox.md](docs/inbox.md).
+(Live 2026-11-22: 1.20 does not reload the inbox files, so `native` uses the console in your pauses; see docs/inbox.md.)
 
 **For non-technical users: `hoi4-harness setup`.** It opens a window where you pick the
 countries an AI plays beside you, what it thinks with (your Claude Code subscription, an

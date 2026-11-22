@@ -45,6 +45,27 @@ def process_running(name: str) -> bool | None:
     return name.lower() in out.stdout.lower()
 
 
+def process_private_gb(name: str) -> float | None:
+    """The private (committed) memory of the process called ``name``, in GB; None where that
+    cannot be told. Windows only. Private bytes, not the working set: HOI4 1.20 in an overnight
+    campaign (2026-11-22) held 78 GB private against a 20 GB working set, and it is the commit
+    limit that ends the game (a 109 GB limit was 107.5 GB full)."""
+    if not name or sys.platform != "win32":
+        return None
+    stem = name[:-4] if name.lower().endswith(".exe") else name
+    script = (f"$p = Get-Process -Name '{stem}' -ErrorAction SilentlyContinue | "
+              "Select-Object -First 1; if ($p) { $p.PrivateMemorySize64 }")
+    try:
+        out = subprocess.run(["powershell.exe", "-NoProfile", "-NonInteractive", "-Command", script],
+                             capture_output=True, text=True, timeout=30)
+    except (OSError, subprocess.SubprocessError):
+        return None
+    try:
+        return int(out.stdout.strip()) / 1024 ** 3
+    except ValueError:
+        return None
+
+
 class Watchdog:
     """Raises ``GameLost`` when the process is gone or the log stops growing."""
 

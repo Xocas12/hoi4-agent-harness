@@ -521,12 +521,28 @@ def _watch_for_campaign(adapter, config: HarnessConfig, fake, driver, sleep) -> 
     inner = driver._focus_check
     take = None
     if config.campaign_take_focus and fake is None:
-        from .window import take_focus as take
+        from ..rival.safety import system_input_watch
+        from .window import take_focus
+
+        take = idle_gated(take_focus, system_input_watch().idle_seconds,
+                          config.campaign_take_focus_idle_seconds)
     patient = PatientFocus(inner, sleep=sleep, max_wait_seconds=config.campaign_focus_wait_minutes * 60,
                            take=take)
     driver._focus_check = patient
     adapter.patient_focus = patient
 
+
+
+def idle_gated(take, idle_seconds, quiet: float):
+    """``take`` (bring the game to the front) only after ``quiet`` seconds with no keyboard or
+    mouse input: a person at the machine keeps their window. An idle clock that cannot be read
+    counts as someone there."""
+    def gated(title: str) -> bool:
+        idle = idle_seconds()
+        if idle is None or idle < quiet:
+            return False
+        return take(title)
+    return gated
 
 
 def _wire_hands(driver, console, config: HarnessConfig, hands: Hands, fake):

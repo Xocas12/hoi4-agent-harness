@@ -1364,6 +1364,246 @@ llmb_steer_navy_raiding_CZE_much_more = {
 	ai_strategy = { type = convoy_raiding_target id = CZE value = 100 }
 }
 
+llmb_steer_navy_raiding_D01_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_navy_raiding_D01_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_navy_raiding_D01_more } } }
+	ai_strategy = { type = convoy_raiding_target id = D01 value = 50 }
+}
+
+llmb_steer_navy_raiding_D01_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_navy_raiding_D01_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_navy_raiding_D01_much_more } } }
+	ai_strategy = { type = convoy_raiding_target id = D01 value = 100 }
+}
+
+llmb_steer_navy_raiding_D02_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_navy_raiding_D02_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_navy_raiding_D02_more } } }
+	ai_strategy = { type = convoy_raiding_target id = D02 value = 50 }
+}
+
+llmb_steer_navy_raiding_D02_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_navy_raiding_D02_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_navy_raiding_D02_much_more } } }
+	ai_strategy = { type = convoy_raiding_target id = D02 value = 100 }
+}
+
+llmb_steer_navy_raiding_D03_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_navy_raiding_D03_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_navy_raiding_D03_more } } }
+	ai_strategy = { type = convoy_raiding_target id = D03 value = 50 }
+}
+
+llmb_steer_navy_raiding_D03_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_navy_raiding_D03_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_navy_raiding_D03_much_more } } }
+	ai_strategy = { type = convoy_raiding_target id = D03 value = 100 }
+}
+
+llmb_steer_navy_raiding_D04_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_navy_raiding_D04_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_navy_raiding_D04_more } } }
+	ai_strategy = { type = convoy_raiding_target id = D04 value = 50 }
+}
+
+llmb_steer_navy_raiding_D04_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_navy_raiding_D04_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_navy_raiding_D04_much_more } } }
+	ai_strategy = { type = convoy_raiding_target id = D04 value = 100 }
+}
+
+llmb_steer_navy_raiding_D05_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_navy_raiding_D05_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_navy_raiding_D05_more } } }
+	ai_strategy = { type = convoy_raiding_target id = D05 value = 50 }
+}
+
+llmb_steer_navy_raiding_D05_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_navy_raiding_D05_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_navy_raiding_D05_much_more } } }
+	ai_strategy = { type = convoy_raiding_target id = D05 value = 100 }
+}
+
+llmb_steer_navy_raiding_D06_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_navy_raiding_D06_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_navy_raiding_D06_more } } }
+	ai_strategy = { type = convoy_raiding_target id = D06 value = 50 }
+}
+
+llmb_steer_navy_raiding_D06_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_navy_raiding_D06_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_navy_raiding_D06_much_more } } }
+	ai_strategy = { type = convoy_raiding_target id = D06 value = 100 }
+}
+
+llmb_steer_navy_raiding_D07_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_navy_raiding_D07_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_navy_raiding_D07_more } } }
+	ai_strategy = { type = convoy_raiding_target id = D07 value = 50 }
+}
+
+llmb_steer_navy_raiding_D07_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_navy_raiding_D07_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_navy_raiding_D07_much_more } } }
+	ai_strategy = { type = convoy_raiding_target id = D07 value = 100 }
+}
+
+llmb_steer_navy_raiding_D08_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_navy_raiding_D08_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_navy_raiding_D08_more } } }
+	ai_strategy = { type = convoy_raiding_target id = D08 value = 50 }
+}
+
+llmb_steer_navy_raiding_D08_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_navy_raiding_D08_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_navy_raiding_D08_much_more } } }
+	ai_strategy = { type = convoy_raiding_target id = D08 value = 100 }
+}
+
+llmb_steer_navy_raiding_D09_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_navy_raiding_D09_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_navy_raiding_D09_more } } }
+	ai_strategy = { type = convoy_raiding_target id = D09 value = 50 }
+}
+
+llmb_steer_navy_raiding_D09_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_navy_raiding_D09_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_navy_raiding_D09_much_more } } }
+	ai_strategy = { type = convoy_raiding_target id = D09 value = 100 }
+}
+
+llmb_steer_navy_raiding_D10_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_navy_raiding_D10_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_navy_raiding_D10_more } } }
+	ai_strategy = { type = convoy_raiding_target id = D10 value = 50 }
+}
+
+llmb_steer_navy_raiding_D10_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_navy_raiding_D10_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_navy_raiding_D10_much_more } } }
+	ai_strategy = { type = convoy_raiding_target id = D10 value = 100 }
+}
+
+llmb_steer_navy_raiding_D11_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_navy_raiding_D11_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_navy_raiding_D11_more } } }
+	ai_strategy = { type = convoy_raiding_target id = D11 value = 50 }
+}
+
+llmb_steer_navy_raiding_D11_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_navy_raiding_D11_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_navy_raiding_D11_much_more } } }
+	ai_strategy = { type = convoy_raiding_target id = D11 value = 100 }
+}
+
+llmb_steer_navy_raiding_D12_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_navy_raiding_D12_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_navy_raiding_D12_more } } }
+	ai_strategy = { type = convoy_raiding_target id = D12 value = 50 }
+}
+
+llmb_steer_navy_raiding_D12_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_navy_raiding_D12_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_navy_raiding_D12_much_more } } }
+	ai_strategy = { type = convoy_raiding_target id = D12 value = 100 }
+}
+
+llmb_steer_navy_raiding_D13_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_navy_raiding_D13_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_navy_raiding_D13_more } } }
+	ai_strategy = { type = convoy_raiding_target id = D13 value = 50 }
+}
+
+llmb_steer_navy_raiding_D13_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_navy_raiding_D13_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_navy_raiding_D13_much_more } } }
+	ai_strategy = { type = convoy_raiding_target id = D13 value = 100 }
+}
+
+llmb_steer_navy_raiding_D14_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_navy_raiding_D14_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_navy_raiding_D14_more } } }
+	ai_strategy = { type = convoy_raiding_target id = D14 value = 50 }
+}
+
+llmb_steer_navy_raiding_D14_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_navy_raiding_D14_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_navy_raiding_D14_much_more } } }
+	ai_strategy = { type = convoy_raiding_target id = D14 value = 100 }
+}
+
+llmb_steer_navy_raiding_D15_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_navy_raiding_D15_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_navy_raiding_D15_more } } }
+	ai_strategy = { type = convoy_raiding_target id = D15 value = 50 }
+}
+
+llmb_steer_navy_raiding_D15_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_navy_raiding_D15_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_navy_raiding_D15_much_more } } }
+	ai_strategy = { type = convoy_raiding_target id = D15 value = 100 }
+}
+
+llmb_steer_navy_raiding_D16_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_navy_raiding_D16_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_navy_raiding_D16_more } } }
+	ai_strategy = { type = convoy_raiding_target id = D16 value = 50 }
+}
+
+llmb_steer_navy_raiding_D16_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_navy_raiding_D16_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_navy_raiding_D16_much_more } } }
+	ai_strategy = { type = convoy_raiding_target id = D16 value = 100 }
+}
+
+llmb_steer_navy_raiding_D17_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_navy_raiding_D17_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_navy_raiding_D17_more } } }
+	ai_strategy = { type = convoy_raiding_target id = D17 value = 50 }
+}
+
+llmb_steer_navy_raiding_D17_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_navy_raiding_D17_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_navy_raiding_D17_much_more } } }
+	ai_strategy = { type = convoy_raiding_target id = D17 value = 100 }
+}
+
+llmb_steer_navy_raiding_D18_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_navy_raiding_D18_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_navy_raiding_D18_more } } }
+	ai_strategy = { type = convoy_raiding_target id = D18 value = 50 }
+}
+
+llmb_steer_navy_raiding_D18_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_navy_raiding_D18_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_navy_raiding_D18_much_more } } }
+	ai_strategy = { type = convoy_raiding_target id = D18 value = 100 }
+}
+
+llmb_steer_navy_raiding_D19_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_navy_raiding_D19_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_navy_raiding_D19_more } } }
+	ai_strategy = { type = convoy_raiding_target id = D19 value = 50 }
+}
+
+llmb_steer_navy_raiding_D19_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_navy_raiding_D19_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_navy_raiding_D19_much_more } } }
+	ai_strategy = { type = convoy_raiding_target id = D19 value = 100 }
+}
+
+llmb_steer_navy_raiding_D20_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_navy_raiding_D20_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_navy_raiding_D20_more } } }
+	ai_strategy = { type = convoy_raiding_target id = D20 value = 50 }
+}
+
+llmb_steer_navy_raiding_D20_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_navy_raiding_D20_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_navy_raiding_D20_much_more } } }
+	ai_strategy = { type = convoy_raiding_target id = D20 value = 100 }
+}
+
 llmb_steer_navy_raiding_DEN_more = {
 	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_navy_raiding_DEN_more }
 	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_navy_raiding_DEN_more } } }
@@ -7526,6 +7766,246 @@ llmb_steer_market_buy_from_CZE_much_more = {
 	ai_strategy = { type = equipment_market_buy seller = CZE value = 200 }
 }
 
+llmb_steer_market_buy_from_D01_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_buy_from_D01_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_buy_from_D01_more } } }
+	ai_strategy = { type = equipment_market_buy seller = D01 value = 100 }
+}
+
+llmb_steer_market_buy_from_D01_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_buy_from_D01_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_buy_from_D01_much_more } } }
+	ai_strategy = { type = equipment_market_buy seller = D01 value = 200 }
+}
+
+llmb_steer_market_buy_from_D02_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_buy_from_D02_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_buy_from_D02_more } } }
+	ai_strategy = { type = equipment_market_buy seller = D02 value = 100 }
+}
+
+llmb_steer_market_buy_from_D02_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_buy_from_D02_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_buy_from_D02_much_more } } }
+	ai_strategy = { type = equipment_market_buy seller = D02 value = 200 }
+}
+
+llmb_steer_market_buy_from_D03_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_buy_from_D03_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_buy_from_D03_more } } }
+	ai_strategy = { type = equipment_market_buy seller = D03 value = 100 }
+}
+
+llmb_steer_market_buy_from_D03_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_buy_from_D03_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_buy_from_D03_much_more } } }
+	ai_strategy = { type = equipment_market_buy seller = D03 value = 200 }
+}
+
+llmb_steer_market_buy_from_D04_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_buy_from_D04_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_buy_from_D04_more } } }
+	ai_strategy = { type = equipment_market_buy seller = D04 value = 100 }
+}
+
+llmb_steer_market_buy_from_D04_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_buy_from_D04_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_buy_from_D04_much_more } } }
+	ai_strategy = { type = equipment_market_buy seller = D04 value = 200 }
+}
+
+llmb_steer_market_buy_from_D05_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_buy_from_D05_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_buy_from_D05_more } } }
+	ai_strategy = { type = equipment_market_buy seller = D05 value = 100 }
+}
+
+llmb_steer_market_buy_from_D05_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_buy_from_D05_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_buy_from_D05_much_more } } }
+	ai_strategy = { type = equipment_market_buy seller = D05 value = 200 }
+}
+
+llmb_steer_market_buy_from_D06_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_buy_from_D06_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_buy_from_D06_more } } }
+	ai_strategy = { type = equipment_market_buy seller = D06 value = 100 }
+}
+
+llmb_steer_market_buy_from_D06_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_buy_from_D06_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_buy_from_D06_much_more } } }
+	ai_strategy = { type = equipment_market_buy seller = D06 value = 200 }
+}
+
+llmb_steer_market_buy_from_D07_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_buy_from_D07_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_buy_from_D07_more } } }
+	ai_strategy = { type = equipment_market_buy seller = D07 value = 100 }
+}
+
+llmb_steer_market_buy_from_D07_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_buy_from_D07_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_buy_from_D07_much_more } } }
+	ai_strategy = { type = equipment_market_buy seller = D07 value = 200 }
+}
+
+llmb_steer_market_buy_from_D08_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_buy_from_D08_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_buy_from_D08_more } } }
+	ai_strategy = { type = equipment_market_buy seller = D08 value = 100 }
+}
+
+llmb_steer_market_buy_from_D08_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_buy_from_D08_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_buy_from_D08_much_more } } }
+	ai_strategy = { type = equipment_market_buy seller = D08 value = 200 }
+}
+
+llmb_steer_market_buy_from_D09_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_buy_from_D09_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_buy_from_D09_more } } }
+	ai_strategy = { type = equipment_market_buy seller = D09 value = 100 }
+}
+
+llmb_steer_market_buy_from_D09_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_buy_from_D09_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_buy_from_D09_much_more } } }
+	ai_strategy = { type = equipment_market_buy seller = D09 value = 200 }
+}
+
+llmb_steer_market_buy_from_D10_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_buy_from_D10_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_buy_from_D10_more } } }
+	ai_strategy = { type = equipment_market_buy seller = D10 value = 100 }
+}
+
+llmb_steer_market_buy_from_D10_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_buy_from_D10_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_buy_from_D10_much_more } } }
+	ai_strategy = { type = equipment_market_buy seller = D10 value = 200 }
+}
+
+llmb_steer_market_buy_from_D11_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_buy_from_D11_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_buy_from_D11_more } } }
+	ai_strategy = { type = equipment_market_buy seller = D11 value = 100 }
+}
+
+llmb_steer_market_buy_from_D11_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_buy_from_D11_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_buy_from_D11_much_more } } }
+	ai_strategy = { type = equipment_market_buy seller = D11 value = 200 }
+}
+
+llmb_steer_market_buy_from_D12_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_buy_from_D12_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_buy_from_D12_more } } }
+	ai_strategy = { type = equipment_market_buy seller = D12 value = 100 }
+}
+
+llmb_steer_market_buy_from_D12_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_buy_from_D12_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_buy_from_D12_much_more } } }
+	ai_strategy = { type = equipment_market_buy seller = D12 value = 200 }
+}
+
+llmb_steer_market_buy_from_D13_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_buy_from_D13_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_buy_from_D13_more } } }
+	ai_strategy = { type = equipment_market_buy seller = D13 value = 100 }
+}
+
+llmb_steer_market_buy_from_D13_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_buy_from_D13_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_buy_from_D13_much_more } } }
+	ai_strategy = { type = equipment_market_buy seller = D13 value = 200 }
+}
+
+llmb_steer_market_buy_from_D14_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_buy_from_D14_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_buy_from_D14_more } } }
+	ai_strategy = { type = equipment_market_buy seller = D14 value = 100 }
+}
+
+llmb_steer_market_buy_from_D14_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_buy_from_D14_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_buy_from_D14_much_more } } }
+	ai_strategy = { type = equipment_market_buy seller = D14 value = 200 }
+}
+
+llmb_steer_market_buy_from_D15_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_buy_from_D15_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_buy_from_D15_more } } }
+	ai_strategy = { type = equipment_market_buy seller = D15 value = 100 }
+}
+
+llmb_steer_market_buy_from_D15_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_buy_from_D15_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_buy_from_D15_much_more } } }
+	ai_strategy = { type = equipment_market_buy seller = D15 value = 200 }
+}
+
+llmb_steer_market_buy_from_D16_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_buy_from_D16_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_buy_from_D16_more } } }
+	ai_strategy = { type = equipment_market_buy seller = D16 value = 100 }
+}
+
+llmb_steer_market_buy_from_D16_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_buy_from_D16_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_buy_from_D16_much_more } } }
+	ai_strategy = { type = equipment_market_buy seller = D16 value = 200 }
+}
+
+llmb_steer_market_buy_from_D17_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_buy_from_D17_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_buy_from_D17_more } } }
+	ai_strategy = { type = equipment_market_buy seller = D17 value = 100 }
+}
+
+llmb_steer_market_buy_from_D17_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_buy_from_D17_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_buy_from_D17_much_more } } }
+	ai_strategy = { type = equipment_market_buy seller = D17 value = 200 }
+}
+
+llmb_steer_market_buy_from_D18_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_buy_from_D18_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_buy_from_D18_more } } }
+	ai_strategy = { type = equipment_market_buy seller = D18 value = 100 }
+}
+
+llmb_steer_market_buy_from_D18_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_buy_from_D18_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_buy_from_D18_much_more } } }
+	ai_strategy = { type = equipment_market_buy seller = D18 value = 200 }
+}
+
+llmb_steer_market_buy_from_D19_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_buy_from_D19_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_buy_from_D19_more } } }
+	ai_strategy = { type = equipment_market_buy seller = D19 value = 100 }
+}
+
+llmb_steer_market_buy_from_D19_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_buy_from_D19_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_buy_from_D19_much_more } } }
+	ai_strategy = { type = equipment_market_buy seller = D19 value = 200 }
+}
+
+llmb_steer_market_buy_from_D20_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_buy_from_D20_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_buy_from_D20_more } } }
+	ai_strategy = { type = equipment_market_buy seller = D20 value = 100 }
+}
+
+llmb_steer_market_buy_from_D20_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_buy_from_D20_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_buy_from_D20_much_more } } }
+	ai_strategy = { type = equipment_market_buy seller = D20 value = 200 }
+}
+
 llmb_steer_market_buy_from_DEN_more = {
 	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_buy_from_DEN_more }
 	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_buy_from_DEN_more } } }
@@ -8742,6 +9222,366 @@ llmb_steer_market_trade_desire_CZE_much_more = {
 	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_trade_desire_CZE_much_more }
 	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_trade_desire_CZE_much_more } } }
 	ai_strategy = { type = equipment_market_trade_desire id = CZE value = 100 }
+}
+
+llmb_steer_market_trade_desire_D01_less = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_trade_desire_D01_less }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_trade_desire_D01_less } } }
+	ai_strategy = { type = equipment_market_trade_desire id = D01 value = -30 }
+}
+
+llmb_steer_market_trade_desire_D01_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_trade_desire_D01_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_trade_desire_D01_more } } }
+	ai_strategy = { type = equipment_market_trade_desire id = D01 value = 30 }
+}
+
+llmb_steer_market_trade_desire_D01_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_trade_desire_D01_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_trade_desire_D01_much_more } } }
+	ai_strategy = { type = equipment_market_trade_desire id = D01 value = 100 }
+}
+
+llmb_steer_market_trade_desire_D02_less = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_trade_desire_D02_less }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_trade_desire_D02_less } } }
+	ai_strategy = { type = equipment_market_trade_desire id = D02 value = -30 }
+}
+
+llmb_steer_market_trade_desire_D02_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_trade_desire_D02_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_trade_desire_D02_more } } }
+	ai_strategy = { type = equipment_market_trade_desire id = D02 value = 30 }
+}
+
+llmb_steer_market_trade_desire_D02_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_trade_desire_D02_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_trade_desire_D02_much_more } } }
+	ai_strategy = { type = equipment_market_trade_desire id = D02 value = 100 }
+}
+
+llmb_steer_market_trade_desire_D03_less = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_trade_desire_D03_less }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_trade_desire_D03_less } } }
+	ai_strategy = { type = equipment_market_trade_desire id = D03 value = -30 }
+}
+
+llmb_steer_market_trade_desire_D03_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_trade_desire_D03_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_trade_desire_D03_more } } }
+	ai_strategy = { type = equipment_market_trade_desire id = D03 value = 30 }
+}
+
+llmb_steer_market_trade_desire_D03_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_trade_desire_D03_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_trade_desire_D03_much_more } } }
+	ai_strategy = { type = equipment_market_trade_desire id = D03 value = 100 }
+}
+
+llmb_steer_market_trade_desire_D04_less = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_trade_desire_D04_less }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_trade_desire_D04_less } } }
+	ai_strategy = { type = equipment_market_trade_desire id = D04 value = -30 }
+}
+
+llmb_steer_market_trade_desire_D04_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_trade_desire_D04_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_trade_desire_D04_more } } }
+	ai_strategy = { type = equipment_market_trade_desire id = D04 value = 30 }
+}
+
+llmb_steer_market_trade_desire_D04_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_trade_desire_D04_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_trade_desire_D04_much_more } } }
+	ai_strategy = { type = equipment_market_trade_desire id = D04 value = 100 }
+}
+
+llmb_steer_market_trade_desire_D05_less = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_trade_desire_D05_less }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_trade_desire_D05_less } } }
+	ai_strategy = { type = equipment_market_trade_desire id = D05 value = -30 }
+}
+
+llmb_steer_market_trade_desire_D05_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_trade_desire_D05_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_trade_desire_D05_more } } }
+	ai_strategy = { type = equipment_market_trade_desire id = D05 value = 30 }
+}
+
+llmb_steer_market_trade_desire_D05_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_trade_desire_D05_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_trade_desire_D05_much_more } } }
+	ai_strategy = { type = equipment_market_trade_desire id = D05 value = 100 }
+}
+
+llmb_steer_market_trade_desire_D06_less = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_trade_desire_D06_less }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_trade_desire_D06_less } } }
+	ai_strategy = { type = equipment_market_trade_desire id = D06 value = -30 }
+}
+
+llmb_steer_market_trade_desire_D06_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_trade_desire_D06_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_trade_desire_D06_more } } }
+	ai_strategy = { type = equipment_market_trade_desire id = D06 value = 30 }
+}
+
+llmb_steer_market_trade_desire_D06_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_trade_desire_D06_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_trade_desire_D06_much_more } } }
+	ai_strategy = { type = equipment_market_trade_desire id = D06 value = 100 }
+}
+
+llmb_steer_market_trade_desire_D07_less = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_trade_desire_D07_less }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_trade_desire_D07_less } } }
+	ai_strategy = { type = equipment_market_trade_desire id = D07 value = -30 }
+}
+
+llmb_steer_market_trade_desire_D07_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_trade_desire_D07_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_trade_desire_D07_more } } }
+	ai_strategy = { type = equipment_market_trade_desire id = D07 value = 30 }
+}
+
+llmb_steer_market_trade_desire_D07_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_trade_desire_D07_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_trade_desire_D07_much_more } } }
+	ai_strategy = { type = equipment_market_trade_desire id = D07 value = 100 }
+}
+
+llmb_steer_market_trade_desire_D08_less = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_trade_desire_D08_less }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_trade_desire_D08_less } } }
+	ai_strategy = { type = equipment_market_trade_desire id = D08 value = -30 }
+}
+
+llmb_steer_market_trade_desire_D08_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_trade_desire_D08_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_trade_desire_D08_more } } }
+	ai_strategy = { type = equipment_market_trade_desire id = D08 value = 30 }
+}
+
+llmb_steer_market_trade_desire_D08_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_trade_desire_D08_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_trade_desire_D08_much_more } } }
+	ai_strategy = { type = equipment_market_trade_desire id = D08 value = 100 }
+}
+
+llmb_steer_market_trade_desire_D09_less = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_trade_desire_D09_less }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_trade_desire_D09_less } } }
+	ai_strategy = { type = equipment_market_trade_desire id = D09 value = -30 }
+}
+
+llmb_steer_market_trade_desire_D09_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_trade_desire_D09_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_trade_desire_D09_more } } }
+	ai_strategy = { type = equipment_market_trade_desire id = D09 value = 30 }
+}
+
+llmb_steer_market_trade_desire_D09_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_trade_desire_D09_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_trade_desire_D09_much_more } } }
+	ai_strategy = { type = equipment_market_trade_desire id = D09 value = 100 }
+}
+
+llmb_steer_market_trade_desire_D10_less = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_trade_desire_D10_less }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_trade_desire_D10_less } } }
+	ai_strategy = { type = equipment_market_trade_desire id = D10 value = -30 }
+}
+
+llmb_steer_market_trade_desire_D10_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_trade_desire_D10_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_trade_desire_D10_more } } }
+	ai_strategy = { type = equipment_market_trade_desire id = D10 value = 30 }
+}
+
+llmb_steer_market_trade_desire_D10_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_trade_desire_D10_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_trade_desire_D10_much_more } } }
+	ai_strategy = { type = equipment_market_trade_desire id = D10 value = 100 }
+}
+
+llmb_steer_market_trade_desire_D11_less = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_trade_desire_D11_less }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_trade_desire_D11_less } } }
+	ai_strategy = { type = equipment_market_trade_desire id = D11 value = -30 }
+}
+
+llmb_steer_market_trade_desire_D11_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_trade_desire_D11_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_trade_desire_D11_more } } }
+	ai_strategy = { type = equipment_market_trade_desire id = D11 value = 30 }
+}
+
+llmb_steer_market_trade_desire_D11_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_trade_desire_D11_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_trade_desire_D11_much_more } } }
+	ai_strategy = { type = equipment_market_trade_desire id = D11 value = 100 }
+}
+
+llmb_steer_market_trade_desire_D12_less = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_trade_desire_D12_less }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_trade_desire_D12_less } } }
+	ai_strategy = { type = equipment_market_trade_desire id = D12 value = -30 }
+}
+
+llmb_steer_market_trade_desire_D12_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_trade_desire_D12_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_trade_desire_D12_more } } }
+	ai_strategy = { type = equipment_market_trade_desire id = D12 value = 30 }
+}
+
+llmb_steer_market_trade_desire_D12_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_trade_desire_D12_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_trade_desire_D12_much_more } } }
+	ai_strategy = { type = equipment_market_trade_desire id = D12 value = 100 }
+}
+
+llmb_steer_market_trade_desire_D13_less = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_trade_desire_D13_less }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_trade_desire_D13_less } } }
+	ai_strategy = { type = equipment_market_trade_desire id = D13 value = -30 }
+}
+
+llmb_steer_market_trade_desire_D13_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_trade_desire_D13_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_trade_desire_D13_more } } }
+	ai_strategy = { type = equipment_market_trade_desire id = D13 value = 30 }
+}
+
+llmb_steer_market_trade_desire_D13_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_trade_desire_D13_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_trade_desire_D13_much_more } } }
+	ai_strategy = { type = equipment_market_trade_desire id = D13 value = 100 }
+}
+
+llmb_steer_market_trade_desire_D14_less = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_trade_desire_D14_less }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_trade_desire_D14_less } } }
+	ai_strategy = { type = equipment_market_trade_desire id = D14 value = -30 }
+}
+
+llmb_steer_market_trade_desire_D14_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_trade_desire_D14_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_trade_desire_D14_more } } }
+	ai_strategy = { type = equipment_market_trade_desire id = D14 value = 30 }
+}
+
+llmb_steer_market_trade_desire_D14_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_trade_desire_D14_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_trade_desire_D14_much_more } } }
+	ai_strategy = { type = equipment_market_trade_desire id = D14 value = 100 }
+}
+
+llmb_steer_market_trade_desire_D15_less = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_trade_desire_D15_less }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_trade_desire_D15_less } } }
+	ai_strategy = { type = equipment_market_trade_desire id = D15 value = -30 }
+}
+
+llmb_steer_market_trade_desire_D15_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_trade_desire_D15_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_trade_desire_D15_more } } }
+	ai_strategy = { type = equipment_market_trade_desire id = D15 value = 30 }
+}
+
+llmb_steer_market_trade_desire_D15_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_trade_desire_D15_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_trade_desire_D15_much_more } } }
+	ai_strategy = { type = equipment_market_trade_desire id = D15 value = 100 }
+}
+
+llmb_steer_market_trade_desire_D16_less = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_trade_desire_D16_less }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_trade_desire_D16_less } } }
+	ai_strategy = { type = equipment_market_trade_desire id = D16 value = -30 }
+}
+
+llmb_steer_market_trade_desire_D16_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_trade_desire_D16_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_trade_desire_D16_more } } }
+	ai_strategy = { type = equipment_market_trade_desire id = D16 value = 30 }
+}
+
+llmb_steer_market_trade_desire_D16_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_trade_desire_D16_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_trade_desire_D16_much_more } } }
+	ai_strategy = { type = equipment_market_trade_desire id = D16 value = 100 }
+}
+
+llmb_steer_market_trade_desire_D17_less = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_trade_desire_D17_less }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_trade_desire_D17_less } } }
+	ai_strategy = { type = equipment_market_trade_desire id = D17 value = -30 }
+}
+
+llmb_steer_market_trade_desire_D17_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_trade_desire_D17_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_trade_desire_D17_more } } }
+	ai_strategy = { type = equipment_market_trade_desire id = D17 value = 30 }
+}
+
+llmb_steer_market_trade_desire_D17_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_trade_desire_D17_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_trade_desire_D17_much_more } } }
+	ai_strategy = { type = equipment_market_trade_desire id = D17 value = 100 }
+}
+
+llmb_steer_market_trade_desire_D18_less = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_trade_desire_D18_less }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_trade_desire_D18_less } } }
+	ai_strategy = { type = equipment_market_trade_desire id = D18 value = -30 }
+}
+
+llmb_steer_market_trade_desire_D18_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_trade_desire_D18_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_trade_desire_D18_more } } }
+	ai_strategy = { type = equipment_market_trade_desire id = D18 value = 30 }
+}
+
+llmb_steer_market_trade_desire_D18_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_trade_desire_D18_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_trade_desire_D18_much_more } } }
+	ai_strategy = { type = equipment_market_trade_desire id = D18 value = 100 }
+}
+
+llmb_steer_market_trade_desire_D19_less = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_trade_desire_D19_less }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_trade_desire_D19_less } } }
+	ai_strategy = { type = equipment_market_trade_desire id = D19 value = -30 }
+}
+
+llmb_steer_market_trade_desire_D19_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_trade_desire_D19_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_trade_desire_D19_more } } }
+	ai_strategy = { type = equipment_market_trade_desire id = D19 value = 30 }
+}
+
+llmb_steer_market_trade_desire_D19_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_trade_desire_D19_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_trade_desire_D19_much_more } } }
+	ai_strategy = { type = equipment_market_trade_desire id = D19 value = 100 }
+}
+
+llmb_steer_market_trade_desire_D20_less = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_trade_desire_D20_less }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_trade_desire_D20_less } } }
+	ai_strategy = { type = equipment_market_trade_desire id = D20 value = -30 }
+}
+
+llmb_steer_market_trade_desire_D20_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_trade_desire_D20_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_trade_desire_D20_more } } }
+	ai_strategy = { type = equipment_market_trade_desire id = D20 value = 30 }
+}
+
+llmb_steer_market_trade_desire_D20_much_more = {
+	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_trade_desire_D20_much_more }
+	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_trade_desire_D20_much_more } } }
+	ai_strategy = { type = equipment_market_trade_desire id = D20 value = 100 }
 }
 
 llmb_steer_market_trade_desire_DEN_less = {
@@ -10056,850 +10896,4 @@ llmb_steer_market_trade_desire_YUN_much_more = {
 	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_trade_desire_YUN_much_more }
 	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_trade_desire_YUN_much_more } } }
 	ai_strategy = { type = equipment_market_trade_desire id = YUN value = 100 }
-}
-
-llmb_steer_market_sell_amphibious_mechanized_equipment_less = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_amphibious_mechanized_equipment_less }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_amphibious_mechanized_equipment_less } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = amphibious_mechanized_equipment value = -50 }
-}
-
-llmb_steer_market_sell_amphibious_mechanized_equipment_more = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_amphibious_mechanized_equipment_more }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_amphibious_mechanized_equipment_more } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = amphibious_mechanized_equipment value = 50 }
-}
-
-llmb_steer_market_sell_amphibious_mechanized_equipment_much_more = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_amphibious_mechanized_equipment_much_more }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_amphibious_mechanized_equipment_much_more } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = amphibious_mechanized_equipment value = 100 }
-}
-
-llmb_steer_market_sell_amphibious_tank_chassis_less = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_amphibious_tank_chassis_less }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_amphibious_tank_chassis_less } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = amphibious_tank_chassis value = -50 }
-}
-
-llmb_steer_market_sell_amphibious_tank_chassis_more = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_amphibious_tank_chassis_more }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_amphibious_tank_chassis_more } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = amphibious_tank_chassis value = 50 }
-}
-
-llmb_steer_market_sell_amphibious_tank_chassis_much_more = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_amphibious_tank_chassis_much_more }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_amphibious_tank_chassis_much_more } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = amphibious_tank_chassis value = 100 }
-}
-
-llmb_steer_market_sell_anti_air_equipment_less = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_anti_air_equipment_less }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_anti_air_equipment_less } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = anti_air_equipment value = -50 }
-}
-
-llmb_steer_market_sell_anti_air_equipment_more = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_anti_air_equipment_more }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_anti_air_equipment_more } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = anti_air_equipment value = 50 }
-}
-
-llmb_steer_market_sell_anti_air_equipment_much_more = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_anti_air_equipment_much_more }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_anti_air_equipment_much_more } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = anti_air_equipment value = 100 }
-}
-
-llmb_steer_market_sell_anti_tank_equipment_less = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_anti_tank_equipment_less }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_anti_tank_equipment_less } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = anti_tank_equipment value = -50 }
-}
-
-llmb_steer_market_sell_anti_tank_equipment_more = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_anti_tank_equipment_more }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_anti_tank_equipment_more } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = anti_tank_equipment value = 50 }
-}
-
-llmb_steer_market_sell_anti_tank_equipment_much_more = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_anti_tank_equipment_much_more }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_anti_tank_equipment_much_more } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = anti_tank_equipment value = 100 }
-}
-
-llmb_steer_market_sell_armored_car_equipment_less = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_armored_car_equipment_less }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_armored_car_equipment_less } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = armored_car_equipment value = -50 }
-}
-
-llmb_steer_market_sell_armored_car_equipment_more = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_armored_car_equipment_more }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_armored_car_equipment_more } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = armored_car_equipment value = 50 }
-}
-
-llmb_steer_market_sell_armored_car_equipment_much_more = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_armored_car_equipment_much_more }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_armored_car_equipment_much_more } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = armored_car_equipment value = 100 }
-}
-
-llmb_steer_market_sell_armored_support_vehicle_less = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_armored_support_vehicle_less }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_armored_support_vehicle_less } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = armored_support_vehicle value = -50 }
-}
-
-llmb_steer_market_sell_armored_support_vehicle_more = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_armored_support_vehicle_more }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_armored_support_vehicle_more } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = armored_support_vehicle value = 50 }
-}
-
-llmb_steer_market_sell_armored_support_vehicle_much_more = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_armored_support_vehicle_much_more }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_armored_support_vehicle_much_more } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = armored_support_vehicle value = 100 }
-}
-
-llmb_steer_market_sell_artillery_equipment_less = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_artillery_equipment_less }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_artillery_equipment_less } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = artillery_equipment value = -50 }
-}
-
-llmb_steer_market_sell_artillery_equipment_more = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_artillery_equipment_more }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_artillery_equipment_more } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = artillery_equipment value = 50 }
-}
-
-llmb_steer_market_sell_artillery_equipment_much_more = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_artillery_equipment_much_more }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_artillery_equipment_much_more } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = artillery_equipment value = 100 }
-}
-
-llmb_steer_market_sell_ballistic_missile_equipment_less = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_ballistic_missile_equipment_less }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_ballistic_missile_equipment_less } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = ballistic_missile_equipment value = -50 }
-}
-
-llmb_steer_market_sell_ballistic_missile_equipment_more = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_ballistic_missile_equipment_more }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_ballistic_missile_equipment_more } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = ballistic_missile_equipment value = 50 }
-}
-
-llmb_steer_market_sell_ballistic_missile_equipment_much_more = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_ballistic_missile_equipment_much_more }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_ballistic_missile_equipment_much_more } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = ballistic_missile_equipment value = 100 }
-}
-
-llmb_steer_market_sell_convoy_less = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_convoy_less }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_convoy_less } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = convoy value = -50 }
-}
-
-llmb_steer_market_sell_convoy_more = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_convoy_more }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_convoy_more } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = convoy value = 50 }
-}
-
-llmb_steer_market_sell_convoy_much_more = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_convoy_much_more }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_convoy_much_more } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = convoy value = 100 }
-}
-
-llmb_steer_market_sell_cv_small_plane_airframe_less = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_cv_small_plane_airframe_less }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_cv_small_plane_airframe_less } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = cv_small_plane_airframe value = -50 }
-}
-
-llmb_steer_market_sell_cv_small_plane_airframe_more = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_cv_small_plane_airframe_more }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_cv_small_plane_airframe_more } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = cv_small_plane_airframe value = 50 }
-}
-
-llmb_steer_market_sell_cv_small_plane_airframe_much_more = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_cv_small_plane_airframe_much_more }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_cv_small_plane_airframe_much_more } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = cv_small_plane_airframe value = 100 }
-}
-
-llmb_steer_market_sell_explosive_ammo_equipment_less = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_explosive_ammo_equipment_less }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_explosive_ammo_equipment_less } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = explosive_ammo_equipment value = -50 }
-}
-
-llmb_steer_market_sell_explosive_ammo_equipment_more = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_explosive_ammo_equipment_more }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_explosive_ammo_equipment_more } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = explosive_ammo_equipment value = 50 }
-}
-
-llmb_steer_market_sell_explosive_ammo_equipment_much_more = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_explosive_ammo_equipment_much_more }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_explosive_ammo_equipment_much_more } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = explosive_ammo_equipment value = 100 }
-}
-
-llmb_steer_market_sell_floating_harbor_equipment_less = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_floating_harbor_equipment_less }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_floating_harbor_equipment_less } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = floating_harbor_equipment value = -50 }
-}
-
-llmb_steer_market_sell_floating_harbor_equipment_more = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_floating_harbor_equipment_more }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_floating_harbor_equipment_more } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = floating_harbor_equipment value = 50 }
-}
-
-llmb_steer_market_sell_floating_harbor_equipment_much_more = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_floating_harbor_equipment_much_more }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_floating_harbor_equipment_much_more } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = floating_harbor_equipment value = 100 }
-}
-
-llmb_steer_market_sell_guided_missile_equipment_less = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_guided_missile_equipment_less }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_guided_missile_equipment_less } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = guided_missile_equipment value = -50 }
-}
-
-llmb_steer_market_sell_guided_missile_equipment_more = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_guided_missile_equipment_more }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_guided_missile_equipment_more } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = guided_missile_equipment value = 50 }
-}
-
-llmb_steer_market_sell_guided_missile_equipment_much_more = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_guided_missile_equipment_much_more }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_guided_missile_equipment_much_more } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = guided_missile_equipment value = 100 }
-}
-
-llmb_steer_market_sell_heavy_tank_chassis_less = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_heavy_tank_chassis_less }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_heavy_tank_chassis_less } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = heavy_tank_chassis value = -50 }
-}
-
-llmb_steer_market_sell_heavy_tank_chassis_more = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_heavy_tank_chassis_more }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_heavy_tank_chassis_more } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = heavy_tank_chassis value = 50 }
-}
-
-llmb_steer_market_sell_heavy_tank_chassis_much_more = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_heavy_tank_chassis_much_more }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_heavy_tank_chassis_much_more } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = heavy_tank_chassis value = 100 }
-}
-
-llmb_steer_market_sell_helicopter_equipment_less = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_helicopter_equipment_less }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_helicopter_equipment_less } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = helicopter_equipment value = -50 }
-}
-
-llmb_steer_market_sell_helicopter_equipment_more = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_helicopter_equipment_more }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_helicopter_equipment_more } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = helicopter_equipment value = 50 }
-}
-
-llmb_steer_market_sell_helicopter_equipment_much_more = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_helicopter_equipment_much_more }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_helicopter_equipment_much_more } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = helicopter_equipment value = 100 }
-}
-
-llmb_steer_market_sell_infantry_equipment_less = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_infantry_equipment_less }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_infantry_equipment_less } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = infantry_equipment value = -50 }
-}
-
-llmb_steer_market_sell_infantry_equipment_more = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_infantry_equipment_more }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_infantry_equipment_more } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = infantry_equipment value = 50 }
-}
-
-llmb_steer_market_sell_infantry_equipment_much_more = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_infantry_equipment_much_more }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_infantry_equipment_much_more } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = infantry_equipment value = 100 }
-}
-
-llmb_steer_market_sell_land_cruiser_chassis_less = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_land_cruiser_chassis_less }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_land_cruiser_chassis_less } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = land_cruiser_chassis value = -50 }
-}
-
-llmb_steer_market_sell_land_cruiser_chassis_more = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_land_cruiser_chassis_more }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_land_cruiser_chassis_more } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = land_cruiser_chassis value = 50 }
-}
-
-llmb_steer_market_sell_land_cruiser_chassis_much_more = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_land_cruiser_chassis_much_more }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_land_cruiser_chassis_much_more } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = land_cruiser_chassis value = 100 }
-}
-
-llmb_steer_market_sell_large_plane_airframe_less = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_large_plane_airframe_less }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_large_plane_airframe_less } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = large_plane_airframe value = -50 }
-}
-
-llmb_steer_market_sell_large_plane_airframe_more = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_large_plane_airframe_more }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_large_plane_airframe_more } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = large_plane_airframe value = 50 }
-}
-
-llmb_steer_market_sell_large_plane_airframe_much_more = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_large_plane_airframe_much_more }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_large_plane_airframe_much_more } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = large_plane_airframe value = 100 }
-}
-
-llmb_steer_market_sell_light_tank_chassis_less = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_light_tank_chassis_less }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_light_tank_chassis_less } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = light_tank_chassis value = -50 }
-}
-
-llmb_steer_market_sell_light_tank_chassis_more = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_light_tank_chassis_more }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_light_tank_chassis_more } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = light_tank_chassis value = 50 }
-}
-
-llmb_steer_market_sell_light_tank_chassis_much_more = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_light_tank_chassis_much_more }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_light_tank_chassis_much_more } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = light_tank_chassis value = 100 }
-}
-
-llmb_steer_market_sell_mechanized_equipment_less = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_mechanized_equipment_less }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_mechanized_equipment_less } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = mechanized_equipment value = -50 }
-}
-
-llmb_steer_market_sell_mechanized_equipment_more = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_mechanized_equipment_more }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_mechanized_equipment_more } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = mechanized_equipment value = 50 }
-}
-
-llmb_steer_market_sell_mechanized_equipment_much_more = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_mechanized_equipment_much_more }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_mechanized_equipment_much_more } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = mechanized_equipment value = 100 }
-}
-
-llmb_steer_market_sell_medium_plane_airframe_less = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_medium_plane_airframe_less }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_medium_plane_airframe_less } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = medium_plane_airframe value = -50 }
-}
-
-llmb_steer_market_sell_medium_plane_airframe_more = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_medium_plane_airframe_more }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_medium_plane_airframe_more } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = medium_plane_airframe value = 50 }
-}
-
-llmb_steer_market_sell_medium_plane_airframe_much_more = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_medium_plane_airframe_much_more }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_medium_plane_airframe_much_more } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = medium_plane_airframe value = 100 }
-}
-
-llmb_steer_market_sell_medium_tank_chassis_less = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_medium_tank_chassis_less }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_medium_tank_chassis_less } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = medium_tank_chassis value = -50 }
-}
-
-llmb_steer_market_sell_medium_tank_chassis_more = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_medium_tank_chassis_more }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_medium_tank_chassis_more } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = medium_tank_chassis value = 50 }
-}
-
-llmb_steer_market_sell_medium_tank_chassis_much_more = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_medium_tank_chassis_much_more }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_medium_tank_chassis_much_more } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = medium_tank_chassis value = 100 }
-}
-
-llmb_steer_market_sell_modern_tank_chassis_less = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_modern_tank_chassis_less }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_modern_tank_chassis_less } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = modern_tank_chassis value = -50 }
-}
-
-llmb_steer_market_sell_modern_tank_chassis_more = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_modern_tank_chassis_more }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_modern_tank_chassis_more } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = modern_tank_chassis value = 50 }
-}
-
-llmb_steer_market_sell_modern_tank_chassis_much_more = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_modern_tank_chassis_much_more }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_modern_tank_chassis_much_more } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = modern_tank_chassis value = 100 }
-}
-
-llmb_steer_market_sell_mothership_equipment_less = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_mothership_equipment_less }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_mothership_equipment_less } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = mothership_equipment value = -50 }
-}
-
-llmb_steer_market_sell_mothership_equipment_more = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_mothership_equipment_more }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_mothership_equipment_more } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = mothership_equipment value = 50 }
-}
-
-llmb_steer_market_sell_mothership_equipment_much_more = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_mothership_equipment_much_more }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_mothership_equipment_much_more } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = mothership_equipment value = 100 }
-}
-
-llmb_steer_market_sell_motorbike_equipment_less = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_motorbike_equipment_less }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_motorbike_equipment_less } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = motorbike_equipment value = -50 }
-}
-
-llmb_steer_market_sell_motorbike_equipment_more = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_motorbike_equipment_more }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_motorbike_equipment_more } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = motorbike_equipment value = 50 }
-}
-
-llmb_steer_market_sell_motorbike_equipment_much_more = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_motorbike_equipment_much_more }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_motorbike_equipment_much_more } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = motorbike_equipment value = 100 }
-}
-
-llmb_steer_market_sell_motorized_equipment_less = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_motorized_equipment_less }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_motorized_equipment_less } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = motorized_equipment value = -50 }
-}
-
-llmb_steer_market_sell_motorized_equipment_more = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_motorized_equipment_more }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_motorized_equipment_more } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = motorized_equipment value = 50 }
-}
-
-llmb_steer_market_sell_motorized_equipment_much_more = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_motorized_equipment_much_more }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_motorized_equipment_much_more } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = motorized_equipment value = 100 }
-}
-
-llmb_steer_market_sell_motorized_rocket_equipment_less = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_motorized_rocket_equipment_less }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_motorized_rocket_equipment_less } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = motorized_rocket_equipment value = -50 }
-}
-
-llmb_steer_market_sell_motorized_rocket_equipment_more = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_motorized_rocket_equipment_more }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_motorized_rocket_equipment_more } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = motorized_rocket_equipment value = 50 }
-}
-
-llmb_steer_market_sell_motorized_rocket_equipment_much_more = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_motorized_rocket_equipment_much_more }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_motorized_rocket_equipment_much_more } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = motorized_rocket_equipment value = 100 }
-}
-
-llmb_steer_market_sell_nuclear_missile_equipment_less = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_nuclear_missile_equipment_less }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_nuclear_missile_equipment_less } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = nuclear_missile_equipment value = -50 }
-}
-
-llmb_steer_market_sell_nuclear_missile_equipment_more = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_nuclear_missile_equipment_more }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_nuclear_missile_equipment_more } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = nuclear_missile_equipment value = 50 }
-}
-
-llmb_steer_market_sell_nuclear_missile_equipment_much_more = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_nuclear_missile_equipment_much_more }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_nuclear_missile_equipment_much_more } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = nuclear_missile_equipment value = 100 }
-}
-
-llmb_steer_market_sell_railway_gun_equipment_less = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_railway_gun_equipment_less }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_railway_gun_equipment_less } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = railway_gun_equipment value = -50 }
-}
-
-llmb_steer_market_sell_railway_gun_equipment_more = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_railway_gun_equipment_more }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_railway_gun_equipment_more } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = railway_gun_equipment value = 50 }
-}
-
-llmb_steer_market_sell_railway_gun_equipment_much_more = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_railway_gun_equipment_much_more }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_railway_gun_equipment_much_more } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = railway_gun_equipment value = 100 }
-}
-
-llmb_steer_market_sell_repair_ship_hull_less = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_repair_ship_hull_less }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_repair_ship_hull_less } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = repair_ship_hull value = -50 }
-}
-
-llmb_steer_market_sell_repair_ship_hull_more = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_repair_ship_hull_more }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_repair_ship_hull_more } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = repair_ship_hull value = 50 }
-}
-
-llmb_steer_market_sell_repair_ship_hull_much_more = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_repair_ship_hull_much_more }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_repair_ship_hull_much_more } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = repair_ship_hull value = 100 }
-}
-
-llmb_steer_market_sell_rocket_artillery_equipment_less = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_rocket_artillery_equipment_less }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_rocket_artillery_equipment_less } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = rocket_artillery_equipment value = -50 }
-}
-
-llmb_steer_market_sell_rocket_artillery_equipment_more = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_rocket_artillery_equipment_more }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_rocket_artillery_equipment_more } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = rocket_artillery_equipment value = 50 }
-}
-
-llmb_steer_market_sell_rocket_artillery_equipment_much_more = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_rocket_artillery_equipment_much_more }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_rocket_artillery_equipment_much_more } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = rocket_artillery_equipment value = 100 }
-}
-
-llmb_steer_market_sell_sam_missile_equipment_less = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_sam_missile_equipment_less }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_sam_missile_equipment_less } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = sam_missile_equipment value = -50 }
-}
-
-llmb_steer_market_sell_sam_missile_equipment_more = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_sam_missile_equipment_more }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_sam_missile_equipment_more } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = sam_missile_equipment value = 50 }
-}
-
-llmb_steer_market_sell_sam_missile_equipment_much_more = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_sam_missile_equipment_much_more }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_sam_missile_equipment_much_more } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = sam_missile_equipment value = 100 }
-}
-
-llmb_steer_market_sell_self_propelled_super_heavy_artillery_equipment_less = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_self_propelled_super_heavy_artillery_equipment_less }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_self_propelled_super_heavy_artillery_equipment_less } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = self_propelled_super_heavy_artillery_equipment value = -50 }
-}
-
-llmb_steer_market_sell_self_propelled_super_heavy_artillery_equipment_more = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_self_propelled_super_heavy_artillery_equipment_more }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_self_propelled_super_heavy_artillery_equipment_more } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = self_propelled_super_heavy_artillery_equipment value = 50 }
-}
-
-llmb_steer_market_sell_self_propelled_super_heavy_artillery_equipment_much_more = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_self_propelled_super_heavy_artillery_equipment_much_more }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_self_propelled_super_heavy_artillery_equipment_much_more } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = self_propelled_super_heavy_artillery_equipment value = 100 }
-}
-
-llmb_steer_market_sell_ship_hull_carrier_less = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_ship_hull_carrier_less }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_ship_hull_carrier_less } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = ship_hull_carrier value = -50 }
-}
-
-llmb_steer_market_sell_ship_hull_carrier_more = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_ship_hull_carrier_more }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_ship_hull_carrier_more } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = ship_hull_carrier value = 50 }
-}
-
-llmb_steer_market_sell_ship_hull_carrier_much_more = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_ship_hull_carrier_much_more }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_ship_hull_carrier_much_more } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = ship_hull_carrier value = 100 }
-}
-
-llmb_steer_market_sell_ship_hull_cruiser_less = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_ship_hull_cruiser_less }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_ship_hull_cruiser_less } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = ship_hull_cruiser value = -50 }
-}
-
-llmb_steer_market_sell_ship_hull_cruiser_more = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_ship_hull_cruiser_more }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_ship_hull_cruiser_more } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = ship_hull_cruiser value = 50 }
-}
-
-llmb_steer_market_sell_ship_hull_cruiser_much_more = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_ship_hull_cruiser_much_more }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_ship_hull_cruiser_much_more } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = ship_hull_cruiser value = 100 }
-}
-
-llmb_steer_market_sell_ship_hull_heavy_less = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_ship_hull_heavy_less }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_ship_hull_heavy_less } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = ship_hull_heavy value = -50 }
-}
-
-llmb_steer_market_sell_ship_hull_heavy_more = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_ship_hull_heavy_more }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_ship_hull_heavy_more } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = ship_hull_heavy value = 50 }
-}
-
-llmb_steer_market_sell_ship_hull_heavy_much_more = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_ship_hull_heavy_much_more }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_ship_hull_heavy_much_more } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = ship_hull_heavy value = 100 }
-}
-
-llmb_steer_market_sell_ship_hull_light_less = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_ship_hull_light_less }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_ship_hull_light_less } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = ship_hull_light value = -50 }
-}
-
-llmb_steer_market_sell_ship_hull_light_more = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_ship_hull_light_more }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_ship_hull_light_more } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = ship_hull_light value = 50 }
-}
-
-llmb_steer_market_sell_ship_hull_light_much_more = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_ship_hull_light_much_more }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_ship_hull_light_much_more } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = ship_hull_light value = 100 }
-}
-
-llmb_steer_market_sell_ship_hull_submarine_less = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_ship_hull_submarine_less }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_ship_hull_submarine_less } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = ship_hull_submarine value = -50 }
-}
-
-llmb_steer_market_sell_ship_hull_submarine_more = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_ship_hull_submarine_more }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_ship_hull_submarine_more } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = ship_hull_submarine value = 50 }
-}
-
-llmb_steer_market_sell_ship_hull_submarine_much_more = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_ship_hull_submarine_much_more }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_ship_hull_submarine_much_more } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = ship_hull_submarine value = 100 }
-}
-
-llmb_steer_market_sell_small_plane_airframe_less = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_small_plane_airframe_less }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_small_plane_airframe_less } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = small_plane_airframe value = -50 }
-}
-
-llmb_steer_market_sell_small_plane_airframe_more = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_small_plane_airframe_more }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_small_plane_airframe_more } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = small_plane_airframe value = 50 }
-}
-
-llmb_steer_market_sell_small_plane_airframe_much_more = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_small_plane_airframe_much_more }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_small_plane_airframe_much_more } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = small_plane_airframe value = 100 }
-}
-
-llmb_steer_market_sell_strat_bomber_intercontinental_equipment_less = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_strat_bomber_intercontinental_equipment_less }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_strat_bomber_intercontinental_equipment_less } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = strat_bomber_intercontinental_equipment value = -50 }
-}
-
-llmb_steer_market_sell_strat_bomber_intercontinental_equipment_more = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_strat_bomber_intercontinental_equipment_more }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_strat_bomber_intercontinental_equipment_more } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = strat_bomber_intercontinental_equipment value = 50 }
-}
-
-llmb_steer_market_sell_strat_bomber_intercontinental_equipment_much_more = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_strat_bomber_intercontinental_equipment_much_more }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_strat_bomber_intercontinental_equipment_much_more } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = strat_bomber_intercontinental_equipment value = 100 }
-}
-
-llmb_steer_market_sell_super_heavy_artillery_equipment_less = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_super_heavy_artillery_equipment_less }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_super_heavy_artillery_equipment_less } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = super_heavy_artillery_equipment value = -50 }
-}
-
-llmb_steer_market_sell_super_heavy_artillery_equipment_more = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_super_heavy_artillery_equipment_more }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_super_heavy_artillery_equipment_more } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = super_heavy_artillery_equipment value = 50 }
-}
-
-llmb_steer_market_sell_super_heavy_artillery_equipment_much_more = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_super_heavy_artillery_equipment_much_more }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_super_heavy_artillery_equipment_much_more } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = super_heavy_artillery_equipment value = 100 }
-}
-
-llmb_steer_market_sell_super_heavy_railway_gun_equipment_less = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_super_heavy_railway_gun_equipment_less }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_super_heavy_railway_gun_equipment_less } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = super_heavy_railway_gun_equipment value = -50 }
-}
-
-llmb_steer_market_sell_super_heavy_railway_gun_equipment_more = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_super_heavy_railway_gun_equipment_more }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_super_heavy_railway_gun_equipment_more } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = super_heavy_railway_gun_equipment value = 50 }
-}
-
-llmb_steer_market_sell_super_heavy_railway_gun_equipment_much_more = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_super_heavy_railway_gun_equipment_much_more }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_super_heavy_railway_gun_equipment_much_more } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = super_heavy_railway_gun_equipment value = 100 }
-}
-
-llmb_steer_market_sell_super_heavy_tank_chassis_less = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_super_heavy_tank_chassis_less }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_super_heavy_tank_chassis_less } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = super_heavy_tank_chassis value = -50 }
-}
-
-llmb_steer_market_sell_super_heavy_tank_chassis_more = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_super_heavy_tank_chassis_more }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_super_heavy_tank_chassis_more } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = super_heavy_tank_chassis value = 50 }
-}
-
-llmb_steer_market_sell_super_heavy_tank_chassis_much_more = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_super_heavy_tank_chassis_much_more }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_super_heavy_tank_chassis_much_more } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = super_heavy_tank_chassis value = 100 }
-}
-
-llmb_steer_market_sell_support_equipment_less = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_support_equipment_less }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_support_equipment_less } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = support_equipment value = -50 }
-}
-
-llmb_steer_market_sell_support_equipment_more = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_support_equipment_more }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_support_equipment_more } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = support_equipment value = 50 }
-}
-
-llmb_steer_market_sell_support_equipment_much_more = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_support_equipment_much_more }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_support_equipment_much_more } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = support_equipment value = 100 }
-}
-
-llmb_steer_market_sell_support_ship_hull_less = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_support_ship_hull_less }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_support_ship_hull_less } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = support_ship_hull value = -50 }
-}
-
-llmb_steer_market_sell_support_ship_hull_more = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_support_ship_hull_more }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_support_ship_hull_more } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = support_ship_hull value = 50 }
-}
-
-llmb_steer_market_sell_support_ship_hull_much_more = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_support_ship_hull_much_more }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_support_ship_hull_much_more } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = support_ship_hull value = 100 }
-}
-
-llmb_steer_market_sell_train_equipment_less = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_train_equipment_less }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_train_equipment_less } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = train_equipment value = -50 }
-}
-
-llmb_steer_market_sell_train_equipment_more = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_train_equipment_more }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_train_equipment_more } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = train_equipment value = 50 }
-}
-
-llmb_steer_market_sell_train_equipment_much_more = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_train_equipment_much_more }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_train_equipment_much_more } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = train_equipment value = 100 }
-}
-
-llmb_steer_market_sell_transport_plane_equipment_less = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_transport_plane_equipment_less }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_transport_plane_equipment_less } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = transport_plane_equipment value = -50 }
-}
-
-llmb_steer_market_sell_transport_plane_equipment_more = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_transport_plane_equipment_more }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_transport_plane_equipment_more } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = transport_plane_equipment value = 50 }
-}
-
-llmb_steer_market_sell_transport_plane_equipment_much_more = {
-	enable = { llm_bridge_is_harness = yes has_country_flag = llmb_steer_market_sell_transport_plane_equipment_much_more }
-	abort = { OR = { llm_bridge_is_harness = no NOT = { has_country_flag = llmb_steer_market_sell_transport_plane_equipment_much_more } } }
-	ai_strategy = { type = equipment_market_for_sale_factor id = transport_plane_equipment value = 100 }
 }

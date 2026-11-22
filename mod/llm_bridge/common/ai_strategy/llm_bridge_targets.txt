@@ -1108,6 +1108,246 @@ llmb_posture_defensive_YUN_strong = {
 	ai_strategy = { type = front_unit_request tag = YUN value = 1000 }
 }
 
+llmb_posture_defensive_D01 = {
+	enable = { has_country_flag = llmb_posture_defensive_D01 }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_D01 } }
+	ai_strategy = { type = front_unit_request tag = D01 value = 50 }
+}
+
+llmb_posture_defensive_D01_strong = {
+	enable = { has_country_flag = llmb_posture_defensive_D01 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_posture_defensive_D01 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = front_unit_request tag = D01 value = 1000 }
+}
+
+llmb_posture_defensive_D02 = {
+	enable = { has_country_flag = llmb_posture_defensive_D02 }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_D02 } }
+	ai_strategy = { type = front_unit_request tag = D02 value = 50 }
+}
+
+llmb_posture_defensive_D02_strong = {
+	enable = { has_country_flag = llmb_posture_defensive_D02 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_posture_defensive_D02 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = front_unit_request tag = D02 value = 1000 }
+}
+
+llmb_posture_defensive_D03 = {
+	enable = { has_country_flag = llmb_posture_defensive_D03 }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_D03 } }
+	ai_strategy = { type = front_unit_request tag = D03 value = 50 }
+}
+
+llmb_posture_defensive_D03_strong = {
+	enable = { has_country_flag = llmb_posture_defensive_D03 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_posture_defensive_D03 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = front_unit_request tag = D03 value = 1000 }
+}
+
+llmb_posture_defensive_D04 = {
+	enable = { has_country_flag = llmb_posture_defensive_D04 }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_D04 } }
+	ai_strategy = { type = front_unit_request tag = D04 value = 50 }
+}
+
+llmb_posture_defensive_D04_strong = {
+	enable = { has_country_flag = llmb_posture_defensive_D04 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_posture_defensive_D04 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = front_unit_request tag = D04 value = 1000 }
+}
+
+llmb_posture_defensive_D05 = {
+	enable = { has_country_flag = llmb_posture_defensive_D05 }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_D05 } }
+	ai_strategy = { type = front_unit_request tag = D05 value = 50 }
+}
+
+llmb_posture_defensive_D05_strong = {
+	enable = { has_country_flag = llmb_posture_defensive_D05 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_posture_defensive_D05 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = front_unit_request tag = D05 value = 1000 }
+}
+
+llmb_posture_defensive_D06 = {
+	enable = { has_country_flag = llmb_posture_defensive_D06 }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_D06 } }
+	ai_strategy = { type = front_unit_request tag = D06 value = 50 }
+}
+
+llmb_posture_defensive_D06_strong = {
+	enable = { has_country_flag = llmb_posture_defensive_D06 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_posture_defensive_D06 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = front_unit_request tag = D06 value = 1000 }
+}
+
+llmb_posture_defensive_D07 = {
+	enable = { has_country_flag = llmb_posture_defensive_D07 }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_D07 } }
+	ai_strategy = { type = front_unit_request tag = D07 value = 50 }
+}
+
+llmb_posture_defensive_D07_strong = {
+	enable = { has_country_flag = llmb_posture_defensive_D07 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_posture_defensive_D07 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = front_unit_request tag = D07 value = 1000 }
+}
+
+llmb_posture_defensive_D08 = {
+	enable = { has_country_flag = llmb_posture_defensive_D08 }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_D08 } }
+	ai_strategy = { type = front_unit_request tag = D08 value = 50 }
+}
+
+llmb_posture_defensive_D08_strong = {
+	enable = { has_country_flag = llmb_posture_defensive_D08 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_posture_defensive_D08 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = front_unit_request tag = D08 value = 1000 }
+}
+
+llmb_posture_defensive_D09 = {
+	enable = { has_country_flag = llmb_posture_defensive_D09 }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_D09 } }
+	ai_strategy = { type = front_unit_request tag = D09 value = 50 }
+}
+
+llmb_posture_defensive_D09_strong = {
+	enable = { has_country_flag = llmb_posture_defensive_D09 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_posture_defensive_D09 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = front_unit_request tag = D09 value = 1000 }
+}
+
+llmb_posture_defensive_D10 = {
+	enable = { has_country_flag = llmb_posture_defensive_D10 }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_D10 } }
+	ai_strategy = { type = front_unit_request tag = D10 value = 50 }
+}
+
+llmb_posture_defensive_D10_strong = {
+	enable = { has_country_flag = llmb_posture_defensive_D10 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_posture_defensive_D10 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = front_unit_request tag = D10 value = 1000 }
+}
+
+llmb_posture_defensive_D11 = {
+	enable = { has_country_flag = llmb_posture_defensive_D11 }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_D11 } }
+	ai_strategy = { type = front_unit_request tag = D11 value = 50 }
+}
+
+llmb_posture_defensive_D11_strong = {
+	enable = { has_country_flag = llmb_posture_defensive_D11 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_posture_defensive_D11 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = front_unit_request tag = D11 value = 1000 }
+}
+
+llmb_posture_defensive_D12 = {
+	enable = { has_country_flag = llmb_posture_defensive_D12 }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_D12 } }
+	ai_strategy = { type = front_unit_request tag = D12 value = 50 }
+}
+
+llmb_posture_defensive_D12_strong = {
+	enable = { has_country_flag = llmb_posture_defensive_D12 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_posture_defensive_D12 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = front_unit_request tag = D12 value = 1000 }
+}
+
+llmb_posture_defensive_D13 = {
+	enable = { has_country_flag = llmb_posture_defensive_D13 }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_D13 } }
+	ai_strategy = { type = front_unit_request tag = D13 value = 50 }
+}
+
+llmb_posture_defensive_D13_strong = {
+	enable = { has_country_flag = llmb_posture_defensive_D13 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_posture_defensive_D13 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = front_unit_request tag = D13 value = 1000 }
+}
+
+llmb_posture_defensive_D14 = {
+	enable = { has_country_flag = llmb_posture_defensive_D14 }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_D14 } }
+	ai_strategy = { type = front_unit_request tag = D14 value = 50 }
+}
+
+llmb_posture_defensive_D14_strong = {
+	enable = { has_country_flag = llmb_posture_defensive_D14 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_posture_defensive_D14 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = front_unit_request tag = D14 value = 1000 }
+}
+
+llmb_posture_defensive_D15 = {
+	enable = { has_country_flag = llmb_posture_defensive_D15 }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_D15 } }
+	ai_strategy = { type = front_unit_request tag = D15 value = 50 }
+}
+
+llmb_posture_defensive_D15_strong = {
+	enable = { has_country_flag = llmb_posture_defensive_D15 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_posture_defensive_D15 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = front_unit_request tag = D15 value = 1000 }
+}
+
+llmb_posture_defensive_D16 = {
+	enable = { has_country_flag = llmb_posture_defensive_D16 }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_D16 } }
+	ai_strategy = { type = front_unit_request tag = D16 value = 50 }
+}
+
+llmb_posture_defensive_D16_strong = {
+	enable = { has_country_flag = llmb_posture_defensive_D16 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_posture_defensive_D16 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = front_unit_request tag = D16 value = 1000 }
+}
+
+llmb_posture_defensive_D17 = {
+	enable = { has_country_flag = llmb_posture_defensive_D17 }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_D17 } }
+	ai_strategy = { type = front_unit_request tag = D17 value = 50 }
+}
+
+llmb_posture_defensive_D17_strong = {
+	enable = { has_country_flag = llmb_posture_defensive_D17 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_posture_defensive_D17 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = front_unit_request tag = D17 value = 1000 }
+}
+
+llmb_posture_defensive_D18 = {
+	enable = { has_country_flag = llmb_posture_defensive_D18 }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_D18 } }
+	ai_strategy = { type = front_unit_request tag = D18 value = 50 }
+}
+
+llmb_posture_defensive_D18_strong = {
+	enable = { has_country_flag = llmb_posture_defensive_D18 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_posture_defensive_D18 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = front_unit_request tag = D18 value = 1000 }
+}
+
+llmb_posture_defensive_D19 = {
+	enable = { has_country_flag = llmb_posture_defensive_D19 }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_D19 } }
+	ai_strategy = { type = front_unit_request tag = D19 value = 50 }
+}
+
+llmb_posture_defensive_D19_strong = {
+	enable = { has_country_flag = llmb_posture_defensive_D19 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_posture_defensive_D19 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = front_unit_request tag = D19 value = 1000 }
+}
+
+llmb_posture_defensive_D20 = {
+	enable = { has_country_flag = llmb_posture_defensive_D20 }
+	abort = { NOT = { has_country_flag = llmb_posture_defensive_D20 } }
+	ai_strategy = { type = front_unit_request tag = D20 value = 50 }
+}
+
+llmb_posture_defensive_D20_strong = {
+	enable = { has_country_flag = llmb_posture_defensive_D20 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_posture_defensive_D20 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = front_unit_request tag = D20 value = 1000 }
+}
+
 llmb_posture_offensive_GER = {
 	enable = { has_country_flag = llmb_posture_offensive_GER }
 	abort = { NOT = { has_country_flag = llmb_posture_offensive_GER } }
@@ -2210,6 +2450,246 @@ llmb_posture_offensive_YUN_strong = {
 	enable = { has_country_flag = llmb_posture_offensive_YUN has_global_flag = llmb_strong_directives }
 	abort = { OR = { NOT = { has_country_flag = llmb_posture_offensive_YUN } NOT = { has_global_flag = llmb_strong_directives } } }
 	ai_strategy = { type = front_unit_request tag = YUN value = 1000 }
+}
+
+llmb_posture_offensive_D01 = {
+	enable = { has_country_flag = llmb_posture_offensive_D01 }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_D01 } }
+	ai_strategy = { type = front_unit_request tag = D01 value = 100 }
+}
+
+llmb_posture_offensive_D01_strong = {
+	enable = { has_country_flag = llmb_posture_offensive_D01 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_posture_offensive_D01 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = front_unit_request tag = D01 value = 1000 }
+}
+
+llmb_posture_offensive_D02 = {
+	enable = { has_country_flag = llmb_posture_offensive_D02 }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_D02 } }
+	ai_strategy = { type = front_unit_request tag = D02 value = 100 }
+}
+
+llmb_posture_offensive_D02_strong = {
+	enable = { has_country_flag = llmb_posture_offensive_D02 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_posture_offensive_D02 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = front_unit_request tag = D02 value = 1000 }
+}
+
+llmb_posture_offensive_D03 = {
+	enable = { has_country_flag = llmb_posture_offensive_D03 }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_D03 } }
+	ai_strategy = { type = front_unit_request tag = D03 value = 100 }
+}
+
+llmb_posture_offensive_D03_strong = {
+	enable = { has_country_flag = llmb_posture_offensive_D03 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_posture_offensive_D03 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = front_unit_request tag = D03 value = 1000 }
+}
+
+llmb_posture_offensive_D04 = {
+	enable = { has_country_flag = llmb_posture_offensive_D04 }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_D04 } }
+	ai_strategy = { type = front_unit_request tag = D04 value = 100 }
+}
+
+llmb_posture_offensive_D04_strong = {
+	enable = { has_country_flag = llmb_posture_offensive_D04 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_posture_offensive_D04 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = front_unit_request tag = D04 value = 1000 }
+}
+
+llmb_posture_offensive_D05 = {
+	enable = { has_country_flag = llmb_posture_offensive_D05 }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_D05 } }
+	ai_strategy = { type = front_unit_request tag = D05 value = 100 }
+}
+
+llmb_posture_offensive_D05_strong = {
+	enable = { has_country_flag = llmb_posture_offensive_D05 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_posture_offensive_D05 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = front_unit_request tag = D05 value = 1000 }
+}
+
+llmb_posture_offensive_D06 = {
+	enable = { has_country_flag = llmb_posture_offensive_D06 }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_D06 } }
+	ai_strategy = { type = front_unit_request tag = D06 value = 100 }
+}
+
+llmb_posture_offensive_D06_strong = {
+	enable = { has_country_flag = llmb_posture_offensive_D06 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_posture_offensive_D06 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = front_unit_request tag = D06 value = 1000 }
+}
+
+llmb_posture_offensive_D07 = {
+	enable = { has_country_flag = llmb_posture_offensive_D07 }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_D07 } }
+	ai_strategy = { type = front_unit_request tag = D07 value = 100 }
+}
+
+llmb_posture_offensive_D07_strong = {
+	enable = { has_country_flag = llmb_posture_offensive_D07 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_posture_offensive_D07 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = front_unit_request tag = D07 value = 1000 }
+}
+
+llmb_posture_offensive_D08 = {
+	enable = { has_country_flag = llmb_posture_offensive_D08 }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_D08 } }
+	ai_strategy = { type = front_unit_request tag = D08 value = 100 }
+}
+
+llmb_posture_offensive_D08_strong = {
+	enable = { has_country_flag = llmb_posture_offensive_D08 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_posture_offensive_D08 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = front_unit_request tag = D08 value = 1000 }
+}
+
+llmb_posture_offensive_D09 = {
+	enable = { has_country_flag = llmb_posture_offensive_D09 }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_D09 } }
+	ai_strategy = { type = front_unit_request tag = D09 value = 100 }
+}
+
+llmb_posture_offensive_D09_strong = {
+	enable = { has_country_flag = llmb_posture_offensive_D09 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_posture_offensive_D09 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = front_unit_request tag = D09 value = 1000 }
+}
+
+llmb_posture_offensive_D10 = {
+	enable = { has_country_flag = llmb_posture_offensive_D10 }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_D10 } }
+	ai_strategy = { type = front_unit_request tag = D10 value = 100 }
+}
+
+llmb_posture_offensive_D10_strong = {
+	enable = { has_country_flag = llmb_posture_offensive_D10 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_posture_offensive_D10 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = front_unit_request tag = D10 value = 1000 }
+}
+
+llmb_posture_offensive_D11 = {
+	enable = { has_country_flag = llmb_posture_offensive_D11 }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_D11 } }
+	ai_strategy = { type = front_unit_request tag = D11 value = 100 }
+}
+
+llmb_posture_offensive_D11_strong = {
+	enable = { has_country_flag = llmb_posture_offensive_D11 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_posture_offensive_D11 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = front_unit_request tag = D11 value = 1000 }
+}
+
+llmb_posture_offensive_D12 = {
+	enable = { has_country_flag = llmb_posture_offensive_D12 }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_D12 } }
+	ai_strategy = { type = front_unit_request tag = D12 value = 100 }
+}
+
+llmb_posture_offensive_D12_strong = {
+	enable = { has_country_flag = llmb_posture_offensive_D12 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_posture_offensive_D12 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = front_unit_request tag = D12 value = 1000 }
+}
+
+llmb_posture_offensive_D13 = {
+	enable = { has_country_flag = llmb_posture_offensive_D13 }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_D13 } }
+	ai_strategy = { type = front_unit_request tag = D13 value = 100 }
+}
+
+llmb_posture_offensive_D13_strong = {
+	enable = { has_country_flag = llmb_posture_offensive_D13 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_posture_offensive_D13 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = front_unit_request tag = D13 value = 1000 }
+}
+
+llmb_posture_offensive_D14 = {
+	enable = { has_country_flag = llmb_posture_offensive_D14 }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_D14 } }
+	ai_strategy = { type = front_unit_request tag = D14 value = 100 }
+}
+
+llmb_posture_offensive_D14_strong = {
+	enable = { has_country_flag = llmb_posture_offensive_D14 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_posture_offensive_D14 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = front_unit_request tag = D14 value = 1000 }
+}
+
+llmb_posture_offensive_D15 = {
+	enable = { has_country_flag = llmb_posture_offensive_D15 }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_D15 } }
+	ai_strategy = { type = front_unit_request tag = D15 value = 100 }
+}
+
+llmb_posture_offensive_D15_strong = {
+	enable = { has_country_flag = llmb_posture_offensive_D15 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_posture_offensive_D15 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = front_unit_request tag = D15 value = 1000 }
+}
+
+llmb_posture_offensive_D16 = {
+	enable = { has_country_flag = llmb_posture_offensive_D16 }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_D16 } }
+	ai_strategy = { type = front_unit_request tag = D16 value = 100 }
+}
+
+llmb_posture_offensive_D16_strong = {
+	enable = { has_country_flag = llmb_posture_offensive_D16 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_posture_offensive_D16 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = front_unit_request tag = D16 value = 1000 }
+}
+
+llmb_posture_offensive_D17 = {
+	enable = { has_country_flag = llmb_posture_offensive_D17 }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_D17 } }
+	ai_strategy = { type = front_unit_request tag = D17 value = 100 }
+}
+
+llmb_posture_offensive_D17_strong = {
+	enable = { has_country_flag = llmb_posture_offensive_D17 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_posture_offensive_D17 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = front_unit_request tag = D17 value = 1000 }
+}
+
+llmb_posture_offensive_D18 = {
+	enable = { has_country_flag = llmb_posture_offensive_D18 }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_D18 } }
+	ai_strategy = { type = front_unit_request tag = D18 value = 100 }
+}
+
+llmb_posture_offensive_D18_strong = {
+	enable = { has_country_flag = llmb_posture_offensive_D18 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_posture_offensive_D18 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = front_unit_request tag = D18 value = 1000 }
+}
+
+llmb_posture_offensive_D19 = {
+	enable = { has_country_flag = llmb_posture_offensive_D19 }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_D19 } }
+	ai_strategy = { type = front_unit_request tag = D19 value = 100 }
+}
+
+llmb_posture_offensive_D19_strong = {
+	enable = { has_country_flag = llmb_posture_offensive_D19 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_posture_offensive_D19 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = front_unit_request tag = D19 value = 1000 }
+}
+
+llmb_posture_offensive_D20 = {
+	enable = { has_country_flag = llmb_posture_offensive_D20 }
+	abort = { NOT = { has_country_flag = llmb_posture_offensive_D20 } }
+	ai_strategy = { type = front_unit_request tag = D20 value = 100 }
+}
+
+llmb_posture_offensive_D20_strong = {
+	enable = { has_country_flag = llmb_posture_offensive_D20 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_posture_offensive_D20 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = front_unit_request tag = D20 value = 1000 }
 }
 
 llmb_invade_GER = {
@@ -3500,6 +3980,286 @@ llmb_invade_YUN_strong = {
 	ai_strategy = { type = invade id = "YUN" value = 10000 }
 }
 
+llmb_invade_D01 = {
+	enable = { has_country_flag = llmb_invade_D01 }
+	abort = { NOT = { has_country_flag = llmb_invade_D01 } }
+	ai_strategy = { type = conquer id = "D01" value = 150 }
+	ai_strategy = { type = invade id = "D01" value = 150 }
+}
+
+llmb_invade_D01_strong = {
+	enable = { has_country_flag = llmb_invade_D01 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_invade_D01 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = conquer id = "D01" value = 10000 }
+	ai_strategy = { type = invade id = "D01" value = 10000 }
+}
+
+llmb_invade_D02 = {
+	enable = { has_country_flag = llmb_invade_D02 }
+	abort = { NOT = { has_country_flag = llmb_invade_D02 } }
+	ai_strategy = { type = conquer id = "D02" value = 150 }
+	ai_strategy = { type = invade id = "D02" value = 150 }
+}
+
+llmb_invade_D02_strong = {
+	enable = { has_country_flag = llmb_invade_D02 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_invade_D02 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = conquer id = "D02" value = 10000 }
+	ai_strategy = { type = invade id = "D02" value = 10000 }
+}
+
+llmb_invade_D03 = {
+	enable = { has_country_flag = llmb_invade_D03 }
+	abort = { NOT = { has_country_flag = llmb_invade_D03 } }
+	ai_strategy = { type = conquer id = "D03" value = 150 }
+	ai_strategy = { type = invade id = "D03" value = 150 }
+}
+
+llmb_invade_D03_strong = {
+	enable = { has_country_flag = llmb_invade_D03 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_invade_D03 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = conquer id = "D03" value = 10000 }
+	ai_strategy = { type = invade id = "D03" value = 10000 }
+}
+
+llmb_invade_D04 = {
+	enable = { has_country_flag = llmb_invade_D04 }
+	abort = { NOT = { has_country_flag = llmb_invade_D04 } }
+	ai_strategy = { type = conquer id = "D04" value = 150 }
+	ai_strategy = { type = invade id = "D04" value = 150 }
+}
+
+llmb_invade_D04_strong = {
+	enable = { has_country_flag = llmb_invade_D04 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_invade_D04 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = conquer id = "D04" value = 10000 }
+	ai_strategy = { type = invade id = "D04" value = 10000 }
+}
+
+llmb_invade_D05 = {
+	enable = { has_country_flag = llmb_invade_D05 }
+	abort = { NOT = { has_country_flag = llmb_invade_D05 } }
+	ai_strategy = { type = conquer id = "D05" value = 150 }
+	ai_strategy = { type = invade id = "D05" value = 150 }
+}
+
+llmb_invade_D05_strong = {
+	enable = { has_country_flag = llmb_invade_D05 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_invade_D05 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = conquer id = "D05" value = 10000 }
+	ai_strategy = { type = invade id = "D05" value = 10000 }
+}
+
+llmb_invade_D06 = {
+	enable = { has_country_flag = llmb_invade_D06 }
+	abort = { NOT = { has_country_flag = llmb_invade_D06 } }
+	ai_strategy = { type = conquer id = "D06" value = 150 }
+	ai_strategy = { type = invade id = "D06" value = 150 }
+}
+
+llmb_invade_D06_strong = {
+	enable = { has_country_flag = llmb_invade_D06 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_invade_D06 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = conquer id = "D06" value = 10000 }
+	ai_strategy = { type = invade id = "D06" value = 10000 }
+}
+
+llmb_invade_D07 = {
+	enable = { has_country_flag = llmb_invade_D07 }
+	abort = { NOT = { has_country_flag = llmb_invade_D07 } }
+	ai_strategy = { type = conquer id = "D07" value = 150 }
+	ai_strategy = { type = invade id = "D07" value = 150 }
+}
+
+llmb_invade_D07_strong = {
+	enable = { has_country_flag = llmb_invade_D07 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_invade_D07 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = conquer id = "D07" value = 10000 }
+	ai_strategy = { type = invade id = "D07" value = 10000 }
+}
+
+llmb_invade_D08 = {
+	enable = { has_country_flag = llmb_invade_D08 }
+	abort = { NOT = { has_country_flag = llmb_invade_D08 } }
+	ai_strategy = { type = conquer id = "D08" value = 150 }
+	ai_strategy = { type = invade id = "D08" value = 150 }
+}
+
+llmb_invade_D08_strong = {
+	enable = { has_country_flag = llmb_invade_D08 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_invade_D08 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = conquer id = "D08" value = 10000 }
+	ai_strategy = { type = invade id = "D08" value = 10000 }
+}
+
+llmb_invade_D09 = {
+	enable = { has_country_flag = llmb_invade_D09 }
+	abort = { NOT = { has_country_flag = llmb_invade_D09 } }
+	ai_strategy = { type = conquer id = "D09" value = 150 }
+	ai_strategy = { type = invade id = "D09" value = 150 }
+}
+
+llmb_invade_D09_strong = {
+	enable = { has_country_flag = llmb_invade_D09 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_invade_D09 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = conquer id = "D09" value = 10000 }
+	ai_strategy = { type = invade id = "D09" value = 10000 }
+}
+
+llmb_invade_D10 = {
+	enable = { has_country_flag = llmb_invade_D10 }
+	abort = { NOT = { has_country_flag = llmb_invade_D10 } }
+	ai_strategy = { type = conquer id = "D10" value = 150 }
+	ai_strategy = { type = invade id = "D10" value = 150 }
+}
+
+llmb_invade_D10_strong = {
+	enable = { has_country_flag = llmb_invade_D10 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_invade_D10 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = conquer id = "D10" value = 10000 }
+	ai_strategy = { type = invade id = "D10" value = 10000 }
+}
+
+llmb_invade_D11 = {
+	enable = { has_country_flag = llmb_invade_D11 }
+	abort = { NOT = { has_country_flag = llmb_invade_D11 } }
+	ai_strategy = { type = conquer id = "D11" value = 150 }
+	ai_strategy = { type = invade id = "D11" value = 150 }
+}
+
+llmb_invade_D11_strong = {
+	enable = { has_country_flag = llmb_invade_D11 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_invade_D11 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = conquer id = "D11" value = 10000 }
+	ai_strategy = { type = invade id = "D11" value = 10000 }
+}
+
+llmb_invade_D12 = {
+	enable = { has_country_flag = llmb_invade_D12 }
+	abort = { NOT = { has_country_flag = llmb_invade_D12 } }
+	ai_strategy = { type = conquer id = "D12" value = 150 }
+	ai_strategy = { type = invade id = "D12" value = 150 }
+}
+
+llmb_invade_D12_strong = {
+	enable = { has_country_flag = llmb_invade_D12 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_invade_D12 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = conquer id = "D12" value = 10000 }
+	ai_strategy = { type = invade id = "D12" value = 10000 }
+}
+
+llmb_invade_D13 = {
+	enable = { has_country_flag = llmb_invade_D13 }
+	abort = { NOT = { has_country_flag = llmb_invade_D13 } }
+	ai_strategy = { type = conquer id = "D13" value = 150 }
+	ai_strategy = { type = invade id = "D13" value = 150 }
+}
+
+llmb_invade_D13_strong = {
+	enable = { has_country_flag = llmb_invade_D13 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_invade_D13 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = conquer id = "D13" value = 10000 }
+	ai_strategy = { type = invade id = "D13" value = 10000 }
+}
+
+llmb_invade_D14 = {
+	enable = { has_country_flag = llmb_invade_D14 }
+	abort = { NOT = { has_country_flag = llmb_invade_D14 } }
+	ai_strategy = { type = conquer id = "D14" value = 150 }
+	ai_strategy = { type = invade id = "D14" value = 150 }
+}
+
+llmb_invade_D14_strong = {
+	enable = { has_country_flag = llmb_invade_D14 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_invade_D14 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = conquer id = "D14" value = 10000 }
+	ai_strategy = { type = invade id = "D14" value = 10000 }
+}
+
+llmb_invade_D15 = {
+	enable = { has_country_flag = llmb_invade_D15 }
+	abort = { NOT = { has_country_flag = llmb_invade_D15 } }
+	ai_strategy = { type = conquer id = "D15" value = 150 }
+	ai_strategy = { type = invade id = "D15" value = 150 }
+}
+
+llmb_invade_D15_strong = {
+	enable = { has_country_flag = llmb_invade_D15 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_invade_D15 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = conquer id = "D15" value = 10000 }
+	ai_strategy = { type = invade id = "D15" value = 10000 }
+}
+
+llmb_invade_D16 = {
+	enable = { has_country_flag = llmb_invade_D16 }
+	abort = { NOT = { has_country_flag = llmb_invade_D16 } }
+	ai_strategy = { type = conquer id = "D16" value = 150 }
+	ai_strategy = { type = invade id = "D16" value = 150 }
+}
+
+llmb_invade_D16_strong = {
+	enable = { has_country_flag = llmb_invade_D16 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_invade_D16 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = conquer id = "D16" value = 10000 }
+	ai_strategy = { type = invade id = "D16" value = 10000 }
+}
+
+llmb_invade_D17 = {
+	enable = { has_country_flag = llmb_invade_D17 }
+	abort = { NOT = { has_country_flag = llmb_invade_D17 } }
+	ai_strategy = { type = conquer id = "D17" value = 150 }
+	ai_strategy = { type = invade id = "D17" value = 150 }
+}
+
+llmb_invade_D17_strong = {
+	enable = { has_country_flag = llmb_invade_D17 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_invade_D17 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = conquer id = "D17" value = 10000 }
+	ai_strategy = { type = invade id = "D17" value = 10000 }
+}
+
+llmb_invade_D18 = {
+	enable = { has_country_flag = llmb_invade_D18 }
+	abort = { NOT = { has_country_flag = llmb_invade_D18 } }
+	ai_strategy = { type = conquer id = "D18" value = 150 }
+	ai_strategy = { type = invade id = "D18" value = 150 }
+}
+
+llmb_invade_D18_strong = {
+	enable = { has_country_flag = llmb_invade_D18 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_invade_D18 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = conquer id = "D18" value = 10000 }
+	ai_strategy = { type = invade id = "D18" value = 10000 }
+}
+
+llmb_invade_D19 = {
+	enable = { has_country_flag = llmb_invade_D19 }
+	abort = { NOT = { has_country_flag = llmb_invade_D19 } }
+	ai_strategy = { type = conquer id = "D19" value = 150 }
+	ai_strategy = { type = invade id = "D19" value = 150 }
+}
+
+llmb_invade_D19_strong = {
+	enable = { has_country_flag = llmb_invade_D19 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_invade_D19 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = conquer id = "D19" value = 10000 }
+	ai_strategy = { type = invade id = "D19" value = 10000 }
+}
+
+llmb_invade_D20 = {
+	enable = { has_country_flag = llmb_invade_D20 }
+	abort = { NOT = { has_country_flag = llmb_invade_D20 } }
+	ai_strategy = { type = conquer id = "D20" value = 150 }
+	ai_strategy = { type = invade id = "D20" value = 150 }
+}
+
+llmb_invade_D20_strong = {
+	enable = { has_country_flag = llmb_invade_D20 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_invade_D20 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = conquer id = "D20" value = 10000 }
+	ai_strategy = { type = invade id = "D20" value = 10000 }
+}
+
 llmb_protect_GER = {
 	enable = { has_country_flag = llmb_protect_GER }
 	abort = { NOT = { has_country_flag = llmb_protect_GER } }
@@ -4602,6 +5362,246 @@ llmb_protect_YUN_strong = {
 	enable = { has_country_flag = llmb_protect_YUN has_global_flag = llmb_strong_directives }
 	abort = { OR = { NOT = { has_country_flag = llmb_protect_YUN } NOT = { has_global_flag = llmb_strong_directives } } }
 	ai_strategy = { type = protect id = "YUN" value = 10000 }
+}
+
+llmb_protect_D01 = {
+	enable = { has_country_flag = llmb_protect_D01 }
+	abort = { NOT = { has_country_flag = llmb_protect_D01 } }
+	ai_strategy = { type = protect id = "D01" value = 150 }
+}
+
+llmb_protect_D01_strong = {
+	enable = { has_country_flag = llmb_protect_D01 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_protect_D01 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = protect id = "D01" value = 10000 }
+}
+
+llmb_protect_D02 = {
+	enable = { has_country_flag = llmb_protect_D02 }
+	abort = { NOT = { has_country_flag = llmb_protect_D02 } }
+	ai_strategy = { type = protect id = "D02" value = 150 }
+}
+
+llmb_protect_D02_strong = {
+	enable = { has_country_flag = llmb_protect_D02 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_protect_D02 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = protect id = "D02" value = 10000 }
+}
+
+llmb_protect_D03 = {
+	enable = { has_country_flag = llmb_protect_D03 }
+	abort = { NOT = { has_country_flag = llmb_protect_D03 } }
+	ai_strategy = { type = protect id = "D03" value = 150 }
+}
+
+llmb_protect_D03_strong = {
+	enable = { has_country_flag = llmb_protect_D03 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_protect_D03 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = protect id = "D03" value = 10000 }
+}
+
+llmb_protect_D04 = {
+	enable = { has_country_flag = llmb_protect_D04 }
+	abort = { NOT = { has_country_flag = llmb_protect_D04 } }
+	ai_strategy = { type = protect id = "D04" value = 150 }
+}
+
+llmb_protect_D04_strong = {
+	enable = { has_country_flag = llmb_protect_D04 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_protect_D04 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = protect id = "D04" value = 10000 }
+}
+
+llmb_protect_D05 = {
+	enable = { has_country_flag = llmb_protect_D05 }
+	abort = { NOT = { has_country_flag = llmb_protect_D05 } }
+	ai_strategy = { type = protect id = "D05" value = 150 }
+}
+
+llmb_protect_D05_strong = {
+	enable = { has_country_flag = llmb_protect_D05 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_protect_D05 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = protect id = "D05" value = 10000 }
+}
+
+llmb_protect_D06 = {
+	enable = { has_country_flag = llmb_protect_D06 }
+	abort = { NOT = { has_country_flag = llmb_protect_D06 } }
+	ai_strategy = { type = protect id = "D06" value = 150 }
+}
+
+llmb_protect_D06_strong = {
+	enable = { has_country_flag = llmb_protect_D06 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_protect_D06 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = protect id = "D06" value = 10000 }
+}
+
+llmb_protect_D07 = {
+	enable = { has_country_flag = llmb_protect_D07 }
+	abort = { NOT = { has_country_flag = llmb_protect_D07 } }
+	ai_strategy = { type = protect id = "D07" value = 150 }
+}
+
+llmb_protect_D07_strong = {
+	enable = { has_country_flag = llmb_protect_D07 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_protect_D07 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = protect id = "D07" value = 10000 }
+}
+
+llmb_protect_D08 = {
+	enable = { has_country_flag = llmb_protect_D08 }
+	abort = { NOT = { has_country_flag = llmb_protect_D08 } }
+	ai_strategy = { type = protect id = "D08" value = 150 }
+}
+
+llmb_protect_D08_strong = {
+	enable = { has_country_flag = llmb_protect_D08 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_protect_D08 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = protect id = "D08" value = 10000 }
+}
+
+llmb_protect_D09 = {
+	enable = { has_country_flag = llmb_protect_D09 }
+	abort = { NOT = { has_country_flag = llmb_protect_D09 } }
+	ai_strategy = { type = protect id = "D09" value = 150 }
+}
+
+llmb_protect_D09_strong = {
+	enable = { has_country_flag = llmb_protect_D09 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_protect_D09 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = protect id = "D09" value = 10000 }
+}
+
+llmb_protect_D10 = {
+	enable = { has_country_flag = llmb_protect_D10 }
+	abort = { NOT = { has_country_flag = llmb_protect_D10 } }
+	ai_strategy = { type = protect id = "D10" value = 150 }
+}
+
+llmb_protect_D10_strong = {
+	enable = { has_country_flag = llmb_protect_D10 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_protect_D10 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = protect id = "D10" value = 10000 }
+}
+
+llmb_protect_D11 = {
+	enable = { has_country_flag = llmb_protect_D11 }
+	abort = { NOT = { has_country_flag = llmb_protect_D11 } }
+	ai_strategy = { type = protect id = "D11" value = 150 }
+}
+
+llmb_protect_D11_strong = {
+	enable = { has_country_flag = llmb_protect_D11 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_protect_D11 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = protect id = "D11" value = 10000 }
+}
+
+llmb_protect_D12 = {
+	enable = { has_country_flag = llmb_protect_D12 }
+	abort = { NOT = { has_country_flag = llmb_protect_D12 } }
+	ai_strategy = { type = protect id = "D12" value = 150 }
+}
+
+llmb_protect_D12_strong = {
+	enable = { has_country_flag = llmb_protect_D12 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_protect_D12 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = protect id = "D12" value = 10000 }
+}
+
+llmb_protect_D13 = {
+	enable = { has_country_flag = llmb_protect_D13 }
+	abort = { NOT = { has_country_flag = llmb_protect_D13 } }
+	ai_strategy = { type = protect id = "D13" value = 150 }
+}
+
+llmb_protect_D13_strong = {
+	enable = { has_country_flag = llmb_protect_D13 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_protect_D13 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = protect id = "D13" value = 10000 }
+}
+
+llmb_protect_D14 = {
+	enable = { has_country_flag = llmb_protect_D14 }
+	abort = { NOT = { has_country_flag = llmb_protect_D14 } }
+	ai_strategy = { type = protect id = "D14" value = 150 }
+}
+
+llmb_protect_D14_strong = {
+	enable = { has_country_flag = llmb_protect_D14 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_protect_D14 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = protect id = "D14" value = 10000 }
+}
+
+llmb_protect_D15 = {
+	enable = { has_country_flag = llmb_protect_D15 }
+	abort = { NOT = { has_country_flag = llmb_protect_D15 } }
+	ai_strategy = { type = protect id = "D15" value = 150 }
+}
+
+llmb_protect_D15_strong = {
+	enable = { has_country_flag = llmb_protect_D15 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_protect_D15 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = protect id = "D15" value = 10000 }
+}
+
+llmb_protect_D16 = {
+	enable = { has_country_flag = llmb_protect_D16 }
+	abort = { NOT = { has_country_flag = llmb_protect_D16 } }
+	ai_strategy = { type = protect id = "D16" value = 150 }
+}
+
+llmb_protect_D16_strong = {
+	enable = { has_country_flag = llmb_protect_D16 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_protect_D16 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = protect id = "D16" value = 10000 }
+}
+
+llmb_protect_D17 = {
+	enable = { has_country_flag = llmb_protect_D17 }
+	abort = { NOT = { has_country_flag = llmb_protect_D17 } }
+	ai_strategy = { type = protect id = "D17" value = 150 }
+}
+
+llmb_protect_D17_strong = {
+	enable = { has_country_flag = llmb_protect_D17 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_protect_D17 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = protect id = "D17" value = 10000 }
+}
+
+llmb_protect_D18 = {
+	enable = { has_country_flag = llmb_protect_D18 }
+	abort = { NOT = { has_country_flag = llmb_protect_D18 } }
+	ai_strategy = { type = protect id = "D18" value = 150 }
+}
+
+llmb_protect_D18_strong = {
+	enable = { has_country_flag = llmb_protect_D18 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_protect_D18 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = protect id = "D18" value = 10000 }
+}
+
+llmb_protect_D19 = {
+	enable = { has_country_flag = llmb_protect_D19 }
+	abort = { NOT = { has_country_flag = llmb_protect_D19 } }
+	ai_strategy = { type = protect id = "D19" value = 150 }
+}
+
+llmb_protect_D19_strong = {
+	enable = { has_country_flag = llmb_protect_D19 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_protect_D19 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = protect id = "D19" value = 10000 }
+}
+
+llmb_protect_D20 = {
+	enable = { has_country_flag = llmb_protect_D20 }
+	abort = { NOT = { has_country_flag = llmb_protect_D20 } }
+	ai_strategy = { type = protect id = "D20" value = 150 }
+}
+
+llmb_protect_D20_strong = {
+	enable = { has_country_flag = llmb_protect_D20 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_protect_D20 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = protect id = "D20" value = 10000 }
 }
 
 llmb_contain_GER = {
@@ -5708,6 +6708,246 @@ llmb_contain_YUN_strong = {
 	ai_strategy = { type = contain id = "YUN" value = 10000 }
 }
 
+llmb_contain_D01 = {
+	enable = { has_country_flag = llmb_contain_D01 }
+	abort = { NOT = { has_country_flag = llmb_contain_D01 } }
+	ai_strategy = { type = contain id = "D01" value = 150 }
+}
+
+llmb_contain_D01_strong = {
+	enable = { has_country_flag = llmb_contain_D01 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_contain_D01 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = contain id = "D01" value = 10000 }
+}
+
+llmb_contain_D02 = {
+	enable = { has_country_flag = llmb_contain_D02 }
+	abort = { NOT = { has_country_flag = llmb_contain_D02 } }
+	ai_strategy = { type = contain id = "D02" value = 150 }
+}
+
+llmb_contain_D02_strong = {
+	enable = { has_country_flag = llmb_contain_D02 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_contain_D02 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = contain id = "D02" value = 10000 }
+}
+
+llmb_contain_D03 = {
+	enable = { has_country_flag = llmb_contain_D03 }
+	abort = { NOT = { has_country_flag = llmb_contain_D03 } }
+	ai_strategy = { type = contain id = "D03" value = 150 }
+}
+
+llmb_contain_D03_strong = {
+	enable = { has_country_flag = llmb_contain_D03 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_contain_D03 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = contain id = "D03" value = 10000 }
+}
+
+llmb_contain_D04 = {
+	enable = { has_country_flag = llmb_contain_D04 }
+	abort = { NOT = { has_country_flag = llmb_contain_D04 } }
+	ai_strategy = { type = contain id = "D04" value = 150 }
+}
+
+llmb_contain_D04_strong = {
+	enable = { has_country_flag = llmb_contain_D04 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_contain_D04 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = contain id = "D04" value = 10000 }
+}
+
+llmb_contain_D05 = {
+	enable = { has_country_flag = llmb_contain_D05 }
+	abort = { NOT = { has_country_flag = llmb_contain_D05 } }
+	ai_strategy = { type = contain id = "D05" value = 150 }
+}
+
+llmb_contain_D05_strong = {
+	enable = { has_country_flag = llmb_contain_D05 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_contain_D05 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = contain id = "D05" value = 10000 }
+}
+
+llmb_contain_D06 = {
+	enable = { has_country_flag = llmb_contain_D06 }
+	abort = { NOT = { has_country_flag = llmb_contain_D06 } }
+	ai_strategy = { type = contain id = "D06" value = 150 }
+}
+
+llmb_contain_D06_strong = {
+	enable = { has_country_flag = llmb_contain_D06 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_contain_D06 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = contain id = "D06" value = 10000 }
+}
+
+llmb_contain_D07 = {
+	enable = { has_country_flag = llmb_contain_D07 }
+	abort = { NOT = { has_country_flag = llmb_contain_D07 } }
+	ai_strategy = { type = contain id = "D07" value = 150 }
+}
+
+llmb_contain_D07_strong = {
+	enable = { has_country_flag = llmb_contain_D07 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_contain_D07 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = contain id = "D07" value = 10000 }
+}
+
+llmb_contain_D08 = {
+	enable = { has_country_flag = llmb_contain_D08 }
+	abort = { NOT = { has_country_flag = llmb_contain_D08 } }
+	ai_strategy = { type = contain id = "D08" value = 150 }
+}
+
+llmb_contain_D08_strong = {
+	enable = { has_country_flag = llmb_contain_D08 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_contain_D08 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = contain id = "D08" value = 10000 }
+}
+
+llmb_contain_D09 = {
+	enable = { has_country_flag = llmb_contain_D09 }
+	abort = { NOT = { has_country_flag = llmb_contain_D09 } }
+	ai_strategy = { type = contain id = "D09" value = 150 }
+}
+
+llmb_contain_D09_strong = {
+	enable = { has_country_flag = llmb_contain_D09 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_contain_D09 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = contain id = "D09" value = 10000 }
+}
+
+llmb_contain_D10 = {
+	enable = { has_country_flag = llmb_contain_D10 }
+	abort = { NOT = { has_country_flag = llmb_contain_D10 } }
+	ai_strategy = { type = contain id = "D10" value = 150 }
+}
+
+llmb_contain_D10_strong = {
+	enable = { has_country_flag = llmb_contain_D10 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_contain_D10 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = contain id = "D10" value = 10000 }
+}
+
+llmb_contain_D11 = {
+	enable = { has_country_flag = llmb_contain_D11 }
+	abort = { NOT = { has_country_flag = llmb_contain_D11 } }
+	ai_strategy = { type = contain id = "D11" value = 150 }
+}
+
+llmb_contain_D11_strong = {
+	enable = { has_country_flag = llmb_contain_D11 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_contain_D11 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = contain id = "D11" value = 10000 }
+}
+
+llmb_contain_D12 = {
+	enable = { has_country_flag = llmb_contain_D12 }
+	abort = { NOT = { has_country_flag = llmb_contain_D12 } }
+	ai_strategy = { type = contain id = "D12" value = 150 }
+}
+
+llmb_contain_D12_strong = {
+	enable = { has_country_flag = llmb_contain_D12 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_contain_D12 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = contain id = "D12" value = 10000 }
+}
+
+llmb_contain_D13 = {
+	enable = { has_country_flag = llmb_contain_D13 }
+	abort = { NOT = { has_country_flag = llmb_contain_D13 } }
+	ai_strategy = { type = contain id = "D13" value = 150 }
+}
+
+llmb_contain_D13_strong = {
+	enable = { has_country_flag = llmb_contain_D13 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_contain_D13 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = contain id = "D13" value = 10000 }
+}
+
+llmb_contain_D14 = {
+	enable = { has_country_flag = llmb_contain_D14 }
+	abort = { NOT = { has_country_flag = llmb_contain_D14 } }
+	ai_strategy = { type = contain id = "D14" value = 150 }
+}
+
+llmb_contain_D14_strong = {
+	enable = { has_country_flag = llmb_contain_D14 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_contain_D14 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = contain id = "D14" value = 10000 }
+}
+
+llmb_contain_D15 = {
+	enable = { has_country_flag = llmb_contain_D15 }
+	abort = { NOT = { has_country_flag = llmb_contain_D15 } }
+	ai_strategy = { type = contain id = "D15" value = 150 }
+}
+
+llmb_contain_D15_strong = {
+	enable = { has_country_flag = llmb_contain_D15 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_contain_D15 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = contain id = "D15" value = 10000 }
+}
+
+llmb_contain_D16 = {
+	enable = { has_country_flag = llmb_contain_D16 }
+	abort = { NOT = { has_country_flag = llmb_contain_D16 } }
+	ai_strategy = { type = contain id = "D16" value = 150 }
+}
+
+llmb_contain_D16_strong = {
+	enable = { has_country_flag = llmb_contain_D16 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_contain_D16 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = contain id = "D16" value = 10000 }
+}
+
+llmb_contain_D17 = {
+	enable = { has_country_flag = llmb_contain_D17 }
+	abort = { NOT = { has_country_flag = llmb_contain_D17 } }
+	ai_strategy = { type = contain id = "D17" value = 150 }
+}
+
+llmb_contain_D17_strong = {
+	enable = { has_country_flag = llmb_contain_D17 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_contain_D17 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = contain id = "D17" value = 10000 }
+}
+
+llmb_contain_D18 = {
+	enable = { has_country_flag = llmb_contain_D18 }
+	abort = { NOT = { has_country_flag = llmb_contain_D18 } }
+	ai_strategy = { type = contain id = "D18" value = 150 }
+}
+
+llmb_contain_D18_strong = {
+	enable = { has_country_flag = llmb_contain_D18 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_contain_D18 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = contain id = "D18" value = 10000 }
+}
+
+llmb_contain_D19 = {
+	enable = { has_country_flag = llmb_contain_D19 }
+	abort = { NOT = { has_country_flag = llmb_contain_D19 } }
+	ai_strategy = { type = contain id = "D19" value = 150 }
+}
+
+llmb_contain_D19_strong = {
+	enable = { has_country_flag = llmb_contain_D19 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_contain_D19 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = contain id = "D19" value = 10000 }
+}
+
+llmb_contain_D20 = {
+	enable = { has_country_flag = llmb_contain_D20 }
+	abort = { NOT = { has_country_flag = llmb_contain_D20 } }
+	ai_strategy = { type = contain id = "D20" value = 150 }
+}
+
+llmb_contain_D20_strong = {
+	enable = { has_country_flag = llmb_contain_D20 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_contain_D20 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = contain id = "D20" value = 10000 }
+}
+
 llmb_befriend_GER = {
 	enable = { has_country_flag = llmb_befriend_GER }
 	abort = { NOT = { has_country_flag = llmb_befriend_GER } }
@@ -6810,6 +8050,246 @@ llmb_befriend_YUN_strong = {
 	enable = { has_country_flag = llmb_befriend_YUN has_global_flag = llmb_strong_directives }
 	abort = { OR = { NOT = { has_country_flag = llmb_befriend_YUN } NOT = { has_global_flag = llmb_strong_directives } } }
 	ai_strategy = { type = befriend id = "YUN" value = 10000 }
+}
+
+llmb_befriend_D01 = {
+	enable = { has_country_flag = llmb_befriend_D01 }
+	abort = { NOT = { has_country_flag = llmb_befriend_D01 } }
+	ai_strategy = { type = befriend id = "D01" value = 150 }
+}
+
+llmb_befriend_D01_strong = {
+	enable = { has_country_flag = llmb_befriend_D01 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_befriend_D01 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = befriend id = "D01" value = 10000 }
+}
+
+llmb_befriend_D02 = {
+	enable = { has_country_flag = llmb_befriend_D02 }
+	abort = { NOT = { has_country_flag = llmb_befriend_D02 } }
+	ai_strategy = { type = befriend id = "D02" value = 150 }
+}
+
+llmb_befriend_D02_strong = {
+	enable = { has_country_flag = llmb_befriend_D02 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_befriend_D02 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = befriend id = "D02" value = 10000 }
+}
+
+llmb_befriend_D03 = {
+	enable = { has_country_flag = llmb_befriend_D03 }
+	abort = { NOT = { has_country_flag = llmb_befriend_D03 } }
+	ai_strategy = { type = befriend id = "D03" value = 150 }
+}
+
+llmb_befriend_D03_strong = {
+	enable = { has_country_flag = llmb_befriend_D03 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_befriend_D03 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = befriend id = "D03" value = 10000 }
+}
+
+llmb_befriend_D04 = {
+	enable = { has_country_flag = llmb_befriend_D04 }
+	abort = { NOT = { has_country_flag = llmb_befriend_D04 } }
+	ai_strategy = { type = befriend id = "D04" value = 150 }
+}
+
+llmb_befriend_D04_strong = {
+	enable = { has_country_flag = llmb_befriend_D04 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_befriend_D04 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = befriend id = "D04" value = 10000 }
+}
+
+llmb_befriend_D05 = {
+	enable = { has_country_flag = llmb_befriend_D05 }
+	abort = { NOT = { has_country_flag = llmb_befriend_D05 } }
+	ai_strategy = { type = befriend id = "D05" value = 150 }
+}
+
+llmb_befriend_D05_strong = {
+	enable = { has_country_flag = llmb_befriend_D05 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_befriend_D05 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = befriend id = "D05" value = 10000 }
+}
+
+llmb_befriend_D06 = {
+	enable = { has_country_flag = llmb_befriend_D06 }
+	abort = { NOT = { has_country_flag = llmb_befriend_D06 } }
+	ai_strategy = { type = befriend id = "D06" value = 150 }
+}
+
+llmb_befriend_D06_strong = {
+	enable = { has_country_flag = llmb_befriend_D06 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_befriend_D06 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = befriend id = "D06" value = 10000 }
+}
+
+llmb_befriend_D07 = {
+	enable = { has_country_flag = llmb_befriend_D07 }
+	abort = { NOT = { has_country_flag = llmb_befriend_D07 } }
+	ai_strategy = { type = befriend id = "D07" value = 150 }
+}
+
+llmb_befriend_D07_strong = {
+	enable = { has_country_flag = llmb_befriend_D07 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_befriend_D07 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = befriend id = "D07" value = 10000 }
+}
+
+llmb_befriend_D08 = {
+	enable = { has_country_flag = llmb_befriend_D08 }
+	abort = { NOT = { has_country_flag = llmb_befriend_D08 } }
+	ai_strategy = { type = befriend id = "D08" value = 150 }
+}
+
+llmb_befriend_D08_strong = {
+	enable = { has_country_flag = llmb_befriend_D08 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_befriend_D08 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = befriend id = "D08" value = 10000 }
+}
+
+llmb_befriend_D09 = {
+	enable = { has_country_flag = llmb_befriend_D09 }
+	abort = { NOT = { has_country_flag = llmb_befriend_D09 } }
+	ai_strategy = { type = befriend id = "D09" value = 150 }
+}
+
+llmb_befriend_D09_strong = {
+	enable = { has_country_flag = llmb_befriend_D09 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_befriend_D09 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = befriend id = "D09" value = 10000 }
+}
+
+llmb_befriend_D10 = {
+	enable = { has_country_flag = llmb_befriend_D10 }
+	abort = { NOT = { has_country_flag = llmb_befriend_D10 } }
+	ai_strategy = { type = befriend id = "D10" value = 150 }
+}
+
+llmb_befriend_D10_strong = {
+	enable = { has_country_flag = llmb_befriend_D10 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_befriend_D10 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = befriend id = "D10" value = 10000 }
+}
+
+llmb_befriend_D11 = {
+	enable = { has_country_flag = llmb_befriend_D11 }
+	abort = { NOT = { has_country_flag = llmb_befriend_D11 } }
+	ai_strategy = { type = befriend id = "D11" value = 150 }
+}
+
+llmb_befriend_D11_strong = {
+	enable = { has_country_flag = llmb_befriend_D11 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_befriend_D11 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = befriend id = "D11" value = 10000 }
+}
+
+llmb_befriend_D12 = {
+	enable = { has_country_flag = llmb_befriend_D12 }
+	abort = { NOT = { has_country_flag = llmb_befriend_D12 } }
+	ai_strategy = { type = befriend id = "D12" value = 150 }
+}
+
+llmb_befriend_D12_strong = {
+	enable = { has_country_flag = llmb_befriend_D12 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_befriend_D12 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = befriend id = "D12" value = 10000 }
+}
+
+llmb_befriend_D13 = {
+	enable = { has_country_flag = llmb_befriend_D13 }
+	abort = { NOT = { has_country_flag = llmb_befriend_D13 } }
+	ai_strategy = { type = befriend id = "D13" value = 150 }
+}
+
+llmb_befriend_D13_strong = {
+	enable = { has_country_flag = llmb_befriend_D13 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_befriend_D13 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = befriend id = "D13" value = 10000 }
+}
+
+llmb_befriend_D14 = {
+	enable = { has_country_flag = llmb_befriend_D14 }
+	abort = { NOT = { has_country_flag = llmb_befriend_D14 } }
+	ai_strategy = { type = befriend id = "D14" value = 150 }
+}
+
+llmb_befriend_D14_strong = {
+	enable = { has_country_flag = llmb_befriend_D14 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_befriend_D14 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = befriend id = "D14" value = 10000 }
+}
+
+llmb_befriend_D15 = {
+	enable = { has_country_flag = llmb_befriend_D15 }
+	abort = { NOT = { has_country_flag = llmb_befriend_D15 } }
+	ai_strategy = { type = befriend id = "D15" value = 150 }
+}
+
+llmb_befriend_D15_strong = {
+	enable = { has_country_flag = llmb_befriend_D15 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_befriend_D15 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = befriend id = "D15" value = 10000 }
+}
+
+llmb_befriend_D16 = {
+	enable = { has_country_flag = llmb_befriend_D16 }
+	abort = { NOT = { has_country_flag = llmb_befriend_D16 } }
+	ai_strategy = { type = befriend id = "D16" value = 150 }
+}
+
+llmb_befriend_D16_strong = {
+	enable = { has_country_flag = llmb_befriend_D16 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_befriend_D16 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = befriend id = "D16" value = 10000 }
+}
+
+llmb_befriend_D17 = {
+	enable = { has_country_flag = llmb_befriend_D17 }
+	abort = { NOT = { has_country_flag = llmb_befriend_D17 } }
+	ai_strategy = { type = befriend id = "D17" value = 150 }
+}
+
+llmb_befriend_D17_strong = {
+	enable = { has_country_flag = llmb_befriend_D17 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_befriend_D17 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = befriend id = "D17" value = 10000 }
+}
+
+llmb_befriend_D18 = {
+	enable = { has_country_flag = llmb_befriend_D18 }
+	abort = { NOT = { has_country_flag = llmb_befriend_D18 } }
+	ai_strategy = { type = befriend id = "D18" value = 150 }
+}
+
+llmb_befriend_D18_strong = {
+	enable = { has_country_flag = llmb_befriend_D18 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_befriend_D18 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = befriend id = "D18" value = 10000 }
+}
+
+llmb_befriend_D19 = {
+	enable = { has_country_flag = llmb_befriend_D19 }
+	abort = { NOT = { has_country_flag = llmb_befriend_D19 } }
+	ai_strategy = { type = befriend id = "D19" value = 150 }
+}
+
+llmb_befriend_D19_strong = {
+	enable = { has_country_flag = llmb_befriend_D19 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_befriend_D19 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = befriend id = "D19" value = 10000 }
+}
+
+llmb_befriend_D20 = {
+	enable = { has_country_flag = llmb_befriend_D20 }
+	abort = { NOT = { has_country_flag = llmb_befriend_D20 } }
+	ai_strategy = { type = befriend id = "D20" value = 150 }
+}
+
+llmb_befriend_D20_strong = {
+	enable = { has_country_flag = llmb_befriend_D20 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_befriend_D20 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = befriend id = "D20" value = 10000 }
 }
 
 llmb_antagonize_GER = {
@@ -7916,6 +9396,246 @@ llmb_antagonize_YUN_strong = {
 	ai_strategy = { type = antagonize id = "YUN" value = 10000 }
 }
 
+llmb_antagonize_D01 = {
+	enable = { has_country_flag = llmb_antagonize_D01 }
+	abort = { NOT = { has_country_flag = llmb_antagonize_D01 } }
+	ai_strategy = { type = antagonize id = "D01" value = 150 }
+}
+
+llmb_antagonize_D01_strong = {
+	enable = { has_country_flag = llmb_antagonize_D01 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_antagonize_D01 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = antagonize id = "D01" value = 10000 }
+}
+
+llmb_antagonize_D02 = {
+	enable = { has_country_flag = llmb_antagonize_D02 }
+	abort = { NOT = { has_country_flag = llmb_antagonize_D02 } }
+	ai_strategy = { type = antagonize id = "D02" value = 150 }
+}
+
+llmb_antagonize_D02_strong = {
+	enable = { has_country_flag = llmb_antagonize_D02 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_antagonize_D02 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = antagonize id = "D02" value = 10000 }
+}
+
+llmb_antagonize_D03 = {
+	enable = { has_country_flag = llmb_antagonize_D03 }
+	abort = { NOT = { has_country_flag = llmb_antagonize_D03 } }
+	ai_strategy = { type = antagonize id = "D03" value = 150 }
+}
+
+llmb_antagonize_D03_strong = {
+	enable = { has_country_flag = llmb_antagonize_D03 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_antagonize_D03 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = antagonize id = "D03" value = 10000 }
+}
+
+llmb_antagonize_D04 = {
+	enable = { has_country_flag = llmb_antagonize_D04 }
+	abort = { NOT = { has_country_flag = llmb_antagonize_D04 } }
+	ai_strategy = { type = antagonize id = "D04" value = 150 }
+}
+
+llmb_antagonize_D04_strong = {
+	enable = { has_country_flag = llmb_antagonize_D04 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_antagonize_D04 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = antagonize id = "D04" value = 10000 }
+}
+
+llmb_antagonize_D05 = {
+	enable = { has_country_flag = llmb_antagonize_D05 }
+	abort = { NOT = { has_country_flag = llmb_antagonize_D05 } }
+	ai_strategy = { type = antagonize id = "D05" value = 150 }
+}
+
+llmb_antagonize_D05_strong = {
+	enable = { has_country_flag = llmb_antagonize_D05 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_antagonize_D05 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = antagonize id = "D05" value = 10000 }
+}
+
+llmb_antagonize_D06 = {
+	enable = { has_country_flag = llmb_antagonize_D06 }
+	abort = { NOT = { has_country_flag = llmb_antagonize_D06 } }
+	ai_strategy = { type = antagonize id = "D06" value = 150 }
+}
+
+llmb_antagonize_D06_strong = {
+	enable = { has_country_flag = llmb_antagonize_D06 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_antagonize_D06 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = antagonize id = "D06" value = 10000 }
+}
+
+llmb_antagonize_D07 = {
+	enable = { has_country_flag = llmb_antagonize_D07 }
+	abort = { NOT = { has_country_flag = llmb_antagonize_D07 } }
+	ai_strategy = { type = antagonize id = "D07" value = 150 }
+}
+
+llmb_antagonize_D07_strong = {
+	enable = { has_country_flag = llmb_antagonize_D07 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_antagonize_D07 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = antagonize id = "D07" value = 10000 }
+}
+
+llmb_antagonize_D08 = {
+	enable = { has_country_flag = llmb_antagonize_D08 }
+	abort = { NOT = { has_country_flag = llmb_antagonize_D08 } }
+	ai_strategy = { type = antagonize id = "D08" value = 150 }
+}
+
+llmb_antagonize_D08_strong = {
+	enable = { has_country_flag = llmb_antagonize_D08 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_antagonize_D08 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = antagonize id = "D08" value = 10000 }
+}
+
+llmb_antagonize_D09 = {
+	enable = { has_country_flag = llmb_antagonize_D09 }
+	abort = { NOT = { has_country_flag = llmb_antagonize_D09 } }
+	ai_strategy = { type = antagonize id = "D09" value = 150 }
+}
+
+llmb_antagonize_D09_strong = {
+	enable = { has_country_flag = llmb_antagonize_D09 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_antagonize_D09 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = antagonize id = "D09" value = 10000 }
+}
+
+llmb_antagonize_D10 = {
+	enable = { has_country_flag = llmb_antagonize_D10 }
+	abort = { NOT = { has_country_flag = llmb_antagonize_D10 } }
+	ai_strategy = { type = antagonize id = "D10" value = 150 }
+}
+
+llmb_antagonize_D10_strong = {
+	enable = { has_country_flag = llmb_antagonize_D10 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_antagonize_D10 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = antagonize id = "D10" value = 10000 }
+}
+
+llmb_antagonize_D11 = {
+	enable = { has_country_flag = llmb_antagonize_D11 }
+	abort = { NOT = { has_country_flag = llmb_antagonize_D11 } }
+	ai_strategy = { type = antagonize id = "D11" value = 150 }
+}
+
+llmb_antagonize_D11_strong = {
+	enable = { has_country_flag = llmb_antagonize_D11 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_antagonize_D11 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = antagonize id = "D11" value = 10000 }
+}
+
+llmb_antagonize_D12 = {
+	enable = { has_country_flag = llmb_antagonize_D12 }
+	abort = { NOT = { has_country_flag = llmb_antagonize_D12 } }
+	ai_strategy = { type = antagonize id = "D12" value = 150 }
+}
+
+llmb_antagonize_D12_strong = {
+	enable = { has_country_flag = llmb_antagonize_D12 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_antagonize_D12 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = antagonize id = "D12" value = 10000 }
+}
+
+llmb_antagonize_D13 = {
+	enable = { has_country_flag = llmb_antagonize_D13 }
+	abort = { NOT = { has_country_flag = llmb_antagonize_D13 } }
+	ai_strategy = { type = antagonize id = "D13" value = 150 }
+}
+
+llmb_antagonize_D13_strong = {
+	enable = { has_country_flag = llmb_antagonize_D13 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_antagonize_D13 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = antagonize id = "D13" value = 10000 }
+}
+
+llmb_antagonize_D14 = {
+	enable = { has_country_flag = llmb_antagonize_D14 }
+	abort = { NOT = { has_country_flag = llmb_antagonize_D14 } }
+	ai_strategy = { type = antagonize id = "D14" value = 150 }
+}
+
+llmb_antagonize_D14_strong = {
+	enable = { has_country_flag = llmb_antagonize_D14 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_antagonize_D14 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = antagonize id = "D14" value = 10000 }
+}
+
+llmb_antagonize_D15 = {
+	enable = { has_country_flag = llmb_antagonize_D15 }
+	abort = { NOT = { has_country_flag = llmb_antagonize_D15 } }
+	ai_strategy = { type = antagonize id = "D15" value = 150 }
+}
+
+llmb_antagonize_D15_strong = {
+	enable = { has_country_flag = llmb_antagonize_D15 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_antagonize_D15 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = antagonize id = "D15" value = 10000 }
+}
+
+llmb_antagonize_D16 = {
+	enable = { has_country_flag = llmb_antagonize_D16 }
+	abort = { NOT = { has_country_flag = llmb_antagonize_D16 } }
+	ai_strategy = { type = antagonize id = "D16" value = 150 }
+}
+
+llmb_antagonize_D16_strong = {
+	enable = { has_country_flag = llmb_antagonize_D16 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_antagonize_D16 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = antagonize id = "D16" value = 10000 }
+}
+
+llmb_antagonize_D17 = {
+	enable = { has_country_flag = llmb_antagonize_D17 }
+	abort = { NOT = { has_country_flag = llmb_antagonize_D17 } }
+	ai_strategy = { type = antagonize id = "D17" value = 150 }
+}
+
+llmb_antagonize_D17_strong = {
+	enable = { has_country_flag = llmb_antagonize_D17 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_antagonize_D17 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = antagonize id = "D17" value = 10000 }
+}
+
+llmb_antagonize_D18 = {
+	enable = { has_country_flag = llmb_antagonize_D18 }
+	abort = { NOT = { has_country_flag = llmb_antagonize_D18 } }
+	ai_strategy = { type = antagonize id = "D18" value = 150 }
+}
+
+llmb_antagonize_D18_strong = {
+	enable = { has_country_flag = llmb_antagonize_D18 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_antagonize_D18 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = antagonize id = "D18" value = 10000 }
+}
+
+llmb_antagonize_D19 = {
+	enable = { has_country_flag = llmb_antagonize_D19 }
+	abort = { NOT = { has_country_flag = llmb_antagonize_D19 } }
+	ai_strategy = { type = antagonize id = "D19" value = 150 }
+}
+
+llmb_antagonize_D19_strong = {
+	enable = { has_country_flag = llmb_antagonize_D19 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_antagonize_D19 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = antagonize id = "D19" value = 10000 }
+}
+
+llmb_antagonize_D20 = {
+	enable = { has_country_flag = llmb_antagonize_D20 }
+	abort = { NOT = { has_country_flag = llmb_antagonize_D20 } }
+	ai_strategy = { type = antagonize id = "D20" value = 150 }
+}
+
+llmb_antagonize_D20_strong = {
+	enable = { has_country_flag = llmb_antagonize_D20 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_antagonize_D20 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = antagonize id = "D20" value = 10000 }
+}
+
 llmb_ignore_GER = {
 	enable = { has_country_flag = llmb_ignore_GER }
 	abort = { NOT = { has_country_flag = llmb_ignore_GER } }
@@ -9018,6 +10738,246 @@ llmb_ignore_YUN_strong = {
 	enable = { has_country_flag = llmb_ignore_YUN has_global_flag = llmb_strong_directives }
 	abort = { OR = { NOT = { has_country_flag = llmb_ignore_YUN } NOT = { has_global_flag = llmb_strong_directives } } }
 	ai_strategy = { type = ignore id = "YUN" value = 10000 }
+}
+
+llmb_ignore_D01 = {
+	enable = { has_country_flag = llmb_ignore_D01 }
+	abort = { NOT = { has_country_flag = llmb_ignore_D01 } }
+	ai_strategy = { type = ignore id = "D01" value = 150 }
+}
+
+llmb_ignore_D01_strong = {
+	enable = { has_country_flag = llmb_ignore_D01 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_ignore_D01 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = ignore id = "D01" value = 10000 }
+}
+
+llmb_ignore_D02 = {
+	enable = { has_country_flag = llmb_ignore_D02 }
+	abort = { NOT = { has_country_flag = llmb_ignore_D02 } }
+	ai_strategy = { type = ignore id = "D02" value = 150 }
+}
+
+llmb_ignore_D02_strong = {
+	enable = { has_country_flag = llmb_ignore_D02 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_ignore_D02 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = ignore id = "D02" value = 10000 }
+}
+
+llmb_ignore_D03 = {
+	enable = { has_country_flag = llmb_ignore_D03 }
+	abort = { NOT = { has_country_flag = llmb_ignore_D03 } }
+	ai_strategy = { type = ignore id = "D03" value = 150 }
+}
+
+llmb_ignore_D03_strong = {
+	enable = { has_country_flag = llmb_ignore_D03 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_ignore_D03 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = ignore id = "D03" value = 10000 }
+}
+
+llmb_ignore_D04 = {
+	enable = { has_country_flag = llmb_ignore_D04 }
+	abort = { NOT = { has_country_flag = llmb_ignore_D04 } }
+	ai_strategy = { type = ignore id = "D04" value = 150 }
+}
+
+llmb_ignore_D04_strong = {
+	enable = { has_country_flag = llmb_ignore_D04 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_ignore_D04 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = ignore id = "D04" value = 10000 }
+}
+
+llmb_ignore_D05 = {
+	enable = { has_country_flag = llmb_ignore_D05 }
+	abort = { NOT = { has_country_flag = llmb_ignore_D05 } }
+	ai_strategy = { type = ignore id = "D05" value = 150 }
+}
+
+llmb_ignore_D05_strong = {
+	enable = { has_country_flag = llmb_ignore_D05 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_ignore_D05 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = ignore id = "D05" value = 10000 }
+}
+
+llmb_ignore_D06 = {
+	enable = { has_country_flag = llmb_ignore_D06 }
+	abort = { NOT = { has_country_flag = llmb_ignore_D06 } }
+	ai_strategy = { type = ignore id = "D06" value = 150 }
+}
+
+llmb_ignore_D06_strong = {
+	enable = { has_country_flag = llmb_ignore_D06 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_ignore_D06 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = ignore id = "D06" value = 10000 }
+}
+
+llmb_ignore_D07 = {
+	enable = { has_country_flag = llmb_ignore_D07 }
+	abort = { NOT = { has_country_flag = llmb_ignore_D07 } }
+	ai_strategy = { type = ignore id = "D07" value = 150 }
+}
+
+llmb_ignore_D07_strong = {
+	enable = { has_country_flag = llmb_ignore_D07 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_ignore_D07 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = ignore id = "D07" value = 10000 }
+}
+
+llmb_ignore_D08 = {
+	enable = { has_country_flag = llmb_ignore_D08 }
+	abort = { NOT = { has_country_flag = llmb_ignore_D08 } }
+	ai_strategy = { type = ignore id = "D08" value = 150 }
+}
+
+llmb_ignore_D08_strong = {
+	enable = { has_country_flag = llmb_ignore_D08 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_ignore_D08 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = ignore id = "D08" value = 10000 }
+}
+
+llmb_ignore_D09 = {
+	enable = { has_country_flag = llmb_ignore_D09 }
+	abort = { NOT = { has_country_flag = llmb_ignore_D09 } }
+	ai_strategy = { type = ignore id = "D09" value = 150 }
+}
+
+llmb_ignore_D09_strong = {
+	enable = { has_country_flag = llmb_ignore_D09 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_ignore_D09 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = ignore id = "D09" value = 10000 }
+}
+
+llmb_ignore_D10 = {
+	enable = { has_country_flag = llmb_ignore_D10 }
+	abort = { NOT = { has_country_flag = llmb_ignore_D10 } }
+	ai_strategy = { type = ignore id = "D10" value = 150 }
+}
+
+llmb_ignore_D10_strong = {
+	enable = { has_country_flag = llmb_ignore_D10 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_ignore_D10 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = ignore id = "D10" value = 10000 }
+}
+
+llmb_ignore_D11 = {
+	enable = { has_country_flag = llmb_ignore_D11 }
+	abort = { NOT = { has_country_flag = llmb_ignore_D11 } }
+	ai_strategy = { type = ignore id = "D11" value = 150 }
+}
+
+llmb_ignore_D11_strong = {
+	enable = { has_country_flag = llmb_ignore_D11 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_ignore_D11 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = ignore id = "D11" value = 10000 }
+}
+
+llmb_ignore_D12 = {
+	enable = { has_country_flag = llmb_ignore_D12 }
+	abort = { NOT = { has_country_flag = llmb_ignore_D12 } }
+	ai_strategy = { type = ignore id = "D12" value = 150 }
+}
+
+llmb_ignore_D12_strong = {
+	enable = { has_country_flag = llmb_ignore_D12 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_ignore_D12 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = ignore id = "D12" value = 10000 }
+}
+
+llmb_ignore_D13 = {
+	enable = { has_country_flag = llmb_ignore_D13 }
+	abort = { NOT = { has_country_flag = llmb_ignore_D13 } }
+	ai_strategy = { type = ignore id = "D13" value = 150 }
+}
+
+llmb_ignore_D13_strong = {
+	enable = { has_country_flag = llmb_ignore_D13 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_ignore_D13 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = ignore id = "D13" value = 10000 }
+}
+
+llmb_ignore_D14 = {
+	enable = { has_country_flag = llmb_ignore_D14 }
+	abort = { NOT = { has_country_flag = llmb_ignore_D14 } }
+	ai_strategy = { type = ignore id = "D14" value = 150 }
+}
+
+llmb_ignore_D14_strong = {
+	enable = { has_country_flag = llmb_ignore_D14 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_ignore_D14 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = ignore id = "D14" value = 10000 }
+}
+
+llmb_ignore_D15 = {
+	enable = { has_country_flag = llmb_ignore_D15 }
+	abort = { NOT = { has_country_flag = llmb_ignore_D15 } }
+	ai_strategy = { type = ignore id = "D15" value = 150 }
+}
+
+llmb_ignore_D15_strong = {
+	enable = { has_country_flag = llmb_ignore_D15 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_ignore_D15 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = ignore id = "D15" value = 10000 }
+}
+
+llmb_ignore_D16 = {
+	enable = { has_country_flag = llmb_ignore_D16 }
+	abort = { NOT = { has_country_flag = llmb_ignore_D16 } }
+	ai_strategy = { type = ignore id = "D16" value = 150 }
+}
+
+llmb_ignore_D16_strong = {
+	enable = { has_country_flag = llmb_ignore_D16 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_ignore_D16 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = ignore id = "D16" value = 10000 }
+}
+
+llmb_ignore_D17 = {
+	enable = { has_country_flag = llmb_ignore_D17 }
+	abort = { NOT = { has_country_flag = llmb_ignore_D17 } }
+	ai_strategy = { type = ignore id = "D17" value = 150 }
+}
+
+llmb_ignore_D17_strong = {
+	enable = { has_country_flag = llmb_ignore_D17 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_ignore_D17 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = ignore id = "D17" value = 10000 }
+}
+
+llmb_ignore_D18 = {
+	enable = { has_country_flag = llmb_ignore_D18 }
+	abort = { NOT = { has_country_flag = llmb_ignore_D18 } }
+	ai_strategy = { type = ignore id = "D18" value = 150 }
+}
+
+llmb_ignore_D18_strong = {
+	enable = { has_country_flag = llmb_ignore_D18 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_ignore_D18 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = ignore id = "D18" value = 10000 }
+}
+
+llmb_ignore_D19 = {
+	enable = { has_country_flag = llmb_ignore_D19 }
+	abort = { NOT = { has_country_flag = llmb_ignore_D19 } }
+	ai_strategy = { type = ignore id = "D19" value = 150 }
+}
+
+llmb_ignore_D19_strong = {
+	enable = { has_country_flag = llmb_ignore_D19 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_ignore_D19 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = ignore id = "D19" value = 10000 }
+}
+
+llmb_ignore_D20 = {
+	enable = { has_country_flag = llmb_ignore_D20 }
+	abort = { NOT = { has_country_flag = llmb_ignore_D20 } }
+	ai_strategy = { type = ignore id = "D20" value = 150 }
+}
+
+llmb_ignore_D20_strong = {
+	enable = { has_country_flag = llmb_ignore_D20 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_ignore_D20 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = ignore id = "D20" value = 10000 }
 }
 
 llmb_prepare_war_GER = {
@@ -10124,6 +12084,246 @@ llmb_prepare_war_YUN_strong = {
 	ai_strategy = { type = prepare_for_war id = "YUN" value = 10000 }
 }
 
+llmb_prepare_war_D01 = {
+	enable = { has_country_flag = llmb_prepare_war_D01 }
+	abort = { NOT = { has_country_flag = llmb_prepare_war_D01 } }
+	ai_strategy = { type = prepare_for_war id = "D01" value = 150 }
+}
+
+llmb_prepare_war_D01_strong = {
+	enable = { has_country_flag = llmb_prepare_war_D01 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_prepare_war_D01 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = prepare_for_war id = "D01" value = 10000 }
+}
+
+llmb_prepare_war_D02 = {
+	enable = { has_country_flag = llmb_prepare_war_D02 }
+	abort = { NOT = { has_country_flag = llmb_prepare_war_D02 } }
+	ai_strategy = { type = prepare_for_war id = "D02" value = 150 }
+}
+
+llmb_prepare_war_D02_strong = {
+	enable = { has_country_flag = llmb_prepare_war_D02 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_prepare_war_D02 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = prepare_for_war id = "D02" value = 10000 }
+}
+
+llmb_prepare_war_D03 = {
+	enable = { has_country_flag = llmb_prepare_war_D03 }
+	abort = { NOT = { has_country_flag = llmb_prepare_war_D03 } }
+	ai_strategy = { type = prepare_for_war id = "D03" value = 150 }
+}
+
+llmb_prepare_war_D03_strong = {
+	enable = { has_country_flag = llmb_prepare_war_D03 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_prepare_war_D03 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = prepare_for_war id = "D03" value = 10000 }
+}
+
+llmb_prepare_war_D04 = {
+	enable = { has_country_flag = llmb_prepare_war_D04 }
+	abort = { NOT = { has_country_flag = llmb_prepare_war_D04 } }
+	ai_strategy = { type = prepare_for_war id = "D04" value = 150 }
+}
+
+llmb_prepare_war_D04_strong = {
+	enable = { has_country_flag = llmb_prepare_war_D04 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_prepare_war_D04 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = prepare_for_war id = "D04" value = 10000 }
+}
+
+llmb_prepare_war_D05 = {
+	enable = { has_country_flag = llmb_prepare_war_D05 }
+	abort = { NOT = { has_country_flag = llmb_prepare_war_D05 } }
+	ai_strategy = { type = prepare_for_war id = "D05" value = 150 }
+}
+
+llmb_prepare_war_D05_strong = {
+	enable = { has_country_flag = llmb_prepare_war_D05 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_prepare_war_D05 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = prepare_for_war id = "D05" value = 10000 }
+}
+
+llmb_prepare_war_D06 = {
+	enable = { has_country_flag = llmb_prepare_war_D06 }
+	abort = { NOT = { has_country_flag = llmb_prepare_war_D06 } }
+	ai_strategy = { type = prepare_for_war id = "D06" value = 150 }
+}
+
+llmb_prepare_war_D06_strong = {
+	enable = { has_country_flag = llmb_prepare_war_D06 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_prepare_war_D06 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = prepare_for_war id = "D06" value = 10000 }
+}
+
+llmb_prepare_war_D07 = {
+	enable = { has_country_flag = llmb_prepare_war_D07 }
+	abort = { NOT = { has_country_flag = llmb_prepare_war_D07 } }
+	ai_strategy = { type = prepare_for_war id = "D07" value = 150 }
+}
+
+llmb_prepare_war_D07_strong = {
+	enable = { has_country_flag = llmb_prepare_war_D07 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_prepare_war_D07 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = prepare_for_war id = "D07" value = 10000 }
+}
+
+llmb_prepare_war_D08 = {
+	enable = { has_country_flag = llmb_prepare_war_D08 }
+	abort = { NOT = { has_country_flag = llmb_prepare_war_D08 } }
+	ai_strategy = { type = prepare_for_war id = "D08" value = 150 }
+}
+
+llmb_prepare_war_D08_strong = {
+	enable = { has_country_flag = llmb_prepare_war_D08 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_prepare_war_D08 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = prepare_for_war id = "D08" value = 10000 }
+}
+
+llmb_prepare_war_D09 = {
+	enable = { has_country_flag = llmb_prepare_war_D09 }
+	abort = { NOT = { has_country_flag = llmb_prepare_war_D09 } }
+	ai_strategy = { type = prepare_for_war id = "D09" value = 150 }
+}
+
+llmb_prepare_war_D09_strong = {
+	enable = { has_country_flag = llmb_prepare_war_D09 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_prepare_war_D09 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = prepare_for_war id = "D09" value = 10000 }
+}
+
+llmb_prepare_war_D10 = {
+	enable = { has_country_flag = llmb_prepare_war_D10 }
+	abort = { NOT = { has_country_flag = llmb_prepare_war_D10 } }
+	ai_strategy = { type = prepare_for_war id = "D10" value = 150 }
+}
+
+llmb_prepare_war_D10_strong = {
+	enable = { has_country_flag = llmb_prepare_war_D10 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_prepare_war_D10 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = prepare_for_war id = "D10" value = 10000 }
+}
+
+llmb_prepare_war_D11 = {
+	enable = { has_country_flag = llmb_prepare_war_D11 }
+	abort = { NOT = { has_country_flag = llmb_prepare_war_D11 } }
+	ai_strategy = { type = prepare_for_war id = "D11" value = 150 }
+}
+
+llmb_prepare_war_D11_strong = {
+	enable = { has_country_flag = llmb_prepare_war_D11 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_prepare_war_D11 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = prepare_for_war id = "D11" value = 10000 }
+}
+
+llmb_prepare_war_D12 = {
+	enable = { has_country_flag = llmb_prepare_war_D12 }
+	abort = { NOT = { has_country_flag = llmb_prepare_war_D12 } }
+	ai_strategy = { type = prepare_for_war id = "D12" value = 150 }
+}
+
+llmb_prepare_war_D12_strong = {
+	enable = { has_country_flag = llmb_prepare_war_D12 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_prepare_war_D12 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = prepare_for_war id = "D12" value = 10000 }
+}
+
+llmb_prepare_war_D13 = {
+	enable = { has_country_flag = llmb_prepare_war_D13 }
+	abort = { NOT = { has_country_flag = llmb_prepare_war_D13 } }
+	ai_strategy = { type = prepare_for_war id = "D13" value = 150 }
+}
+
+llmb_prepare_war_D13_strong = {
+	enable = { has_country_flag = llmb_prepare_war_D13 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_prepare_war_D13 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = prepare_for_war id = "D13" value = 10000 }
+}
+
+llmb_prepare_war_D14 = {
+	enable = { has_country_flag = llmb_prepare_war_D14 }
+	abort = { NOT = { has_country_flag = llmb_prepare_war_D14 } }
+	ai_strategy = { type = prepare_for_war id = "D14" value = 150 }
+}
+
+llmb_prepare_war_D14_strong = {
+	enable = { has_country_flag = llmb_prepare_war_D14 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_prepare_war_D14 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = prepare_for_war id = "D14" value = 10000 }
+}
+
+llmb_prepare_war_D15 = {
+	enable = { has_country_flag = llmb_prepare_war_D15 }
+	abort = { NOT = { has_country_flag = llmb_prepare_war_D15 } }
+	ai_strategy = { type = prepare_for_war id = "D15" value = 150 }
+}
+
+llmb_prepare_war_D15_strong = {
+	enable = { has_country_flag = llmb_prepare_war_D15 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_prepare_war_D15 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = prepare_for_war id = "D15" value = 10000 }
+}
+
+llmb_prepare_war_D16 = {
+	enable = { has_country_flag = llmb_prepare_war_D16 }
+	abort = { NOT = { has_country_flag = llmb_prepare_war_D16 } }
+	ai_strategy = { type = prepare_for_war id = "D16" value = 150 }
+}
+
+llmb_prepare_war_D16_strong = {
+	enable = { has_country_flag = llmb_prepare_war_D16 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_prepare_war_D16 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = prepare_for_war id = "D16" value = 10000 }
+}
+
+llmb_prepare_war_D17 = {
+	enable = { has_country_flag = llmb_prepare_war_D17 }
+	abort = { NOT = { has_country_flag = llmb_prepare_war_D17 } }
+	ai_strategy = { type = prepare_for_war id = "D17" value = 150 }
+}
+
+llmb_prepare_war_D17_strong = {
+	enable = { has_country_flag = llmb_prepare_war_D17 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_prepare_war_D17 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = prepare_for_war id = "D17" value = 10000 }
+}
+
+llmb_prepare_war_D18 = {
+	enable = { has_country_flag = llmb_prepare_war_D18 }
+	abort = { NOT = { has_country_flag = llmb_prepare_war_D18 } }
+	ai_strategy = { type = prepare_for_war id = "D18" value = 150 }
+}
+
+llmb_prepare_war_D18_strong = {
+	enable = { has_country_flag = llmb_prepare_war_D18 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_prepare_war_D18 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = prepare_for_war id = "D18" value = 10000 }
+}
+
+llmb_prepare_war_D19 = {
+	enable = { has_country_flag = llmb_prepare_war_D19 }
+	abort = { NOT = { has_country_flag = llmb_prepare_war_D19 } }
+	ai_strategy = { type = prepare_for_war id = "D19" value = 150 }
+}
+
+llmb_prepare_war_D19_strong = {
+	enable = { has_country_flag = llmb_prepare_war_D19 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_prepare_war_D19 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = prepare_for_war id = "D19" value = 10000 }
+}
+
+llmb_prepare_war_D20 = {
+	enable = { has_country_flag = llmb_prepare_war_D20 }
+	abort = { NOT = { has_country_flag = llmb_prepare_war_D20 } }
+	ai_strategy = { type = prepare_for_war id = "D20" value = 150 }
+}
+
+llmb_prepare_war_D20_strong = {
+	enable = { has_country_flag = llmb_prepare_war_D20 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_prepare_war_D20 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = prepare_for_war id = "D20" value = 10000 }
+}
+
 llmb_declare_war_GER = {
 	enable = { has_country_flag = llmb_declare_war_GER }
 	abort = { NOT = { has_country_flag = llmb_declare_war_GER } }
@@ -11226,6 +13426,246 @@ llmb_declare_war_YUN_strong = {
 	enable = { has_country_flag = llmb_declare_war_YUN has_global_flag = llmb_strong_directives }
 	abort = { OR = { NOT = { has_country_flag = llmb_declare_war_YUN } NOT = { has_global_flag = llmb_strong_directives } } }
 	ai_strategy = { type = declare_war id = "YUN" value = 10000 }
+}
+
+llmb_declare_war_D01 = {
+	enable = { has_country_flag = llmb_declare_war_D01 }
+	abort = { NOT = { has_country_flag = llmb_declare_war_D01 } }
+	ai_strategy = { type = declare_war id = "D01" value = 150 }
+}
+
+llmb_declare_war_D01_strong = {
+	enable = { has_country_flag = llmb_declare_war_D01 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_declare_war_D01 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = declare_war id = "D01" value = 10000 }
+}
+
+llmb_declare_war_D02 = {
+	enable = { has_country_flag = llmb_declare_war_D02 }
+	abort = { NOT = { has_country_flag = llmb_declare_war_D02 } }
+	ai_strategy = { type = declare_war id = "D02" value = 150 }
+}
+
+llmb_declare_war_D02_strong = {
+	enable = { has_country_flag = llmb_declare_war_D02 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_declare_war_D02 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = declare_war id = "D02" value = 10000 }
+}
+
+llmb_declare_war_D03 = {
+	enable = { has_country_flag = llmb_declare_war_D03 }
+	abort = { NOT = { has_country_flag = llmb_declare_war_D03 } }
+	ai_strategy = { type = declare_war id = "D03" value = 150 }
+}
+
+llmb_declare_war_D03_strong = {
+	enable = { has_country_flag = llmb_declare_war_D03 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_declare_war_D03 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = declare_war id = "D03" value = 10000 }
+}
+
+llmb_declare_war_D04 = {
+	enable = { has_country_flag = llmb_declare_war_D04 }
+	abort = { NOT = { has_country_flag = llmb_declare_war_D04 } }
+	ai_strategy = { type = declare_war id = "D04" value = 150 }
+}
+
+llmb_declare_war_D04_strong = {
+	enable = { has_country_flag = llmb_declare_war_D04 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_declare_war_D04 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = declare_war id = "D04" value = 10000 }
+}
+
+llmb_declare_war_D05 = {
+	enable = { has_country_flag = llmb_declare_war_D05 }
+	abort = { NOT = { has_country_flag = llmb_declare_war_D05 } }
+	ai_strategy = { type = declare_war id = "D05" value = 150 }
+}
+
+llmb_declare_war_D05_strong = {
+	enable = { has_country_flag = llmb_declare_war_D05 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_declare_war_D05 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = declare_war id = "D05" value = 10000 }
+}
+
+llmb_declare_war_D06 = {
+	enable = { has_country_flag = llmb_declare_war_D06 }
+	abort = { NOT = { has_country_flag = llmb_declare_war_D06 } }
+	ai_strategy = { type = declare_war id = "D06" value = 150 }
+}
+
+llmb_declare_war_D06_strong = {
+	enable = { has_country_flag = llmb_declare_war_D06 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_declare_war_D06 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = declare_war id = "D06" value = 10000 }
+}
+
+llmb_declare_war_D07 = {
+	enable = { has_country_flag = llmb_declare_war_D07 }
+	abort = { NOT = { has_country_flag = llmb_declare_war_D07 } }
+	ai_strategy = { type = declare_war id = "D07" value = 150 }
+}
+
+llmb_declare_war_D07_strong = {
+	enable = { has_country_flag = llmb_declare_war_D07 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_declare_war_D07 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = declare_war id = "D07" value = 10000 }
+}
+
+llmb_declare_war_D08 = {
+	enable = { has_country_flag = llmb_declare_war_D08 }
+	abort = { NOT = { has_country_flag = llmb_declare_war_D08 } }
+	ai_strategy = { type = declare_war id = "D08" value = 150 }
+}
+
+llmb_declare_war_D08_strong = {
+	enable = { has_country_flag = llmb_declare_war_D08 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_declare_war_D08 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = declare_war id = "D08" value = 10000 }
+}
+
+llmb_declare_war_D09 = {
+	enable = { has_country_flag = llmb_declare_war_D09 }
+	abort = { NOT = { has_country_flag = llmb_declare_war_D09 } }
+	ai_strategy = { type = declare_war id = "D09" value = 150 }
+}
+
+llmb_declare_war_D09_strong = {
+	enable = { has_country_flag = llmb_declare_war_D09 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_declare_war_D09 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = declare_war id = "D09" value = 10000 }
+}
+
+llmb_declare_war_D10 = {
+	enable = { has_country_flag = llmb_declare_war_D10 }
+	abort = { NOT = { has_country_flag = llmb_declare_war_D10 } }
+	ai_strategy = { type = declare_war id = "D10" value = 150 }
+}
+
+llmb_declare_war_D10_strong = {
+	enable = { has_country_flag = llmb_declare_war_D10 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_declare_war_D10 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = declare_war id = "D10" value = 10000 }
+}
+
+llmb_declare_war_D11 = {
+	enable = { has_country_flag = llmb_declare_war_D11 }
+	abort = { NOT = { has_country_flag = llmb_declare_war_D11 } }
+	ai_strategy = { type = declare_war id = "D11" value = 150 }
+}
+
+llmb_declare_war_D11_strong = {
+	enable = { has_country_flag = llmb_declare_war_D11 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_declare_war_D11 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = declare_war id = "D11" value = 10000 }
+}
+
+llmb_declare_war_D12 = {
+	enable = { has_country_flag = llmb_declare_war_D12 }
+	abort = { NOT = { has_country_flag = llmb_declare_war_D12 } }
+	ai_strategy = { type = declare_war id = "D12" value = 150 }
+}
+
+llmb_declare_war_D12_strong = {
+	enable = { has_country_flag = llmb_declare_war_D12 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_declare_war_D12 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = declare_war id = "D12" value = 10000 }
+}
+
+llmb_declare_war_D13 = {
+	enable = { has_country_flag = llmb_declare_war_D13 }
+	abort = { NOT = { has_country_flag = llmb_declare_war_D13 } }
+	ai_strategy = { type = declare_war id = "D13" value = 150 }
+}
+
+llmb_declare_war_D13_strong = {
+	enable = { has_country_flag = llmb_declare_war_D13 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_declare_war_D13 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = declare_war id = "D13" value = 10000 }
+}
+
+llmb_declare_war_D14 = {
+	enable = { has_country_flag = llmb_declare_war_D14 }
+	abort = { NOT = { has_country_flag = llmb_declare_war_D14 } }
+	ai_strategy = { type = declare_war id = "D14" value = 150 }
+}
+
+llmb_declare_war_D14_strong = {
+	enable = { has_country_flag = llmb_declare_war_D14 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_declare_war_D14 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = declare_war id = "D14" value = 10000 }
+}
+
+llmb_declare_war_D15 = {
+	enable = { has_country_flag = llmb_declare_war_D15 }
+	abort = { NOT = { has_country_flag = llmb_declare_war_D15 } }
+	ai_strategy = { type = declare_war id = "D15" value = 150 }
+}
+
+llmb_declare_war_D15_strong = {
+	enable = { has_country_flag = llmb_declare_war_D15 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_declare_war_D15 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = declare_war id = "D15" value = 10000 }
+}
+
+llmb_declare_war_D16 = {
+	enable = { has_country_flag = llmb_declare_war_D16 }
+	abort = { NOT = { has_country_flag = llmb_declare_war_D16 } }
+	ai_strategy = { type = declare_war id = "D16" value = 150 }
+}
+
+llmb_declare_war_D16_strong = {
+	enable = { has_country_flag = llmb_declare_war_D16 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_declare_war_D16 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = declare_war id = "D16" value = 10000 }
+}
+
+llmb_declare_war_D17 = {
+	enable = { has_country_flag = llmb_declare_war_D17 }
+	abort = { NOT = { has_country_flag = llmb_declare_war_D17 } }
+	ai_strategy = { type = declare_war id = "D17" value = 150 }
+}
+
+llmb_declare_war_D17_strong = {
+	enable = { has_country_flag = llmb_declare_war_D17 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_declare_war_D17 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = declare_war id = "D17" value = 10000 }
+}
+
+llmb_declare_war_D18 = {
+	enable = { has_country_flag = llmb_declare_war_D18 }
+	abort = { NOT = { has_country_flag = llmb_declare_war_D18 } }
+	ai_strategy = { type = declare_war id = "D18" value = 150 }
+}
+
+llmb_declare_war_D18_strong = {
+	enable = { has_country_flag = llmb_declare_war_D18 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_declare_war_D18 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = declare_war id = "D18" value = 10000 }
+}
+
+llmb_declare_war_D19 = {
+	enable = { has_country_flag = llmb_declare_war_D19 }
+	abort = { NOT = { has_country_flag = llmb_declare_war_D19 } }
+	ai_strategy = { type = declare_war id = "D19" value = 150 }
+}
+
+llmb_declare_war_D19_strong = {
+	enable = { has_country_flag = llmb_declare_war_D19 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_declare_war_D19 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = declare_war id = "D19" value = 10000 }
+}
+
+llmb_declare_war_D20 = {
+	enable = { has_country_flag = llmb_declare_war_D20 }
+	abort = { NOT = { has_country_flag = llmb_declare_war_D20 } }
+	ai_strategy = { type = declare_war id = "D20" value = 150 }
+}
+
+llmb_declare_war_D20_strong = {
+	enable = { has_country_flag = llmb_declare_war_D20 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_declare_war_D20 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = declare_war id = "D20" value = 10000 }
 }
 
 llmb_volunteers_GER = {
@@ -12332,6 +14772,246 @@ llmb_volunteers_YUN_strong = {
 	ai_strategy = { type = send_volunteers_desire id = "YUN" value = 10000 }
 }
 
+llmb_volunteers_D01 = {
+	enable = { has_country_flag = llmb_volunteers_D01 }
+	abort = { NOT = { has_country_flag = llmb_volunteers_D01 } }
+	ai_strategy = { type = send_volunteers_desire id = "D01" value = 200 }
+}
+
+llmb_volunteers_D01_strong = {
+	enable = { has_country_flag = llmb_volunteers_D01 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_volunteers_D01 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = send_volunteers_desire id = "D01" value = 10000 }
+}
+
+llmb_volunteers_D02 = {
+	enable = { has_country_flag = llmb_volunteers_D02 }
+	abort = { NOT = { has_country_flag = llmb_volunteers_D02 } }
+	ai_strategy = { type = send_volunteers_desire id = "D02" value = 200 }
+}
+
+llmb_volunteers_D02_strong = {
+	enable = { has_country_flag = llmb_volunteers_D02 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_volunteers_D02 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = send_volunteers_desire id = "D02" value = 10000 }
+}
+
+llmb_volunteers_D03 = {
+	enable = { has_country_flag = llmb_volunteers_D03 }
+	abort = { NOT = { has_country_flag = llmb_volunteers_D03 } }
+	ai_strategy = { type = send_volunteers_desire id = "D03" value = 200 }
+}
+
+llmb_volunteers_D03_strong = {
+	enable = { has_country_flag = llmb_volunteers_D03 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_volunteers_D03 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = send_volunteers_desire id = "D03" value = 10000 }
+}
+
+llmb_volunteers_D04 = {
+	enable = { has_country_flag = llmb_volunteers_D04 }
+	abort = { NOT = { has_country_flag = llmb_volunteers_D04 } }
+	ai_strategy = { type = send_volunteers_desire id = "D04" value = 200 }
+}
+
+llmb_volunteers_D04_strong = {
+	enable = { has_country_flag = llmb_volunteers_D04 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_volunteers_D04 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = send_volunteers_desire id = "D04" value = 10000 }
+}
+
+llmb_volunteers_D05 = {
+	enable = { has_country_flag = llmb_volunteers_D05 }
+	abort = { NOT = { has_country_flag = llmb_volunteers_D05 } }
+	ai_strategy = { type = send_volunteers_desire id = "D05" value = 200 }
+}
+
+llmb_volunteers_D05_strong = {
+	enable = { has_country_flag = llmb_volunteers_D05 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_volunteers_D05 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = send_volunteers_desire id = "D05" value = 10000 }
+}
+
+llmb_volunteers_D06 = {
+	enable = { has_country_flag = llmb_volunteers_D06 }
+	abort = { NOT = { has_country_flag = llmb_volunteers_D06 } }
+	ai_strategy = { type = send_volunteers_desire id = "D06" value = 200 }
+}
+
+llmb_volunteers_D06_strong = {
+	enable = { has_country_flag = llmb_volunteers_D06 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_volunteers_D06 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = send_volunteers_desire id = "D06" value = 10000 }
+}
+
+llmb_volunteers_D07 = {
+	enable = { has_country_flag = llmb_volunteers_D07 }
+	abort = { NOT = { has_country_flag = llmb_volunteers_D07 } }
+	ai_strategy = { type = send_volunteers_desire id = "D07" value = 200 }
+}
+
+llmb_volunteers_D07_strong = {
+	enable = { has_country_flag = llmb_volunteers_D07 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_volunteers_D07 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = send_volunteers_desire id = "D07" value = 10000 }
+}
+
+llmb_volunteers_D08 = {
+	enable = { has_country_flag = llmb_volunteers_D08 }
+	abort = { NOT = { has_country_flag = llmb_volunteers_D08 } }
+	ai_strategy = { type = send_volunteers_desire id = "D08" value = 200 }
+}
+
+llmb_volunteers_D08_strong = {
+	enable = { has_country_flag = llmb_volunteers_D08 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_volunteers_D08 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = send_volunteers_desire id = "D08" value = 10000 }
+}
+
+llmb_volunteers_D09 = {
+	enable = { has_country_flag = llmb_volunteers_D09 }
+	abort = { NOT = { has_country_flag = llmb_volunteers_D09 } }
+	ai_strategy = { type = send_volunteers_desire id = "D09" value = 200 }
+}
+
+llmb_volunteers_D09_strong = {
+	enable = { has_country_flag = llmb_volunteers_D09 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_volunteers_D09 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = send_volunteers_desire id = "D09" value = 10000 }
+}
+
+llmb_volunteers_D10 = {
+	enable = { has_country_flag = llmb_volunteers_D10 }
+	abort = { NOT = { has_country_flag = llmb_volunteers_D10 } }
+	ai_strategy = { type = send_volunteers_desire id = "D10" value = 200 }
+}
+
+llmb_volunteers_D10_strong = {
+	enable = { has_country_flag = llmb_volunteers_D10 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_volunteers_D10 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = send_volunteers_desire id = "D10" value = 10000 }
+}
+
+llmb_volunteers_D11 = {
+	enable = { has_country_flag = llmb_volunteers_D11 }
+	abort = { NOT = { has_country_flag = llmb_volunteers_D11 } }
+	ai_strategy = { type = send_volunteers_desire id = "D11" value = 200 }
+}
+
+llmb_volunteers_D11_strong = {
+	enable = { has_country_flag = llmb_volunteers_D11 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_volunteers_D11 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = send_volunteers_desire id = "D11" value = 10000 }
+}
+
+llmb_volunteers_D12 = {
+	enable = { has_country_flag = llmb_volunteers_D12 }
+	abort = { NOT = { has_country_flag = llmb_volunteers_D12 } }
+	ai_strategy = { type = send_volunteers_desire id = "D12" value = 200 }
+}
+
+llmb_volunteers_D12_strong = {
+	enable = { has_country_flag = llmb_volunteers_D12 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_volunteers_D12 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = send_volunteers_desire id = "D12" value = 10000 }
+}
+
+llmb_volunteers_D13 = {
+	enable = { has_country_flag = llmb_volunteers_D13 }
+	abort = { NOT = { has_country_flag = llmb_volunteers_D13 } }
+	ai_strategy = { type = send_volunteers_desire id = "D13" value = 200 }
+}
+
+llmb_volunteers_D13_strong = {
+	enable = { has_country_flag = llmb_volunteers_D13 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_volunteers_D13 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = send_volunteers_desire id = "D13" value = 10000 }
+}
+
+llmb_volunteers_D14 = {
+	enable = { has_country_flag = llmb_volunteers_D14 }
+	abort = { NOT = { has_country_flag = llmb_volunteers_D14 } }
+	ai_strategy = { type = send_volunteers_desire id = "D14" value = 200 }
+}
+
+llmb_volunteers_D14_strong = {
+	enable = { has_country_flag = llmb_volunteers_D14 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_volunteers_D14 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = send_volunteers_desire id = "D14" value = 10000 }
+}
+
+llmb_volunteers_D15 = {
+	enable = { has_country_flag = llmb_volunteers_D15 }
+	abort = { NOT = { has_country_flag = llmb_volunteers_D15 } }
+	ai_strategy = { type = send_volunteers_desire id = "D15" value = 200 }
+}
+
+llmb_volunteers_D15_strong = {
+	enable = { has_country_flag = llmb_volunteers_D15 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_volunteers_D15 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = send_volunteers_desire id = "D15" value = 10000 }
+}
+
+llmb_volunteers_D16 = {
+	enable = { has_country_flag = llmb_volunteers_D16 }
+	abort = { NOT = { has_country_flag = llmb_volunteers_D16 } }
+	ai_strategy = { type = send_volunteers_desire id = "D16" value = 200 }
+}
+
+llmb_volunteers_D16_strong = {
+	enable = { has_country_flag = llmb_volunteers_D16 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_volunteers_D16 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = send_volunteers_desire id = "D16" value = 10000 }
+}
+
+llmb_volunteers_D17 = {
+	enable = { has_country_flag = llmb_volunteers_D17 }
+	abort = { NOT = { has_country_flag = llmb_volunteers_D17 } }
+	ai_strategy = { type = send_volunteers_desire id = "D17" value = 200 }
+}
+
+llmb_volunteers_D17_strong = {
+	enable = { has_country_flag = llmb_volunteers_D17 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_volunteers_D17 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = send_volunteers_desire id = "D17" value = 10000 }
+}
+
+llmb_volunteers_D18 = {
+	enable = { has_country_flag = llmb_volunteers_D18 }
+	abort = { NOT = { has_country_flag = llmb_volunteers_D18 } }
+	ai_strategy = { type = send_volunteers_desire id = "D18" value = 200 }
+}
+
+llmb_volunteers_D18_strong = {
+	enable = { has_country_flag = llmb_volunteers_D18 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_volunteers_D18 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = send_volunteers_desire id = "D18" value = 10000 }
+}
+
+llmb_volunteers_D19 = {
+	enable = { has_country_flag = llmb_volunteers_D19 }
+	abort = { NOT = { has_country_flag = llmb_volunteers_D19 } }
+	ai_strategy = { type = send_volunteers_desire id = "D19" value = 200 }
+}
+
+llmb_volunteers_D19_strong = {
+	enable = { has_country_flag = llmb_volunteers_D19 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_volunteers_D19 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = send_volunteers_desire id = "D19" value = 10000 }
+}
+
+llmb_volunteers_D20 = {
+	enable = { has_country_flag = llmb_volunteers_D20 }
+	abort = { NOT = { has_country_flag = llmb_volunteers_D20 } }
+	ai_strategy = { type = send_volunteers_desire id = "D20" value = 200 }
+}
+
+llmb_volunteers_D20_strong = {
+	enable = { has_country_flag = llmb_volunteers_D20 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_volunteers_D20 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = send_volunteers_desire id = "D20" value = 10000 }
+}
+
 llmb_lend_lease_GER = {
 	enable = { has_country_flag = llmb_lend_lease_GER }
 	abort = { NOT = { has_country_flag = llmb_lend_lease_GER } }
@@ -13434,6 +16114,246 @@ llmb_lend_lease_YUN_strong = {
 	enable = { has_country_flag = llmb_lend_lease_YUN has_global_flag = llmb_strong_directives }
 	abort = { OR = { NOT = { has_country_flag = llmb_lend_lease_YUN } NOT = { has_global_flag = llmb_strong_directives } } }
 	ai_strategy = { type = send_lend_lease_desire id = "YUN" value = 10000 }
+}
+
+llmb_lend_lease_D01 = {
+	enable = { has_country_flag = llmb_lend_lease_D01 }
+	abort = { NOT = { has_country_flag = llmb_lend_lease_D01 } }
+	ai_strategy = { type = send_lend_lease_desire id = "D01" value = 200 }
+}
+
+llmb_lend_lease_D01_strong = {
+	enable = { has_country_flag = llmb_lend_lease_D01 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_lend_lease_D01 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = send_lend_lease_desire id = "D01" value = 10000 }
+}
+
+llmb_lend_lease_D02 = {
+	enable = { has_country_flag = llmb_lend_lease_D02 }
+	abort = { NOT = { has_country_flag = llmb_lend_lease_D02 } }
+	ai_strategy = { type = send_lend_lease_desire id = "D02" value = 200 }
+}
+
+llmb_lend_lease_D02_strong = {
+	enable = { has_country_flag = llmb_lend_lease_D02 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_lend_lease_D02 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = send_lend_lease_desire id = "D02" value = 10000 }
+}
+
+llmb_lend_lease_D03 = {
+	enable = { has_country_flag = llmb_lend_lease_D03 }
+	abort = { NOT = { has_country_flag = llmb_lend_lease_D03 } }
+	ai_strategy = { type = send_lend_lease_desire id = "D03" value = 200 }
+}
+
+llmb_lend_lease_D03_strong = {
+	enable = { has_country_flag = llmb_lend_lease_D03 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_lend_lease_D03 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = send_lend_lease_desire id = "D03" value = 10000 }
+}
+
+llmb_lend_lease_D04 = {
+	enable = { has_country_flag = llmb_lend_lease_D04 }
+	abort = { NOT = { has_country_flag = llmb_lend_lease_D04 } }
+	ai_strategy = { type = send_lend_lease_desire id = "D04" value = 200 }
+}
+
+llmb_lend_lease_D04_strong = {
+	enable = { has_country_flag = llmb_lend_lease_D04 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_lend_lease_D04 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = send_lend_lease_desire id = "D04" value = 10000 }
+}
+
+llmb_lend_lease_D05 = {
+	enable = { has_country_flag = llmb_lend_lease_D05 }
+	abort = { NOT = { has_country_flag = llmb_lend_lease_D05 } }
+	ai_strategy = { type = send_lend_lease_desire id = "D05" value = 200 }
+}
+
+llmb_lend_lease_D05_strong = {
+	enable = { has_country_flag = llmb_lend_lease_D05 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_lend_lease_D05 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = send_lend_lease_desire id = "D05" value = 10000 }
+}
+
+llmb_lend_lease_D06 = {
+	enable = { has_country_flag = llmb_lend_lease_D06 }
+	abort = { NOT = { has_country_flag = llmb_lend_lease_D06 } }
+	ai_strategy = { type = send_lend_lease_desire id = "D06" value = 200 }
+}
+
+llmb_lend_lease_D06_strong = {
+	enable = { has_country_flag = llmb_lend_lease_D06 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_lend_lease_D06 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = send_lend_lease_desire id = "D06" value = 10000 }
+}
+
+llmb_lend_lease_D07 = {
+	enable = { has_country_flag = llmb_lend_lease_D07 }
+	abort = { NOT = { has_country_flag = llmb_lend_lease_D07 } }
+	ai_strategy = { type = send_lend_lease_desire id = "D07" value = 200 }
+}
+
+llmb_lend_lease_D07_strong = {
+	enable = { has_country_flag = llmb_lend_lease_D07 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_lend_lease_D07 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = send_lend_lease_desire id = "D07" value = 10000 }
+}
+
+llmb_lend_lease_D08 = {
+	enable = { has_country_flag = llmb_lend_lease_D08 }
+	abort = { NOT = { has_country_flag = llmb_lend_lease_D08 } }
+	ai_strategy = { type = send_lend_lease_desire id = "D08" value = 200 }
+}
+
+llmb_lend_lease_D08_strong = {
+	enable = { has_country_flag = llmb_lend_lease_D08 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_lend_lease_D08 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = send_lend_lease_desire id = "D08" value = 10000 }
+}
+
+llmb_lend_lease_D09 = {
+	enable = { has_country_flag = llmb_lend_lease_D09 }
+	abort = { NOT = { has_country_flag = llmb_lend_lease_D09 } }
+	ai_strategy = { type = send_lend_lease_desire id = "D09" value = 200 }
+}
+
+llmb_lend_lease_D09_strong = {
+	enable = { has_country_flag = llmb_lend_lease_D09 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_lend_lease_D09 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = send_lend_lease_desire id = "D09" value = 10000 }
+}
+
+llmb_lend_lease_D10 = {
+	enable = { has_country_flag = llmb_lend_lease_D10 }
+	abort = { NOT = { has_country_flag = llmb_lend_lease_D10 } }
+	ai_strategy = { type = send_lend_lease_desire id = "D10" value = 200 }
+}
+
+llmb_lend_lease_D10_strong = {
+	enable = { has_country_flag = llmb_lend_lease_D10 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_lend_lease_D10 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = send_lend_lease_desire id = "D10" value = 10000 }
+}
+
+llmb_lend_lease_D11 = {
+	enable = { has_country_flag = llmb_lend_lease_D11 }
+	abort = { NOT = { has_country_flag = llmb_lend_lease_D11 } }
+	ai_strategy = { type = send_lend_lease_desire id = "D11" value = 200 }
+}
+
+llmb_lend_lease_D11_strong = {
+	enable = { has_country_flag = llmb_lend_lease_D11 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_lend_lease_D11 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = send_lend_lease_desire id = "D11" value = 10000 }
+}
+
+llmb_lend_lease_D12 = {
+	enable = { has_country_flag = llmb_lend_lease_D12 }
+	abort = { NOT = { has_country_flag = llmb_lend_lease_D12 } }
+	ai_strategy = { type = send_lend_lease_desire id = "D12" value = 200 }
+}
+
+llmb_lend_lease_D12_strong = {
+	enable = { has_country_flag = llmb_lend_lease_D12 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_lend_lease_D12 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = send_lend_lease_desire id = "D12" value = 10000 }
+}
+
+llmb_lend_lease_D13 = {
+	enable = { has_country_flag = llmb_lend_lease_D13 }
+	abort = { NOT = { has_country_flag = llmb_lend_lease_D13 } }
+	ai_strategy = { type = send_lend_lease_desire id = "D13" value = 200 }
+}
+
+llmb_lend_lease_D13_strong = {
+	enable = { has_country_flag = llmb_lend_lease_D13 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_lend_lease_D13 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = send_lend_lease_desire id = "D13" value = 10000 }
+}
+
+llmb_lend_lease_D14 = {
+	enable = { has_country_flag = llmb_lend_lease_D14 }
+	abort = { NOT = { has_country_flag = llmb_lend_lease_D14 } }
+	ai_strategy = { type = send_lend_lease_desire id = "D14" value = 200 }
+}
+
+llmb_lend_lease_D14_strong = {
+	enable = { has_country_flag = llmb_lend_lease_D14 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_lend_lease_D14 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = send_lend_lease_desire id = "D14" value = 10000 }
+}
+
+llmb_lend_lease_D15 = {
+	enable = { has_country_flag = llmb_lend_lease_D15 }
+	abort = { NOT = { has_country_flag = llmb_lend_lease_D15 } }
+	ai_strategy = { type = send_lend_lease_desire id = "D15" value = 200 }
+}
+
+llmb_lend_lease_D15_strong = {
+	enable = { has_country_flag = llmb_lend_lease_D15 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_lend_lease_D15 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = send_lend_lease_desire id = "D15" value = 10000 }
+}
+
+llmb_lend_lease_D16 = {
+	enable = { has_country_flag = llmb_lend_lease_D16 }
+	abort = { NOT = { has_country_flag = llmb_lend_lease_D16 } }
+	ai_strategy = { type = send_lend_lease_desire id = "D16" value = 200 }
+}
+
+llmb_lend_lease_D16_strong = {
+	enable = { has_country_flag = llmb_lend_lease_D16 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_lend_lease_D16 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = send_lend_lease_desire id = "D16" value = 10000 }
+}
+
+llmb_lend_lease_D17 = {
+	enable = { has_country_flag = llmb_lend_lease_D17 }
+	abort = { NOT = { has_country_flag = llmb_lend_lease_D17 } }
+	ai_strategy = { type = send_lend_lease_desire id = "D17" value = 200 }
+}
+
+llmb_lend_lease_D17_strong = {
+	enable = { has_country_flag = llmb_lend_lease_D17 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_lend_lease_D17 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = send_lend_lease_desire id = "D17" value = 10000 }
+}
+
+llmb_lend_lease_D18 = {
+	enable = { has_country_flag = llmb_lend_lease_D18 }
+	abort = { NOT = { has_country_flag = llmb_lend_lease_D18 } }
+	ai_strategy = { type = send_lend_lease_desire id = "D18" value = 200 }
+}
+
+llmb_lend_lease_D18_strong = {
+	enable = { has_country_flag = llmb_lend_lease_D18 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_lend_lease_D18 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = send_lend_lease_desire id = "D18" value = 10000 }
+}
+
+llmb_lend_lease_D19 = {
+	enable = { has_country_flag = llmb_lend_lease_D19 }
+	abort = { NOT = { has_country_flag = llmb_lend_lease_D19 } }
+	ai_strategy = { type = send_lend_lease_desire id = "D19" value = 200 }
+}
+
+llmb_lend_lease_D19_strong = {
+	enable = { has_country_flag = llmb_lend_lease_D19 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_lend_lease_D19 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = send_lend_lease_desire id = "D19" value = 10000 }
+}
+
+llmb_lend_lease_D20 = {
+	enable = { has_country_flag = llmb_lend_lease_D20 }
+	abort = { NOT = { has_country_flag = llmb_lend_lease_D20 } }
+	ai_strategy = { type = send_lend_lease_desire id = "D20" value = 200 }
+}
+
+llmb_lend_lease_D20_strong = {
+	enable = { has_country_flag = llmb_lend_lease_D20 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_lend_lease_D20 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = send_lend_lease_desire id = "D20" value = 10000 }
 }
 
 llmb_ally_GER = {
@@ -14540,6 +17460,246 @@ llmb_ally_YUN_strong = {
 	ai_strategy = { type = alliance id = "YUN" value = 10000 }
 }
 
+llmb_ally_D01 = {
+	enable = { has_country_flag = llmb_ally_D01 }
+	abort = { NOT = { has_country_flag = llmb_ally_D01 } }
+	ai_strategy = { type = alliance id = "D01" value = 150 }
+}
+
+llmb_ally_D01_strong = {
+	enable = { has_country_flag = llmb_ally_D01 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_ally_D01 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = alliance id = "D01" value = 10000 }
+}
+
+llmb_ally_D02 = {
+	enable = { has_country_flag = llmb_ally_D02 }
+	abort = { NOT = { has_country_flag = llmb_ally_D02 } }
+	ai_strategy = { type = alliance id = "D02" value = 150 }
+}
+
+llmb_ally_D02_strong = {
+	enable = { has_country_flag = llmb_ally_D02 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_ally_D02 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = alliance id = "D02" value = 10000 }
+}
+
+llmb_ally_D03 = {
+	enable = { has_country_flag = llmb_ally_D03 }
+	abort = { NOT = { has_country_flag = llmb_ally_D03 } }
+	ai_strategy = { type = alliance id = "D03" value = 150 }
+}
+
+llmb_ally_D03_strong = {
+	enable = { has_country_flag = llmb_ally_D03 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_ally_D03 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = alliance id = "D03" value = 10000 }
+}
+
+llmb_ally_D04 = {
+	enable = { has_country_flag = llmb_ally_D04 }
+	abort = { NOT = { has_country_flag = llmb_ally_D04 } }
+	ai_strategy = { type = alliance id = "D04" value = 150 }
+}
+
+llmb_ally_D04_strong = {
+	enable = { has_country_flag = llmb_ally_D04 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_ally_D04 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = alliance id = "D04" value = 10000 }
+}
+
+llmb_ally_D05 = {
+	enable = { has_country_flag = llmb_ally_D05 }
+	abort = { NOT = { has_country_flag = llmb_ally_D05 } }
+	ai_strategy = { type = alliance id = "D05" value = 150 }
+}
+
+llmb_ally_D05_strong = {
+	enable = { has_country_flag = llmb_ally_D05 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_ally_D05 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = alliance id = "D05" value = 10000 }
+}
+
+llmb_ally_D06 = {
+	enable = { has_country_flag = llmb_ally_D06 }
+	abort = { NOT = { has_country_flag = llmb_ally_D06 } }
+	ai_strategy = { type = alliance id = "D06" value = 150 }
+}
+
+llmb_ally_D06_strong = {
+	enable = { has_country_flag = llmb_ally_D06 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_ally_D06 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = alliance id = "D06" value = 10000 }
+}
+
+llmb_ally_D07 = {
+	enable = { has_country_flag = llmb_ally_D07 }
+	abort = { NOT = { has_country_flag = llmb_ally_D07 } }
+	ai_strategy = { type = alliance id = "D07" value = 150 }
+}
+
+llmb_ally_D07_strong = {
+	enable = { has_country_flag = llmb_ally_D07 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_ally_D07 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = alliance id = "D07" value = 10000 }
+}
+
+llmb_ally_D08 = {
+	enable = { has_country_flag = llmb_ally_D08 }
+	abort = { NOT = { has_country_flag = llmb_ally_D08 } }
+	ai_strategy = { type = alliance id = "D08" value = 150 }
+}
+
+llmb_ally_D08_strong = {
+	enable = { has_country_flag = llmb_ally_D08 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_ally_D08 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = alliance id = "D08" value = 10000 }
+}
+
+llmb_ally_D09 = {
+	enable = { has_country_flag = llmb_ally_D09 }
+	abort = { NOT = { has_country_flag = llmb_ally_D09 } }
+	ai_strategy = { type = alliance id = "D09" value = 150 }
+}
+
+llmb_ally_D09_strong = {
+	enable = { has_country_flag = llmb_ally_D09 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_ally_D09 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = alliance id = "D09" value = 10000 }
+}
+
+llmb_ally_D10 = {
+	enable = { has_country_flag = llmb_ally_D10 }
+	abort = { NOT = { has_country_flag = llmb_ally_D10 } }
+	ai_strategy = { type = alliance id = "D10" value = 150 }
+}
+
+llmb_ally_D10_strong = {
+	enable = { has_country_flag = llmb_ally_D10 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_ally_D10 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = alliance id = "D10" value = 10000 }
+}
+
+llmb_ally_D11 = {
+	enable = { has_country_flag = llmb_ally_D11 }
+	abort = { NOT = { has_country_flag = llmb_ally_D11 } }
+	ai_strategy = { type = alliance id = "D11" value = 150 }
+}
+
+llmb_ally_D11_strong = {
+	enable = { has_country_flag = llmb_ally_D11 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_ally_D11 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = alliance id = "D11" value = 10000 }
+}
+
+llmb_ally_D12 = {
+	enable = { has_country_flag = llmb_ally_D12 }
+	abort = { NOT = { has_country_flag = llmb_ally_D12 } }
+	ai_strategy = { type = alliance id = "D12" value = 150 }
+}
+
+llmb_ally_D12_strong = {
+	enable = { has_country_flag = llmb_ally_D12 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_ally_D12 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = alliance id = "D12" value = 10000 }
+}
+
+llmb_ally_D13 = {
+	enable = { has_country_flag = llmb_ally_D13 }
+	abort = { NOT = { has_country_flag = llmb_ally_D13 } }
+	ai_strategy = { type = alliance id = "D13" value = 150 }
+}
+
+llmb_ally_D13_strong = {
+	enable = { has_country_flag = llmb_ally_D13 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_ally_D13 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = alliance id = "D13" value = 10000 }
+}
+
+llmb_ally_D14 = {
+	enable = { has_country_flag = llmb_ally_D14 }
+	abort = { NOT = { has_country_flag = llmb_ally_D14 } }
+	ai_strategy = { type = alliance id = "D14" value = 150 }
+}
+
+llmb_ally_D14_strong = {
+	enable = { has_country_flag = llmb_ally_D14 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_ally_D14 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = alliance id = "D14" value = 10000 }
+}
+
+llmb_ally_D15 = {
+	enable = { has_country_flag = llmb_ally_D15 }
+	abort = { NOT = { has_country_flag = llmb_ally_D15 } }
+	ai_strategy = { type = alliance id = "D15" value = 150 }
+}
+
+llmb_ally_D15_strong = {
+	enable = { has_country_flag = llmb_ally_D15 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_ally_D15 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = alliance id = "D15" value = 10000 }
+}
+
+llmb_ally_D16 = {
+	enable = { has_country_flag = llmb_ally_D16 }
+	abort = { NOT = { has_country_flag = llmb_ally_D16 } }
+	ai_strategy = { type = alliance id = "D16" value = 150 }
+}
+
+llmb_ally_D16_strong = {
+	enable = { has_country_flag = llmb_ally_D16 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_ally_D16 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = alliance id = "D16" value = 10000 }
+}
+
+llmb_ally_D17 = {
+	enable = { has_country_flag = llmb_ally_D17 }
+	abort = { NOT = { has_country_flag = llmb_ally_D17 } }
+	ai_strategy = { type = alliance id = "D17" value = 150 }
+}
+
+llmb_ally_D17_strong = {
+	enable = { has_country_flag = llmb_ally_D17 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_ally_D17 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = alliance id = "D17" value = 10000 }
+}
+
+llmb_ally_D18 = {
+	enable = { has_country_flag = llmb_ally_D18 }
+	abort = { NOT = { has_country_flag = llmb_ally_D18 } }
+	ai_strategy = { type = alliance id = "D18" value = 150 }
+}
+
+llmb_ally_D18_strong = {
+	enable = { has_country_flag = llmb_ally_D18 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_ally_D18 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = alliance id = "D18" value = 10000 }
+}
+
+llmb_ally_D19 = {
+	enable = { has_country_flag = llmb_ally_D19 }
+	abort = { NOT = { has_country_flag = llmb_ally_D19 } }
+	ai_strategy = { type = alliance id = "D19" value = 150 }
+}
+
+llmb_ally_D19_strong = {
+	enable = { has_country_flag = llmb_ally_D19 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_ally_D19 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = alliance id = "D19" value = 10000 }
+}
+
+llmb_ally_D20 = {
+	enable = { has_country_flag = llmb_ally_D20 }
+	abort = { NOT = { has_country_flag = llmb_ally_D20 } }
+	ai_strategy = { type = alliance id = "D20" value = 150 }
+}
+
+llmb_ally_D20_strong = {
+	enable = { has_country_flag = llmb_ally_D20 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_ally_D20 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = alliance id = "D20" value = 10000 }
+}
+
 llmb_spy_on_GER = {
 	enable = { has_country_flag = llmb_spy_on_GER }
 	abort = { NOT = { has_country_flag = llmb_spy_on_GER } }
@@ -15642,6 +18802,246 @@ llmb_spy_on_YUN_strong = {
 	enable = { has_country_flag = llmb_spy_on_YUN has_global_flag = llmb_strong_directives }
 	abort = { OR = { NOT = { has_country_flag = llmb_spy_on_YUN } NOT = { has_global_flag = llmb_strong_directives } } }
 	ai_strategy = { type = operative_mission mission = build_intel_network value = 10000 mission_target = YUN }
+}
+
+llmb_spy_on_D01 = {
+	enable = { has_country_flag = llmb_spy_on_D01 }
+	abort = { NOT = { has_country_flag = llmb_spy_on_D01 } }
+	ai_strategy = { type = operative_mission mission = build_intel_network value = 800 mission_target = D01 }
+}
+
+llmb_spy_on_D01_strong = {
+	enable = { has_country_flag = llmb_spy_on_D01 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_spy_on_D01 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = operative_mission mission = build_intel_network value = 10000 mission_target = D01 }
+}
+
+llmb_spy_on_D02 = {
+	enable = { has_country_flag = llmb_spy_on_D02 }
+	abort = { NOT = { has_country_flag = llmb_spy_on_D02 } }
+	ai_strategy = { type = operative_mission mission = build_intel_network value = 800 mission_target = D02 }
+}
+
+llmb_spy_on_D02_strong = {
+	enable = { has_country_flag = llmb_spy_on_D02 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_spy_on_D02 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = operative_mission mission = build_intel_network value = 10000 mission_target = D02 }
+}
+
+llmb_spy_on_D03 = {
+	enable = { has_country_flag = llmb_spy_on_D03 }
+	abort = { NOT = { has_country_flag = llmb_spy_on_D03 } }
+	ai_strategy = { type = operative_mission mission = build_intel_network value = 800 mission_target = D03 }
+}
+
+llmb_spy_on_D03_strong = {
+	enable = { has_country_flag = llmb_spy_on_D03 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_spy_on_D03 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = operative_mission mission = build_intel_network value = 10000 mission_target = D03 }
+}
+
+llmb_spy_on_D04 = {
+	enable = { has_country_flag = llmb_spy_on_D04 }
+	abort = { NOT = { has_country_flag = llmb_spy_on_D04 } }
+	ai_strategy = { type = operative_mission mission = build_intel_network value = 800 mission_target = D04 }
+}
+
+llmb_spy_on_D04_strong = {
+	enable = { has_country_flag = llmb_spy_on_D04 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_spy_on_D04 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = operative_mission mission = build_intel_network value = 10000 mission_target = D04 }
+}
+
+llmb_spy_on_D05 = {
+	enable = { has_country_flag = llmb_spy_on_D05 }
+	abort = { NOT = { has_country_flag = llmb_spy_on_D05 } }
+	ai_strategy = { type = operative_mission mission = build_intel_network value = 800 mission_target = D05 }
+}
+
+llmb_spy_on_D05_strong = {
+	enable = { has_country_flag = llmb_spy_on_D05 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_spy_on_D05 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = operative_mission mission = build_intel_network value = 10000 mission_target = D05 }
+}
+
+llmb_spy_on_D06 = {
+	enable = { has_country_flag = llmb_spy_on_D06 }
+	abort = { NOT = { has_country_flag = llmb_spy_on_D06 } }
+	ai_strategy = { type = operative_mission mission = build_intel_network value = 800 mission_target = D06 }
+}
+
+llmb_spy_on_D06_strong = {
+	enable = { has_country_flag = llmb_spy_on_D06 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_spy_on_D06 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = operative_mission mission = build_intel_network value = 10000 mission_target = D06 }
+}
+
+llmb_spy_on_D07 = {
+	enable = { has_country_flag = llmb_spy_on_D07 }
+	abort = { NOT = { has_country_flag = llmb_spy_on_D07 } }
+	ai_strategy = { type = operative_mission mission = build_intel_network value = 800 mission_target = D07 }
+}
+
+llmb_spy_on_D07_strong = {
+	enable = { has_country_flag = llmb_spy_on_D07 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_spy_on_D07 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = operative_mission mission = build_intel_network value = 10000 mission_target = D07 }
+}
+
+llmb_spy_on_D08 = {
+	enable = { has_country_flag = llmb_spy_on_D08 }
+	abort = { NOT = { has_country_flag = llmb_spy_on_D08 } }
+	ai_strategy = { type = operative_mission mission = build_intel_network value = 800 mission_target = D08 }
+}
+
+llmb_spy_on_D08_strong = {
+	enable = { has_country_flag = llmb_spy_on_D08 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_spy_on_D08 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = operative_mission mission = build_intel_network value = 10000 mission_target = D08 }
+}
+
+llmb_spy_on_D09 = {
+	enable = { has_country_flag = llmb_spy_on_D09 }
+	abort = { NOT = { has_country_flag = llmb_spy_on_D09 } }
+	ai_strategy = { type = operative_mission mission = build_intel_network value = 800 mission_target = D09 }
+}
+
+llmb_spy_on_D09_strong = {
+	enable = { has_country_flag = llmb_spy_on_D09 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_spy_on_D09 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = operative_mission mission = build_intel_network value = 10000 mission_target = D09 }
+}
+
+llmb_spy_on_D10 = {
+	enable = { has_country_flag = llmb_spy_on_D10 }
+	abort = { NOT = { has_country_flag = llmb_spy_on_D10 } }
+	ai_strategy = { type = operative_mission mission = build_intel_network value = 800 mission_target = D10 }
+}
+
+llmb_spy_on_D10_strong = {
+	enable = { has_country_flag = llmb_spy_on_D10 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_spy_on_D10 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = operative_mission mission = build_intel_network value = 10000 mission_target = D10 }
+}
+
+llmb_spy_on_D11 = {
+	enable = { has_country_flag = llmb_spy_on_D11 }
+	abort = { NOT = { has_country_flag = llmb_spy_on_D11 } }
+	ai_strategy = { type = operative_mission mission = build_intel_network value = 800 mission_target = D11 }
+}
+
+llmb_spy_on_D11_strong = {
+	enable = { has_country_flag = llmb_spy_on_D11 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_spy_on_D11 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = operative_mission mission = build_intel_network value = 10000 mission_target = D11 }
+}
+
+llmb_spy_on_D12 = {
+	enable = { has_country_flag = llmb_spy_on_D12 }
+	abort = { NOT = { has_country_flag = llmb_spy_on_D12 } }
+	ai_strategy = { type = operative_mission mission = build_intel_network value = 800 mission_target = D12 }
+}
+
+llmb_spy_on_D12_strong = {
+	enable = { has_country_flag = llmb_spy_on_D12 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_spy_on_D12 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = operative_mission mission = build_intel_network value = 10000 mission_target = D12 }
+}
+
+llmb_spy_on_D13 = {
+	enable = { has_country_flag = llmb_spy_on_D13 }
+	abort = { NOT = { has_country_flag = llmb_spy_on_D13 } }
+	ai_strategy = { type = operative_mission mission = build_intel_network value = 800 mission_target = D13 }
+}
+
+llmb_spy_on_D13_strong = {
+	enable = { has_country_flag = llmb_spy_on_D13 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_spy_on_D13 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = operative_mission mission = build_intel_network value = 10000 mission_target = D13 }
+}
+
+llmb_spy_on_D14 = {
+	enable = { has_country_flag = llmb_spy_on_D14 }
+	abort = { NOT = { has_country_flag = llmb_spy_on_D14 } }
+	ai_strategy = { type = operative_mission mission = build_intel_network value = 800 mission_target = D14 }
+}
+
+llmb_spy_on_D14_strong = {
+	enable = { has_country_flag = llmb_spy_on_D14 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_spy_on_D14 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = operative_mission mission = build_intel_network value = 10000 mission_target = D14 }
+}
+
+llmb_spy_on_D15 = {
+	enable = { has_country_flag = llmb_spy_on_D15 }
+	abort = { NOT = { has_country_flag = llmb_spy_on_D15 } }
+	ai_strategy = { type = operative_mission mission = build_intel_network value = 800 mission_target = D15 }
+}
+
+llmb_spy_on_D15_strong = {
+	enable = { has_country_flag = llmb_spy_on_D15 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_spy_on_D15 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = operative_mission mission = build_intel_network value = 10000 mission_target = D15 }
+}
+
+llmb_spy_on_D16 = {
+	enable = { has_country_flag = llmb_spy_on_D16 }
+	abort = { NOT = { has_country_flag = llmb_spy_on_D16 } }
+	ai_strategy = { type = operative_mission mission = build_intel_network value = 800 mission_target = D16 }
+}
+
+llmb_spy_on_D16_strong = {
+	enable = { has_country_flag = llmb_spy_on_D16 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_spy_on_D16 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = operative_mission mission = build_intel_network value = 10000 mission_target = D16 }
+}
+
+llmb_spy_on_D17 = {
+	enable = { has_country_flag = llmb_spy_on_D17 }
+	abort = { NOT = { has_country_flag = llmb_spy_on_D17 } }
+	ai_strategy = { type = operative_mission mission = build_intel_network value = 800 mission_target = D17 }
+}
+
+llmb_spy_on_D17_strong = {
+	enable = { has_country_flag = llmb_spy_on_D17 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_spy_on_D17 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = operative_mission mission = build_intel_network value = 10000 mission_target = D17 }
+}
+
+llmb_spy_on_D18 = {
+	enable = { has_country_flag = llmb_spy_on_D18 }
+	abort = { NOT = { has_country_flag = llmb_spy_on_D18 } }
+	ai_strategy = { type = operative_mission mission = build_intel_network value = 800 mission_target = D18 }
+}
+
+llmb_spy_on_D18_strong = {
+	enable = { has_country_flag = llmb_spy_on_D18 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_spy_on_D18 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = operative_mission mission = build_intel_network value = 10000 mission_target = D18 }
+}
+
+llmb_spy_on_D19 = {
+	enable = { has_country_flag = llmb_spy_on_D19 }
+	abort = { NOT = { has_country_flag = llmb_spy_on_D19 } }
+	ai_strategy = { type = operative_mission mission = build_intel_network value = 800 mission_target = D19 }
+}
+
+llmb_spy_on_D19_strong = {
+	enable = { has_country_flag = llmb_spy_on_D19 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_spy_on_D19 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = operative_mission mission = build_intel_network value = 10000 mission_target = D19 }
+}
+
+llmb_spy_on_D20 = {
+	enable = { has_country_flag = llmb_spy_on_D20 }
+	abort = { NOT = { has_country_flag = llmb_spy_on_D20 } }
+	ai_strategy = { type = operative_mission mission = build_intel_network value = 800 mission_target = D20 }
+}
+
+llmb_spy_on_D20_strong = {
+	enable = { has_country_flag = llmb_spy_on_D20 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_spy_on_D20 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = operative_mission mission = build_intel_network value = 10000 mission_target = D20 }
 }
 
 llmb_sabotage_GER = {
@@ -16748,6 +20148,246 @@ llmb_sabotage_YUN_strong = {
 	ai_strategy = { type = operative_operation operation = operation_targeted_sabotage_industry value = 10000 operation_target = YUN }
 }
 
+llmb_sabotage_D01 = {
+	enable = { has_country_flag = llmb_sabotage_D01 }
+	abort = { NOT = { has_country_flag = llmb_sabotage_D01 } }
+	ai_strategy = { type = operative_operation operation = operation_targeted_sabotage_industry value = 800 operation_target = D01 }
+}
+
+llmb_sabotage_D01_strong = {
+	enable = { has_country_flag = llmb_sabotage_D01 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_sabotage_D01 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = operative_operation operation = operation_targeted_sabotage_industry value = 10000 operation_target = D01 }
+}
+
+llmb_sabotage_D02 = {
+	enable = { has_country_flag = llmb_sabotage_D02 }
+	abort = { NOT = { has_country_flag = llmb_sabotage_D02 } }
+	ai_strategy = { type = operative_operation operation = operation_targeted_sabotage_industry value = 800 operation_target = D02 }
+}
+
+llmb_sabotage_D02_strong = {
+	enable = { has_country_flag = llmb_sabotage_D02 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_sabotage_D02 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = operative_operation operation = operation_targeted_sabotage_industry value = 10000 operation_target = D02 }
+}
+
+llmb_sabotage_D03 = {
+	enable = { has_country_flag = llmb_sabotage_D03 }
+	abort = { NOT = { has_country_flag = llmb_sabotage_D03 } }
+	ai_strategy = { type = operative_operation operation = operation_targeted_sabotage_industry value = 800 operation_target = D03 }
+}
+
+llmb_sabotage_D03_strong = {
+	enable = { has_country_flag = llmb_sabotage_D03 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_sabotage_D03 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = operative_operation operation = operation_targeted_sabotage_industry value = 10000 operation_target = D03 }
+}
+
+llmb_sabotage_D04 = {
+	enable = { has_country_flag = llmb_sabotage_D04 }
+	abort = { NOT = { has_country_flag = llmb_sabotage_D04 } }
+	ai_strategy = { type = operative_operation operation = operation_targeted_sabotage_industry value = 800 operation_target = D04 }
+}
+
+llmb_sabotage_D04_strong = {
+	enable = { has_country_flag = llmb_sabotage_D04 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_sabotage_D04 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = operative_operation operation = operation_targeted_sabotage_industry value = 10000 operation_target = D04 }
+}
+
+llmb_sabotage_D05 = {
+	enable = { has_country_flag = llmb_sabotage_D05 }
+	abort = { NOT = { has_country_flag = llmb_sabotage_D05 } }
+	ai_strategy = { type = operative_operation operation = operation_targeted_sabotage_industry value = 800 operation_target = D05 }
+}
+
+llmb_sabotage_D05_strong = {
+	enable = { has_country_flag = llmb_sabotage_D05 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_sabotage_D05 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = operative_operation operation = operation_targeted_sabotage_industry value = 10000 operation_target = D05 }
+}
+
+llmb_sabotage_D06 = {
+	enable = { has_country_flag = llmb_sabotage_D06 }
+	abort = { NOT = { has_country_flag = llmb_sabotage_D06 } }
+	ai_strategy = { type = operative_operation operation = operation_targeted_sabotage_industry value = 800 operation_target = D06 }
+}
+
+llmb_sabotage_D06_strong = {
+	enable = { has_country_flag = llmb_sabotage_D06 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_sabotage_D06 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = operative_operation operation = operation_targeted_sabotage_industry value = 10000 operation_target = D06 }
+}
+
+llmb_sabotage_D07 = {
+	enable = { has_country_flag = llmb_sabotage_D07 }
+	abort = { NOT = { has_country_flag = llmb_sabotage_D07 } }
+	ai_strategy = { type = operative_operation operation = operation_targeted_sabotage_industry value = 800 operation_target = D07 }
+}
+
+llmb_sabotage_D07_strong = {
+	enable = { has_country_flag = llmb_sabotage_D07 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_sabotage_D07 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = operative_operation operation = operation_targeted_sabotage_industry value = 10000 operation_target = D07 }
+}
+
+llmb_sabotage_D08 = {
+	enable = { has_country_flag = llmb_sabotage_D08 }
+	abort = { NOT = { has_country_flag = llmb_sabotage_D08 } }
+	ai_strategy = { type = operative_operation operation = operation_targeted_sabotage_industry value = 800 operation_target = D08 }
+}
+
+llmb_sabotage_D08_strong = {
+	enable = { has_country_flag = llmb_sabotage_D08 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_sabotage_D08 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = operative_operation operation = operation_targeted_sabotage_industry value = 10000 operation_target = D08 }
+}
+
+llmb_sabotage_D09 = {
+	enable = { has_country_flag = llmb_sabotage_D09 }
+	abort = { NOT = { has_country_flag = llmb_sabotage_D09 } }
+	ai_strategy = { type = operative_operation operation = operation_targeted_sabotage_industry value = 800 operation_target = D09 }
+}
+
+llmb_sabotage_D09_strong = {
+	enable = { has_country_flag = llmb_sabotage_D09 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_sabotage_D09 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = operative_operation operation = operation_targeted_sabotage_industry value = 10000 operation_target = D09 }
+}
+
+llmb_sabotage_D10 = {
+	enable = { has_country_flag = llmb_sabotage_D10 }
+	abort = { NOT = { has_country_flag = llmb_sabotage_D10 } }
+	ai_strategy = { type = operative_operation operation = operation_targeted_sabotage_industry value = 800 operation_target = D10 }
+}
+
+llmb_sabotage_D10_strong = {
+	enable = { has_country_flag = llmb_sabotage_D10 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_sabotage_D10 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = operative_operation operation = operation_targeted_sabotage_industry value = 10000 operation_target = D10 }
+}
+
+llmb_sabotage_D11 = {
+	enable = { has_country_flag = llmb_sabotage_D11 }
+	abort = { NOT = { has_country_flag = llmb_sabotage_D11 } }
+	ai_strategy = { type = operative_operation operation = operation_targeted_sabotage_industry value = 800 operation_target = D11 }
+}
+
+llmb_sabotage_D11_strong = {
+	enable = { has_country_flag = llmb_sabotage_D11 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_sabotage_D11 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = operative_operation operation = operation_targeted_sabotage_industry value = 10000 operation_target = D11 }
+}
+
+llmb_sabotage_D12 = {
+	enable = { has_country_flag = llmb_sabotage_D12 }
+	abort = { NOT = { has_country_flag = llmb_sabotage_D12 } }
+	ai_strategy = { type = operative_operation operation = operation_targeted_sabotage_industry value = 800 operation_target = D12 }
+}
+
+llmb_sabotage_D12_strong = {
+	enable = { has_country_flag = llmb_sabotage_D12 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_sabotage_D12 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = operative_operation operation = operation_targeted_sabotage_industry value = 10000 operation_target = D12 }
+}
+
+llmb_sabotage_D13 = {
+	enable = { has_country_flag = llmb_sabotage_D13 }
+	abort = { NOT = { has_country_flag = llmb_sabotage_D13 } }
+	ai_strategy = { type = operative_operation operation = operation_targeted_sabotage_industry value = 800 operation_target = D13 }
+}
+
+llmb_sabotage_D13_strong = {
+	enable = { has_country_flag = llmb_sabotage_D13 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_sabotage_D13 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = operative_operation operation = operation_targeted_sabotage_industry value = 10000 operation_target = D13 }
+}
+
+llmb_sabotage_D14 = {
+	enable = { has_country_flag = llmb_sabotage_D14 }
+	abort = { NOT = { has_country_flag = llmb_sabotage_D14 } }
+	ai_strategy = { type = operative_operation operation = operation_targeted_sabotage_industry value = 800 operation_target = D14 }
+}
+
+llmb_sabotage_D14_strong = {
+	enable = { has_country_flag = llmb_sabotage_D14 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_sabotage_D14 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = operative_operation operation = operation_targeted_sabotage_industry value = 10000 operation_target = D14 }
+}
+
+llmb_sabotage_D15 = {
+	enable = { has_country_flag = llmb_sabotage_D15 }
+	abort = { NOT = { has_country_flag = llmb_sabotage_D15 } }
+	ai_strategy = { type = operative_operation operation = operation_targeted_sabotage_industry value = 800 operation_target = D15 }
+}
+
+llmb_sabotage_D15_strong = {
+	enable = { has_country_flag = llmb_sabotage_D15 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_sabotage_D15 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = operative_operation operation = operation_targeted_sabotage_industry value = 10000 operation_target = D15 }
+}
+
+llmb_sabotage_D16 = {
+	enable = { has_country_flag = llmb_sabotage_D16 }
+	abort = { NOT = { has_country_flag = llmb_sabotage_D16 } }
+	ai_strategy = { type = operative_operation operation = operation_targeted_sabotage_industry value = 800 operation_target = D16 }
+}
+
+llmb_sabotage_D16_strong = {
+	enable = { has_country_flag = llmb_sabotage_D16 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_sabotage_D16 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = operative_operation operation = operation_targeted_sabotage_industry value = 10000 operation_target = D16 }
+}
+
+llmb_sabotage_D17 = {
+	enable = { has_country_flag = llmb_sabotage_D17 }
+	abort = { NOT = { has_country_flag = llmb_sabotage_D17 } }
+	ai_strategy = { type = operative_operation operation = operation_targeted_sabotage_industry value = 800 operation_target = D17 }
+}
+
+llmb_sabotage_D17_strong = {
+	enable = { has_country_flag = llmb_sabotage_D17 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_sabotage_D17 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = operative_operation operation = operation_targeted_sabotage_industry value = 10000 operation_target = D17 }
+}
+
+llmb_sabotage_D18 = {
+	enable = { has_country_flag = llmb_sabotage_D18 }
+	abort = { NOT = { has_country_flag = llmb_sabotage_D18 } }
+	ai_strategy = { type = operative_operation operation = operation_targeted_sabotage_industry value = 800 operation_target = D18 }
+}
+
+llmb_sabotage_D18_strong = {
+	enable = { has_country_flag = llmb_sabotage_D18 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_sabotage_D18 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = operative_operation operation = operation_targeted_sabotage_industry value = 10000 operation_target = D18 }
+}
+
+llmb_sabotage_D19 = {
+	enable = { has_country_flag = llmb_sabotage_D19 }
+	abort = { NOT = { has_country_flag = llmb_sabotage_D19 } }
+	ai_strategy = { type = operative_operation operation = operation_targeted_sabotage_industry value = 800 operation_target = D19 }
+}
+
+llmb_sabotage_D19_strong = {
+	enable = { has_country_flag = llmb_sabotage_D19 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_sabotage_D19 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = operative_operation operation = operation_targeted_sabotage_industry value = 10000 operation_target = D19 }
+}
+
+llmb_sabotage_D20 = {
+	enable = { has_country_flag = llmb_sabotage_D20 }
+	abort = { NOT = { has_country_flag = llmb_sabotage_D20 } }
+	ai_strategy = { type = operative_operation operation = operation_targeted_sabotage_industry value = 800 operation_target = D20 }
+}
+
+llmb_sabotage_D20_strong = {
+	enable = { has_country_flag = llmb_sabotage_D20 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_sabotage_D20 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = operative_operation operation = operation_targeted_sabotage_industry value = 10000 operation_target = D20 }
+}
+
 llmb_steal_tech_GER = {
 	enable = { has_country_flag = llmb_steal_tech_GER }
 	abort = { NOT = { has_country_flag = llmb_steal_tech_GER } }
@@ -17850,4 +21490,244 @@ llmb_steal_tech_YUN_strong = {
 	enable = { has_country_flag = llmb_steal_tech_YUN has_global_flag = llmb_strong_directives }
 	abort = { OR = { NOT = { has_country_flag = llmb_steal_tech_YUN } NOT = { has_global_flag = llmb_strong_directives } } }
 	ai_strategy = { type = operative_operation operation = operation_steal_tech_civilian value = 10000 operation_target = YUN }
+}
+
+llmb_steal_tech_D01 = {
+	enable = { has_country_flag = llmb_steal_tech_D01 }
+	abort = { NOT = { has_country_flag = llmb_steal_tech_D01 } }
+	ai_strategy = { type = operative_operation operation = operation_steal_tech_civilian value = 800 operation_target = D01 }
+}
+
+llmb_steal_tech_D01_strong = {
+	enable = { has_country_flag = llmb_steal_tech_D01 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_steal_tech_D01 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = operative_operation operation = operation_steal_tech_civilian value = 10000 operation_target = D01 }
+}
+
+llmb_steal_tech_D02 = {
+	enable = { has_country_flag = llmb_steal_tech_D02 }
+	abort = { NOT = { has_country_flag = llmb_steal_tech_D02 } }
+	ai_strategy = { type = operative_operation operation = operation_steal_tech_civilian value = 800 operation_target = D02 }
+}
+
+llmb_steal_tech_D02_strong = {
+	enable = { has_country_flag = llmb_steal_tech_D02 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_steal_tech_D02 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = operative_operation operation = operation_steal_tech_civilian value = 10000 operation_target = D02 }
+}
+
+llmb_steal_tech_D03 = {
+	enable = { has_country_flag = llmb_steal_tech_D03 }
+	abort = { NOT = { has_country_flag = llmb_steal_tech_D03 } }
+	ai_strategy = { type = operative_operation operation = operation_steal_tech_civilian value = 800 operation_target = D03 }
+}
+
+llmb_steal_tech_D03_strong = {
+	enable = { has_country_flag = llmb_steal_tech_D03 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_steal_tech_D03 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = operative_operation operation = operation_steal_tech_civilian value = 10000 operation_target = D03 }
+}
+
+llmb_steal_tech_D04 = {
+	enable = { has_country_flag = llmb_steal_tech_D04 }
+	abort = { NOT = { has_country_flag = llmb_steal_tech_D04 } }
+	ai_strategy = { type = operative_operation operation = operation_steal_tech_civilian value = 800 operation_target = D04 }
+}
+
+llmb_steal_tech_D04_strong = {
+	enable = { has_country_flag = llmb_steal_tech_D04 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_steal_tech_D04 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = operative_operation operation = operation_steal_tech_civilian value = 10000 operation_target = D04 }
+}
+
+llmb_steal_tech_D05 = {
+	enable = { has_country_flag = llmb_steal_tech_D05 }
+	abort = { NOT = { has_country_flag = llmb_steal_tech_D05 } }
+	ai_strategy = { type = operative_operation operation = operation_steal_tech_civilian value = 800 operation_target = D05 }
+}
+
+llmb_steal_tech_D05_strong = {
+	enable = { has_country_flag = llmb_steal_tech_D05 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_steal_tech_D05 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = operative_operation operation = operation_steal_tech_civilian value = 10000 operation_target = D05 }
+}
+
+llmb_steal_tech_D06 = {
+	enable = { has_country_flag = llmb_steal_tech_D06 }
+	abort = { NOT = { has_country_flag = llmb_steal_tech_D06 } }
+	ai_strategy = { type = operative_operation operation = operation_steal_tech_civilian value = 800 operation_target = D06 }
+}
+
+llmb_steal_tech_D06_strong = {
+	enable = { has_country_flag = llmb_steal_tech_D06 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_steal_tech_D06 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = operative_operation operation = operation_steal_tech_civilian value = 10000 operation_target = D06 }
+}
+
+llmb_steal_tech_D07 = {
+	enable = { has_country_flag = llmb_steal_tech_D07 }
+	abort = { NOT = { has_country_flag = llmb_steal_tech_D07 } }
+	ai_strategy = { type = operative_operation operation = operation_steal_tech_civilian value = 800 operation_target = D07 }
+}
+
+llmb_steal_tech_D07_strong = {
+	enable = { has_country_flag = llmb_steal_tech_D07 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_steal_tech_D07 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = operative_operation operation = operation_steal_tech_civilian value = 10000 operation_target = D07 }
+}
+
+llmb_steal_tech_D08 = {
+	enable = { has_country_flag = llmb_steal_tech_D08 }
+	abort = { NOT = { has_country_flag = llmb_steal_tech_D08 } }
+	ai_strategy = { type = operative_operation operation = operation_steal_tech_civilian value = 800 operation_target = D08 }
+}
+
+llmb_steal_tech_D08_strong = {
+	enable = { has_country_flag = llmb_steal_tech_D08 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_steal_tech_D08 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = operative_operation operation = operation_steal_tech_civilian value = 10000 operation_target = D08 }
+}
+
+llmb_steal_tech_D09 = {
+	enable = { has_country_flag = llmb_steal_tech_D09 }
+	abort = { NOT = { has_country_flag = llmb_steal_tech_D09 } }
+	ai_strategy = { type = operative_operation operation = operation_steal_tech_civilian value = 800 operation_target = D09 }
+}
+
+llmb_steal_tech_D09_strong = {
+	enable = { has_country_flag = llmb_steal_tech_D09 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_steal_tech_D09 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = operative_operation operation = operation_steal_tech_civilian value = 10000 operation_target = D09 }
+}
+
+llmb_steal_tech_D10 = {
+	enable = { has_country_flag = llmb_steal_tech_D10 }
+	abort = { NOT = { has_country_flag = llmb_steal_tech_D10 } }
+	ai_strategy = { type = operative_operation operation = operation_steal_tech_civilian value = 800 operation_target = D10 }
+}
+
+llmb_steal_tech_D10_strong = {
+	enable = { has_country_flag = llmb_steal_tech_D10 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_steal_tech_D10 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = operative_operation operation = operation_steal_tech_civilian value = 10000 operation_target = D10 }
+}
+
+llmb_steal_tech_D11 = {
+	enable = { has_country_flag = llmb_steal_tech_D11 }
+	abort = { NOT = { has_country_flag = llmb_steal_tech_D11 } }
+	ai_strategy = { type = operative_operation operation = operation_steal_tech_civilian value = 800 operation_target = D11 }
+}
+
+llmb_steal_tech_D11_strong = {
+	enable = { has_country_flag = llmb_steal_tech_D11 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_steal_tech_D11 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = operative_operation operation = operation_steal_tech_civilian value = 10000 operation_target = D11 }
+}
+
+llmb_steal_tech_D12 = {
+	enable = { has_country_flag = llmb_steal_tech_D12 }
+	abort = { NOT = { has_country_flag = llmb_steal_tech_D12 } }
+	ai_strategy = { type = operative_operation operation = operation_steal_tech_civilian value = 800 operation_target = D12 }
+}
+
+llmb_steal_tech_D12_strong = {
+	enable = { has_country_flag = llmb_steal_tech_D12 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_steal_tech_D12 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = operative_operation operation = operation_steal_tech_civilian value = 10000 operation_target = D12 }
+}
+
+llmb_steal_tech_D13 = {
+	enable = { has_country_flag = llmb_steal_tech_D13 }
+	abort = { NOT = { has_country_flag = llmb_steal_tech_D13 } }
+	ai_strategy = { type = operative_operation operation = operation_steal_tech_civilian value = 800 operation_target = D13 }
+}
+
+llmb_steal_tech_D13_strong = {
+	enable = { has_country_flag = llmb_steal_tech_D13 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_steal_tech_D13 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = operative_operation operation = operation_steal_tech_civilian value = 10000 operation_target = D13 }
+}
+
+llmb_steal_tech_D14 = {
+	enable = { has_country_flag = llmb_steal_tech_D14 }
+	abort = { NOT = { has_country_flag = llmb_steal_tech_D14 } }
+	ai_strategy = { type = operative_operation operation = operation_steal_tech_civilian value = 800 operation_target = D14 }
+}
+
+llmb_steal_tech_D14_strong = {
+	enable = { has_country_flag = llmb_steal_tech_D14 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_steal_tech_D14 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = operative_operation operation = operation_steal_tech_civilian value = 10000 operation_target = D14 }
+}
+
+llmb_steal_tech_D15 = {
+	enable = { has_country_flag = llmb_steal_tech_D15 }
+	abort = { NOT = { has_country_flag = llmb_steal_tech_D15 } }
+	ai_strategy = { type = operative_operation operation = operation_steal_tech_civilian value = 800 operation_target = D15 }
+}
+
+llmb_steal_tech_D15_strong = {
+	enable = { has_country_flag = llmb_steal_tech_D15 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_steal_tech_D15 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = operative_operation operation = operation_steal_tech_civilian value = 10000 operation_target = D15 }
+}
+
+llmb_steal_tech_D16 = {
+	enable = { has_country_flag = llmb_steal_tech_D16 }
+	abort = { NOT = { has_country_flag = llmb_steal_tech_D16 } }
+	ai_strategy = { type = operative_operation operation = operation_steal_tech_civilian value = 800 operation_target = D16 }
+}
+
+llmb_steal_tech_D16_strong = {
+	enable = { has_country_flag = llmb_steal_tech_D16 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_steal_tech_D16 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = operative_operation operation = operation_steal_tech_civilian value = 10000 operation_target = D16 }
+}
+
+llmb_steal_tech_D17 = {
+	enable = { has_country_flag = llmb_steal_tech_D17 }
+	abort = { NOT = { has_country_flag = llmb_steal_tech_D17 } }
+	ai_strategy = { type = operative_operation operation = operation_steal_tech_civilian value = 800 operation_target = D17 }
+}
+
+llmb_steal_tech_D17_strong = {
+	enable = { has_country_flag = llmb_steal_tech_D17 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_steal_tech_D17 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = operative_operation operation = operation_steal_tech_civilian value = 10000 operation_target = D17 }
+}
+
+llmb_steal_tech_D18 = {
+	enable = { has_country_flag = llmb_steal_tech_D18 }
+	abort = { NOT = { has_country_flag = llmb_steal_tech_D18 } }
+	ai_strategy = { type = operative_operation operation = operation_steal_tech_civilian value = 800 operation_target = D18 }
+}
+
+llmb_steal_tech_D18_strong = {
+	enable = { has_country_flag = llmb_steal_tech_D18 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_steal_tech_D18 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = operative_operation operation = operation_steal_tech_civilian value = 10000 operation_target = D18 }
+}
+
+llmb_steal_tech_D19 = {
+	enable = { has_country_flag = llmb_steal_tech_D19 }
+	abort = { NOT = { has_country_flag = llmb_steal_tech_D19 } }
+	ai_strategy = { type = operative_operation operation = operation_steal_tech_civilian value = 800 operation_target = D19 }
+}
+
+llmb_steal_tech_D19_strong = {
+	enable = { has_country_flag = llmb_steal_tech_D19 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_steal_tech_D19 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = operative_operation operation = operation_steal_tech_civilian value = 10000 operation_target = D19 }
+}
+
+llmb_steal_tech_D20 = {
+	enable = { has_country_flag = llmb_steal_tech_D20 }
+	abort = { NOT = { has_country_flag = llmb_steal_tech_D20 } }
+	ai_strategy = { type = operative_operation operation = operation_steal_tech_civilian value = 800 operation_target = D20 }
+}
+
+llmb_steal_tech_D20_strong = {
+	enable = { has_country_flag = llmb_steal_tech_D20 has_global_flag = llmb_strong_directives }
+	abort = { OR = { NOT = { has_country_flag = llmb_steal_tech_D20 } NOT = { has_global_flag = llmb_strong_directives } } }
+	ai_strategy = { type = operative_operation operation = operation_steal_tech_civilian value = 10000 operation_target = D20 }
 }

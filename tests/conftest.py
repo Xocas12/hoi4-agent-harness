@@ -7,6 +7,8 @@ instead, and pyautogui behaves as if it were not installed.
 """
 
 import sys
+import tempfile
+from pathlib import Path
 
 import pytest
 
@@ -62,3 +64,35 @@ def _own_harness_home(monkeypatch, tmp_path_factory):
     home = tmp_path_factory.mktemp("harness-home")
     monkeypatch.setenv("HOI4_HARNESS_HOME", str(home))
     monkeypatch.delenv("HOI4_CHAT", raising=False)
+
+
+@pytest.fixture(autouse=True)
+def _no_machine_dlc_state(monkeypatch):
+    """The active DLC list is this machine's (the game's logs/system.log, written by every launch)
+    and the console channel keeps the last playset's list in a module global. A test sees
+    neither unless it builds them: a live launch on 2026-11-22 turned a fixture test's 7 takeable
+    decisions into 6, and a channel built by one test folded another's quoted DLC names."""
+    from hoi4_harness import dlc
+    from hoi4_harness.adapters import console
+
+    monkeypatch.setattr(console, "ACTIVE_DLCS", None)
+    real = dlc.read_game_log
+    tests_dir = Path(__file__).resolve().parent
+    temp_dir = Path(tempfile.gettempdir()).resolve()
+
+    def only_test_dirs(user_dir):
+        if user_dir is None:
+            return None
+        where = Path(user_dir).resolve()
+        if tests_dir in where.parents or temp_dir in where.parents or where == tests_dir:
+            return real(user_dir)
+        return None
+
+    monkeypatch.setattr(dlc, "read_game_log", only_test_dirs)
+
+
+@pytest.fixture(autouse=True)
+def _no_real_game_memory(monkeypatch):
+    """The campaign's memory guard reads the real hoi4.exe; a test injects a reader instead
+    (a live game left running on this machine must not stop a fake campaign)."""
+    monkeypatch.setattr("hoi4_harness.campaign.watch.process_private_gb", lambda _name: None)

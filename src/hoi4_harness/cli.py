@@ -1037,7 +1037,13 @@ def cmd_native(args: argparse.Namespace) -> int:
     def echo(line: str) -> None:
         print(line, file=sys.stderr, flush=True)
 
-    args.transport, args.live, args.rival_act_when = "inbox", True, "inbox"
+    # The console (keys) is the default: the first live run (2026-11-22) found that 1.20 does not
+    # reload the inbox files from the mod folder, so `--transport inbox` is opt-in. The keys act in
+    # the person's pauses (`paused`), or whenever the keyboard is idle (`idle`, unattended runs).
+    args.live = True
+    args.transport = getattr(args, "transport", None) or "keys"
+    if not getattr(args, "rival_act_when", None):
+        args.rival_act_when = "inbox" if args.transport == "inbox" else "paused"
     for name in ("launch", "keep_running", "no_debug_check"):
         if not hasattr(args, name):
             setattr(args, name, False)
@@ -1886,7 +1892,7 @@ def build_parser() -> argparse.ArgumentParser:
                       help="several rivals: the most actions one window types across all of "
                            "them, taken in turn (default 12)")
     play.add_argument("--rival-act-when", dest="rival_act_when",
-                      choices=["paused", "handover", "never", "inbox"],
+                      choices=["paused", "handover", "never", "inbox", "idle"],
                       help="rival: when the queue may be typed: paused (you paused and left the "
                            "keyboard alone), handover (only when you run `hoi4-harness handover`), "
                            "never (shown, not run)")
@@ -1999,6 +2005,11 @@ def build_parser() -> argparse.ArgumentParser:
     native.add_argument("--no-debug-check", dest="no_debug_check", action="store_true",
                         help="play even when the game seems to run without -debug_mode")
     native.add_argument("--until", metavar="YYYY-MM-DD", help="stop at this in-game date")
+    native.add_argument("--rival-act-when", dest="rival_act_when",
+                        choices=["paused", "handover", "never", "inbox", "idle"],
+                        help="when orders are typed: paused (your pauses; default with keys), idle "
+                             "(whenever the keyboard is idle: unattended runs), inbox (default with "
+                             "--transport inbox)")
     native.add_argument("--breakaway", action="store_true",
                         help="--rival TAG is the country a civil war splits: play the side that "
                              "breaks away from it (a new D01-D50 tag), once it exists "

@@ -115,7 +115,8 @@ class RivalQueue(HandoverQueue):
     def _when(self) -> str:
         return {"paused": "the person's next pause", "handover": "the person's next handover",
                 "never": "the person to do it themselves",
-                "inbox": "the game's inbox at the next in-game day"}.get(
+                "inbox": "the game's inbox at the next in-game day",
+                "idle": "the next moment the keyboard is idle (an unattended run)"}.get(
                     self.policy.name if self.policy else "paused", "a safe window")
 
     def enqueue(self, call: ActionCall, date: str, turn: int) -> ActionResult:
@@ -137,7 +138,7 @@ class RivalQueue(HandoverQueue):
         else:
             message = (f"Queued as #{entry.position}. NOT done yet: it runs in {self._when()}, "
                        "after a check that it still applies, which may be days of game time "
-                       "away (or never, if the person never pauses). Do not plan as if it had "
+                       "away. Do not plan as if it had "
                        "happened.")
         return ActionResult(ok=True, action=call.name, call_id=call.call_id, message=message,
                             changed={"queued": entry.position, "executed": False})

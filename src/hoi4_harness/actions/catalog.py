@@ -519,9 +519,10 @@ ACTIONS += [
         description=(
             "End the turn and run the game forward. Call this when there is nothing "
             "worth doing yet; it is the cheapest action available and the correct "
-            "default in peacetime. Do not send it in the same answer as "
-            "list_decisions or describe_action: the turn would end before you saw the "
-            "result, so the harness skips advance_time and returns the read first."
+            "default in peacetime. Do not send it in the same answer as a read "
+            "(inspect_world, list_decisions, describe_action, read_event, list_designs): the "
+            "turn would end before you saw the result, so the harness skips advance_time and "
+            "returns the read first, which costs a whole extra turn."
         ),
         parameters=_schema(
             {"days": {"type": "integer", "minimum": 1, "maximum": 90},
@@ -552,7 +553,7 @@ ACTIONS += [
             "into later turns. Use it for intent that outlives this turn: what you "
             "are building toward and what would change your mind."
         ),
-        parameters=_schema({"text": {"type": "string", "maxLength": 500}}, ["text"]),
+        parameters=_schema({"text": {"type": "string"}}, ["text"]),
     ),
 ]
 

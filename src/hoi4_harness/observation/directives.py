@@ -126,6 +126,12 @@ class DirectiveTracker:
         if wars_seen and was.allied != now.allied:
             changes.append("now fighting on our side" if now.allied else "no longer allied")
         caveat = f"{' and '.join(unseen)} unknown" if unseen else ""
+        if not changes and wars_seen and item.directive == "declare_war" and not now.at_war:
+            # The overnight campaign (2026-11-22) held declare_war CZE for 222 days and read
+            # "effect not observable": the AI declares only with a war goal to declare on.
+            return (f"{head}: not at war yet. The AI declares only with a war goal: raise "
+                    f"prepare_war {item.target} too (it justifies one), or take the focus or "
+                    f"decision that gives it")
         if not changes:
             if unseen:
                 return f"{head}: effect not observable with this reader ({caveat})"

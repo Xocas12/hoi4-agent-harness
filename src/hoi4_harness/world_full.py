@@ -934,7 +934,8 @@ def brief_lines(full: FullWorld, me: str, intel: dict[str, Intel]) -> list[str]:
         bits.append(f"faction {faction['template']} (leader {faction['leader']}, "
                     f"{len(faction['members'])} members)")
     if wars:
-        bits.append("at war with " + ", ".join(wars[:6]))
+        bits.append("at war with " + ", ".join(wars[:6])
+                    + (f" (+{len(wars) - 6} more)" if len(wars) > 6 else ""))
     guaranteed = sorted(t for t, r in own.relations.items()
                         if r.get("guarantee", {}).get("direction") == "to")
     if guaranteed:
@@ -956,6 +957,13 @@ def brief_lines(full: FullWorld, me: str, intel: dict[str, Intel]) -> list[str]:
     stock = ", ".join(f"{k} {v}" for k, v in list(own.stockpile.items())[:3])
     out.append(f"  Fleet and air: {ships} ships in {len(own.fleets)} task forces, {planes} planes in "
                f"{len(own.air)} wings" + (f"; stockpile {stock}" if stock else ""))
+    # The log carries neither the fuel stockpile nor the convoys; the save does (the top bar's
+    # numbers). The brief's header said "fuel 0" before this line existed (2026-11-22).
+    econ = own.economy or {}
+    fuel = econ.get("fuel") or {}
+    if fuel.get("max") or econ.get("convoys") is not None:
+        out.append(f"  Fuel {fuel.get('stock', 0):,} of {fuel.get('max', 0):,}; "
+                   f"convoys {econ.get('convoys', 0)}")
     return out
 
 

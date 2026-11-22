@@ -44,6 +44,16 @@ def test_128_a_read_sent_with_advance_time_reaches_the_next_request(tmp_path):
     assert messages[-1].tool_results[0].content
 
 
+def test_the_skipped_advance_time_names_the_reads_it_was_sent_with(tmp_path):
+    # inspect_world counts as a read too; the old message named only list_decisions and
+    # describe_action, and Haiku kept pairing inspect_world with advance_time (2026-11-22).
+    _run(tmp_path, [say("look", ("inspect_world", {"view": "divisions"}),
+                        ("list_decisions", {}), ("advance_time", {"days": 30}))])
+    skipped = records(tmp_path, "actions")[0]["results"][-1]
+    assert skipped["is_error"] is True
+    assert "(inspect_world, list_decisions)" in skipped["content"]
+
+
 def test_128_advance_time_alone_still_ends_the_turn(tmp_path):
     client = _run(tmp_path, [say("quiet", ("advance_time", {"days": 30}))])
     first = records(tmp_path, "actions")[0]["results"]

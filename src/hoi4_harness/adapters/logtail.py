@@ -98,9 +98,15 @@ FIELDS = {
 HEAD_BYTES = 256
 
 # Fields the mod does not emit yet. Reported as unknown rather than defaulted.
+#: The net political power trend spans up to this many days of state lines.
+PP_TREND_DAYS = 30
+
 NOT_EMITTED = [
     "research", "production", "construction", "fronts", "wars", "national_focus",
     "completed_focuses",
+    # No LLMB line carries the fuel stockpile or the convoy count: unread, not zero (the
+    # overnight campaign's brief said "fuel 0" for a Germany holding 408k, 2026-11-22).
+    "fuel", "convoys",
     # Hybrid control: the mod raises flags but reports only posture changes, as
     # events. Posture becomes known the first time one arrives.
     "posture", "ai_directives", "delegated_armies",
@@ -243,6 +249,8 @@ class LogTailAdapter(GameAdapter):
         # means 'sees it whole' to verification, which then rejected a change the
         # paused game had not ticked to show yet (seen live on a fresh load).
         self._state = GameState(unknown_fields=list(NOT_EMITTED), telemetry_ticks=0)
+        #: Political power by date from the state lines, for the net trend (PP_TREND_DAYS).
+        self._pp_seen: dict[str, float] = {}
         self._pending: list[GameEvent] = []
         self._seen_any = False
         #: tag -> last counter values seen, for completion events.
@@ -303,6 +311,7 @@ class LogTailAdapter(GameAdapter):
             # offset before this poll: it would be read from the middle.
             self._offset = 0
             self._state = GameState(unknown_fields=list(NOT_EMITTED), telemetry_ticks=0)
+            self._pp_seen = {}
             self._pending = []
             self._counters = {}
             self._ticks, self._closed, self._research_event = {}, {}, {}
@@ -381,6 +390,7 @@ class LogTailAdapter(GameAdapter):
                     if attribute in state.unknown_fields:
                         state.unknown_fields.remove(attribute)
             if kind == "state":
+                self._pp_trend(state)
                 if fields.get("ai") in ("0", "1"):
                     state.ai_controlled = fields["ai"] == "1"
                 self._split_trade(fields)
@@ -533,6 +543,22 @@ class LogTailAdapter(GameAdapter):
             state.research.append(ResearchSlot(index=len(state.research), technology=ident))
         if ("national_focus" if kind == "focus" else "research") in state.unknown_fields:
             state.unknown_fields.remove("national_focus" if kind == "focus" else "research")
+
+    def _pp_trend(self, state: GameState) -> None:
+        """Net political power a day over up to PP_TREND_DAYS of state lines."""
+        if not state.date or state.political_power is None or "political_power" in state.unknown_fields:
+            return
+        self._pp_seen[state.date] = float(state.political_power)
+        dates = sorted(self._pp_seen)[-(PP_TREND_DAYS + 1):]
+        self._pp_seen = {d: self._pp_seen[d] for d in dates}
+        try:
+            first, last = date.fromisoformat(dates[0]), date.fromisoformat(dates[-1])
+        except ValueError:
+            return
+        days = (last - first).days
+        if days >= 3:
+            state.pp_per_day = (self._pp_seen[dates[-1]] - self._pp_seen[dates[0]]) / days
+            state.pp_trend_days = days
 
     def _intel(self, fields: dict[str, str]) -> None:
         """``intel|tag|of|civ|army|navy|air``: the country's intel against ``of``, x100. A value

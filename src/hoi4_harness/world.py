@@ -404,7 +404,7 @@ def read_world(path: Path, me: str, *, layer=None, also: tuple[str, ...] = ()) -
         magic = handle.read(8)
     if magic.startswith(b"HOI4bin") or bytes(1) in magic:
         raise ValueError(f"{path.name} is a binary save: set save_as_binary=no in settings.txt")
-    text = path.read_text(encoding="utf-8", errors="replace")
+    text = sg.read_text(path)
     head = sg._head(text)
     world = World(date=head.get("date") if isinstance(head.get("date"), str) else None,
                   path=path, player=head.get("player") if isinstance(head.get("player"), str) else None)
@@ -615,8 +615,13 @@ def _group_line(index, state, divisions: list[Division], foe: list[Division] | N
     dig = _avg(d.dig_in for d in divisions)
     terrain = divisions[0].terrain if divisions else ""
     kinds = ", ".join(f"{n} {t}" for t, n in list(_templates(divisions).items())[:3])
-    text = (f"{_state_name(index, state)}" + (f" [{terrain}]" if terrain else "")
-            + f": {len(divisions)} ({kinds})")
+    if state is None and terrain == "ocean":
+        # A sea province has no state: these are divisions on transports (the 1940 Norway
+        # landing read "? [ocean]" in the overnight campaign, 2026-11-22).
+        text = f"At sea, on transports: {len(divisions)} ({kinds})"
+    else:
+        text = (f"{_state_name(index, state)}" + (f" [{terrain}]" if terrain else "")
+                + f": {len(divisions)} ({kinds})")
     bits = []
     if org is not None:
         bits.append(f"org {org:.0f}")
@@ -685,7 +690,11 @@ def brief_lines(pic: Picture, index=None, layer=None, *, states: int = 6, countr
         fac = info["factories"]
         if isinstance(fac, dict):
             fac = f"{fac['civ']} civ / {fac['mil']} mil / {fac['dock']} dock"
-        lines.append(f"  {tag}: divisions {info['divisions']}" + (f" ({seen} in contact)" if seen else "")
+        # "In contact" read as a war to the model: a peacetime Germany "fought" CZE, POL and FRA
+        # for eight months in its notes (overnight campaign, 2026-11-22). Say which it is.
+        enemies = getattr(pic.world, "enemies", None) or set()
+        where = "in contact, at war" if tag in enemies else "at the border, at peace"
+        lines.append(f"  {tag}: divisions {info['divisions']}" + (f" ({seen} {where})" if seen else "")
                      + f"; factories {fac}; producing {prod}{note}")
     full = getattr(pic.world, "full", None)
     if full is not None:

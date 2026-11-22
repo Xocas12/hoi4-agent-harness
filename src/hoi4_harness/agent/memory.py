@@ -34,7 +34,10 @@ class Memory:
     digest: list[str] = field(default_factory=list)
 
     def note(self, date: str, turn: int, text: str) -> None:
-        self.journal.append(JournalEntry(date=date, turn=turn, text=text.strip()))
+        text = text.strip()
+        if len(text) > 600:                       # kept, trimmed: a long note used to be rejected
+            text = text[:597].rstrip() + "..."
+        self.journal.append(JournalEntry(date=date, turn=turn, text=text))
         del self.journal[: max(0, len(self.journal) - self.max_journal)]
 
     def record_turn(self, date: str, actions: list[str]) -> None:

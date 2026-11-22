@@ -146,7 +146,11 @@ def test_the_brief_section_and_the_query_views(save, grid):
     assert "Army: 3 divisions" in text
     assert "Industry: 7 civ / 3 mil / 0 dock; producing infantry_equipment_1 x3" in text
     assert "state 11 [plains]: 2 (2 Infantry) org 55, manpower 90%, dug in 6 | facing 2" in text
-    assert "GER: divisions 5 (3 in contact); factories 23 civ / 17 mil / 0 dock" in text
+    # SWE and GER are at peace in this save: neighbours seen are "at the border", not "in
+    # contact" (a model read "in contact" as a war, overnight campaign 2026-11-22)
+    assert "GER: divisions 5 (3 at the border, at peace); factories 23 civ / 17 mil / 0 dock" in text
+    pic.world.enemies = {"GER"}
+    assert "GER: divisions 5 (3 in contact, at war)" in "\n".join(W.brief_lines(pic, layer=grid))
     divisions = W.query(pic, "divisions", None)
     assert divisions["count"] == 3 and divisions["divisions"][0]["province"] in (1, 6)
     state = W.query(pic, "state", "12")         # provinces 3, 7, 11 (11 held by SWE)
@@ -219,3 +223,11 @@ def test_no_save_yet_is_said_not_guessed(tmp_path):
     observer = W.WorldObserver("SWE", tmp_path)
     assert observer.brief_lines(GameState(country="SWE")) == []
     assert "no text save" in observer.query(GameState(country="SWE"), "divisions", None)["error"]
+
+
+def test_divisions_in_a_sea_province_read_as_at_sea():
+    # The 1940 Norway landing read "? [ocean]" (overnight campaign, 2026-11-22).
+    class Div:
+        organisation, manpower, dig_in, terrain, template = 30, 1.0, 0, "ocean", "Infantry"
+
+    assert W._group_line(None, None, [Div(), Div()]).startswith("At sea, on transports: 2 (2 Infantry)")
