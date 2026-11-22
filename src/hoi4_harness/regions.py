@@ -115,7 +115,10 @@ def resolve(regions: dict[int, Region], value: str) -> Region | None:
     for r in regions.values():
         if low in (r.name.lower(), r.name_key.lower()):
             return r
-    return None
+    # A partial name the LLM would type ("Western Mediterranean" for "Western Mediterranean Sea"):
+    # accepted only when exactly one region contains it.
+    hits = [r for r in regions.values() if low and low in r.name.lower()]
+    return hits[0] if len(hits) == 1 else None
 
 
 def write(mod_dir: Path, regions: dict[int, Region]) -> Path:

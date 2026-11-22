@@ -192,6 +192,22 @@ class UnsafeConsoleLine(ValueError):
     """A line the console would split wrongly."""
 
 
+#: The playset's active DLCs, set by the console channel from its index (dlc.py). With it known,
+#: ``has_dlc = "Name"`` is folded to ``always = yes/no`` before a line reaches the console: the
+#: console splits quoted text on spaces, so a guard that copies a law's or a decision's own
+#: ``has_dlc = "Death or Dishonor"`` could not be typed at all (first live run, 2026-11-22).
+ACTIVE_DLCS: frozenset[str] | None = None
+_HAS_DLC = re.compile(r'has_dlc\s*=\s*"([^"]*)"')
+
+
+def fold_dlc(line: str, active: frozenset[str] | None = None) -> str:
+    """``has_dlc = "X"`` -> ``always = yes`` or ``always = no`` for the known active set."""
+    active = ACTIVE_DLCS if active is None else active
+    if active is None:
+        return line
+    return _HAS_DLC.sub(lambda m: "always = yes" if m.group(1) in active else "always = no", line)
+
+
 def check_console_line(line: str) -> None:
     """Refuse a quoted string holding a space or ``=``.
 
@@ -199,8 +215,7 @@ def check_console_line(line: str) -> None:
     ``=`` even inside quotes, so ``log = "a b"`` failed with "Unknown
     effect-type: b" and ``log = "x=1"`` with "Unknown effect-type: =".
     """
-    import re
-    for quoted in re.findall(r'"([^"]*)"', line):
+    for quoted in re.findall(r'"([^"]*)"', fold_dlc(line)):
         if " " in quoted or "=" in quoted:
             raise UnsafeConsoleLine(
                 f"the console splits quoted text on spaces and '=': {quoted!r}")
@@ -253,6 +268,10 @@ class ConsoleChannel:
         #: The inbox transport (``inbox.Inbox``): when set, the lines this channel would type
         #: go into the mod's inbox file instead, and no key is ever sent (docs/inbox.md).
         self.inbox = None
+        global ACTIVE_DLCS
+        dlcs = getattr(getattr(index, "playset", None), "dlcs", None)
+        if dlcs is not None:
+            ACTIVE_DLCS = frozenset(dlcs)
         #: click_gui_button: the marker each planned click logs inside its guard.
         self.click_markers: dict[int, str] = {}
         #: set_front_order: what each planned order sets, and the orders the game confirmed.
@@ -996,6 +1015,7 @@ class ConsoleChannel:
                 return self._write(self._archive_path(), lines)
             self.inbox.post(lines)
             return self._write(self._archive_path(), lines)
+        lines = [fold_dlc(line) for line in lines]
         for line in lines:
             check_console_line(line)
         text_chords(f"run {config.filename}")
@@ -1116,6 +1136,7 @@ class ConsoleChannel:
             [p.call for p in planned])
         if self.inbox is not None:
             return self._send_inbox(flat, lines)
+        lines = [fold_dlc(line) for line in lines]
         if needs_save:
             # Last, so the save holds what the lines above did. The save is
             # written a few seconds later, from the state at this command.

@@ -25,16 +25,19 @@ from hoi4_harness.types import ActionCall  # noqa: E402
 GAME = Path("C:/Program Files (x86)/Steam/steamapps/common/Hearts of Iron IV")
 
 
-def build(country: str, run_dir: Path) -> HOI4Env:
+def build(country: str, run_dir: Path, transport: str = "keys") -> HOI4Env:
     config = HarnessConfig()
     config.adapter = "headless"
     config.headless_reader = "logtail"
-    config.console_transport = "inbox"
+    config.console_transport = transport
     config.dry_run = False
     config.country = country
     config.game_dir = GAME
     config.mod_context = True
     config.observe_world = True
+    # Rival-like steering vocabulary (front, region and production orders) is offered when the
+    # game's AI owns the country.
+    config.operational_control = "game_ai"
     config.run_dir = run_dir
     config.inbox_ack_seconds = 90.0
     index = config.build_index()
@@ -51,8 +54,9 @@ def main() -> int:
     parser.add_argument("calls", nargs="*")
     parser.add_argument("--country", required=True)
     parser.add_argument("--run-dir", default=str(REPO / "runs" / "live-verify"))
+    parser.add_argument("--transport", default="keys", choices=["keys", "inbox"])
     args = parser.parse_args()
-    env = build(args.country.upper(), Path(args.run_dir))
+    env = build(args.country.upper(), Path(args.run_dir), args.transport)
     if args.verb == "brief":
         print(env.observe().brief)
         return 0
