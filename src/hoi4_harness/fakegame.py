@@ -415,6 +415,8 @@ class FakeGame:
         #: ``create_equipment_variant`` made, and the DLCs ``has_dlc`` answers for (None: all).
         self.experience: dict[str, float] = {"army": 0.0, "navy": 0.0, "air": 0.0}
         self.variants: list[dict] = []
+        #: What ``add_equipment_production`` was asked for (type, version_name, creator, factories).
+        self.added_lines: list[dict] = []
         self.dlcs: set[str] | None = None
         self.state_occupation_laws: dict[str, str] = {}
         #: Global flags set through the console (llm_bridge_strong_directives).
@@ -1635,11 +1637,16 @@ class FakeGame:
         if self.index is not None and name not in self.index.equipment_types():
             raise ScriptError(f"Unknown equipment: {name}")
         s = self.world.state
+        wanted = int(_number(str(requested.value))) if requested else 1
+        inner = equipment.value
+        self.added_lines.append({
+            "type": name, "factories": wanted,
+            "version_name": str(_get(inner, "version_name").value) if _get(inner, "version_name") else None,
+            "creator": str(_get(inner, "creator").value) if _get(inner, "creator") else None})
         free = s.military_factories - sum(line.factories for line in s.production)
         if free <= 0:
             self._log(f"add_equipment_production: no free military factory for {name}")
             return
-        wanted = int(_number(str(requested.value))) if requested else 1
         s.production.append(ProductionLine(equipment=name, factories=min(wanted, free)))
 
     def _activate_advisor(self, character: str) -> None:

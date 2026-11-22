@@ -127,6 +127,33 @@ ACTIONS: list[ActionSpec] = [
         ),
     ),
     ActionSpec(
+        name="add_production_line",
+        category="economy",
+        description=(
+            "CONTESTED (only with campaign_contested_production, under the game's AI): open a NEW "
+            "production line with the game's add_equipment_production effect, for an equipment "
+            "(infantry_equipment_1) or for one of your own designs (equipment = the chassis, "
+            "variant = its name or version number from list_designs). Unlike set_production it does "
+            "not refuse when a line for that equipment exists: it adds another. factories is the "
+            "number requested; the game gives the line only the factories that are free, and the "
+            "game's AI, which keeps running production, may switch the line, take its factories or "
+            "delete it. A variant name must have no spaces on the typed console. A line that ran "
+            "is proven by a marker the game logs inside the effect; the harness records each one "
+            "so the run can be measured afterwards."
+        ),
+        parameters=_schema(
+            {
+                "equipment": {"type": "string",
+                              "description": "Equipment id, or the chassis of the design."},
+                "factories": {"type": "integer", "minimum": 1, "maximum": 200},
+                "variant": {"type": "string",
+                            "description": "Name or version number of one of your designs of "
+                                           "that chassis (list_designs)."},
+            },
+            ["equipment", "factories"],
+        ),
+    ),
+    ActionSpec(
         name="change_production_equipment",
         category="economy",
         description=(

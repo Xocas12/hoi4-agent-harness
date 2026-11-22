@@ -813,6 +813,12 @@ class IdentifierIndex:
             if why:
                 return ActionResult(ok=False, action=call.name, call_id=call.call_id,
                                     message=why + ".", error_kind="invalid_args")
+        if call.name == "add_production_line":
+            equipment = str(args.get("equipment", ""))
+            known = self.equipment_types()
+            if known and equipment not in known:
+                return self._reject(call, f"There is no buildable equipment '{equipment}' in this "
+                                    "playset", equipment, sorted(known))
         if call.name == "design_equipment":
             from .designers import EMPTY, KINDS
 

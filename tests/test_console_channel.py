@@ -406,7 +406,7 @@ def test_the_console_is_the_default_for_the_actions_verified_live():
     assert {n for n, c in channels.items() if c == "console"} == CONSOLE_ACTIONS
     assert channels["set_national_focus"] == channels["start_research"] == "ui"
     assert CONSOLE_ACTIONS == {
-        "queue_construction", "set_production", "hire_advisor",
+        "queue_construction", "set_production", "hire_advisor", "add_production_line",
         "set_ai_directive", "set_ai_posture", "clear_ai_directives", "take_decision",
         "click_gui_button", "set_front_order", "set_region_order", "change_law", "set_occupation_law",
         "diplomacy_act", "fire_advisor", "steer_production", "steer_intelligence", "steer_research",

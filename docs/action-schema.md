@@ -1,6 +1,6 @@
 # The action catalog
 
-The catalog is the agent's entire vocabulary. It is small on purpose: 52 verbs,
+The catalog is the agent's entire vocabulary. It is small on purpose: 53 verbs,
 listed by `hoi4-harness actions` (add `--json` for schemas).
 
 | Action | Category | Notes |
@@ -11,6 +11,7 @@ listed by `hoi4-harness actions` (add `--json` for schemas).
 | `design_equipment` | economy | Designs a tank, ship or plane variant as the designer screen does (No Step Back / Man the Guns / By Blood Alone): the chassis, the modules by slot (checked against the slot, what a turret opens, the count limits, the unlocking technology), upgrade levels, an optional parent design; guarded by the DLC, every unlock and `has_<army\|navy\|air>_experience`, charged in the same `if` with the matching negative effect, a marker inside. The price is an upper bound (`docs/designers.md`). Console/inbox |
 | `queue_province_building` | economy | Fortification, coastal fortification, naval base, supply hub in one province, under the game's own `free_building_slots` rule for that province; one guarded block per level, a marker each (`docs/interaction.md` row 74). Railways are not offered |
 | `set_production` | economy | Declarative: total factories on a line. Edits a line that exists (by click, section 14b of `docs/live-session.md`), opens one only when none exists; a new line is guarded by `has_tech` of the technology that unlocks the equipment |
+| `add_production_line` | economy | CONTESTED, only with `campaign_contested_production` (issue #161 step 1). Opens a NEW line with `add_equipment_production` for an equipment or one of your designs (`variant`, space-free name on the typed console), guarded by `has_tech` of the unlock, a marker logged inside; each confirmed line is recorded in the run's `contested_lines.jsonl` for `scripts/contested_report.py`. The game's AI may switch or delete it (`docs/contested-production.md`) |
 | `change_production_equipment` | economy | Change the equipment of an existing line without duplicating it; by click, NOT live-verified |
 | `design_division_template` | army | Creates a template (a new name; battalions one type per column, up to five support companies; each unit unlocked); free, guarded, marked. Editing is refused (it costs army experience on the screen). Console/inbox |
 | `deploy_divisions` | army | Consumes equipment. Simulator only: a live game does not offer it (the deployment screen is mouse-only) |
