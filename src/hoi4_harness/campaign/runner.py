@@ -525,6 +525,11 @@ def _run(config: HarnessConfig, planner: LLMClient | None, resume: bool, env: HO
     tracker = ProgressTracker(run_dir=run_dir, until=end, max_usd=config.budget.max_usd,
                               objective=_objective_label(config))
     env.brief_hooks.append(tracker.brief_lines)
+    if getattr(config, "observe_world", False) and env.world is None:
+        # The forces, battles and intel picture from the newest save (world.py), as rival runs get.
+        from ..world import build_observer
+
+        env.attach_world(build_observer(config, env.index, getattr(adapter, "fake_game", None)))
     watchdog = getattr(adapter, "watchdog", None)
     patient = getattr(adapter, "patient_focus", None)
     if patient is not None:
