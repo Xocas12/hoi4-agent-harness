@@ -176,7 +176,32 @@ class CampaignSupervisor(Supervisor):
         if self.saves is not None:
             self.saves.prune()
             self.note_rule()
-        return None
+        return self._memory_check(state)
+
+    def _memory_check(self, state: GameState, read=None) -> str | None:
+        """The game's private memory against ``campaign_memory_limit_gb``: past it, a recovery
+        save now (whatever the month) and then a stop or a warning."""
+        limit = self.config.campaign_memory_limit_gb
+        if not limit or self.config.dry_run:
+            return None
+        if read is None:
+            if self.watchdog is None:
+                return None               # no live game process to look at (a fake game, a test)
+            from .watch import process_private_gb
+            read = process_private_gb
+        used = read(self.config.campaign_game_process or "hoi4.exe")
+        if used is None or used < limit:
+            return None
+        self.log.line(f"HOI4 holds {used:.0f} GB of private memory (limit {limit:g} GB): it "
+                      "leaks over a long run and crashes when the system's commit runs out")
+        if self.config.campaign_on_memory != "stop":
+            return None
+        self.last_save = None                     # a save now, not in N months
+        self._recovery_save(state)
+        return (f"HOI4 holds {used:.0f} GB of private memory (limit {limit:g} GB). A recovery "
+                f"save was asked for at {state.date}. Restart the game with -debug_mode, load "
+                "that save, and run the same command with --resume: the run marks the country, "
+                "turns human_ai on and carries on")
 
     def _player_capitulated(self, state: GameState) -> str | None:
         """Note the player's own capitulation (the brief, ``campaign_state.json`` and the

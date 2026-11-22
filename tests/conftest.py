@@ -89,3 +89,10 @@ def _no_machine_dlc_state(monkeypatch):
         return None
 
     monkeypatch.setattr(dlc, "read_game_log", only_test_dirs)
+
+
+@pytest.fixture(autouse=True)
+def _no_real_game_memory(monkeypatch):
+    """The campaign's memory guard reads the real hoi4.exe; a test injects a reader instead
+    (a live game left running on this machine must not stop a fake campaign)."""
+    monkeypatch.setattr("hoi4_harness.campaign.watch.process_private_gb", lambda _name: None)
