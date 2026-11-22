@@ -588,10 +588,16 @@ class AgentLoop:
                 if action.name == "advance_time" and asked_to_read:
                     results.append(ToolResult(
                         call_id=call.id, name=call.name, is_error=True,
-                        content=("advance_time was not run: this answer also asked to read "
-                                 "(list_decisions / describe_action), and the turn would have "
-                                 "ended before you saw the result. The results are above; "
-                                 "call advance_time again when you have read them.")))
+                        # Name the reads it sent: "list_decisions / describe_action" left
+                        # inspect_world out, and Haiku paired it with advance_time five times
+                        # in 37 calls (overnight campaign, 2026-11-22).
+                        content=("advance_time was not run: this answer also asked to read ("
+                                 + ", ".join(sorted({c.name for c in response.tool_calls
+                                                     if c.name in catalog.QUERY_ACTIONS}))
+                                 + "), and the turn would have ended before you saw the result. "
+                                 "The results are above; call advance_time again when you have "
+                                 "read them. Next time send reads alone, then act and advance "
+                                 "in the answer after.")))
                     continue
                 if self.advisor:
                     # Intercepted: recorded, shown to the player, never executed.
