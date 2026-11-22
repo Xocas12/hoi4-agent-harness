@@ -32,7 +32,8 @@ import shutil
 import subprocess
 import sys
 import tempfile
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager
 from pathlib import Path
 
 from ...actions.registry import ToolSpec
@@ -93,6 +94,7 @@ def extract_json(text: str) -> dict:
 
 class ClaudeCliClient(LLMClient):
     name = "claude-cli"
+    web_search_support = True
 
     def __init__(self, model: str = "haiku", *, cli: str | None = None,
                  timeout_seconds: float = 300.0, workdir: str | Path | None = None,
@@ -104,14 +106,27 @@ class ClaudeCliClient(LLMClient):
         self.workdir = Path(workdir) if workdir else Path(tempfile.gettempdir()) / "hoi4-harness-claude"
         self._run = run or subprocess.run
         self.retries = retries
+        self.web = False
+        self.plain = False
         self._ids = itertools.count(1)
         self.seq = 0
         self.last_cost_usd = 0.0
         self.total_cost_usd = 0.0
 
+    @contextmanager
+    def prose(self, web: bool = False) -> Iterator[None]:
+        """Inside the block: the reply as it comes, and WebSearch/WebFetch (only those) when ``web``."""
+        before = (self.plain, self.web)
+        self.plain, self.web = True, web
+        try:
+            yield
+        finally:
+            self.plain, self.web = before
+
     def _command(self, system_file: Path) -> list[str]:
+        tools = "WebSearch,WebFetch" if self.web else ""
         return [find_cli(self.cli), "-p", "--model", self.model, "--output-format", "json",
-                "--tools", "", "--setting-sources", "", "--strict-mcp-config",
+                "--tools", tools, "--setting-sources", "", "--strict-mcp-config",
                 "--no-session-persistence", "--system-prompt-file", str(system_file)]
 
     def _call(self, system_file: Path, prompt: str) -> tuple[str, dict]:
@@ -143,6 +158,8 @@ class ClaudeCliClient(LLMClient):
     def complete(self, system: str, messages: list[Msg], tools: list[ToolSpec] | None = None,
                  max_tokens: int | None = None) -> LLMResponse:
         self.seq += 1
+        if self.plain:
+            return self._complete_plain(system, messages)
         tools = list(tools or [])
         self.workdir.mkdir(parents=True, exist_ok=True)
         system_file = self.workdir / "system.md"
@@ -162,6 +179,16 @@ class ClaudeCliClient(LLMClient):
                 continue
             return self._response(data, usage)
         return LLMResponse(text=text, tool_calls=[], stop_reason="end_turn", usage=usage,
+                           model=self.model)
+
+    def _complete_plain(self, system: str, messages: list[Msg]) -> LLMResponse:
+        """One call, the reply as it comes: a briefing is prose, not a tool-call envelope."""
+        self.workdir.mkdir(parents=True, exist_ok=True)
+        system_file = self.workdir / "system.md"
+        system_file.write_text(system, encoding="utf-8")
+        prompt = "\n\n".join(m.text for m in messages if m.text)
+        text, envelope = self._call(system_file, prompt)
+        return LLMResponse(text=text.strip(), stop_reason="end_turn", usage=self._usage(envelope),
                            model=self.model)
 
     def _usage(self, envelope: dict) -> Usage:

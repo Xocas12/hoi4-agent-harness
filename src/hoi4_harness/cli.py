@@ -260,6 +260,13 @@ def _config_from_args(args: argparse.Namespace) -> HarnessConfig:
         config.campaign_until = args.until
     if getattr(args, "choose_path", False):
         config.campaign_choose_path = True
+    if getattr(args, "briefing_flag", False):
+        config.campaign_briefing = True
+    if getattr(args, "rebrief", None):
+        config.campaign_rebrief = [x.strip() for x in args.rebrief.split(",") if x.strip()]
+        config.campaign_briefing = True
+    if getattr(args, "briefing_web", False):
+        config.briefing_web_search = True
     if getattr(args, "lobby_rule", False):
         config.campaign_lobby_rule = True
     spec = getattr(args, "control", None)
@@ -1346,6 +1353,64 @@ def cmd_paths(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_brief_world(args: argparse.Namespace) -> int:
+    """The briefing agent on its own: the dossier of the world and the country from a save and
+    the playset, and the orientation the configured model writes from it (#165)."""
+    from . import briefing as B
+    from .adapters.savegame import find_save_dir
+    from .agent.llm import build_llm
+    from .world import newest_save
+
+    config = _config_from_args(args)
+    if config.game_dir is None:
+        print("brief-world: point --game-dir (or HOI4_GAME_DIR) at the HOI4 install", file=sys.stderr)
+        return 2
+    if not args.country:
+        print("brief-world: name a country with --country TAG", file=sys.stderr)
+        return 2
+    tag = args.country.upper()
+    try:
+        index = config.build_index()
+    except FileNotFoundError as exc:
+        print(f"brief-world: {exc}", file=sys.stderr)
+        return 1
+    save = Path(args.save) if args.save else config.briefing_save
+    if save is None:
+        folder = config.save_dir or find_save_dir()
+        save = newest_save(Path(folder), None, tag) if folder else None
+    layer = None
+    if save is not None:
+        try:
+            from .mapdata import MapLayer
+
+            layer = MapLayer.load(index.playset)
+        except Exception as exc:  # noqa: BLE001
+            print(f"brief-world: no map layer ({type(exc).__name__}: {exc})", file=sys.stderr)
+    if save is None:
+        print("brief-world: no save found (--save PATH); the dossier has the playset's files only",
+              file=sys.stderr)
+    spec = config.briefing if config.briefing.provider else config.planner
+    client = None if args.dossier_only else build_llm(spec)
+    web_on, why = (False, "web search is off")
+    if client is not None:
+        web_on, why = B.enable_web(client, args.web or config.briefing_web_search)
+    if args.web or config.briefing_web_search:
+        print(f"brief-world: {why}", file=sys.stderr)
+    dossier = B.build_dossier(config, index, tag, save=save, layer=layer, offline=not web_on)
+    if args.dossier_only:
+        print(dossier.render())
+        return 0
+    made = B.brief(client, dossier, web=web_on, max_tokens=spec.max_tokens)
+    out = Path(args.out) if args.out else config.run_dir
+    path = B.save_briefing(out, made, dossier)
+    print(made.text)
+    print(f"saved: {path} (dossier beside it in {Path(out) / 'briefings'}); "
+          f"{made.input_tokens:,} in / {made.output_tokens:,} out", file=sys.stderr)
+    if made.missing:
+        print("brief-world: the briefing lacks: " + ", ".join(made.missing), file=sys.stderr)
+    return 0
+
+
 def cmd_mod_actions(args: argparse.Namespace) -> int:
     """What a country can do in the playset, and what the mods are about."""
     import time
@@ -1896,6 +1961,15 @@ def build_parser() -> argparse.ArgumentParser:
                       help="campaign: before the start the model picks its country's path (AI "
                            "behaviour rule + focus tree summary; see `paths`) and the choice "
                            "shapes the guidance (#160)")
+    play.add_argument("--briefing", dest="briefing_flag", action="store_true",
+                      help="campaign: before the start a briefing model writes an orientation "
+                           "(the situation and the open paths, no plan) for the player (#165; "
+                           "docs/briefing.md)")
+    play.add_argument("--rebrief", metavar="SCHEDULE",
+                      help="with --briefing: brief again at yearly, halfyearly, YYYY-MM-DD or on "
+                           "war, capitulation, faction (comma list)")
+    play.add_argument("--briefing-web", dest="briefing_web", action="store_true",
+                      help="with --briefing: let the briefing model search the web for mods")
     play.add_argument("--lobby-rule", dest="lobby_rule", action="store_true",
                       help="with --choose-path: click the rule and Historical AI Focuses off into "
                            "the new-game lobby before starting (needs calibration; see "
@@ -2209,6 +2283,20 @@ def build_parser() -> argparse.ArgumentParser:
     common(paths_cmd)
     paths_cmd.add_argument("--json", action="store_true", help="machine-readable output")
     paths_cmd.set_defaults(func=cmd_paths)
+
+    brief_cmd = sub.add_parser("brief-world", help="the briefing agent: a dossier of the world and "
+                                                   "the country, and an orientation from the model (#165)")
+    common(brief_cmd)
+    brief_cmd.add_argument("--save", metavar="PATH",
+                           help="the save to read (default: the country's newest)")
+    brief_cmd.add_argument("--out", metavar="DIR",
+                           help="where briefing.md and briefings/ go (default: the run dir)")
+    brief_cmd.add_argument("--web", action="store_true",
+                           help="let the model search the web for mods it cannot judge from files "
+                                "(anthropic and claude-cli only)")
+    brief_cmd.add_argument("--dossier-only", dest="dossier_only", action="store_true",
+                           help="print the dossier and call no model")
+    brief_cmd.set_defaults(func=cmd_brief_world)
 
     mapcmd = sub.add_parser("map", help="where a state or province is, in map pixels")
     common(mapcmd)

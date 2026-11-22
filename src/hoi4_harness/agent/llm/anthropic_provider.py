@@ -15,9 +15,14 @@ Notes that matter for cost on a long campaign:
 from __future__ import annotations
 
 import os
+from collections.abc import Iterator
+from contextlib import contextmanager
 
 from ...actions.registry import ToolSpec
 from .base import LLMClient, LLMResponse, Msg, ToolCall, Usage
+
+#: The API's server-side web search tool (no harness code runs it).
+WEB_SEARCH_TOOL = "web_search_20250305"
 
 
 def usage_from_wire(raw) -> Usage:
@@ -91,6 +96,9 @@ def wire_messages(messages: list[Msg]) -> list[dict]:
 
 class AnthropicClient(LLMClient):
     name = "anthropic"
+    web_search_support = True
+    #: Uses of the server-side web search a call may make; 0 is off (see ``prose``).
+    web_search_uses = 0
 
     def __init__(
         self,
@@ -118,8 +126,22 @@ class AnthropicClient(LLMClient):
         self.effort = effort
         self.cache_prefix = cache_prefix
 
+    @contextmanager
+    def prose(self, web: bool = False, max_uses: int = 5) -> Iterator[None]:
+        """The API's server-side web search tool, added to the calls inside the block."""
+        before = self.web_search_uses
+        self.web_search_uses = max_uses if web else 0
+        try:
+            yield
+        finally:
+            self.web_search_uses = before
+
     def _tools(self, tools: list[ToolSpec] | None) -> list[dict]:
-        return wire_tools(tools, self.cache_prefix)
+        wire = wire_tools(tools, self.cache_prefix)
+        if self.web_search_uses:
+            wire.append({"type": WEB_SEARCH_TOOL, "name": "web_search",
+                         "max_uses": self.web_search_uses})
+        return wire
 
     def _messages(self, messages: list[Msg]) -> list[dict]:
         return wire_messages(messages)

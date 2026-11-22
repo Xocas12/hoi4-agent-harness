@@ -314,6 +314,12 @@ save: matches the choice`, or a `WARNING` when it differs, or a note that the sa
 record it. Where a real save writes its rules has not been seen yet; the reader looks for
 `<token> = "<OPTION>"` in the header and the live check confirms it.
 
+## A briefing before the start (#165)
+
+`campaign_briefing` (`--briefing`) has a scout model write an orientation (the situation and the
+open paths, no plan) that the player reads under its own objective; `--rebrief` repeats it. See
+[briefing.md](briefing.md).
+
 ## Stops and what the run keeps
 
 | Situation | What happens |

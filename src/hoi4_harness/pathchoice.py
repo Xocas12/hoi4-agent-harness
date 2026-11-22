@@ -382,7 +382,7 @@ CHOOSE_SYSTEM = (
     'nothing else: {"choice": "<option name>", "reason": "<one or two sentences>"}.')
 
 
-def choice_prompt(menu: PathMenu) -> str:
+def choice_prompt(menu: PathMenu, briefing: str | None = None) -> str:
     rule = menu.rule
     if rule is not None:
         ask = (f"Choose one option of {rule.token}, by its name "
@@ -391,7 +391,9 @@ def choice_prompt(menu: PathMenu) -> str:
         ask = ("The playset has no AI behaviour rule for this country, so name the path you want "
                "in a few words (a branch or a focus from the list). It steers your own guidance "
                "for the campaign.")
-    return f"{render_menu(menu, limit=25)}\n\n{ask}"
+    head = (f"{briefing.strip()}\n\nThe briefing informs your choice; it does not make it.\n\n"
+            if briefing else "")
+    return f"{head}{render_menu(menu, limit=25)}\n\n{ask}"
 
 
 def parse_choice(text: str, menu: PathMenu) -> tuple[str, str] | None:
@@ -415,12 +417,13 @@ def parse_choice(text: str, menu: PathMenu) -> tuple[str, str] | None:
     return pick, reason
 
 
-def choose_path(client, menu: PathMenu, *, max_tokens: int = 600) -> PathChoice:
+def choose_path(client, menu: PathMenu, *, max_tokens: int = 600,
+                briefing: str | None = None) -> PathChoice:
     """Ask ``client`` once. An unreadable or invalid reply falls back to the rule's default
     option (or "no path chosen" without a rule) and says so in the reason; it is never asked again."""
     from .agent.llm.base import Msg
 
-    response = client.complete(CHOOSE_SYSTEM, [Msg(role="user", text=choice_prompt(menu))],
+    response = client.complete(CHOOSE_SYSTEM, [Msg(role="user", text=choice_prompt(menu, briefing))],
                               tools=None, max_tokens=max_tokens)
     rule = menu.rule
     parsed = parse_choice(getattr(response, "text", "") or "", menu)
