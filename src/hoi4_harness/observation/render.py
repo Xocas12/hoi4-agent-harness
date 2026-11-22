@@ -75,6 +75,32 @@ def _war_line(war) -> str:
     return f"AT WAR with {war.against}{since} ({', '.join(score + seen)})"
 
 
+#: Above this many wars, the ones far away are folded into one line.
+WARS_IN_FULL = 5
+
+
+def war_lines(wars) -> list[str]:
+    """A line per war; with many (a world war: Germany at war with 17 in 1940, most of them a
+    British dominion or mandate with no border and no divisions), the far ones share one line."""
+    wars = list(wars)
+    if len(wars) <= WARS_IN_FULL:
+        return [_war_line(w) for w in wars]
+    near = [w for w in wars if w.borders or (w.surrender_progress or 0) > 0 or w.borders is None]
+    far = [w for w in wars if w not in near]
+    lines = [_war_line(w) for w in near]
+    if far:
+        far.sort(key=lambda w: -(w.enemy_divisions or 0))
+        armed = [f"{w.against} {w.enemy_divisions}" for w in far if w.enemy_divisions]
+        empty = [w.against for w in far if not w.enemy_divisions]
+        text = f"AT WAR also with {len(far)} more, no shared border, none surrendering"
+        if armed:
+            text += ": divisions " + ", ".join(armed)
+        if empty:
+            text += ("; " if armed else ": ") + ", ".join(empty) + " with none"
+        lines.append(text)
+    return lines
+
+
 def render_full(state: GameState, max_events: int = 6, max_fronts: int = 3) -> str:
     """A complete situation brief.
 
@@ -167,8 +193,7 @@ def render_full(state: GameState, max_events: int = 6, max_fronts: int = 3) -> s
         lines.append("Stockpile: " + ", ".join(f"{k} {v:,}" for k, v in top))
 
     if state.wars:
-        for war in state.wars:
-            lines.append(_war_line(war))
+        lines.extend(war_lines(state.wars))
     elif unnamed_enemies(state):
         lines.append(_unnamed_war_line(state))
     lines.extend(mechanics_lines(state))
