@@ -306,6 +306,27 @@ def read_historical_ai(path: Path, head_bytes: int = 262144) -> bool | None:
     return historical_ai(data.decode("utf-8", errors="replace"))
 
 
+def game_rule(text: str, token: str) -> str | None:
+    """The option a save's text records for the game rule ``token`` (``GER_ai_behavior``), or
+    None. The harness has not yet seen where a real save writes its rules, so this looks for
+    ``token = "OPTION"`` (or a bare word) anywhere in the text it is given; #160's live check
+    confirms the spot."""
+    found = re.search(r"^[ \t]*" + re.escape(token) + r'[ \t]*=[ \t]*"?([A-Za-z0-9_]+)"?', text, re.M)
+    return found.group(1) if found else None
+
+
+def read_game_rule(path: Path, token: str, head_bytes: int = 262144) -> str | None:
+    """:func:`game_rule` for a save file's header (see :func:`read_historical_ai`)."""
+    try:
+        with Path(path).open("rb") as handle:
+            data = handle.read(head_bytes)
+    except OSError:
+        return None
+    if data.startswith(b"HOI4bin") or bytes(1) in data[:8]:
+        return None
+    return game_rule(data.decode("utf-8", errors="replace"), token)
+
+
 def _head(text: str) -> dict:
     """``date`` and ``player``, which a save writes in its first few lines.
 

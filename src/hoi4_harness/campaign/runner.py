@@ -30,7 +30,7 @@ from pathlib import Path
 from .. import cadence
 from ..adapters.base import GameLost
 from ..adapters.clock import days_between
-from ..adapters.savegame import read_historical_ai
+from ..adapters.savegame import read_game_rule, read_historical_ai
 from ..agent.llm.base import LLMClient
 from ..agent.loop import AgentLoop, RunReport, Supervisor
 from ..agent.memory import Memory
@@ -49,6 +49,7 @@ STATE_FILE = "campaign_state.json"
 #: How many times the log is read for the ``ai=`` flip, and the pause between reads.
 VERIFY_TRIES = 6
 VERIFY_SECONDS = 2.0
+_PARA = "\n\n"
 
 
 class CampaignStartError(RuntimeError):
@@ -116,6 +117,70 @@ def historical_rule_lines(value: bool | None, wanted: str = "any") -> list[str]:
     return lines
 
 
+def path_rule_lines(choice: dict, found: str | None) -> list[str]:
+    """The campaign.log lines for the chosen path's rule as the first save records it (#160)."""
+    token, want = choice.get("rule"), choice.get("option")
+    if found is None:
+        return [f"path rule {token}: the first save does not record it (chosen {want}); the "
+                "lobby step could not be confirmed from the save"]
+    if found.lower() == str(want).lower():
+        return [f"path rule {token} = {found} in the first save: matches the choice"]
+    return [f"WARNING: path rule {token} is {found} in the first save but {want} was chosen: the "
+            "lobby did not set it; the AI will not follow the chosen path"]
+
+
+def _choose_path(config: HarnessConfig, planner, env: HOI4Env, run_dir: Path, log: CampaignLog,
+                 clicker=None, pause: Callable[[float], None] = time.sleep) -> None:
+    """#160: before the start, show the model its country's paths, record its choice, set the
+    rule in the lobby (when asked) and add the choice to the guidance. Asked once per run:
+    a resumed run keeps the recorded choice."""
+    from .. import pathchoice
+    from ..agent.llm import build_llm
+    from . import lobby
+
+    if not config.campaign_choose_path:
+        return
+    recorded = load_state(run_dir).get("path_choice")
+    if recorded:
+        choice = pathchoice.PathChoice(**recorded)
+        log.line(f"path already chosen by an earlier run, kept: {choice.option} ({choice.reason})")
+    else:
+        tag = (config.country or "").upper()
+        if env.index is None or not tag:
+            log.line("path choice skipped: it needs a playset (game_dir) and a country")
+            return
+        client = planner if planner is not None else (
+            build_llm(config.planner) if config.planner_active else None)
+        if client is None:
+            log.line("path choice skipped: no model to ask")
+            return
+        menu = pathchoice.build_menu(env.index, tag)
+        choice = pathchoice.choose_path(client, menu)
+        save_state(run_dir, path_choice=choice.to_dict(), path_menu_branches=len(menu.branches))
+        if choice.source == "default":
+            log.line(f"WARNING: {choice.reason}")
+        log.line(f"path chosen for {tag}: {choice.option}"
+                 + (f" ({choice.rule})" if choice.rule else "") + f"; reason: {choice.reason}")
+        if choice.rule is None:
+            log.line(f"no AI behaviour rule for {tag} in this playset: the choice steers the "
+                     "guidance only; no lobby step")
+        elif config.campaign_lobby_rule:
+            steps = lobby.steps_for(choice.rule, choice.option, config.campaign_lobby_points)
+            try:
+                lobby.run_steps(steps, clicker or lobby.LiveClicker(config.window_title),
+                                log.line, pause=pause)
+            except lobby.LobbyError as exc:
+                log.line(f"cannot start: the lobby step failed: {exc}")
+                raise CampaignStartError(f"the lobby step failed: {exc}") from exc
+            log.line(f"lobby: {choice.rule}={choice.option} and Historical AI Focuses off "
+                     "clicked; the first save is read back to confirm")
+        else:
+            log.line(f"the rule is NOT set in the lobby (campaign_lobby_rule is off): set "
+                     f"{choice.rule}={choice.option} and Historical AI Focuses off by hand "
+                     "before the game starts")
+    config.objective = config.objective.rstrip() + _PARA + pathchoice.guidance_text(choice)
+
+
 def _months_between(earlier: str, later: str) -> int:
     try:
         a, b = date.fromisoformat(earlier), date.fromisoformat(later)
@@ -133,6 +198,7 @@ class CampaignSupervisor(Supervisor):
         self.run_dir, self.watchdog = run_dir, watchdog
         self.loop: AgentLoop | None = None
         self._rule_misses = 0
+        self._path_misses = 0
         #: The person's guidance (``hoi4-harness guide``): the board the brief reads from.
         self._logged_guidance: set[int] = set(load_state(run_dir).get("guidance_seen") or [])
         self.guidance = GuidanceBoard(run_dir, load_state(run_dir).get("guidance_seen"))
@@ -323,7 +389,30 @@ class CampaignSupervisor(Supervisor):
 
     def note_rule(self) -> None:
         """Once the first recovery save is on disk, read the Historical AI Focuses rule
-        from its header, log it, and keep it in the run state. A warning, never a stop."""
+        (and the chosen path's AI behaviour rule, #160) from its header, log them, and keep
+        them in the run state. A warning, never a stop."""
+        self._note_historical()
+        self._note_path_rule()
+
+    def _note_path_rule(self) -> None:
+        state = load_state(self.run_dir)
+        choice = state.get("path_choice")
+        if (self.saves is None or not choice or not choice.get("rule")
+                or "path_rule_in_save" in state):
+            return
+        saves = self.saves.data["saves"]
+        if not saves or self.saves.save_dir is None:
+            return
+        found = read_game_rule(self.saves.save_dir / saves[0]["name"], choice["rule"])
+        if found is None:
+            self._path_misses += 1
+            if self._path_misses < RULE_TRIES:
+                return
+        save_state(self.run_dir, path_rule_in_save=found)
+        for line in path_rule_lines(choice, found):
+            self.log.line(line)
+
+    def _note_historical(self) -> None:
         if self.saves is None or "historical_ai" in load_state(self.run_dir):
             return
         saves = self.saves.data["saves"]
@@ -521,6 +610,7 @@ def run_campaign(
     env: HOI4Env | None = None,
     until: str | None = None,
     profile: str | Path | None = None,
+    lobby_clicker=None,
 ) -> tuple[RunReport, dict]:
     """Run a campaign to its end date or its first reason to stop.
 
@@ -539,11 +629,12 @@ def run_campaign(
     # A sleeping or locked PC types into nothing: hold it awake for the whole run (a no-op
     # for a dry run or the fake game), and let go however the run ends.
     with keep_awake_for(config, log.line):
-        return _run(config, planner, resume, env, until, run_dir, log)
+        return _run(config, planner, resume, env, until, run_dir, log, lobby_clicker)
 
 
 def _run(config: HarnessConfig, planner: LLMClient | None, resume: bool, env: HOI4Env | None,
-         until: str | None, run_dir: Path, log: CampaignLog) -> tuple[RunReport, dict]:
+         until: str | None, run_dir: Path, log: CampaignLog,
+         lobby_clicker=None) -> tuple[RunReport, dict]:
     from ..agent.llm import build_llm
     from ..cli import _env_from_config
 
@@ -566,6 +657,7 @@ def _run(config: HarnessConfig, planner: LLMClient | None, resume: bool, env: HO
     cap = f"${config.budget.max_usd:.2f}" if config.budget.max_usd else "none"
     log.line(f"campaign {'resumed' if resume else 'started'}: {config.country or '?'} until {end}, "
              f"cap {cap}, model {config.planner.model}")
+    _choose_path(config, planner, env, run_dir, log, clicker=lobby_clicker, pause=sleep)
     try:
         begin(env, config, log, sleep=sleep, run_dir=run_dir)
     except (CampaignStartError, GameLost) as exc:

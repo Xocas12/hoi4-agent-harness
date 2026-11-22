@@ -1,0 +1,75 @@
+focus_tree = {
+	id = swedish_paths_focus
+	country = {
+		factor = 0
+		modifier = {
+			add = 10
+			tag = SWE
+		}
+	}
+	focus = {
+		id = SWE_expand_industry
+		x = 0
+		y = 0
+		completion_reward = {
+			add_research_slot = 1
+			add_ideas = SWE_industry_idea
+		}
+	}
+	focus = {
+		id = SWE_north_root
+		x = 4
+		y = 0
+		completion_reward = {
+			add_political_power = 50
+		}
+	}
+	focus = {
+		id = SWE_axis_pact
+		x = 0
+		y = 1
+		prerequisite = { focus = SWE_expand_industry }
+		mutually_exclusive = { focus = SWE_red_turn }
+		completion_reward = {
+			set_politics = {
+				ruling_party = fascism
+			}
+			create_faction = "Axis fixture"
+		}
+	}
+	focus = {
+		id = SWE_take_norway
+		x = 0
+		y = 2
+		prerequisite = { focus = SWE_axis_pact }
+		completion_reward = {
+			create_wargoal = {
+				type = annex_everything
+				target = NOR
+			}
+		}
+	}
+	focus = {
+		id = SWE_red_turn
+		x = 2
+		y = 1
+		prerequisite = { focus = SWE_expand_industry }
+		mutually_exclusive = { focus = SWE_axis_pact }
+		completion_reward = {
+			set_politics = {
+				ruling_party = communism
+			}
+		}
+	}
+	focus = {
+		id = SWE_puppet_finland
+		x = 4
+		y = 1
+		prerequisite = { focus = SWE_north_root }
+		completion_reward = {
+			FIN = {
+				puppet = ROOT
+			}
+		}
+	}
+}

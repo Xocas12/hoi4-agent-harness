@@ -403,6 +403,19 @@ class HarnessConfig:
     #: when a save reads ``historical=0`` (and ``off`` when it reads 1). ``any`` only logs.
     #: It never stops the run: whether to run with the rule on is the person's call.
     campaign_historical_ai: str = "any"
+    #: Before the start, show the model the paths open to its country (the AI behaviour game
+    #: rule's options and a focus tree summary), ask it once to choose one with a reason, record
+    #: it in the run state and build the guidance around it (#160). The choice is kept across
+    #: ``--resume``. Costs one model call.
+    campaign_choose_path: bool = False
+    #: With ``campaign_choose_path``: click the choice into the new-game lobby (Custom Game
+    #: Rules, Historical AI Focuses off, Start) before the campaign begins. Sends real mouse
+    #: clicks and needs ``campaign_lobby_points`` (docs/campaign.md); off, the choice only
+    #: steers the guidance and the log says which rule to set by hand.
+    campaign_lobby_rule: bool = False
+    #: Screen points for the lobby steps nobody has recorded yet (campaign/lobby.py):
+    #: ``{"rule_row": [x, y], "option:FASCIST": [x, y], "rules_close": [x, y]}``.
+    campaign_lobby_points: dict = field(default_factory=dict)
     #: The AI the game runs underneath (docs/expert-ai.md): ``vanilla``, ``expert_ai`` (the
     #: Workshop mod; the campaign then turns on the strong directive weights, because its own
     #: plans would drown the normal ones) or ``auto`` (read dlc_load.json at the start).
