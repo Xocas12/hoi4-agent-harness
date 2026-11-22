@@ -168,3 +168,14 @@ def test_the_sheets_new_file_numbers_match_the_installed_game():
                         "00_defines.lua").read_text(encoding="utf-8-sig"), re.S)
     assert [int(n) for n in re.findall(r"^\s*(\d+)", recruit.group(1), re.M)] == [25, 50, 75, 100]
     assert "25, 50, 75, then 100" in vanilla
+
+
+def test_the_unattended_packs_teach_how_to_break_a_stalemate():
+    for pack in ("world-conquest", "rival"):
+        text = guidance.load(pack)
+        assert "**Breaking a stalemate.**" in text, pack
+        paragraph = text.split("**Breaking a stalemate.**")[1].split("\n")[0]
+        for tool in ("set_front_order", "order=push", "order=reserve", "steer_army", "steer_production",
+                     "view=fronts"):
+            assert tool in paragraph, (pack, tool)
+        assert "not to wait" in paragraph
