@@ -58,6 +58,9 @@ DEFAULT_TAGS = (
     "GUA", "GXC", "HAI", "HON", "ICE", "INS", "JOR", "KUW", "LEB", "LIB", "MAL", "MEN",
     "MON", "NEP", "NIC", "OMA", "PAL", "PAN", "PAR", "PRU", "SHX", "SIK", "SLO", "SYR",
     "TAN", "TIB", "URG", "VEN", "XSM", "YEM", "YUN",
+    # Civil-war breakaways get dynamic tags (late.py): a directive at one needs its blocks too
+    # (live 2026-11-22: "no directive plumbing for D03" while D03 attacked the Republic).
+    *(f"D{n:02d}" for n in range(1, 21)),
 )
 
 #: Directive -> the ai_strategy entries it raises, as (type, value).

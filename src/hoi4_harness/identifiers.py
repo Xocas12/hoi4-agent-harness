@@ -759,6 +759,12 @@ class IdentifierIndex:
         if call.name in ("start_research", "steer_research") and self.technologies:
             tech = str(args.get("technology", ""))
             if tech not in self.technologies:
+                # A unique prefix is the id the model meant ("synth_oil" for
+                # "synth_oil_experiments", live 2026-11-22: Haiku guessed it four times).
+                starts = [t for t in self.technologies if tech and t.startswith(tech)]
+                if len(starts) == 1:
+                    args["technology"] = tech = starts[0]
+            if tech not in self.technologies:
                 return self._reject(
                     call, f"There is no technology '{tech}' in this playset", tech, self.technologies
                 )

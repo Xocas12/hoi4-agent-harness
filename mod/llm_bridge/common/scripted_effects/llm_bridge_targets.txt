@@ -94,6 +94,26 @@ llm_bridge_clear_target = {
 	clr_country_flag = llmb_target_XSM
 	clr_country_flag = llmb_target_YEM
 	clr_country_flag = llmb_target_YUN
+	clr_country_flag = llmb_target_D01
+	clr_country_flag = llmb_target_D02
+	clr_country_flag = llmb_target_D03
+	clr_country_flag = llmb_target_D04
+	clr_country_flag = llmb_target_D05
+	clr_country_flag = llmb_target_D06
+	clr_country_flag = llmb_target_D07
+	clr_country_flag = llmb_target_D08
+	clr_country_flag = llmb_target_D09
+	clr_country_flag = llmb_target_D10
+	clr_country_flag = llmb_target_D11
+	clr_country_flag = llmb_target_D12
+	clr_country_flag = llmb_target_D13
+	clr_country_flag = llmb_target_D14
+	clr_country_flag = llmb_target_D15
+	clr_country_flag = llmb_target_D16
+	clr_country_flag = llmb_target_D17
+	clr_country_flag = llmb_target_D18
+	clr_country_flag = llmb_target_D19
+	clr_country_flag = llmb_target_D20
 }
 
 llm_bridge_select_GER = {
@@ -648,6 +668,126 @@ llm_bridge_select_YUN = {
 	log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=13|detail=YUN"
 }
 
+llm_bridge_select_D01 = {
+	llm_bridge_clear_target = yes
+	set_country_flag = llmb_target_D01
+	log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=13|detail=D01"
+}
+
+llm_bridge_select_D02 = {
+	llm_bridge_clear_target = yes
+	set_country_flag = llmb_target_D02
+	log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=13|detail=D02"
+}
+
+llm_bridge_select_D03 = {
+	llm_bridge_clear_target = yes
+	set_country_flag = llmb_target_D03
+	log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=13|detail=D03"
+}
+
+llm_bridge_select_D04 = {
+	llm_bridge_clear_target = yes
+	set_country_flag = llmb_target_D04
+	log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=13|detail=D04"
+}
+
+llm_bridge_select_D05 = {
+	llm_bridge_clear_target = yes
+	set_country_flag = llmb_target_D05
+	log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=13|detail=D05"
+}
+
+llm_bridge_select_D06 = {
+	llm_bridge_clear_target = yes
+	set_country_flag = llmb_target_D06
+	log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=13|detail=D06"
+}
+
+llm_bridge_select_D07 = {
+	llm_bridge_clear_target = yes
+	set_country_flag = llmb_target_D07
+	log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=13|detail=D07"
+}
+
+llm_bridge_select_D08 = {
+	llm_bridge_clear_target = yes
+	set_country_flag = llmb_target_D08
+	log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=13|detail=D08"
+}
+
+llm_bridge_select_D09 = {
+	llm_bridge_clear_target = yes
+	set_country_flag = llmb_target_D09
+	log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=13|detail=D09"
+}
+
+llm_bridge_select_D10 = {
+	llm_bridge_clear_target = yes
+	set_country_flag = llmb_target_D10
+	log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=13|detail=D10"
+}
+
+llm_bridge_select_D11 = {
+	llm_bridge_clear_target = yes
+	set_country_flag = llmb_target_D11
+	log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=13|detail=D11"
+}
+
+llm_bridge_select_D12 = {
+	llm_bridge_clear_target = yes
+	set_country_flag = llmb_target_D12
+	log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=13|detail=D12"
+}
+
+llm_bridge_select_D13 = {
+	llm_bridge_clear_target = yes
+	set_country_flag = llmb_target_D13
+	log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=13|detail=D13"
+}
+
+llm_bridge_select_D14 = {
+	llm_bridge_clear_target = yes
+	set_country_flag = llmb_target_D14
+	log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=13|detail=D14"
+}
+
+llm_bridge_select_D15 = {
+	llm_bridge_clear_target = yes
+	set_country_flag = llmb_target_D15
+	log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=13|detail=D15"
+}
+
+llm_bridge_select_D16 = {
+	llm_bridge_clear_target = yes
+	set_country_flag = llmb_target_D16
+	log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=13|detail=D16"
+}
+
+llm_bridge_select_D17 = {
+	llm_bridge_clear_target = yes
+	set_country_flag = llmb_target_D17
+	log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=13|detail=D17"
+}
+
+llm_bridge_select_D18 = {
+	llm_bridge_clear_target = yes
+	set_country_flag = llmb_target_D18
+	log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=13|detail=D18"
+}
+
+llm_bridge_select_D19 = {
+	llm_bridge_clear_target = yes
+	set_country_flag = llmb_target_D19
+	log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=13|detail=D19"
+}
+
+llm_bridge_select_D20 = {
+	llm_bridge_clear_target = yes
+	set_country_flag = llmb_target_D20
+	log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=13|detail=D20"
+}
+
 llm_bridge_raise_invade = {
 	if = { limit = { has_country_flag = llmb_target_GER } set_country_flag = llmb_invade_GER log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=invade GER" }
 	if = { limit = { has_country_flag = llmb_target_ENG } set_country_flag = llmb_invade_ENG log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=invade ENG" }
@@ -741,6 +881,26 @@ llm_bridge_raise_invade = {
 	if = { limit = { has_country_flag = llmb_target_XSM } set_country_flag = llmb_invade_XSM log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=invade XSM" }
 	if = { limit = { has_country_flag = llmb_target_YEM } set_country_flag = llmb_invade_YEM log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=invade YEM" }
 	if = { limit = { has_country_flag = llmb_target_YUN } set_country_flag = llmb_invade_YUN log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=invade YUN" }
+	if = { limit = { has_country_flag = llmb_target_D01 } set_country_flag = llmb_invade_D01 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=invade D01" }
+	if = { limit = { has_country_flag = llmb_target_D02 } set_country_flag = llmb_invade_D02 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=invade D02" }
+	if = { limit = { has_country_flag = llmb_target_D03 } set_country_flag = llmb_invade_D03 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=invade D03" }
+	if = { limit = { has_country_flag = llmb_target_D04 } set_country_flag = llmb_invade_D04 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=invade D04" }
+	if = { limit = { has_country_flag = llmb_target_D05 } set_country_flag = llmb_invade_D05 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=invade D05" }
+	if = { limit = { has_country_flag = llmb_target_D06 } set_country_flag = llmb_invade_D06 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=invade D06" }
+	if = { limit = { has_country_flag = llmb_target_D07 } set_country_flag = llmb_invade_D07 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=invade D07" }
+	if = { limit = { has_country_flag = llmb_target_D08 } set_country_flag = llmb_invade_D08 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=invade D08" }
+	if = { limit = { has_country_flag = llmb_target_D09 } set_country_flag = llmb_invade_D09 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=invade D09" }
+	if = { limit = { has_country_flag = llmb_target_D10 } set_country_flag = llmb_invade_D10 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=invade D10" }
+	if = { limit = { has_country_flag = llmb_target_D11 } set_country_flag = llmb_invade_D11 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=invade D11" }
+	if = { limit = { has_country_flag = llmb_target_D12 } set_country_flag = llmb_invade_D12 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=invade D12" }
+	if = { limit = { has_country_flag = llmb_target_D13 } set_country_flag = llmb_invade_D13 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=invade D13" }
+	if = { limit = { has_country_flag = llmb_target_D14 } set_country_flag = llmb_invade_D14 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=invade D14" }
+	if = { limit = { has_country_flag = llmb_target_D15 } set_country_flag = llmb_invade_D15 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=invade D15" }
+	if = { limit = { has_country_flag = llmb_target_D16 } set_country_flag = llmb_invade_D16 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=invade D16" }
+	if = { limit = { has_country_flag = llmb_target_D17 } set_country_flag = llmb_invade_D17 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=invade D17" }
+	if = { limit = { has_country_flag = llmb_target_D18 } set_country_flag = llmb_invade_D18 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=invade D18" }
+	if = { limit = { has_country_flag = llmb_target_D19 } set_country_flag = llmb_invade_D19 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=invade D19" }
+	if = { limit = { has_country_flag = llmb_target_D20 } set_country_flag = llmb_invade_D20 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=invade D20" }
 }
 
 llm_bridge_raise_protect = {
@@ -836,6 +996,26 @@ llm_bridge_raise_protect = {
 	if = { limit = { has_country_flag = llmb_target_XSM } set_country_flag = llmb_protect_XSM log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=protect XSM" }
 	if = { limit = { has_country_flag = llmb_target_YEM } set_country_flag = llmb_protect_YEM log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=protect YEM" }
 	if = { limit = { has_country_flag = llmb_target_YUN } set_country_flag = llmb_protect_YUN log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=protect YUN" }
+	if = { limit = { has_country_flag = llmb_target_D01 } set_country_flag = llmb_protect_D01 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=protect D01" }
+	if = { limit = { has_country_flag = llmb_target_D02 } set_country_flag = llmb_protect_D02 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=protect D02" }
+	if = { limit = { has_country_flag = llmb_target_D03 } set_country_flag = llmb_protect_D03 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=protect D03" }
+	if = { limit = { has_country_flag = llmb_target_D04 } set_country_flag = llmb_protect_D04 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=protect D04" }
+	if = { limit = { has_country_flag = llmb_target_D05 } set_country_flag = llmb_protect_D05 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=protect D05" }
+	if = { limit = { has_country_flag = llmb_target_D06 } set_country_flag = llmb_protect_D06 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=protect D06" }
+	if = { limit = { has_country_flag = llmb_target_D07 } set_country_flag = llmb_protect_D07 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=protect D07" }
+	if = { limit = { has_country_flag = llmb_target_D08 } set_country_flag = llmb_protect_D08 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=protect D08" }
+	if = { limit = { has_country_flag = llmb_target_D09 } set_country_flag = llmb_protect_D09 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=protect D09" }
+	if = { limit = { has_country_flag = llmb_target_D10 } set_country_flag = llmb_protect_D10 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=protect D10" }
+	if = { limit = { has_country_flag = llmb_target_D11 } set_country_flag = llmb_protect_D11 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=protect D11" }
+	if = { limit = { has_country_flag = llmb_target_D12 } set_country_flag = llmb_protect_D12 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=protect D12" }
+	if = { limit = { has_country_flag = llmb_target_D13 } set_country_flag = llmb_protect_D13 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=protect D13" }
+	if = { limit = { has_country_flag = llmb_target_D14 } set_country_flag = llmb_protect_D14 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=protect D14" }
+	if = { limit = { has_country_flag = llmb_target_D15 } set_country_flag = llmb_protect_D15 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=protect D15" }
+	if = { limit = { has_country_flag = llmb_target_D16 } set_country_flag = llmb_protect_D16 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=protect D16" }
+	if = { limit = { has_country_flag = llmb_target_D17 } set_country_flag = llmb_protect_D17 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=protect D17" }
+	if = { limit = { has_country_flag = llmb_target_D18 } set_country_flag = llmb_protect_D18 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=protect D18" }
+	if = { limit = { has_country_flag = llmb_target_D19 } set_country_flag = llmb_protect_D19 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=protect D19" }
+	if = { limit = { has_country_flag = llmb_target_D20 } set_country_flag = llmb_protect_D20 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=protect D20" }
 }
 
 llm_bridge_raise_contain = {
@@ -931,6 +1111,26 @@ llm_bridge_raise_contain = {
 	if = { limit = { has_country_flag = llmb_target_XSM } set_country_flag = llmb_contain_XSM log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=contain XSM" }
 	if = { limit = { has_country_flag = llmb_target_YEM } set_country_flag = llmb_contain_YEM log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=contain YEM" }
 	if = { limit = { has_country_flag = llmb_target_YUN } set_country_flag = llmb_contain_YUN log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=contain YUN" }
+	if = { limit = { has_country_flag = llmb_target_D01 } set_country_flag = llmb_contain_D01 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=contain D01" }
+	if = { limit = { has_country_flag = llmb_target_D02 } set_country_flag = llmb_contain_D02 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=contain D02" }
+	if = { limit = { has_country_flag = llmb_target_D03 } set_country_flag = llmb_contain_D03 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=contain D03" }
+	if = { limit = { has_country_flag = llmb_target_D04 } set_country_flag = llmb_contain_D04 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=contain D04" }
+	if = { limit = { has_country_flag = llmb_target_D05 } set_country_flag = llmb_contain_D05 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=contain D05" }
+	if = { limit = { has_country_flag = llmb_target_D06 } set_country_flag = llmb_contain_D06 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=contain D06" }
+	if = { limit = { has_country_flag = llmb_target_D07 } set_country_flag = llmb_contain_D07 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=contain D07" }
+	if = { limit = { has_country_flag = llmb_target_D08 } set_country_flag = llmb_contain_D08 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=contain D08" }
+	if = { limit = { has_country_flag = llmb_target_D09 } set_country_flag = llmb_contain_D09 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=contain D09" }
+	if = { limit = { has_country_flag = llmb_target_D10 } set_country_flag = llmb_contain_D10 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=contain D10" }
+	if = { limit = { has_country_flag = llmb_target_D11 } set_country_flag = llmb_contain_D11 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=contain D11" }
+	if = { limit = { has_country_flag = llmb_target_D12 } set_country_flag = llmb_contain_D12 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=contain D12" }
+	if = { limit = { has_country_flag = llmb_target_D13 } set_country_flag = llmb_contain_D13 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=contain D13" }
+	if = { limit = { has_country_flag = llmb_target_D14 } set_country_flag = llmb_contain_D14 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=contain D14" }
+	if = { limit = { has_country_flag = llmb_target_D15 } set_country_flag = llmb_contain_D15 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=contain D15" }
+	if = { limit = { has_country_flag = llmb_target_D16 } set_country_flag = llmb_contain_D16 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=contain D16" }
+	if = { limit = { has_country_flag = llmb_target_D17 } set_country_flag = llmb_contain_D17 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=contain D17" }
+	if = { limit = { has_country_flag = llmb_target_D18 } set_country_flag = llmb_contain_D18 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=contain D18" }
+	if = { limit = { has_country_flag = llmb_target_D19 } set_country_flag = llmb_contain_D19 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=contain D19" }
+	if = { limit = { has_country_flag = llmb_target_D20 } set_country_flag = llmb_contain_D20 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=contain D20" }
 }
 
 llm_bridge_raise_befriend = {
@@ -1026,6 +1226,26 @@ llm_bridge_raise_befriend = {
 	if = { limit = { has_country_flag = llmb_target_XSM } set_country_flag = llmb_befriend_XSM log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=befriend XSM" }
 	if = { limit = { has_country_flag = llmb_target_YEM } set_country_flag = llmb_befriend_YEM log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=befriend YEM" }
 	if = { limit = { has_country_flag = llmb_target_YUN } set_country_flag = llmb_befriend_YUN log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=befriend YUN" }
+	if = { limit = { has_country_flag = llmb_target_D01 } set_country_flag = llmb_befriend_D01 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=befriend D01" }
+	if = { limit = { has_country_flag = llmb_target_D02 } set_country_flag = llmb_befriend_D02 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=befriend D02" }
+	if = { limit = { has_country_flag = llmb_target_D03 } set_country_flag = llmb_befriend_D03 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=befriend D03" }
+	if = { limit = { has_country_flag = llmb_target_D04 } set_country_flag = llmb_befriend_D04 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=befriend D04" }
+	if = { limit = { has_country_flag = llmb_target_D05 } set_country_flag = llmb_befriend_D05 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=befriend D05" }
+	if = { limit = { has_country_flag = llmb_target_D06 } set_country_flag = llmb_befriend_D06 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=befriend D06" }
+	if = { limit = { has_country_flag = llmb_target_D07 } set_country_flag = llmb_befriend_D07 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=befriend D07" }
+	if = { limit = { has_country_flag = llmb_target_D08 } set_country_flag = llmb_befriend_D08 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=befriend D08" }
+	if = { limit = { has_country_flag = llmb_target_D09 } set_country_flag = llmb_befriend_D09 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=befriend D09" }
+	if = { limit = { has_country_flag = llmb_target_D10 } set_country_flag = llmb_befriend_D10 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=befriend D10" }
+	if = { limit = { has_country_flag = llmb_target_D11 } set_country_flag = llmb_befriend_D11 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=befriend D11" }
+	if = { limit = { has_country_flag = llmb_target_D12 } set_country_flag = llmb_befriend_D12 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=befriend D12" }
+	if = { limit = { has_country_flag = llmb_target_D13 } set_country_flag = llmb_befriend_D13 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=befriend D13" }
+	if = { limit = { has_country_flag = llmb_target_D14 } set_country_flag = llmb_befriend_D14 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=befriend D14" }
+	if = { limit = { has_country_flag = llmb_target_D15 } set_country_flag = llmb_befriend_D15 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=befriend D15" }
+	if = { limit = { has_country_flag = llmb_target_D16 } set_country_flag = llmb_befriend_D16 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=befriend D16" }
+	if = { limit = { has_country_flag = llmb_target_D17 } set_country_flag = llmb_befriend_D17 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=befriend D17" }
+	if = { limit = { has_country_flag = llmb_target_D18 } set_country_flag = llmb_befriend_D18 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=befriend D18" }
+	if = { limit = { has_country_flag = llmb_target_D19 } set_country_flag = llmb_befriend_D19 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=befriend D19" }
+	if = { limit = { has_country_flag = llmb_target_D20 } set_country_flag = llmb_befriend_D20 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=befriend D20" }
 }
 
 llm_bridge_raise_antagonize = {
@@ -1121,6 +1341,26 @@ llm_bridge_raise_antagonize = {
 	if = { limit = { has_country_flag = llmb_target_XSM } set_country_flag = llmb_antagonize_XSM log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=antagonize XSM" }
 	if = { limit = { has_country_flag = llmb_target_YEM } set_country_flag = llmb_antagonize_YEM log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=antagonize YEM" }
 	if = { limit = { has_country_flag = llmb_target_YUN } set_country_flag = llmb_antagonize_YUN log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=antagonize YUN" }
+	if = { limit = { has_country_flag = llmb_target_D01 } set_country_flag = llmb_antagonize_D01 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=antagonize D01" }
+	if = { limit = { has_country_flag = llmb_target_D02 } set_country_flag = llmb_antagonize_D02 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=antagonize D02" }
+	if = { limit = { has_country_flag = llmb_target_D03 } set_country_flag = llmb_antagonize_D03 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=antagonize D03" }
+	if = { limit = { has_country_flag = llmb_target_D04 } set_country_flag = llmb_antagonize_D04 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=antagonize D04" }
+	if = { limit = { has_country_flag = llmb_target_D05 } set_country_flag = llmb_antagonize_D05 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=antagonize D05" }
+	if = { limit = { has_country_flag = llmb_target_D06 } set_country_flag = llmb_antagonize_D06 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=antagonize D06" }
+	if = { limit = { has_country_flag = llmb_target_D07 } set_country_flag = llmb_antagonize_D07 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=antagonize D07" }
+	if = { limit = { has_country_flag = llmb_target_D08 } set_country_flag = llmb_antagonize_D08 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=antagonize D08" }
+	if = { limit = { has_country_flag = llmb_target_D09 } set_country_flag = llmb_antagonize_D09 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=antagonize D09" }
+	if = { limit = { has_country_flag = llmb_target_D10 } set_country_flag = llmb_antagonize_D10 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=antagonize D10" }
+	if = { limit = { has_country_flag = llmb_target_D11 } set_country_flag = llmb_antagonize_D11 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=antagonize D11" }
+	if = { limit = { has_country_flag = llmb_target_D12 } set_country_flag = llmb_antagonize_D12 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=antagonize D12" }
+	if = { limit = { has_country_flag = llmb_target_D13 } set_country_flag = llmb_antagonize_D13 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=antagonize D13" }
+	if = { limit = { has_country_flag = llmb_target_D14 } set_country_flag = llmb_antagonize_D14 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=antagonize D14" }
+	if = { limit = { has_country_flag = llmb_target_D15 } set_country_flag = llmb_antagonize_D15 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=antagonize D15" }
+	if = { limit = { has_country_flag = llmb_target_D16 } set_country_flag = llmb_antagonize_D16 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=antagonize D16" }
+	if = { limit = { has_country_flag = llmb_target_D17 } set_country_flag = llmb_antagonize_D17 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=antagonize D17" }
+	if = { limit = { has_country_flag = llmb_target_D18 } set_country_flag = llmb_antagonize_D18 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=antagonize D18" }
+	if = { limit = { has_country_flag = llmb_target_D19 } set_country_flag = llmb_antagonize_D19 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=antagonize D19" }
+	if = { limit = { has_country_flag = llmb_target_D20 } set_country_flag = llmb_antagonize_D20 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=antagonize D20" }
 }
 
 llm_bridge_raise_ignore = {
@@ -1216,6 +1456,26 @@ llm_bridge_raise_ignore = {
 	if = { limit = { has_country_flag = llmb_target_XSM } set_country_flag = llmb_ignore_XSM log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=ignore XSM" }
 	if = { limit = { has_country_flag = llmb_target_YEM } set_country_flag = llmb_ignore_YEM log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=ignore YEM" }
 	if = { limit = { has_country_flag = llmb_target_YUN } set_country_flag = llmb_ignore_YUN log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=ignore YUN" }
+	if = { limit = { has_country_flag = llmb_target_D01 } set_country_flag = llmb_ignore_D01 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=ignore D01" }
+	if = { limit = { has_country_flag = llmb_target_D02 } set_country_flag = llmb_ignore_D02 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=ignore D02" }
+	if = { limit = { has_country_flag = llmb_target_D03 } set_country_flag = llmb_ignore_D03 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=ignore D03" }
+	if = { limit = { has_country_flag = llmb_target_D04 } set_country_flag = llmb_ignore_D04 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=ignore D04" }
+	if = { limit = { has_country_flag = llmb_target_D05 } set_country_flag = llmb_ignore_D05 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=ignore D05" }
+	if = { limit = { has_country_flag = llmb_target_D06 } set_country_flag = llmb_ignore_D06 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=ignore D06" }
+	if = { limit = { has_country_flag = llmb_target_D07 } set_country_flag = llmb_ignore_D07 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=ignore D07" }
+	if = { limit = { has_country_flag = llmb_target_D08 } set_country_flag = llmb_ignore_D08 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=ignore D08" }
+	if = { limit = { has_country_flag = llmb_target_D09 } set_country_flag = llmb_ignore_D09 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=ignore D09" }
+	if = { limit = { has_country_flag = llmb_target_D10 } set_country_flag = llmb_ignore_D10 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=ignore D10" }
+	if = { limit = { has_country_flag = llmb_target_D11 } set_country_flag = llmb_ignore_D11 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=ignore D11" }
+	if = { limit = { has_country_flag = llmb_target_D12 } set_country_flag = llmb_ignore_D12 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=ignore D12" }
+	if = { limit = { has_country_flag = llmb_target_D13 } set_country_flag = llmb_ignore_D13 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=ignore D13" }
+	if = { limit = { has_country_flag = llmb_target_D14 } set_country_flag = llmb_ignore_D14 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=ignore D14" }
+	if = { limit = { has_country_flag = llmb_target_D15 } set_country_flag = llmb_ignore_D15 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=ignore D15" }
+	if = { limit = { has_country_flag = llmb_target_D16 } set_country_flag = llmb_ignore_D16 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=ignore D16" }
+	if = { limit = { has_country_flag = llmb_target_D17 } set_country_flag = llmb_ignore_D17 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=ignore D17" }
+	if = { limit = { has_country_flag = llmb_target_D18 } set_country_flag = llmb_ignore_D18 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=ignore D18" }
+	if = { limit = { has_country_flag = llmb_target_D19 } set_country_flag = llmb_ignore_D19 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=ignore D19" }
+	if = { limit = { has_country_flag = llmb_target_D20 } set_country_flag = llmb_ignore_D20 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=ignore D20" }
 }
 
 llm_bridge_raise_prepare_war = {
@@ -1311,6 +1571,26 @@ llm_bridge_raise_prepare_war = {
 	if = { limit = { has_country_flag = llmb_target_XSM } set_country_flag = llmb_prepare_war_XSM log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=prepare_war XSM" }
 	if = { limit = { has_country_flag = llmb_target_YEM } set_country_flag = llmb_prepare_war_YEM log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=prepare_war YEM" }
 	if = { limit = { has_country_flag = llmb_target_YUN } set_country_flag = llmb_prepare_war_YUN log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=prepare_war YUN" }
+	if = { limit = { has_country_flag = llmb_target_D01 } set_country_flag = llmb_prepare_war_D01 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=prepare_war D01" }
+	if = { limit = { has_country_flag = llmb_target_D02 } set_country_flag = llmb_prepare_war_D02 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=prepare_war D02" }
+	if = { limit = { has_country_flag = llmb_target_D03 } set_country_flag = llmb_prepare_war_D03 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=prepare_war D03" }
+	if = { limit = { has_country_flag = llmb_target_D04 } set_country_flag = llmb_prepare_war_D04 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=prepare_war D04" }
+	if = { limit = { has_country_flag = llmb_target_D05 } set_country_flag = llmb_prepare_war_D05 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=prepare_war D05" }
+	if = { limit = { has_country_flag = llmb_target_D06 } set_country_flag = llmb_prepare_war_D06 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=prepare_war D06" }
+	if = { limit = { has_country_flag = llmb_target_D07 } set_country_flag = llmb_prepare_war_D07 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=prepare_war D07" }
+	if = { limit = { has_country_flag = llmb_target_D08 } set_country_flag = llmb_prepare_war_D08 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=prepare_war D08" }
+	if = { limit = { has_country_flag = llmb_target_D09 } set_country_flag = llmb_prepare_war_D09 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=prepare_war D09" }
+	if = { limit = { has_country_flag = llmb_target_D10 } set_country_flag = llmb_prepare_war_D10 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=prepare_war D10" }
+	if = { limit = { has_country_flag = llmb_target_D11 } set_country_flag = llmb_prepare_war_D11 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=prepare_war D11" }
+	if = { limit = { has_country_flag = llmb_target_D12 } set_country_flag = llmb_prepare_war_D12 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=prepare_war D12" }
+	if = { limit = { has_country_flag = llmb_target_D13 } set_country_flag = llmb_prepare_war_D13 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=prepare_war D13" }
+	if = { limit = { has_country_flag = llmb_target_D14 } set_country_flag = llmb_prepare_war_D14 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=prepare_war D14" }
+	if = { limit = { has_country_flag = llmb_target_D15 } set_country_flag = llmb_prepare_war_D15 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=prepare_war D15" }
+	if = { limit = { has_country_flag = llmb_target_D16 } set_country_flag = llmb_prepare_war_D16 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=prepare_war D16" }
+	if = { limit = { has_country_flag = llmb_target_D17 } set_country_flag = llmb_prepare_war_D17 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=prepare_war D17" }
+	if = { limit = { has_country_flag = llmb_target_D18 } set_country_flag = llmb_prepare_war_D18 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=prepare_war D18" }
+	if = { limit = { has_country_flag = llmb_target_D19 } set_country_flag = llmb_prepare_war_D19 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=prepare_war D19" }
+	if = { limit = { has_country_flag = llmb_target_D20 } set_country_flag = llmb_prepare_war_D20 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=prepare_war D20" }
 }
 
 llm_bridge_raise_declare_war = {
@@ -1406,6 +1686,26 @@ llm_bridge_raise_declare_war = {
 	if = { limit = { has_country_flag = llmb_target_XSM } set_country_flag = llmb_declare_war_XSM log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=declare_war XSM" }
 	if = { limit = { has_country_flag = llmb_target_YEM } set_country_flag = llmb_declare_war_YEM log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=declare_war YEM" }
 	if = { limit = { has_country_flag = llmb_target_YUN } set_country_flag = llmb_declare_war_YUN log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=declare_war YUN" }
+	if = { limit = { has_country_flag = llmb_target_D01 } set_country_flag = llmb_declare_war_D01 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=declare_war D01" }
+	if = { limit = { has_country_flag = llmb_target_D02 } set_country_flag = llmb_declare_war_D02 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=declare_war D02" }
+	if = { limit = { has_country_flag = llmb_target_D03 } set_country_flag = llmb_declare_war_D03 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=declare_war D03" }
+	if = { limit = { has_country_flag = llmb_target_D04 } set_country_flag = llmb_declare_war_D04 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=declare_war D04" }
+	if = { limit = { has_country_flag = llmb_target_D05 } set_country_flag = llmb_declare_war_D05 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=declare_war D05" }
+	if = { limit = { has_country_flag = llmb_target_D06 } set_country_flag = llmb_declare_war_D06 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=declare_war D06" }
+	if = { limit = { has_country_flag = llmb_target_D07 } set_country_flag = llmb_declare_war_D07 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=declare_war D07" }
+	if = { limit = { has_country_flag = llmb_target_D08 } set_country_flag = llmb_declare_war_D08 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=declare_war D08" }
+	if = { limit = { has_country_flag = llmb_target_D09 } set_country_flag = llmb_declare_war_D09 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=declare_war D09" }
+	if = { limit = { has_country_flag = llmb_target_D10 } set_country_flag = llmb_declare_war_D10 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=declare_war D10" }
+	if = { limit = { has_country_flag = llmb_target_D11 } set_country_flag = llmb_declare_war_D11 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=declare_war D11" }
+	if = { limit = { has_country_flag = llmb_target_D12 } set_country_flag = llmb_declare_war_D12 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=declare_war D12" }
+	if = { limit = { has_country_flag = llmb_target_D13 } set_country_flag = llmb_declare_war_D13 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=declare_war D13" }
+	if = { limit = { has_country_flag = llmb_target_D14 } set_country_flag = llmb_declare_war_D14 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=declare_war D14" }
+	if = { limit = { has_country_flag = llmb_target_D15 } set_country_flag = llmb_declare_war_D15 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=declare_war D15" }
+	if = { limit = { has_country_flag = llmb_target_D16 } set_country_flag = llmb_declare_war_D16 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=declare_war D16" }
+	if = { limit = { has_country_flag = llmb_target_D17 } set_country_flag = llmb_declare_war_D17 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=declare_war D17" }
+	if = { limit = { has_country_flag = llmb_target_D18 } set_country_flag = llmb_declare_war_D18 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=declare_war D18" }
+	if = { limit = { has_country_flag = llmb_target_D19 } set_country_flag = llmb_declare_war_D19 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=declare_war D19" }
+	if = { limit = { has_country_flag = llmb_target_D20 } set_country_flag = llmb_declare_war_D20 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=declare_war D20" }
 }
 
 llm_bridge_raise_volunteers = {
@@ -1501,6 +1801,26 @@ llm_bridge_raise_volunteers = {
 	if = { limit = { has_country_flag = llmb_target_XSM } set_country_flag = llmb_volunteers_XSM log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=volunteers XSM" }
 	if = { limit = { has_country_flag = llmb_target_YEM } set_country_flag = llmb_volunteers_YEM log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=volunteers YEM" }
 	if = { limit = { has_country_flag = llmb_target_YUN } set_country_flag = llmb_volunteers_YUN log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=volunteers YUN" }
+	if = { limit = { has_country_flag = llmb_target_D01 } set_country_flag = llmb_volunteers_D01 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=volunteers D01" }
+	if = { limit = { has_country_flag = llmb_target_D02 } set_country_flag = llmb_volunteers_D02 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=volunteers D02" }
+	if = { limit = { has_country_flag = llmb_target_D03 } set_country_flag = llmb_volunteers_D03 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=volunteers D03" }
+	if = { limit = { has_country_flag = llmb_target_D04 } set_country_flag = llmb_volunteers_D04 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=volunteers D04" }
+	if = { limit = { has_country_flag = llmb_target_D05 } set_country_flag = llmb_volunteers_D05 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=volunteers D05" }
+	if = { limit = { has_country_flag = llmb_target_D06 } set_country_flag = llmb_volunteers_D06 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=volunteers D06" }
+	if = { limit = { has_country_flag = llmb_target_D07 } set_country_flag = llmb_volunteers_D07 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=volunteers D07" }
+	if = { limit = { has_country_flag = llmb_target_D08 } set_country_flag = llmb_volunteers_D08 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=volunteers D08" }
+	if = { limit = { has_country_flag = llmb_target_D09 } set_country_flag = llmb_volunteers_D09 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=volunteers D09" }
+	if = { limit = { has_country_flag = llmb_target_D10 } set_country_flag = llmb_volunteers_D10 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=volunteers D10" }
+	if = { limit = { has_country_flag = llmb_target_D11 } set_country_flag = llmb_volunteers_D11 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=volunteers D11" }
+	if = { limit = { has_country_flag = llmb_target_D12 } set_country_flag = llmb_volunteers_D12 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=volunteers D12" }
+	if = { limit = { has_country_flag = llmb_target_D13 } set_country_flag = llmb_volunteers_D13 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=volunteers D13" }
+	if = { limit = { has_country_flag = llmb_target_D14 } set_country_flag = llmb_volunteers_D14 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=volunteers D14" }
+	if = { limit = { has_country_flag = llmb_target_D15 } set_country_flag = llmb_volunteers_D15 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=volunteers D15" }
+	if = { limit = { has_country_flag = llmb_target_D16 } set_country_flag = llmb_volunteers_D16 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=volunteers D16" }
+	if = { limit = { has_country_flag = llmb_target_D17 } set_country_flag = llmb_volunteers_D17 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=volunteers D17" }
+	if = { limit = { has_country_flag = llmb_target_D18 } set_country_flag = llmb_volunteers_D18 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=volunteers D18" }
+	if = { limit = { has_country_flag = llmb_target_D19 } set_country_flag = llmb_volunteers_D19 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=volunteers D19" }
+	if = { limit = { has_country_flag = llmb_target_D20 } set_country_flag = llmb_volunteers_D20 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=volunteers D20" }
 }
 
 llm_bridge_raise_lend_lease = {
@@ -1596,6 +1916,26 @@ llm_bridge_raise_lend_lease = {
 	if = { limit = { has_country_flag = llmb_target_XSM } set_country_flag = llmb_lend_lease_XSM log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=lend_lease XSM" }
 	if = { limit = { has_country_flag = llmb_target_YEM } set_country_flag = llmb_lend_lease_YEM log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=lend_lease YEM" }
 	if = { limit = { has_country_flag = llmb_target_YUN } set_country_flag = llmb_lend_lease_YUN log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=lend_lease YUN" }
+	if = { limit = { has_country_flag = llmb_target_D01 } set_country_flag = llmb_lend_lease_D01 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=lend_lease D01" }
+	if = { limit = { has_country_flag = llmb_target_D02 } set_country_flag = llmb_lend_lease_D02 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=lend_lease D02" }
+	if = { limit = { has_country_flag = llmb_target_D03 } set_country_flag = llmb_lend_lease_D03 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=lend_lease D03" }
+	if = { limit = { has_country_flag = llmb_target_D04 } set_country_flag = llmb_lend_lease_D04 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=lend_lease D04" }
+	if = { limit = { has_country_flag = llmb_target_D05 } set_country_flag = llmb_lend_lease_D05 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=lend_lease D05" }
+	if = { limit = { has_country_flag = llmb_target_D06 } set_country_flag = llmb_lend_lease_D06 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=lend_lease D06" }
+	if = { limit = { has_country_flag = llmb_target_D07 } set_country_flag = llmb_lend_lease_D07 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=lend_lease D07" }
+	if = { limit = { has_country_flag = llmb_target_D08 } set_country_flag = llmb_lend_lease_D08 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=lend_lease D08" }
+	if = { limit = { has_country_flag = llmb_target_D09 } set_country_flag = llmb_lend_lease_D09 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=lend_lease D09" }
+	if = { limit = { has_country_flag = llmb_target_D10 } set_country_flag = llmb_lend_lease_D10 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=lend_lease D10" }
+	if = { limit = { has_country_flag = llmb_target_D11 } set_country_flag = llmb_lend_lease_D11 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=lend_lease D11" }
+	if = { limit = { has_country_flag = llmb_target_D12 } set_country_flag = llmb_lend_lease_D12 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=lend_lease D12" }
+	if = { limit = { has_country_flag = llmb_target_D13 } set_country_flag = llmb_lend_lease_D13 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=lend_lease D13" }
+	if = { limit = { has_country_flag = llmb_target_D14 } set_country_flag = llmb_lend_lease_D14 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=lend_lease D14" }
+	if = { limit = { has_country_flag = llmb_target_D15 } set_country_flag = llmb_lend_lease_D15 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=lend_lease D15" }
+	if = { limit = { has_country_flag = llmb_target_D16 } set_country_flag = llmb_lend_lease_D16 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=lend_lease D16" }
+	if = { limit = { has_country_flag = llmb_target_D17 } set_country_flag = llmb_lend_lease_D17 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=lend_lease D17" }
+	if = { limit = { has_country_flag = llmb_target_D18 } set_country_flag = llmb_lend_lease_D18 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=lend_lease D18" }
+	if = { limit = { has_country_flag = llmb_target_D19 } set_country_flag = llmb_lend_lease_D19 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=lend_lease D19" }
+	if = { limit = { has_country_flag = llmb_target_D20 } set_country_flag = llmb_lend_lease_D20 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=lend_lease D20" }
 }
 
 llm_bridge_raise_ally = {
@@ -1691,6 +2031,26 @@ llm_bridge_raise_ally = {
 	if = { limit = { has_country_flag = llmb_target_XSM } set_country_flag = llmb_ally_XSM log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=ally XSM" }
 	if = { limit = { has_country_flag = llmb_target_YEM } set_country_flag = llmb_ally_YEM log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=ally YEM" }
 	if = { limit = { has_country_flag = llmb_target_YUN } set_country_flag = llmb_ally_YUN log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=ally YUN" }
+	if = { limit = { has_country_flag = llmb_target_D01 } set_country_flag = llmb_ally_D01 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=ally D01" }
+	if = { limit = { has_country_flag = llmb_target_D02 } set_country_flag = llmb_ally_D02 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=ally D02" }
+	if = { limit = { has_country_flag = llmb_target_D03 } set_country_flag = llmb_ally_D03 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=ally D03" }
+	if = { limit = { has_country_flag = llmb_target_D04 } set_country_flag = llmb_ally_D04 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=ally D04" }
+	if = { limit = { has_country_flag = llmb_target_D05 } set_country_flag = llmb_ally_D05 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=ally D05" }
+	if = { limit = { has_country_flag = llmb_target_D06 } set_country_flag = llmb_ally_D06 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=ally D06" }
+	if = { limit = { has_country_flag = llmb_target_D07 } set_country_flag = llmb_ally_D07 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=ally D07" }
+	if = { limit = { has_country_flag = llmb_target_D08 } set_country_flag = llmb_ally_D08 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=ally D08" }
+	if = { limit = { has_country_flag = llmb_target_D09 } set_country_flag = llmb_ally_D09 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=ally D09" }
+	if = { limit = { has_country_flag = llmb_target_D10 } set_country_flag = llmb_ally_D10 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=ally D10" }
+	if = { limit = { has_country_flag = llmb_target_D11 } set_country_flag = llmb_ally_D11 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=ally D11" }
+	if = { limit = { has_country_flag = llmb_target_D12 } set_country_flag = llmb_ally_D12 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=ally D12" }
+	if = { limit = { has_country_flag = llmb_target_D13 } set_country_flag = llmb_ally_D13 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=ally D13" }
+	if = { limit = { has_country_flag = llmb_target_D14 } set_country_flag = llmb_ally_D14 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=ally D14" }
+	if = { limit = { has_country_flag = llmb_target_D15 } set_country_flag = llmb_ally_D15 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=ally D15" }
+	if = { limit = { has_country_flag = llmb_target_D16 } set_country_flag = llmb_ally_D16 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=ally D16" }
+	if = { limit = { has_country_flag = llmb_target_D17 } set_country_flag = llmb_ally_D17 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=ally D17" }
+	if = { limit = { has_country_flag = llmb_target_D18 } set_country_flag = llmb_ally_D18 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=ally D18" }
+	if = { limit = { has_country_flag = llmb_target_D19 } set_country_flag = llmb_ally_D19 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=ally D19" }
+	if = { limit = { has_country_flag = llmb_target_D20 } set_country_flag = llmb_ally_D20 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=ally D20" }
 }
 
 llm_bridge_raise_spy_on = {
@@ -1786,6 +2146,26 @@ llm_bridge_raise_spy_on = {
 	if = { limit = { has_country_flag = llmb_target_XSM } set_country_flag = llmb_spy_on_XSM log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=spy_on XSM" }
 	if = { limit = { has_country_flag = llmb_target_YEM } set_country_flag = llmb_spy_on_YEM log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=spy_on YEM" }
 	if = { limit = { has_country_flag = llmb_target_YUN } set_country_flag = llmb_spy_on_YUN log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=spy_on YUN" }
+	if = { limit = { has_country_flag = llmb_target_D01 } set_country_flag = llmb_spy_on_D01 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=spy_on D01" }
+	if = { limit = { has_country_flag = llmb_target_D02 } set_country_flag = llmb_spy_on_D02 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=spy_on D02" }
+	if = { limit = { has_country_flag = llmb_target_D03 } set_country_flag = llmb_spy_on_D03 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=spy_on D03" }
+	if = { limit = { has_country_flag = llmb_target_D04 } set_country_flag = llmb_spy_on_D04 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=spy_on D04" }
+	if = { limit = { has_country_flag = llmb_target_D05 } set_country_flag = llmb_spy_on_D05 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=spy_on D05" }
+	if = { limit = { has_country_flag = llmb_target_D06 } set_country_flag = llmb_spy_on_D06 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=spy_on D06" }
+	if = { limit = { has_country_flag = llmb_target_D07 } set_country_flag = llmb_spy_on_D07 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=spy_on D07" }
+	if = { limit = { has_country_flag = llmb_target_D08 } set_country_flag = llmb_spy_on_D08 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=spy_on D08" }
+	if = { limit = { has_country_flag = llmb_target_D09 } set_country_flag = llmb_spy_on_D09 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=spy_on D09" }
+	if = { limit = { has_country_flag = llmb_target_D10 } set_country_flag = llmb_spy_on_D10 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=spy_on D10" }
+	if = { limit = { has_country_flag = llmb_target_D11 } set_country_flag = llmb_spy_on_D11 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=spy_on D11" }
+	if = { limit = { has_country_flag = llmb_target_D12 } set_country_flag = llmb_spy_on_D12 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=spy_on D12" }
+	if = { limit = { has_country_flag = llmb_target_D13 } set_country_flag = llmb_spy_on_D13 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=spy_on D13" }
+	if = { limit = { has_country_flag = llmb_target_D14 } set_country_flag = llmb_spy_on_D14 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=spy_on D14" }
+	if = { limit = { has_country_flag = llmb_target_D15 } set_country_flag = llmb_spy_on_D15 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=spy_on D15" }
+	if = { limit = { has_country_flag = llmb_target_D16 } set_country_flag = llmb_spy_on_D16 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=spy_on D16" }
+	if = { limit = { has_country_flag = llmb_target_D17 } set_country_flag = llmb_spy_on_D17 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=spy_on D17" }
+	if = { limit = { has_country_flag = llmb_target_D18 } set_country_flag = llmb_spy_on_D18 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=spy_on D18" }
+	if = { limit = { has_country_flag = llmb_target_D19 } set_country_flag = llmb_spy_on_D19 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=spy_on D19" }
+	if = { limit = { has_country_flag = llmb_target_D20 } set_country_flag = llmb_spy_on_D20 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=spy_on D20" }
 }
 
 llm_bridge_raise_sabotage = {
@@ -1881,6 +2261,26 @@ llm_bridge_raise_sabotage = {
 	if = { limit = { has_country_flag = llmb_target_XSM } set_country_flag = llmb_sabotage_XSM log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=sabotage XSM" }
 	if = { limit = { has_country_flag = llmb_target_YEM } set_country_flag = llmb_sabotage_YEM log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=sabotage YEM" }
 	if = { limit = { has_country_flag = llmb_target_YUN } set_country_flag = llmb_sabotage_YUN log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=sabotage YUN" }
+	if = { limit = { has_country_flag = llmb_target_D01 } set_country_flag = llmb_sabotage_D01 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=sabotage D01" }
+	if = { limit = { has_country_flag = llmb_target_D02 } set_country_flag = llmb_sabotage_D02 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=sabotage D02" }
+	if = { limit = { has_country_flag = llmb_target_D03 } set_country_flag = llmb_sabotage_D03 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=sabotage D03" }
+	if = { limit = { has_country_flag = llmb_target_D04 } set_country_flag = llmb_sabotage_D04 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=sabotage D04" }
+	if = { limit = { has_country_flag = llmb_target_D05 } set_country_flag = llmb_sabotage_D05 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=sabotage D05" }
+	if = { limit = { has_country_flag = llmb_target_D06 } set_country_flag = llmb_sabotage_D06 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=sabotage D06" }
+	if = { limit = { has_country_flag = llmb_target_D07 } set_country_flag = llmb_sabotage_D07 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=sabotage D07" }
+	if = { limit = { has_country_flag = llmb_target_D08 } set_country_flag = llmb_sabotage_D08 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=sabotage D08" }
+	if = { limit = { has_country_flag = llmb_target_D09 } set_country_flag = llmb_sabotage_D09 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=sabotage D09" }
+	if = { limit = { has_country_flag = llmb_target_D10 } set_country_flag = llmb_sabotage_D10 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=sabotage D10" }
+	if = { limit = { has_country_flag = llmb_target_D11 } set_country_flag = llmb_sabotage_D11 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=sabotage D11" }
+	if = { limit = { has_country_flag = llmb_target_D12 } set_country_flag = llmb_sabotage_D12 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=sabotage D12" }
+	if = { limit = { has_country_flag = llmb_target_D13 } set_country_flag = llmb_sabotage_D13 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=sabotage D13" }
+	if = { limit = { has_country_flag = llmb_target_D14 } set_country_flag = llmb_sabotage_D14 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=sabotage D14" }
+	if = { limit = { has_country_flag = llmb_target_D15 } set_country_flag = llmb_sabotage_D15 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=sabotage D15" }
+	if = { limit = { has_country_flag = llmb_target_D16 } set_country_flag = llmb_sabotage_D16 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=sabotage D16" }
+	if = { limit = { has_country_flag = llmb_target_D17 } set_country_flag = llmb_sabotage_D17 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=sabotage D17" }
+	if = { limit = { has_country_flag = llmb_target_D18 } set_country_flag = llmb_sabotage_D18 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=sabotage D18" }
+	if = { limit = { has_country_flag = llmb_target_D19 } set_country_flag = llmb_sabotage_D19 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=sabotage D19" }
+	if = { limit = { has_country_flag = llmb_target_D20 } set_country_flag = llmb_sabotage_D20 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=sabotage D20" }
 }
 
 llm_bridge_raise_steal_tech = {
@@ -1976,6 +2376,26 @@ llm_bridge_raise_steal_tech = {
 	if = { limit = { has_country_flag = llmb_target_XSM } set_country_flag = llmb_steal_tech_XSM log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=steal_tech XSM" }
 	if = { limit = { has_country_flag = llmb_target_YEM } set_country_flag = llmb_steal_tech_YEM log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=steal_tech YEM" }
 	if = { limit = { has_country_flag = llmb_target_YUN } set_country_flag = llmb_steal_tech_YUN log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=steal_tech YUN" }
+	if = { limit = { has_country_flag = llmb_target_D01 } set_country_flag = llmb_steal_tech_D01 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=steal_tech D01" }
+	if = { limit = { has_country_flag = llmb_target_D02 } set_country_flag = llmb_steal_tech_D02 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=steal_tech D02" }
+	if = { limit = { has_country_flag = llmb_target_D03 } set_country_flag = llmb_steal_tech_D03 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=steal_tech D03" }
+	if = { limit = { has_country_flag = llmb_target_D04 } set_country_flag = llmb_steal_tech_D04 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=steal_tech D04" }
+	if = { limit = { has_country_flag = llmb_target_D05 } set_country_flag = llmb_steal_tech_D05 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=steal_tech D05" }
+	if = { limit = { has_country_flag = llmb_target_D06 } set_country_flag = llmb_steal_tech_D06 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=steal_tech D06" }
+	if = { limit = { has_country_flag = llmb_target_D07 } set_country_flag = llmb_steal_tech_D07 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=steal_tech D07" }
+	if = { limit = { has_country_flag = llmb_target_D08 } set_country_flag = llmb_steal_tech_D08 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=steal_tech D08" }
+	if = { limit = { has_country_flag = llmb_target_D09 } set_country_flag = llmb_steal_tech_D09 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=steal_tech D09" }
+	if = { limit = { has_country_flag = llmb_target_D10 } set_country_flag = llmb_steal_tech_D10 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=steal_tech D10" }
+	if = { limit = { has_country_flag = llmb_target_D11 } set_country_flag = llmb_steal_tech_D11 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=steal_tech D11" }
+	if = { limit = { has_country_flag = llmb_target_D12 } set_country_flag = llmb_steal_tech_D12 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=steal_tech D12" }
+	if = { limit = { has_country_flag = llmb_target_D13 } set_country_flag = llmb_steal_tech_D13 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=steal_tech D13" }
+	if = { limit = { has_country_flag = llmb_target_D14 } set_country_flag = llmb_steal_tech_D14 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=steal_tech D14" }
+	if = { limit = { has_country_flag = llmb_target_D15 } set_country_flag = llmb_steal_tech_D15 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=steal_tech D15" }
+	if = { limit = { has_country_flag = llmb_target_D16 } set_country_flag = llmb_steal_tech_D16 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=steal_tech D16" }
+	if = { limit = { has_country_flag = llmb_target_D17 } set_country_flag = llmb_steal_tech_D17 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=steal_tech D17" }
+	if = { limit = { has_country_flag = llmb_target_D18 } set_country_flag = llmb_steal_tech_D18 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=steal_tech D18" }
+	if = { limit = { has_country_flag = llmb_target_D19 } set_country_flag = llmb_steal_tech_D19 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=steal_tech D19" }
+	if = { limit = { has_country_flag = llmb_target_D20 } set_country_flag = llmb_steal_tech_D20 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=14|detail=steal_tech D20" }
 }
 
 llm_bridge_clear_theater_postures = {
@@ -2071,6 +2491,26 @@ llm_bridge_clear_theater_postures = {
 	clr_country_flag = llmb_posture_defensive_XSM
 	clr_country_flag = llmb_posture_defensive_YEM
 	clr_country_flag = llmb_posture_defensive_YUN
+	clr_country_flag = llmb_posture_defensive_D01
+	clr_country_flag = llmb_posture_defensive_D02
+	clr_country_flag = llmb_posture_defensive_D03
+	clr_country_flag = llmb_posture_defensive_D04
+	clr_country_flag = llmb_posture_defensive_D05
+	clr_country_flag = llmb_posture_defensive_D06
+	clr_country_flag = llmb_posture_defensive_D07
+	clr_country_flag = llmb_posture_defensive_D08
+	clr_country_flag = llmb_posture_defensive_D09
+	clr_country_flag = llmb_posture_defensive_D10
+	clr_country_flag = llmb_posture_defensive_D11
+	clr_country_flag = llmb_posture_defensive_D12
+	clr_country_flag = llmb_posture_defensive_D13
+	clr_country_flag = llmb_posture_defensive_D14
+	clr_country_flag = llmb_posture_defensive_D15
+	clr_country_flag = llmb_posture_defensive_D16
+	clr_country_flag = llmb_posture_defensive_D17
+	clr_country_flag = llmb_posture_defensive_D18
+	clr_country_flag = llmb_posture_defensive_D19
+	clr_country_flag = llmb_posture_defensive_D20
 	clr_country_flag = llmb_posture_offensive_GER
 	clr_country_flag = llmb_posture_offensive_ENG
 	clr_country_flag = llmb_posture_offensive_FRA
@@ -2163,6 +2603,26 @@ llm_bridge_clear_theater_postures = {
 	clr_country_flag = llmb_posture_offensive_XSM
 	clr_country_flag = llmb_posture_offensive_YEM
 	clr_country_flag = llmb_posture_offensive_YUN
+	clr_country_flag = llmb_posture_offensive_D01
+	clr_country_flag = llmb_posture_offensive_D02
+	clr_country_flag = llmb_posture_offensive_D03
+	clr_country_flag = llmb_posture_offensive_D04
+	clr_country_flag = llmb_posture_offensive_D05
+	clr_country_flag = llmb_posture_offensive_D06
+	clr_country_flag = llmb_posture_offensive_D07
+	clr_country_flag = llmb_posture_offensive_D08
+	clr_country_flag = llmb_posture_offensive_D09
+	clr_country_flag = llmb_posture_offensive_D10
+	clr_country_flag = llmb_posture_offensive_D11
+	clr_country_flag = llmb_posture_offensive_D12
+	clr_country_flag = llmb_posture_offensive_D13
+	clr_country_flag = llmb_posture_offensive_D14
+	clr_country_flag = llmb_posture_offensive_D15
+	clr_country_flag = llmb_posture_offensive_D16
+	clr_country_flag = llmb_posture_offensive_D17
+	clr_country_flag = llmb_posture_offensive_D18
+	clr_country_flag = llmb_posture_offensive_D19
+	clr_country_flag = llmb_posture_offensive_D20
 }
 
 llm_bridge_raise_theater_defensive = {
@@ -2258,6 +2718,26 @@ llm_bridge_raise_theater_defensive = {
 	if = { limit = { has_country_flag = llmb_target_XSM } clr_country_flag = llmb_posture_defensive_XSM clr_country_flag = llmb_posture_offensive_XSM set_country_flag = llmb_posture_defensive_XSM log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=15|detail=defensive XSM" }
 	if = { limit = { has_country_flag = llmb_target_YEM } clr_country_flag = llmb_posture_defensive_YEM clr_country_flag = llmb_posture_offensive_YEM set_country_flag = llmb_posture_defensive_YEM log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=15|detail=defensive YEM" }
 	if = { limit = { has_country_flag = llmb_target_YUN } clr_country_flag = llmb_posture_defensive_YUN clr_country_flag = llmb_posture_offensive_YUN set_country_flag = llmb_posture_defensive_YUN log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=15|detail=defensive YUN" }
+	if = { limit = { has_country_flag = llmb_target_D01 } clr_country_flag = llmb_posture_defensive_D01 clr_country_flag = llmb_posture_offensive_D01 set_country_flag = llmb_posture_defensive_D01 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=15|detail=defensive D01" }
+	if = { limit = { has_country_flag = llmb_target_D02 } clr_country_flag = llmb_posture_defensive_D02 clr_country_flag = llmb_posture_offensive_D02 set_country_flag = llmb_posture_defensive_D02 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=15|detail=defensive D02" }
+	if = { limit = { has_country_flag = llmb_target_D03 } clr_country_flag = llmb_posture_defensive_D03 clr_country_flag = llmb_posture_offensive_D03 set_country_flag = llmb_posture_defensive_D03 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=15|detail=defensive D03" }
+	if = { limit = { has_country_flag = llmb_target_D04 } clr_country_flag = llmb_posture_defensive_D04 clr_country_flag = llmb_posture_offensive_D04 set_country_flag = llmb_posture_defensive_D04 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=15|detail=defensive D04" }
+	if = { limit = { has_country_flag = llmb_target_D05 } clr_country_flag = llmb_posture_defensive_D05 clr_country_flag = llmb_posture_offensive_D05 set_country_flag = llmb_posture_defensive_D05 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=15|detail=defensive D05" }
+	if = { limit = { has_country_flag = llmb_target_D06 } clr_country_flag = llmb_posture_defensive_D06 clr_country_flag = llmb_posture_offensive_D06 set_country_flag = llmb_posture_defensive_D06 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=15|detail=defensive D06" }
+	if = { limit = { has_country_flag = llmb_target_D07 } clr_country_flag = llmb_posture_defensive_D07 clr_country_flag = llmb_posture_offensive_D07 set_country_flag = llmb_posture_defensive_D07 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=15|detail=defensive D07" }
+	if = { limit = { has_country_flag = llmb_target_D08 } clr_country_flag = llmb_posture_defensive_D08 clr_country_flag = llmb_posture_offensive_D08 set_country_flag = llmb_posture_defensive_D08 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=15|detail=defensive D08" }
+	if = { limit = { has_country_flag = llmb_target_D09 } clr_country_flag = llmb_posture_defensive_D09 clr_country_flag = llmb_posture_offensive_D09 set_country_flag = llmb_posture_defensive_D09 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=15|detail=defensive D09" }
+	if = { limit = { has_country_flag = llmb_target_D10 } clr_country_flag = llmb_posture_defensive_D10 clr_country_flag = llmb_posture_offensive_D10 set_country_flag = llmb_posture_defensive_D10 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=15|detail=defensive D10" }
+	if = { limit = { has_country_flag = llmb_target_D11 } clr_country_flag = llmb_posture_defensive_D11 clr_country_flag = llmb_posture_offensive_D11 set_country_flag = llmb_posture_defensive_D11 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=15|detail=defensive D11" }
+	if = { limit = { has_country_flag = llmb_target_D12 } clr_country_flag = llmb_posture_defensive_D12 clr_country_flag = llmb_posture_offensive_D12 set_country_flag = llmb_posture_defensive_D12 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=15|detail=defensive D12" }
+	if = { limit = { has_country_flag = llmb_target_D13 } clr_country_flag = llmb_posture_defensive_D13 clr_country_flag = llmb_posture_offensive_D13 set_country_flag = llmb_posture_defensive_D13 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=15|detail=defensive D13" }
+	if = { limit = { has_country_flag = llmb_target_D14 } clr_country_flag = llmb_posture_defensive_D14 clr_country_flag = llmb_posture_offensive_D14 set_country_flag = llmb_posture_defensive_D14 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=15|detail=defensive D14" }
+	if = { limit = { has_country_flag = llmb_target_D15 } clr_country_flag = llmb_posture_defensive_D15 clr_country_flag = llmb_posture_offensive_D15 set_country_flag = llmb_posture_defensive_D15 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=15|detail=defensive D15" }
+	if = { limit = { has_country_flag = llmb_target_D16 } clr_country_flag = llmb_posture_defensive_D16 clr_country_flag = llmb_posture_offensive_D16 set_country_flag = llmb_posture_defensive_D16 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=15|detail=defensive D16" }
+	if = { limit = { has_country_flag = llmb_target_D17 } clr_country_flag = llmb_posture_defensive_D17 clr_country_flag = llmb_posture_offensive_D17 set_country_flag = llmb_posture_defensive_D17 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=15|detail=defensive D17" }
+	if = { limit = { has_country_flag = llmb_target_D18 } clr_country_flag = llmb_posture_defensive_D18 clr_country_flag = llmb_posture_offensive_D18 set_country_flag = llmb_posture_defensive_D18 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=15|detail=defensive D18" }
+	if = { limit = { has_country_flag = llmb_target_D19 } clr_country_flag = llmb_posture_defensive_D19 clr_country_flag = llmb_posture_offensive_D19 set_country_flag = llmb_posture_defensive_D19 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=15|detail=defensive D19" }
+	if = { limit = { has_country_flag = llmb_target_D20 } clr_country_flag = llmb_posture_defensive_D20 clr_country_flag = llmb_posture_offensive_D20 set_country_flag = llmb_posture_defensive_D20 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=15|detail=defensive D20" }
 }
 
 llm_bridge_raise_theater_offensive = {
@@ -2353,6 +2833,26 @@ llm_bridge_raise_theater_offensive = {
 	if = { limit = { has_country_flag = llmb_target_XSM } clr_country_flag = llmb_posture_defensive_XSM clr_country_flag = llmb_posture_offensive_XSM set_country_flag = llmb_posture_offensive_XSM log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=15|detail=offensive XSM" }
 	if = { limit = { has_country_flag = llmb_target_YEM } clr_country_flag = llmb_posture_defensive_YEM clr_country_flag = llmb_posture_offensive_YEM set_country_flag = llmb_posture_offensive_YEM log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=15|detail=offensive YEM" }
 	if = { limit = { has_country_flag = llmb_target_YUN } clr_country_flag = llmb_posture_defensive_YUN clr_country_flag = llmb_posture_offensive_YUN set_country_flag = llmb_posture_offensive_YUN log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=15|detail=offensive YUN" }
+	if = { limit = { has_country_flag = llmb_target_D01 } clr_country_flag = llmb_posture_defensive_D01 clr_country_flag = llmb_posture_offensive_D01 set_country_flag = llmb_posture_offensive_D01 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=15|detail=offensive D01" }
+	if = { limit = { has_country_flag = llmb_target_D02 } clr_country_flag = llmb_posture_defensive_D02 clr_country_flag = llmb_posture_offensive_D02 set_country_flag = llmb_posture_offensive_D02 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=15|detail=offensive D02" }
+	if = { limit = { has_country_flag = llmb_target_D03 } clr_country_flag = llmb_posture_defensive_D03 clr_country_flag = llmb_posture_offensive_D03 set_country_flag = llmb_posture_offensive_D03 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=15|detail=offensive D03" }
+	if = { limit = { has_country_flag = llmb_target_D04 } clr_country_flag = llmb_posture_defensive_D04 clr_country_flag = llmb_posture_offensive_D04 set_country_flag = llmb_posture_offensive_D04 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=15|detail=offensive D04" }
+	if = { limit = { has_country_flag = llmb_target_D05 } clr_country_flag = llmb_posture_defensive_D05 clr_country_flag = llmb_posture_offensive_D05 set_country_flag = llmb_posture_offensive_D05 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=15|detail=offensive D05" }
+	if = { limit = { has_country_flag = llmb_target_D06 } clr_country_flag = llmb_posture_defensive_D06 clr_country_flag = llmb_posture_offensive_D06 set_country_flag = llmb_posture_offensive_D06 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=15|detail=offensive D06" }
+	if = { limit = { has_country_flag = llmb_target_D07 } clr_country_flag = llmb_posture_defensive_D07 clr_country_flag = llmb_posture_offensive_D07 set_country_flag = llmb_posture_offensive_D07 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=15|detail=offensive D07" }
+	if = { limit = { has_country_flag = llmb_target_D08 } clr_country_flag = llmb_posture_defensive_D08 clr_country_flag = llmb_posture_offensive_D08 set_country_flag = llmb_posture_offensive_D08 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=15|detail=offensive D08" }
+	if = { limit = { has_country_flag = llmb_target_D09 } clr_country_flag = llmb_posture_defensive_D09 clr_country_flag = llmb_posture_offensive_D09 set_country_flag = llmb_posture_offensive_D09 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=15|detail=offensive D09" }
+	if = { limit = { has_country_flag = llmb_target_D10 } clr_country_flag = llmb_posture_defensive_D10 clr_country_flag = llmb_posture_offensive_D10 set_country_flag = llmb_posture_offensive_D10 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=15|detail=offensive D10" }
+	if = { limit = { has_country_flag = llmb_target_D11 } clr_country_flag = llmb_posture_defensive_D11 clr_country_flag = llmb_posture_offensive_D11 set_country_flag = llmb_posture_offensive_D11 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=15|detail=offensive D11" }
+	if = { limit = { has_country_flag = llmb_target_D12 } clr_country_flag = llmb_posture_defensive_D12 clr_country_flag = llmb_posture_offensive_D12 set_country_flag = llmb_posture_offensive_D12 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=15|detail=offensive D12" }
+	if = { limit = { has_country_flag = llmb_target_D13 } clr_country_flag = llmb_posture_defensive_D13 clr_country_flag = llmb_posture_offensive_D13 set_country_flag = llmb_posture_offensive_D13 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=15|detail=offensive D13" }
+	if = { limit = { has_country_flag = llmb_target_D14 } clr_country_flag = llmb_posture_defensive_D14 clr_country_flag = llmb_posture_offensive_D14 set_country_flag = llmb_posture_offensive_D14 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=15|detail=offensive D14" }
+	if = { limit = { has_country_flag = llmb_target_D15 } clr_country_flag = llmb_posture_defensive_D15 clr_country_flag = llmb_posture_offensive_D15 set_country_flag = llmb_posture_offensive_D15 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=15|detail=offensive D15" }
+	if = { limit = { has_country_flag = llmb_target_D16 } clr_country_flag = llmb_posture_defensive_D16 clr_country_flag = llmb_posture_offensive_D16 set_country_flag = llmb_posture_offensive_D16 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=15|detail=offensive D16" }
+	if = { limit = { has_country_flag = llmb_target_D17 } clr_country_flag = llmb_posture_defensive_D17 clr_country_flag = llmb_posture_offensive_D17 set_country_flag = llmb_posture_offensive_D17 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=15|detail=offensive D17" }
+	if = { limit = { has_country_flag = llmb_target_D18 } clr_country_flag = llmb_posture_defensive_D18 clr_country_flag = llmb_posture_offensive_D18 set_country_flag = llmb_posture_offensive_D18 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=15|detail=offensive D18" }
+	if = { limit = { has_country_flag = llmb_target_D19 } clr_country_flag = llmb_posture_defensive_D19 clr_country_flag = llmb_posture_offensive_D19 set_country_flag = llmb_posture_offensive_D19 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=15|detail=offensive D19" }
+	if = { limit = { has_country_flag = llmb_target_D20 } clr_country_flag = llmb_posture_defensive_D20 clr_country_flag = llmb_posture_offensive_D20 set_country_flag = llmb_posture_offensive_D20 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=15|detail=offensive D20" }
 }
 
 llm_bridge_raise_theater_balanced = {
@@ -2448,6 +2948,26 @@ llm_bridge_raise_theater_balanced = {
 	if = { limit = { has_country_flag = llmb_target_XSM } clr_country_flag = llmb_posture_defensive_XSM clr_country_flag = llmb_posture_offensive_XSM log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=15|detail=balanced XSM" }
 	if = { limit = { has_country_flag = llmb_target_YEM } clr_country_flag = llmb_posture_defensive_YEM clr_country_flag = llmb_posture_offensive_YEM log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=15|detail=balanced YEM" }
 	if = { limit = { has_country_flag = llmb_target_YUN } clr_country_flag = llmb_posture_defensive_YUN clr_country_flag = llmb_posture_offensive_YUN log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=15|detail=balanced YUN" }
+	if = { limit = { has_country_flag = llmb_target_D01 } clr_country_flag = llmb_posture_defensive_D01 clr_country_flag = llmb_posture_offensive_D01 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=15|detail=balanced D01" }
+	if = { limit = { has_country_flag = llmb_target_D02 } clr_country_flag = llmb_posture_defensive_D02 clr_country_flag = llmb_posture_offensive_D02 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=15|detail=balanced D02" }
+	if = { limit = { has_country_flag = llmb_target_D03 } clr_country_flag = llmb_posture_defensive_D03 clr_country_flag = llmb_posture_offensive_D03 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=15|detail=balanced D03" }
+	if = { limit = { has_country_flag = llmb_target_D04 } clr_country_flag = llmb_posture_defensive_D04 clr_country_flag = llmb_posture_offensive_D04 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=15|detail=balanced D04" }
+	if = { limit = { has_country_flag = llmb_target_D05 } clr_country_flag = llmb_posture_defensive_D05 clr_country_flag = llmb_posture_offensive_D05 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=15|detail=balanced D05" }
+	if = { limit = { has_country_flag = llmb_target_D06 } clr_country_flag = llmb_posture_defensive_D06 clr_country_flag = llmb_posture_offensive_D06 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=15|detail=balanced D06" }
+	if = { limit = { has_country_flag = llmb_target_D07 } clr_country_flag = llmb_posture_defensive_D07 clr_country_flag = llmb_posture_offensive_D07 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=15|detail=balanced D07" }
+	if = { limit = { has_country_flag = llmb_target_D08 } clr_country_flag = llmb_posture_defensive_D08 clr_country_flag = llmb_posture_offensive_D08 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=15|detail=balanced D08" }
+	if = { limit = { has_country_flag = llmb_target_D09 } clr_country_flag = llmb_posture_defensive_D09 clr_country_flag = llmb_posture_offensive_D09 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=15|detail=balanced D09" }
+	if = { limit = { has_country_flag = llmb_target_D10 } clr_country_flag = llmb_posture_defensive_D10 clr_country_flag = llmb_posture_offensive_D10 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=15|detail=balanced D10" }
+	if = { limit = { has_country_flag = llmb_target_D11 } clr_country_flag = llmb_posture_defensive_D11 clr_country_flag = llmb_posture_offensive_D11 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=15|detail=balanced D11" }
+	if = { limit = { has_country_flag = llmb_target_D12 } clr_country_flag = llmb_posture_defensive_D12 clr_country_flag = llmb_posture_offensive_D12 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=15|detail=balanced D12" }
+	if = { limit = { has_country_flag = llmb_target_D13 } clr_country_flag = llmb_posture_defensive_D13 clr_country_flag = llmb_posture_offensive_D13 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=15|detail=balanced D13" }
+	if = { limit = { has_country_flag = llmb_target_D14 } clr_country_flag = llmb_posture_defensive_D14 clr_country_flag = llmb_posture_offensive_D14 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=15|detail=balanced D14" }
+	if = { limit = { has_country_flag = llmb_target_D15 } clr_country_flag = llmb_posture_defensive_D15 clr_country_flag = llmb_posture_offensive_D15 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=15|detail=balanced D15" }
+	if = { limit = { has_country_flag = llmb_target_D16 } clr_country_flag = llmb_posture_defensive_D16 clr_country_flag = llmb_posture_offensive_D16 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=15|detail=balanced D16" }
+	if = { limit = { has_country_flag = llmb_target_D17 } clr_country_flag = llmb_posture_defensive_D17 clr_country_flag = llmb_posture_offensive_D17 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=15|detail=balanced D17" }
+	if = { limit = { has_country_flag = llmb_target_D18 } clr_country_flag = llmb_posture_defensive_D18 clr_country_flag = llmb_posture_offensive_D18 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=15|detail=balanced D18" }
+	if = { limit = { has_country_flag = llmb_target_D19 } clr_country_flag = llmb_posture_defensive_D19 clr_country_flag = llmb_posture_offensive_D19 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=15|detail=balanced D19" }
+	if = { limit = { has_country_flag = llmb_target_D20 } clr_country_flag = llmb_posture_defensive_D20 clr_country_flag = llmb_posture_offensive_D20 log = "LLMB|v5|evt|tag=[ROOT.GetTag]|kind=15|detail=balanced D20" }
 }
 
 llm_bridge_clear_target_directives = {
@@ -2543,6 +3063,26 @@ llm_bridge_clear_target_directives = {
 	clr_country_flag = llmb_invade_XSM
 	clr_country_flag = llmb_invade_YEM
 	clr_country_flag = llmb_invade_YUN
+	clr_country_flag = llmb_invade_D01
+	clr_country_flag = llmb_invade_D02
+	clr_country_flag = llmb_invade_D03
+	clr_country_flag = llmb_invade_D04
+	clr_country_flag = llmb_invade_D05
+	clr_country_flag = llmb_invade_D06
+	clr_country_flag = llmb_invade_D07
+	clr_country_flag = llmb_invade_D08
+	clr_country_flag = llmb_invade_D09
+	clr_country_flag = llmb_invade_D10
+	clr_country_flag = llmb_invade_D11
+	clr_country_flag = llmb_invade_D12
+	clr_country_flag = llmb_invade_D13
+	clr_country_flag = llmb_invade_D14
+	clr_country_flag = llmb_invade_D15
+	clr_country_flag = llmb_invade_D16
+	clr_country_flag = llmb_invade_D17
+	clr_country_flag = llmb_invade_D18
+	clr_country_flag = llmb_invade_D19
+	clr_country_flag = llmb_invade_D20
 	clr_country_flag = llmb_protect_GER
 	clr_country_flag = llmb_protect_ENG
 	clr_country_flag = llmb_protect_FRA
@@ -2635,6 +3175,26 @@ llm_bridge_clear_target_directives = {
 	clr_country_flag = llmb_protect_XSM
 	clr_country_flag = llmb_protect_YEM
 	clr_country_flag = llmb_protect_YUN
+	clr_country_flag = llmb_protect_D01
+	clr_country_flag = llmb_protect_D02
+	clr_country_flag = llmb_protect_D03
+	clr_country_flag = llmb_protect_D04
+	clr_country_flag = llmb_protect_D05
+	clr_country_flag = llmb_protect_D06
+	clr_country_flag = llmb_protect_D07
+	clr_country_flag = llmb_protect_D08
+	clr_country_flag = llmb_protect_D09
+	clr_country_flag = llmb_protect_D10
+	clr_country_flag = llmb_protect_D11
+	clr_country_flag = llmb_protect_D12
+	clr_country_flag = llmb_protect_D13
+	clr_country_flag = llmb_protect_D14
+	clr_country_flag = llmb_protect_D15
+	clr_country_flag = llmb_protect_D16
+	clr_country_flag = llmb_protect_D17
+	clr_country_flag = llmb_protect_D18
+	clr_country_flag = llmb_protect_D19
+	clr_country_flag = llmb_protect_D20
 	clr_country_flag = llmb_contain_GER
 	clr_country_flag = llmb_contain_ENG
 	clr_country_flag = llmb_contain_FRA
@@ -2727,6 +3287,26 @@ llm_bridge_clear_target_directives = {
 	clr_country_flag = llmb_contain_XSM
 	clr_country_flag = llmb_contain_YEM
 	clr_country_flag = llmb_contain_YUN
+	clr_country_flag = llmb_contain_D01
+	clr_country_flag = llmb_contain_D02
+	clr_country_flag = llmb_contain_D03
+	clr_country_flag = llmb_contain_D04
+	clr_country_flag = llmb_contain_D05
+	clr_country_flag = llmb_contain_D06
+	clr_country_flag = llmb_contain_D07
+	clr_country_flag = llmb_contain_D08
+	clr_country_flag = llmb_contain_D09
+	clr_country_flag = llmb_contain_D10
+	clr_country_flag = llmb_contain_D11
+	clr_country_flag = llmb_contain_D12
+	clr_country_flag = llmb_contain_D13
+	clr_country_flag = llmb_contain_D14
+	clr_country_flag = llmb_contain_D15
+	clr_country_flag = llmb_contain_D16
+	clr_country_flag = llmb_contain_D17
+	clr_country_flag = llmb_contain_D18
+	clr_country_flag = llmb_contain_D19
+	clr_country_flag = llmb_contain_D20
 	clr_country_flag = llmb_befriend_GER
 	clr_country_flag = llmb_befriend_ENG
 	clr_country_flag = llmb_befriend_FRA
@@ -2819,6 +3399,26 @@ llm_bridge_clear_target_directives = {
 	clr_country_flag = llmb_befriend_XSM
 	clr_country_flag = llmb_befriend_YEM
 	clr_country_flag = llmb_befriend_YUN
+	clr_country_flag = llmb_befriend_D01
+	clr_country_flag = llmb_befriend_D02
+	clr_country_flag = llmb_befriend_D03
+	clr_country_flag = llmb_befriend_D04
+	clr_country_flag = llmb_befriend_D05
+	clr_country_flag = llmb_befriend_D06
+	clr_country_flag = llmb_befriend_D07
+	clr_country_flag = llmb_befriend_D08
+	clr_country_flag = llmb_befriend_D09
+	clr_country_flag = llmb_befriend_D10
+	clr_country_flag = llmb_befriend_D11
+	clr_country_flag = llmb_befriend_D12
+	clr_country_flag = llmb_befriend_D13
+	clr_country_flag = llmb_befriend_D14
+	clr_country_flag = llmb_befriend_D15
+	clr_country_flag = llmb_befriend_D16
+	clr_country_flag = llmb_befriend_D17
+	clr_country_flag = llmb_befriend_D18
+	clr_country_flag = llmb_befriend_D19
+	clr_country_flag = llmb_befriend_D20
 	clr_country_flag = llmb_antagonize_GER
 	clr_country_flag = llmb_antagonize_ENG
 	clr_country_flag = llmb_antagonize_FRA
@@ -2911,6 +3511,26 @@ llm_bridge_clear_target_directives = {
 	clr_country_flag = llmb_antagonize_XSM
 	clr_country_flag = llmb_antagonize_YEM
 	clr_country_flag = llmb_antagonize_YUN
+	clr_country_flag = llmb_antagonize_D01
+	clr_country_flag = llmb_antagonize_D02
+	clr_country_flag = llmb_antagonize_D03
+	clr_country_flag = llmb_antagonize_D04
+	clr_country_flag = llmb_antagonize_D05
+	clr_country_flag = llmb_antagonize_D06
+	clr_country_flag = llmb_antagonize_D07
+	clr_country_flag = llmb_antagonize_D08
+	clr_country_flag = llmb_antagonize_D09
+	clr_country_flag = llmb_antagonize_D10
+	clr_country_flag = llmb_antagonize_D11
+	clr_country_flag = llmb_antagonize_D12
+	clr_country_flag = llmb_antagonize_D13
+	clr_country_flag = llmb_antagonize_D14
+	clr_country_flag = llmb_antagonize_D15
+	clr_country_flag = llmb_antagonize_D16
+	clr_country_flag = llmb_antagonize_D17
+	clr_country_flag = llmb_antagonize_D18
+	clr_country_flag = llmb_antagonize_D19
+	clr_country_flag = llmb_antagonize_D20
 	clr_country_flag = llmb_ignore_GER
 	clr_country_flag = llmb_ignore_ENG
 	clr_country_flag = llmb_ignore_FRA
@@ -3003,6 +3623,26 @@ llm_bridge_clear_target_directives = {
 	clr_country_flag = llmb_ignore_XSM
 	clr_country_flag = llmb_ignore_YEM
 	clr_country_flag = llmb_ignore_YUN
+	clr_country_flag = llmb_ignore_D01
+	clr_country_flag = llmb_ignore_D02
+	clr_country_flag = llmb_ignore_D03
+	clr_country_flag = llmb_ignore_D04
+	clr_country_flag = llmb_ignore_D05
+	clr_country_flag = llmb_ignore_D06
+	clr_country_flag = llmb_ignore_D07
+	clr_country_flag = llmb_ignore_D08
+	clr_country_flag = llmb_ignore_D09
+	clr_country_flag = llmb_ignore_D10
+	clr_country_flag = llmb_ignore_D11
+	clr_country_flag = llmb_ignore_D12
+	clr_country_flag = llmb_ignore_D13
+	clr_country_flag = llmb_ignore_D14
+	clr_country_flag = llmb_ignore_D15
+	clr_country_flag = llmb_ignore_D16
+	clr_country_flag = llmb_ignore_D17
+	clr_country_flag = llmb_ignore_D18
+	clr_country_flag = llmb_ignore_D19
+	clr_country_flag = llmb_ignore_D20
 	clr_country_flag = llmb_prepare_war_GER
 	clr_country_flag = llmb_prepare_war_ENG
 	clr_country_flag = llmb_prepare_war_FRA
@@ -3095,6 +3735,26 @@ llm_bridge_clear_target_directives = {
 	clr_country_flag = llmb_prepare_war_XSM
 	clr_country_flag = llmb_prepare_war_YEM
 	clr_country_flag = llmb_prepare_war_YUN
+	clr_country_flag = llmb_prepare_war_D01
+	clr_country_flag = llmb_prepare_war_D02
+	clr_country_flag = llmb_prepare_war_D03
+	clr_country_flag = llmb_prepare_war_D04
+	clr_country_flag = llmb_prepare_war_D05
+	clr_country_flag = llmb_prepare_war_D06
+	clr_country_flag = llmb_prepare_war_D07
+	clr_country_flag = llmb_prepare_war_D08
+	clr_country_flag = llmb_prepare_war_D09
+	clr_country_flag = llmb_prepare_war_D10
+	clr_country_flag = llmb_prepare_war_D11
+	clr_country_flag = llmb_prepare_war_D12
+	clr_country_flag = llmb_prepare_war_D13
+	clr_country_flag = llmb_prepare_war_D14
+	clr_country_flag = llmb_prepare_war_D15
+	clr_country_flag = llmb_prepare_war_D16
+	clr_country_flag = llmb_prepare_war_D17
+	clr_country_flag = llmb_prepare_war_D18
+	clr_country_flag = llmb_prepare_war_D19
+	clr_country_flag = llmb_prepare_war_D20
 	clr_country_flag = llmb_declare_war_GER
 	clr_country_flag = llmb_declare_war_ENG
 	clr_country_flag = llmb_declare_war_FRA
@@ -3187,6 +3847,26 @@ llm_bridge_clear_target_directives = {
 	clr_country_flag = llmb_declare_war_XSM
 	clr_country_flag = llmb_declare_war_YEM
 	clr_country_flag = llmb_declare_war_YUN
+	clr_country_flag = llmb_declare_war_D01
+	clr_country_flag = llmb_declare_war_D02
+	clr_country_flag = llmb_declare_war_D03
+	clr_country_flag = llmb_declare_war_D04
+	clr_country_flag = llmb_declare_war_D05
+	clr_country_flag = llmb_declare_war_D06
+	clr_country_flag = llmb_declare_war_D07
+	clr_country_flag = llmb_declare_war_D08
+	clr_country_flag = llmb_declare_war_D09
+	clr_country_flag = llmb_declare_war_D10
+	clr_country_flag = llmb_declare_war_D11
+	clr_country_flag = llmb_declare_war_D12
+	clr_country_flag = llmb_declare_war_D13
+	clr_country_flag = llmb_declare_war_D14
+	clr_country_flag = llmb_declare_war_D15
+	clr_country_flag = llmb_declare_war_D16
+	clr_country_flag = llmb_declare_war_D17
+	clr_country_flag = llmb_declare_war_D18
+	clr_country_flag = llmb_declare_war_D19
+	clr_country_flag = llmb_declare_war_D20
 	clr_country_flag = llmb_volunteers_GER
 	clr_country_flag = llmb_volunteers_ENG
 	clr_country_flag = llmb_volunteers_FRA
@@ -3279,6 +3959,26 @@ llm_bridge_clear_target_directives = {
 	clr_country_flag = llmb_volunteers_XSM
 	clr_country_flag = llmb_volunteers_YEM
 	clr_country_flag = llmb_volunteers_YUN
+	clr_country_flag = llmb_volunteers_D01
+	clr_country_flag = llmb_volunteers_D02
+	clr_country_flag = llmb_volunteers_D03
+	clr_country_flag = llmb_volunteers_D04
+	clr_country_flag = llmb_volunteers_D05
+	clr_country_flag = llmb_volunteers_D06
+	clr_country_flag = llmb_volunteers_D07
+	clr_country_flag = llmb_volunteers_D08
+	clr_country_flag = llmb_volunteers_D09
+	clr_country_flag = llmb_volunteers_D10
+	clr_country_flag = llmb_volunteers_D11
+	clr_country_flag = llmb_volunteers_D12
+	clr_country_flag = llmb_volunteers_D13
+	clr_country_flag = llmb_volunteers_D14
+	clr_country_flag = llmb_volunteers_D15
+	clr_country_flag = llmb_volunteers_D16
+	clr_country_flag = llmb_volunteers_D17
+	clr_country_flag = llmb_volunteers_D18
+	clr_country_flag = llmb_volunteers_D19
+	clr_country_flag = llmb_volunteers_D20
 	clr_country_flag = llmb_lend_lease_GER
 	clr_country_flag = llmb_lend_lease_ENG
 	clr_country_flag = llmb_lend_lease_FRA
@@ -3371,6 +4071,26 @@ llm_bridge_clear_target_directives = {
 	clr_country_flag = llmb_lend_lease_XSM
 	clr_country_flag = llmb_lend_lease_YEM
 	clr_country_flag = llmb_lend_lease_YUN
+	clr_country_flag = llmb_lend_lease_D01
+	clr_country_flag = llmb_lend_lease_D02
+	clr_country_flag = llmb_lend_lease_D03
+	clr_country_flag = llmb_lend_lease_D04
+	clr_country_flag = llmb_lend_lease_D05
+	clr_country_flag = llmb_lend_lease_D06
+	clr_country_flag = llmb_lend_lease_D07
+	clr_country_flag = llmb_lend_lease_D08
+	clr_country_flag = llmb_lend_lease_D09
+	clr_country_flag = llmb_lend_lease_D10
+	clr_country_flag = llmb_lend_lease_D11
+	clr_country_flag = llmb_lend_lease_D12
+	clr_country_flag = llmb_lend_lease_D13
+	clr_country_flag = llmb_lend_lease_D14
+	clr_country_flag = llmb_lend_lease_D15
+	clr_country_flag = llmb_lend_lease_D16
+	clr_country_flag = llmb_lend_lease_D17
+	clr_country_flag = llmb_lend_lease_D18
+	clr_country_flag = llmb_lend_lease_D19
+	clr_country_flag = llmb_lend_lease_D20
 	clr_country_flag = llmb_ally_GER
 	clr_country_flag = llmb_ally_ENG
 	clr_country_flag = llmb_ally_FRA
@@ -3463,6 +4183,26 @@ llm_bridge_clear_target_directives = {
 	clr_country_flag = llmb_ally_XSM
 	clr_country_flag = llmb_ally_YEM
 	clr_country_flag = llmb_ally_YUN
+	clr_country_flag = llmb_ally_D01
+	clr_country_flag = llmb_ally_D02
+	clr_country_flag = llmb_ally_D03
+	clr_country_flag = llmb_ally_D04
+	clr_country_flag = llmb_ally_D05
+	clr_country_flag = llmb_ally_D06
+	clr_country_flag = llmb_ally_D07
+	clr_country_flag = llmb_ally_D08
+	clr_country_flag = llmb_ally_D09
+	clr_country_flag = llmb_ally_D10
+	clr_country_flag = llmb_ally_D11
+	clr_country_flag = llmb_ally_D12
+	clr_country_flag = llmb_ally_D13
+	clr_country_flag = llmb_ally_D14
+	clr_country_flag = llmb_ally_D15
+	clr_country_flag = llmb_ally_D16
+	clr_country_flag = llmb_ally_D17
+	clr_country_flag = llmb_ally_D18
+	clr_country_flag = llmb_ally_D19
+	clr_country_flag = llmb_ally_D20
 	clr_country_flag = llmb_spy_on_GER
 	clr_country_flag = llmb_spy_on_ENG
 	clr_country_flag = llmb_spy_on_FRA
@@ -3555,6 +4295,26 @@ llm_bridge_clear_target_directives = {
 	clr_country_flag = llmb_spy_on_XSM
 	clr_country_flag = llmb_spy_on_YEM
 	clr_country_flag = llmb_spy_on_YUN
+	clr_country_flag = llmb_spy_on_D01
+	clr_country_flag = llmb_spy_on_D02
+	clr_country_flag = llmb_spy_on_D03
+	clr_country_flag = llmb_spy_on_D04
+	clr_country_flag = llmb_spy_on_D05
+	clr_country_flag = llmb_spy_on_D06
+	clr_country_flag = llmb_spy_on_D07
+	clr_country_flag = llmb_spy_on_D08
+	clr_country_flag = llmb_spy_on_D09
+	clr_country_flag = llmb_spy_on_D10
+	clr_country_flag = llmb_spy_on_D11
+	clr_country_flag = llmb_spy_on_D12
+	clr_country_flag = llmb_spy_on_D13
+	clr_country_flag = llmb_spy_on_D14
+	clr_country_flag = llmb_spy_on_D15
+	clr_country_flag = llmb_spy_on_D16
+	clr_country_flag = llmb_spy_on_D17
+	clr_country_flag = llmb_spy_on_D18
+	clr_country_flag = llmb_spy_on_D19
+	clr_country_flag = llmb_spy_on_D20
 	clr_country_flag = llmb_sabotage_GER
 	clr_country_flag = llmb_sabotage_ENG
 	clr_country_flag = llmb_sabotage_FRA
@@ -3647,6 +4407,26 @@ llm_bridge_clear_target_directives = {
 	clr_country_flag = llmb_sabotage_XSM
 	clr_country_flag = llmb_sabotage_YEM
 	clr_country_flag = llmb_sabotage_YUN
+	clr_country_flag = llmb_sabotage_D01
+	clr_country_flag = llmb_sabotage_D02
+	clr_country_flag = llmb_sabotage_D03
+	clr_country_flag = llmb_sabotage_D04
+	clr_country_flag = llmb_sabotage_D05
+	clr_country_flag = llmb_sabotage_D06
+	clr_country_flag = llmb_sabotage_D07
+	clr_country_flag = llmb_sabotage_D08
+	clr_country_flag = llmb_sabotage_D09
+	clr_country_flag = llmb_sabotage_D10
+	clr_country_flag = llmb_sabotage_D11
+	clr_country_flag = llmb_sabotage_D12
+	clr_country_flag = llmb_sabotage_D13
+	clr_country_flag = llmb_sabotage_D14
+	clr_country_flag = llmb_sabotage_D15
+	clr_country_flag = llmb_sabotage_D16
+	clr_country_flag = llmb_sabotage_D17
+	clr_country_flag = llmb_sabotage_D18
+	clr_country_flag = llmb_sabotage_D19
+	clr_country_flag = llmb_sabotage_D20
 	clr_country_flag = llmb_steal_tech_GER
 	clr_country_flag = llmb_steal_tech_ENG
 	clr_country_flag = llmb_steal_tech_FRA
@@ -3739,6 +4519,26 @@ llm_bridge_clear_target_directives = {
 	clr_country_flag = llmb_steal_tech_XSM
 	clr_country_flag = llmb_steal_tech_YEM
 	clr_country_flag = llmb_steal_tech_YUN
+	clr_country_flag = llmb_steal_tech_D01
+	clr_country_flag = llmb_steal_tech_D02
+	clr_country_flag = llmb_steal_tech_D03
+	clr_country_flag = llmb_steal_tech_D04
+	clr_country_flag = llmb_steal_tech_D05
+	clr_country_flag = llmb_steal_tech_D06
+	clr_country_flag = llmb_steal_tech_D07
+	clr_country_flag = llmb_steal_tech_D08
+	clr_country_flag = llmb_steal_tech_D09
+	clr_country_flag = llmb_steal_tech_D10
+	clr_country_flag = llmb_steal_tech_D11
+	clr_country_flag = llmb_steal_tech_D12
+	clr_country_flag = llmb_steal_tech_D13
+	clr_country_flag = llmb_steal_tech_D14
+	clr_country_flag = llmb_steal_tech_D15
+	clr_country_flag = llmb_steal_tech_D16
+	clr_country_flag = llmb_steal_tech_D17
+	clr_country_flag = llmb_steal_tech_D18
+	clr_country_flag = llmb_steal_tech_D19
+	clr_country_flag = llmb_steal_tech_D20
 	llm_bridge_clear_theater_postures = yes
 	llm_bridge_clear_target = yes
 }
