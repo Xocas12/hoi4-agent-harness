@@ -473,7 +473,10 @@ def _check_ready(config: HarnessConfig, planner: LLMClient | None) -> None:
         raise CampaignStartError(
             "a campaign sends keys: pass --live (against the real game, with it loaded, paused "
             "and in front) or use --fake-game")
-    priced = config.planner_active and config.planner.provider != "scripted"
+    from ..config import UNPRICED_PROVIDERS
+
+    # Claude Code through the CLI and the mailbox are on a subscription: no per-call spend to cap.
+    priced = config.planner_active and config.planner.provider not in UNPRICED_PROVIDERS
     if priced and config.budget.max_usd is None:
         raise CampaignStartError(
             "a campaign spends money unattended: give it a hard cap with --max-usd N")
