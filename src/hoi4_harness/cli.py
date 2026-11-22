@@ -1053,9 +1053,11 @@ def cmd_native(args: argparse.Namespace) -> int:
         print("native: --rival TAG[,TAG...] (or --setup FILE) says which countries the LLM plays",
               file=sys.stderr)
         return 2
-    if not getattr(args, "provider", None):
-        args.provider = "claude-cli"
     base = _config_from_args(args)
+    if not getattr(args, "provider", None) and base.planner.provider == "scripted":
+        # No provider chosen anywhere (flag, profile or setup file): the Claude Code CLI, as before.
+        # A flag here would also have overwritten every country's own provider.
+        base.planner.switch_provider("claude-cli")
     tags = _run_tags(base)
     mine = (getattr(args, "my_country", None) or "").strip().upper()
     if mine and mine in tags:

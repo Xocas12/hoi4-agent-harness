@@ -179,18 +179,27 @@ TELEMETRY_CHOICES = ("", "1", "2", "3", "4", "6", "8", "12", "24", "48", "72", "
 
 
 class SetupWindow:                                              # pragma: no cover - needs a display
-    def __init__(self, controller: SetupController):
+    def __init__(self, controller: SetupController, settings=None):
         import tkinter as tk
         from tkinter import ttk
+
+        from .settings_gui import build_tabs
+        from .settings_model import SettingsModel
 
         self.c = controller
         self.tk, self.ttk = tk, ttk
         self.root = tk.Tk()
         self.root.title("Hearts of Iron IV: AI countries")
-        self.root.geometry("980x760")
+        self.root.geometry("1040x800")
         self.selected: str | None = None
         self._loading = False
+        self.settings = settings if settings is not None else SettingsModel()
+        self.tabs = ttk.Notebook(self.root)
+        self.tabs.pack(fill="both", expand=True)
+        self.quick = ttk.Frame(self.tabs)
+        self.tabs.add(self.quick, text="Quick start")
         self._build()
+        self.advanced = build_tabs(self.tabs, self.settings)
         self._reload_players()
         self.root.after(2000, self._tick)
 
@@ -198,7 +207,7 @@ class SetupWindow:                                              # pragma: no cov
 
     def _build(self) -> None:
         tk, ttk = self.tk, self.ttk
-        outer = ttk.Frame(self.root, padding=10)
+        outer = ttk.Frame(self.quick, padding=10)
         outer.pack(fill="both", expand=True)
         ttk.Label(outer, text="Pick the countries an AI will play beside you, and what it uses to "
                               "think. Nothing starts until you press Start.",

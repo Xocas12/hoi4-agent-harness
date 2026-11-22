@@ -91,3 +91,11 @@ Every `native` / `play --rival` run writes `~/.hoi4-harness/players.json` when i
 - The Windows file restriction for `setup.json` uses `icacls` and is best effort. Treat the file as sensitive either way.
 - The model names offered in the lists (`claude-opus-5`, `claude-sonnet-5-5`, `gpt-5`, `gpt-5-mini`, `gemini-2.5-pro`, `gemini-2.5-flash`, `haiku`/`sonnet`/`opus`, `llama3.1`, `qwen2.5`) are suggestions; the box is editable, and the provider rejects a name it does not know.
 - A run started from the window goes through the same untested-live inbox path as `native` ([inbox.md](inbox.md)).
+
+## The other tabs: every setting, countries table, profiles, run
+
+`hoi4-harness setup` also has tabs for people who would otherwise use flags and profile JSON.
+
+- **Countries**: one line per country with controller (LLM, game AI, person, off), mode (campaign, rival, co-op), provider, model, key variable, base URL, spend cap, control map and instruction. LLM rival lines become `rival` and `rival_players`; a campaign or co-op line becomes `country`, `campaign` / `handover`, the planner and `control`; person lines become `mp_human_tags`. Game AI (outside a campaign) and off lines are not stored in a profile: a country nobody names is the game's AI. A key is never stored: the line names the environment variable that holds it.
+- **All settings**: every `HarnessConfig` field, in sections, with the help from its comment in `config.py`, the default, and a widget for its type. The list is generated from the dataclass (`settings_model.field_specs`), so a new field appears without a UI edit; where a family of fields goes is decided in `GROUP_PREFIXES` in `settings_model.py`. A field deliberately left out is in `HIDDEN` with the reason.
+- **Profile and run**: load, edit and save profile JSON (only what differs from the defaults), the command line the settings stand for (`play --profile FILE`, or `native --profile FILE --rival A,B` for rival countries), a preflight check (the countries table plus `campaign-check`'s checks), and Start, which refuses to start on a failed preflight.
