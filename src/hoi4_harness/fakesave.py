@@ -58,6 +58,8 @@ def render_save(game, hour: int) -> str:
         'save_version=33\nmods={\n\t"LLM Bridge"\n}\n',
         'gameplaysettings={\n\tdifficulty="normal"\n\tironman=0\n'
         f'\thistorical={int(getattr(game, "historical", 0))}\n}}\n',
+        ("game_rules={\n" + "".join(f'\t{k}="{v}"\n' for k, v in game.game_rules.items()) + "}\n"
+         if getattr(game, "game_rules", None) else ""),
         'start_date="1936.1.1.12"\n',
     ]
 

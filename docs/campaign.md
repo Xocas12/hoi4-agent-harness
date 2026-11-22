@@ -284,6 +284,36 @@ prices claude-opus-5-5 at $4 / $20 / $0.20 / $5 per MTok and keeps a $0.75 reser
 last call cannot overshoot the cap. Exit codes: 0 the end date was reached, 1 stopped with
 a reason, 2 could not start, 3 crashed.
 
+## Choosing the country's path (#160)
+
+`hoi4-harness paths --country GER [--game-dir PATH] [--json]` prints what the playset offers: the
+country's AI behaviour game rule (`common/game_rules/*.txt`, e.g. `GER_ai_behavior` with its
+options and their localised names and descriptions) and a summary of its focus tree: the
+branches (everything reached from one root focus), what each gets, and the focuses that commit
+the country (ideology change, war goal, puppet, faction) with what they exclude.
+
+With `campaign_choose_path = true` (`play --campaign --choose-path`) the model reads that menu
+once before the start and answers `{"choice": "<option>", "reason": "..."}`. The choice and
+reason go into `campaign_state.json` (`path_choice`), into `campaign.log`, and into the
+objective, so the guidance for the rest of the run is built around it. A resumed run keeps the
+recorded choice and does not ask again. An unreadable reply falls back to the rule's default
+option and says so. Where the playset has no rule for the country, the log says so and the
+choice steers the guidance only.
+
+With `campaign_lobby_rule = true` (`--lobby-rule`) the harness also clicks the rule into the
+new-game lobby (Custom Game Rules, the option, Historical AI Focuses off, START), with a
+check that the game window is in front before every click; if it is not, the path stops there.
+**This needs live calibration:** only the Custom Game Rules button (1640, 764), the Historical
+AI Focuses box (1862, 929) and START (1742, 1028) at 1920x1080 are recorded. Give the rest in
+`campaign_lobby_points`, e.g. `{"rule_row": [x, y], "option:FASCIST": [x, y], "rules_close":
+[x, y]}`; a path with a missing point is refused before the first click. The Historical box is
+a toggle the harness cannot read: the path assumes the lobby opened with it on.
+
+The first recovery save is then read back: `path rule GER_ai_behavior = FASCIST in the first
+save: matches the choice`, or a `WARNING` when it differs, or a note that the save does not
+record it. Where a real save writes its rules has not been seen yet; the reader looks for
+`<token> = "<OPTION>"` in the header and the live check confirms it.
+
 ## Stops and what the run keeps
 
 | Situation | What happens |

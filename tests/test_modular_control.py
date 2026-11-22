@@ -79,7 +79,8 @@ def test_a_preset_map_gives_the_old_tool_list_exactly(mode):
 @pytest.mark.parametrize("mode", ["llm", "ai", "game_ai"])
 def test_a_preset_config_offers_the_old_tools_and_the_old_prompt(mode):
     config = HarnessConfig(operational_control=mode)
-    assert config.allowed_actions(set(ALL)) == actions_for_mode(set(ALL), mode)
+    # add_production_line is the #161 experiment's: offered only with the flag.
+    assert config.allowed_actions(set(ALL)) == actions_for_mode(set(ALL), mode) - {"add_production_line"}
     assert config.control_map().preset == mode and not config.control_map().explicit
     assert system_for(config) == build_system(operational_control=mode)
     assert describe(mode) in system_for(config)

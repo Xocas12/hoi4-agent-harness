@@ -11,6 +11,7 @@
     hoi4-harness compare economy_ramp       the same scenario across models, one table
     hoi4-harness measure --campaign wartime_1939_1941   brief size and wake rate in a war
     hoi4-harness index --game-dir PATH      what countries and focuses a playset defines
+    hoi4-harness paths --country GER        the AI behaviour rule options and focus branches
     hoi4-harness mod-actions --country GER what a country can do in a playset, and what its mods are
     hoi4-harness experiment defensive_war   model-only vs AI-only vs hybrid, same seeds
     hoi4-harness play --headless            no mouse, no screen: the log in, the console and keys out
@@ -257,6 +258,10 @@ def _config_from_args(args: argparse.Namespace) -> HarnessConfig:
         config.campaign = True
     if getattr(args, "until", None):
         config.campaign_until = args.until
+    if getattr(args, "choose_path", False):
+        config.campaign_choose_path = True
+    if getattr(args, "lobby_rule", False):
+        config.campaign_lobby_rule = True
     spec = getattr(args, "control", None)
     if spec:
         if "=" in spec:
@@ -1320,6 +1325,27 @@ def cmd_index(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_paths(args: argparse.Namespace) -> int:
+    """The paths open to a country: its AI behaviour rule options and its focus tree branches."""
+    from . import pathchoice
+
+    config = _config_from_args(args)
+    if config.game_dir is None:
+        print("paths: point --game-dir (or HOI4_GAME_DIR) at the HOI4 install", file=sys.stderr)
+        return 2
+    if not args.country:
+        print("paths: name a country with --country TAG", file=sys.stderr)
+        return 2
+    try:
+        index = config.build_index()
+    except FileNotFoundError as exc:
+        print(f"paths: {exc}", file=sys.stderr)
+        return 1
+    menu = pathchoice.build_menu(index, args.country)
+    print(pathchoice.menu_json(menu) if args.json else pathchoice.render_menu(menu))
+    return 0
+
+
 def cmd_mod_actions(args: argparse.Namespace) -> int:
     """What a country can do in the playset, and what the mods are about."""
     import time
@@ -1866,6 +1892,14 @@ def build_parser() -> argparse.ArgumentParser:
                            "the model steers it; see docs/campaign.md")
     play.add_argument("--until", metavar="YYYY-MM-DD",
                       help="stop when the game reaches this date (campaign default 1948-12-31)")
+    play.add_argument("--choose-path", dest="choose_path", action="store_true",
+                      help="campaign: before the start the model picks its country's path (AI "
+                           "behaviour rule + focus tree summary; see `paths`) and the choice "
+                           "shapes the guidance (#160)")
+    play.add_argument("--lobby-rule", dest="lobby_rule", action="store_true",
+                      help="with --choose-path: click the rule and Historical AI Focuses off into "
+                           "the new-game lobby before starting (needs calibration; see "
+                           "docs/campaign.md)")
     play.add_argument("--control", metavar="game_ai|llm|DOMAIN=CONTROLLER,...",
                       help="campaign: who plays the country. game_ai (default): the game's AI "
                            "runs it, the model steers. llm: independent mode, the model plays "
@@ -2169,6 +2203,12 @@ def build_parser() -> argparse.ArgumentParser:
     # --country (from the common flags) picks the country whose tree is shown.
     index.add_argument("--all", action="store_true", help="with --country: list every focus")
     index.set_defaults(func=cmd_index)
+
+    paths_cmd = sub.add_parser("paths", help="the paths open to a country: its AI behaviour rule "
+                                             "options and focus tree branches (#160)")
+    common(paths_cmd)
+    paths_cmd.add_argument("--json", action="store_true", help="machine-readable output")
+    paths_cmd.set_defaults(func=cmd_paths)
 
     mapcmd = sub.add_parser("map", help="where a state or province is, in map pixels")
     common(mapcmd)

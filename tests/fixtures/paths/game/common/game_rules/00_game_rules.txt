@@ -1,0 +1,34 @@
+# Invented rules in the shape of the game's: one AI behaviour rule per country.
+unrelated_rule = {
+	name = "RULE_UNRELATED"
+	group = "RULE_GROUP_GENERAL"
+	default = {
+		name = ON
+		text = "RULE_OPTION_ON"
+	}
+	option = {
+		name = OFF
+		text = "RULE_OPTION_OFF"
+	}
+}
+
+SWE_ai_behavior = {
+	name = "SWE_AI_BEHAVIOR"
+	group = "RULE_GROUP_AI_BEHAVIOR"
+	default = {
+		name = DEFAULT
+		text = "RULE_OPTION_DEFAULT"
+		desc = "RULE_OPTION_DEFAULT_AI_DESC"
+	}
+	option = {
+		name = FASCIST
+		text = "RULE_OPTION_FASCIST"
+		desc = "RULE_OPTION_FASCIST_SWE_AI_DESC"
+	}
+	option = {
+		name = SWE_SOCIALIST
+		required_dlc = "Fixture DLC"
+		text = "RULE_OPTION_SWE_SOCIALIST"
+		desc = "RULE_OPTION_SWE_SOCIALIST_DESC"
+	}
+}

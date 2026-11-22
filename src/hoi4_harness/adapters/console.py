@@ -59,7 +59,7 @@ from .ui_scripts import verify
 #: only effects that exist for them (``complete_national_focus``, ``set_technology``)
 #: skip the time and cost a player pays, which is a different game.
 CONSOLE_ACTIONS = frozenset({
-    "queue_construction", "set_production", "hire_advisor",
+    "queue_construction", "set_production", "hire_advisor", "add_production_line",
     "queue_province_building", "design_division_template", "design_equipment",
     "set_ai_directive", "set_ai_posture", "clear_ai_directives", "take_decision",
     "click_gui_button", "set_front_order", "set_region_order",
@@ -74,7 +74,11 @@ MARKED_ACTIONS = frozenset({
     "diplomacy_act", "hire_advisor", "queue_province_building", "design_division_template",
     "design_equipment", "fire_advisor", "steer_production", "steer_intelligence", "steer_research",
     "steer_navy", "steer_air", "steer_spending", "steer_market", "steer_army",
+    "add_production_line",
 })
+#: Where ``add_production_line`` records each line the game confirmed (one JSON object per line),
+#: in the run's directory; ``scripts/contested_report.py`` matches them against the text saves.
+CONTESTED_LINES_FILE = "contested_lines.jsonl"
 #: Marked actions the telemetry can also show: when the marker line cannot be found (keys
 #: transport, no inbox log), the state read-back decides, as before the marker existed.
 STATE_FALLBACK = frozenset({"hire_advisor"})
@@ -286,6 +290,8 @@ class ConsoleChannel:
         #: The country's own designs, for design_equipment's parent: the world observer
         #: (``variants(state)``), attached by ``Environment.attach_world``. None: no save reader.
         self.designs = None
+        #: add_production_line: what each planned call records once the game logged its marker.
+        self.line_pending: dict[int, dict] = {}
         from ..steering import Standing as SteerStanding
         self.steer_standing = SteerStanding(getattr(self.config, 'archive_dir', None))
 
@@ -306,6 +312,8 @@ class ConsoleChannel:
             return self._plan_construction(call, args, country)
         if call.name == "set_production":
             return self._plan_production(call, args, country, state)
+        if call.name == "add_production_line":
+            return self._plan_add_line(call, args, country, state)
         if call.name == "queue_province_building":
             return self._plan_province_building(call, args, country)
         if call.name == "design_division_template":
@@ -439,6 +447,95 @@ class ConsoleChannel:
                           "available from the start, so what unlocks it is unknown: the "
                           "harness cannot tell that the country may build it")
         return Planned(call, [self._inline(country, body)], unchecked)
+
+    def _plan_add_line(self, call, args, country, state) -> Planned:
+        """Issue #161: ``add_equipment_production`` for an equipment or one of the country's own
+        designs, one guarded effect with a marker logged inside the guard. It opens a NEW line even
+        when one exists (the contested experiment adds beside the AI's own); the marker is the
+        proof it ran, and the line is recorded for ``scripts/contested_report.py``."""
+        from .. import designers, policy_effects
+
+        equipment, factories = str(args["equipment"]), int(args["factories"])
+        index = self._need_index("checking the equipment exists")
+        if equipment not in index.equipment_types():
+            raise Refused(f"there is no buildable equipment '{equipment}' in this playset")
+        if not 1 <= factories <= 200:
+            raise Refused("factories is the number requested: 1 to 200")
+        if not _SAFE_ID.match(equipment):
+            raise Refused(f"{equipment!r} has characters the harness will not write into script")
+        typed = self.transport != "inbox"
+        variant = args.get("variant")
+        version_name = None
+        guard = ""
+        unchecked = ["free factories: the game gives a new line only the factories that are free, "
+                     "and the game's AI, which keeps running production, may switch, starve or "
+                     "delete it (this run measures that)"]
+        if variant not in (None, ""):
+            variants: list = []
+            if self.designs is not None:
+                try:
+                    variants = list(self.designs.variants(state))
+                except Exception:  # noqa: BLE001 - a save that cannot be read leaves no designs
+                    variants = []
+            if not variants:
+                raise Refused("a design is read from the newest text save, and none could be read: "
+                              "leave variant out to build the equipment itself")
+            try:
+                found = designers.find_parent(variants, equipment, variant)
+            except designers.DesignRefused as exc:
+                raise Refused(str(exc)) from None
+            if not found.name:
+                raise Refused(f"{equipment} version {found.version} is the chassis' default design "
+                              "and has no name to reference: leave variant out to build it")
+            version_name = found.name
+            if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9 _\-]{0,39}", version_name):
+                raise Refused(f"the design name {version_name!r} has characters the harness will "
+                              "not write into script")
+            if " " in version_name and typed:
+                raise Refused(f"the design {version_name!r} has a space in its name, and the typed "
+                              "console splits quoted text on spaces: it cannot be referenced. "
+                              "Design it again with a name of letters, digits, underscores and "
+                              "hyphens only, or use the inbox transport")
+            unchecked.append("the design's technology is not re-tested: the design exists, so it "
+                             "was unlocked when it was made")
+        else:
+            always, techs = index.equipment_unlock(equipment)
+            if techs:
+                if not all(_SAFE_ID.match(t) for t in techs):
+                    raise Refused(f"a technology that unlocks {equipment} has characters the "
+                                  "harness will not write into script")
+                tests = [f"has_tech = {t}" for t in techs]
+                guard = tests[0] if len(tests) == 1 else f"OR = {{ {' '.join(tests)} }}"
+            elif not always:
+                raise Refused(f"no technology of this playset unlocks {equipment} and it is not "
+                              "available from the start, so what unlocks it is unknown: the "
+                              "harness cannot tell that the country may build it")
+        spec = f"type = {equipment}"
+        if version_name is not None:
+            spec += f' creator = "{country}" version_name = "{version_name}"'
+        body = (f"add_equipment_production = {{ equipment = {{ {spec} }} "
+                f"requested_factories = {factories} }}")
+        what = equipment + (f" ({version_name})" if version_name else "")
+        done = (f"a new {what} line was opened asking for {factories} factories; the game's AI may "
+                "switch or delete it: check a later brief")
+        out = policy_effects.finish(country, guard, body, 0.0, unchecked, done,
+                                    self.config.effect_command, typed)
+        if not out.executable:
+            raise Refused(out.reason)
+        self.line_pending[id(call)] = {
+            "call_id": call.call_id, "country": country, "date": state.date,
+            "equipment": equipment, "variant": version_name, "factories": factories}
+        return self._marked(call, out.nonce, out.line, out.done, out.unchecked)
+
+    def _record_line(self, record: dict) -> None:
+        """Append a confirmed line to the run's ``contested_lines.jsonl``."""
+        import json
+
+        base = self.config.archive_dir or Path("runs")
+        base.mkdir(parents=True, exist_ok=True)
+        record = {**record, "wall_time": time.time()}
+        with (base / CONTESTED_LINES_FILE).open("a", encoding="utf-8", newline="\n") as fh:
+            fh.write(json.dumps(record, sort_keys=True) + "\n")
 
     def _plan_province_building(self, call, args, country) -> Planned:
         """Queue a province building (a bunker, a naval base, a supply hub) in a province of a
@@ -884,6 +981,9 @@ class ConsoleChannel:
             except OSError:
                 tail = ""
             if nonce and f"|click|{nonce}" in tail:
+                line = self.line_pending.pop(id(call), None)
+                if line is not None:
+                    self._record_line(line)
                 levels = self.click_levels.pop(id(call), None)
                 if levels is not None:
                     got = tail.count(f"|click|{nonce}")

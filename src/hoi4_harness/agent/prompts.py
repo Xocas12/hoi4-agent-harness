@@ -269,6 +269,19 @@ INSTRUCTION = (
 )
 
 
+#: Issue #161 step 1 (``campaign_contested_production``): said when the game's AI runs the
+#: country and the model is nonetheless given production lines, designs and research.
+CONTESTED = (
+    "Contested experiment: the game's AI runs your country and you ALSO have add_production_line, "
+    "design_equipment and (where it is in your tool list) start_research. They are not yours "
+    "alone. The AI keeps running production and research and may switch your line to something "
+    "else, take its factories, delete it, or never build your design. Open a line with its factory "
+    "count, then check the brief on later turns to see whether it is still there and still yours; "
+    "do not assume it. If a line was undone, say so with `note` rather than opening it again "
+    "every turn: the run is measuring what the AI does to them."
+)
+
+
 def build_system(
     guidance: str | Path | None = "doctrine",
     extra: str = "",
@@ -287,6 +300,7 @@ def build_system(
     control_map=None,
     instruction: str = "",
     skills_text: str = "",
+    contested: bool = False,
 ) -> str:
     """Assemble the system prompt.
 
@@ -304,6 +318,8 @@ def build_system(
     parts = [MECHANICS,
              describe_map(control_map, hands) if modular
              else describe(operational_control, campaign=independent, hands=hands)]
+    if contested:
+        parts.append(CONTESTED)
     if advisor:
         # Sits with the mechanics, before any guidance: it corrects the fiction
         # that the harness executes what the model calls.
@@ -393,6 +409,8 @@ def system_for(config, index=None) -> str:
         campaign_hands=_hands_for(config),
         control_map=config.control_map() if hasattr(config, "control_map") else None,
         instruction=getattr(config, "instruction", ""),
+        contested=bool(getattr(config, "campaign_contested_production", False)
+                       and getattr(config, "campaign", False)),
     )
 
 

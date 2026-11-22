@@ -515,7 +515,8 @@ def battle_line(b: Battle, name_of) -> str:
     text = (f"{head}: {kind}{_names(b.attacker)} attack {_forces(b.attacker)} vs "
             f"{_names(b.defender)} {_forces(b.defender)}, {_days(b.hours)}")
     if b.own:
-        text += (f"; damage dealt {b.attacker.dealt[0]:.0f} vs {b.defender.dealt[0]:.0f}"
+        # attacker first, then defender: "dealt 208 vs 1077" in a Soviet attack read as Germany's 208
+        text += (f"; damage dealt: attacker {b.attacker.dealt[0]:.0f}, defender {b.defender.dealt[0]:.0f}"
                  if b.kind == "land" else "")
         tactics = "/".join(t for t in (b.attacker.tactic, b.defender.tactic) if t)
         if tactics and b.kind == "land":

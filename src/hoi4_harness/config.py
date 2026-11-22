@@ -375,6 +375,11 @@ class HarnessConfig:
     #: not sent, the model plays the country itself with the hands-on actions the headless
     #: adapter offers; not yet verified against the live game, docs/campaign.md).
     campaign_control: str = "game_ai"
+    #: Issue #161 step 1, an experiment. With the game's AI running the country (human_ai), also
+    #: offer the model ``add_production_line``, ``design_equipment`` and ``start_research`` (where
+    #: the adapter has it): the AI may undo, switch or double them, which is what the run measures
+    #: (``scripts/contested_report.py``). Off: the AI owns them, as before.
+    campaign_contested_production: bool = False
     #: In an independent campaign (``campaign_control = "llm"``): ``mouse`` (the default) adds
     #: the input driver's mouse to the headless adapter, for the actions the console cannot do
     #: (research, division orders, handing an army to the game's AI); ``none`` keeps the
@@ -403,6 +408,19 @@ class HarnessConfig:
     #: when a save reads ``historical=0`` (and ``off`` when it reads 1). ``any`` only logs.
     #: It never stops the run: whether to run with the rule on is the person's call.
     campaign_historical_ai: str = "any"
+    #: Before the start, show the model the paths open to its country (the AI behaviour game
+    #: rule's options and a focus tree summary), ask it once to choose one with a reason, record
+    #: it in the run state and build the guidance around it (#160). The choice is kept across
+    #: ``--resume``. Costs one model call.
+    campaign_choose_path: bool = False
+    #: With ``campaign_choose_path``: click the choice into the new-game lobby (Custom Game
+    #: Rules, Historical AI Focuses off, Start) before the campaign begins. Sends real mouse
+    #: clicks and needs ``campaign_lobby_points`` (docs/campaign.md); off, the choice only
+    #: steers the guidance and the log says which rule to set by hand.
+    campaign_lobby_rule: bool = False
+    #: Screen points for the lobby steps nobody has recorded yet (campaign/lobby.py):
+    #: ``{"rule_row": [x, y], "option:FASCIST": [x, y], "rules_close": [x, y]}``.
+    campaign_lobby_points: dict = field(default_factory=dict)
     #: The AI the game runs underneath (docs/expert-ai.md): ``vanilla``, ``expert_ai`` (the
     #: Workshop mod; the campaign then turns on the strong directive weights, because its own
     #: plans would drown the normal ones) or ``auto`` (read dlc_load.json at the start).
@@ -697,6 +715,12 @@ class HarnessConfig:
             # posture stay out (the game's AI is not running the country), but handing an army
             # to the AI is what lets the model hold a front it is not ordering (adapters/hands.py).
             allowed.add("delegate_army_to_ai")
+        from .control import CONTESTED_PRODUCTION, PRODUCTION_LINE_ACTION
+
+        if self.campaign_contested_production and self.campaign and cmap.human_ai:
+            allowed |= CONTESTED_PRODUCTION & set(adapter_supports)
+        elif not self.campaign_contested_production:
+            allowed.discard(PRODUCTION_LINE_ACTION)
         if self.clock_owner != "harness":
             # The player owns the clock, so the model may not take it either --
             # structurally, not by asking it nicely in the prompt.
