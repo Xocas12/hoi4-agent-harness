@@ -29,5 +29,6 @@
     "max_output_tokens": 1200000
   },
   "observe_world": true,
-  "campaign_review_min_days": 21
+  "campaign_review_min_days": 21,
+  "campaign_take_focus": true
 }

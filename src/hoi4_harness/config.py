@@ -349,6 +349,9 @@ class HarnessConfig:
     #: ``SetForegroundWindow``). Off by default: the harness waits and never takes the
     #: keyboard from whatever the person is doing.
     campaign_take_focus: bool = False
+    #: ...and only once the keyboard and mouse have been idle this long, so it never pulls
+    #: the game over a window someone is using (a relaunch left VS Code in front, 2026-11-22).
+    campaign_take_focus_idle_seconds: float = 120.0
     #: The game's process name, for the death check (empty: no check).
     campaign_game_process: str = "hoi4.exe"
     #: What an exhausted budget does: ``stop`` (leave the game paused, resumable) or
