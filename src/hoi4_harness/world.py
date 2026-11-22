@@ -615,8 +615,13 @@ def _group_line(index, state, divisions: list[Division], foe: list[Division] | N
     dig = _avg(d.dig_in for d in divisions)
     terrain = divisions[0].terrain if divisions else ""
     kinds = ", ".join(f"{n} {t}" for t, n in list(_templates(divisions).items())[:3])
-    text = (f"{_state_name(index, state)}" + (f" [{terrain}]" if terrain else "")
-            + f": {len(divisions)} ({kinds})")
+    if state is None and terrain == "ocean":
+        # A sea province has no state: these are divisions on transports (the 1940 Norway
+        # landing read "? [ocean]" in the overnight campaign, 2026-11-22).
+        text = f"At sea, on transports: {len(divisions)} ({kinds})"
+    else:
+        text = (f"{_state_name(index, state)}" + (f" [{terrain}]" if terrain else "")
+                + f": {len(divisions)} ({kinds})")
     bits = []
     if org is not None:
         bits.append(f"org {org:.0f}")

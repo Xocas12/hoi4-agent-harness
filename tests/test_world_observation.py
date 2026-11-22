@@ -223,3 +223,11 @@ def test_no_save_yet_is_said_not_guessed(tmp_path):
     observer = W.WorldObserver("SWE", tmp_path)
     assert observer.brief_lines(GameState(country="SWE")) == []
     assert "no text save" in observer.query(GameState(country="SWE"), "divisions", None)["error"]
+
+
+def test_divisions_in_a_sea_province_read_as_at_sea():
+    # The 1940 Norway landing read "? [ocean]" (overnight campaign, 2026-11-22).
+    class Div:
+        organisation, manpower, dig_in, terrain, template = 30, 1.0, 0, "ocean", "Infantry"
+
+    assert W._group_line(None, None, [Div(), Div()]).startswith("At sea, on transports: 2 (2 Infantry)")
