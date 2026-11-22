@@ -75,6 +75,11 @@ class CampaignLog:
         if self.echo is not None:
             self.echo(text)
 
+    def show(self, text: str) -> None:
+        """Text for the person at the console only (a briefing): the log keeps where it is saved."""
+        if self.echo is not None:
+            self.echo(text)
+
 
 def load_state(run_dir: Path) -> dict:
     """What the run keeps between runs of the harness (``campaign_state.json``)."""
@@ -130,7 +135,8 @@ def path_rule_lines(choice: dict, found: str | None) -> list[str]:
 
 
 def _choose_path(config: HarnessConfig, planner, env: HOI4Env, run_dir: Path, log: CampaignLog,
-                 clicker=None, pause: Callable[[float], None] = time.sleep) -> None:
+                 clicker=None, pause: Callable[[float], None] = time.sleep,
+                 briefing: str | None = None) -> None:
     """#160: before the start, show the model its country's paths, record its choice, set the
     rule in the lobby (when asked) and add the choice to the guidance. Asked once per run:
     a resumed run keeps the recorded choice."""
@@ -155,7 +161,7 @@ def _choose_path(config: HarnessConfig, planner, env: HOI4Env, run_dir: Path, lo
             log.line("path choice skipped: no model to ask")
             return
         menu = pathchoice.build_menu(env.index, tag)
-        choice = pathchoice.choose_path(client, menu)
+        choice = pathchoice.choose_path(client, menu, briefing=briefing)
         save_state(run_dir, path_choice=choice.to_dict(), path_menu_branches=len(menu.branches))
         if choice.source == "default":
             log.line(f"WARNING: {choice.reason}")
@@ -181,6 +187,38 @@ def _choose_path(config: HarnessConfig, planner, env: HOI4Env, run_dir: Path, lo
     config.objective = config.objective.rstrip() + _PARA + pathchoice.guidance_text(choice)
 
 
+def _start_briefing(config, planner, briefer, env, run_dir: Path, log: CampaignLog, resume: bool,
+                    opener=None):
+    """#165: the briefing before the first turn. ``(BriefingRun, (context text, date))``; the
+    run is None when the briefing is off, the text None when it could not be written. A
+    resumed run keeps the briefing it wrote and asks for no new one."""
+    from ..agent.llm import build_llm
+    from ..briefing import parse_schedule
+    from .briefer import BriefingRun
+
+    if not config.campaign_briefing:
+        return None, None
+    parse_schedule(config.campaign_rebrief)          # a bad schedule fails here, not a year in
+    if briefer is not None:
+        client = briefer
+    elif config.briefing.provider:
+        client = build_llm(config.briefing)
+    else:
+        client = planner if planner is not None else (
+            build_llm(config.planner) if config.planner_active else None)
+    if client is None:
+        log.line("briefing skipped: no model to ask")
+        return None, None
+    run = BriefingRun(config, client, env, run_dir, log, lambda: load_state(run_dir),
+                      lambda **kw: save_state(run_dir, **kw), _save_dir(config), opener)
+    if resume:
+        kept = run.recorded()
+        if kept:
+            log.line("briefing already written by an earlier run, kept")
+            return run, kept
+    return run, run.run("the campaign start", (config.country or "").upper())
+
+
 def _months_between(earlier: str, later: str) -> int:
     try:
         a, b = date.fromisoformat(earlier), date.fromisoformat(later)
@@ -197,6 +235,8 @@ class CampaignSupervisor(Supervisor):
         self.config, self.env, self.tracker, self.log = config, env, tracker, log
         self.run_dir, self.watchdog = run_dir, watchdog
         self.loop: AgentLoop | None = None
+        #: The briefing agent (briefer.BriefingRun) when ``campaign_briefing`` is on (#165).
+        self.briefing = None
         self._rule_misses = 0
         self._path_misses = 0
         #: The person's guidance (``hoi4-harness guide``): the board the brief reads from.
@@ -242,7 +282,48 @@ class CampaignSupervisor(Supervisor):
         if self.saves is not None:
             self.saves.prune()
             self.note_rule()
+        self._rebrief(state)
         return self._memory_check(state)
+
+    def _rebrief(self, state: GameState) -> None:
+        """#165: brief again when the schedule says so (a date, a year, a new war, a
+        capitulation, a faction change). The new briefing replaces the old in the player's
+        context from the next turn; a failed one leaves the old in place."""
+        from .. import briefing as B
+        from ..world import _days
+        from . import briefer as BR
+
+        if self.briefing is None or self.loop is None or not self.config.campaign_rebrief:
+            return
+        schedule = B.parse_schedule(self.config.campaign_rebrief)
+        saved = load_state(self.run_dir)
+        kept = saved.get("rebrief")
+        if not kept:
+            first = (saved.get("briefing") or {}).get("date") or state.date
+            if (_days(first, state.date) or 0) < 0:      # a save from after the game's date
+                first = state.date
+            save_state(self.run_dir, rebrief={"last": first, **BR.snapshot(state),
+                                              "done": [], "cap": False})
+            return
+        tag = player_tag(state, self.config.country)
+        fell = own_capitulation(state, tag) is not None
+        last = kept.get("last") or state.date
+        gap = _days(last, state.date)
+        if gap is not None and gap < BR.MIN_GAP_DAYS:
+            return
+        reason = B.due(schedule, date=state.date, last=last, seen_wars=set(kept.get("wars", [])),
+                       wars=BR.wars_of(state), faction_before=kept.get("faction"),
+                       faction_now=state.faction, capitulated=fell and not kept.get("cap"),
+                       done_dates=set(kept.get("done", [])))
+        if not reason:
+            return
+        done = set(kept.get("done", []))
+        done |= {i for i in schedule if i[:1].isdigit() and B._ymd(state.date) >= B._ymd(i)}
+        made = self.briefing.run(reason, tag, state.date)
+        save_state(self.run_dir, rebrief={"last": state.date, **BR.snapshot(state),
+                                          "done": sorted(done), "cap": bool(fell or kept.get("cap"))})
+        if made:
+            self.loop.memory.briefing = made[0]
 
     def _memory_check(self, state: GameState, read=None) -> str | None:
         """The game's private memory against ``campaign_memory_limit_gb``: past it, a recovery
@@ -611,6 +692,8 @@ def run_campaign(
     until: str | None = None,
     profile: str | Path | None = None,
     lobby_clicker=None,
+    briefer: LLMClient | None = None,
+    briefing_opener=None,
 ) -> tuple[RunReport, dict]:
     """Run a campaign to its end date or its first reason to stop.
 
@@ -629,12 +712,14 @@ def run_campaign(
     # A sleeping or locked PC types into nothing: hold it awake for the whole run (a no-op
     # for a dry run or the fake game), and let go however the run ends.
     with keep_awake_for(config, log.line):
-        return _run(config, planner, resume, env, until, run_dir, log, lobby_clicker)
+        return _run(config, planner, resume, env, until, run_dir, log, lobby_clicker,
+                    briefer, briefing_opener)
 
 
 def _run(config: HarnessConfig, planner: LLMClient | None, resume: bool, env: HOI4Env | None,
          until: str | None, run_dir: Path, log: CampaignLog,
-         lobby_clicker=None) -> tuple[RunReport, dict]:
+         lobby_clicker=None, briefer: LLMClient | None = None,
+         briefing_opener=None) -> tuple[RunReport, dict]:
     from ..agent.llm import build_llm
     from ..cli import _env_from_config
 
@@ -657,7 +742,10 @@ def _run(config: HarnessConfig, planner: LLMClient | None, resume: bool, env: HO
     cap = f"${config.budget.max_usd:.2f}" if config.budget.max_usd else "none"
     log.line(f"campaign {'resumed' if resume else 'started'}: {config.country or '?'} until {end}, "
              f"cap {cap}, model {config.planner.model}")
-    _choose_path(config, planner, env, run_dir, log, clicker=lobby_clicker, pause=sleep)
+    brief_run, first = _start_briefing(config, planner, briefer, env, run_dir, log, resume,
+                                       briefing_opener)
+    _choose_path(config, planner, env, run_dir, log, clicker=lobby_clicker, pause=sleep,
+                 briefing=first[0] if first else None)
     try:
         begin(env, config, log, sleep=sleep, run_dir=run_dir)
     except (CampaignStartError, GameLost) as exc:
@@ -667,6 +755,7 @@ def _run(config: HarnessConfig, planner: LLMClient | None, resume: bool, env: HO
         watchdog.reset()
     save_state(run_dir, save_dir=str(_save_dir(config) or ""))
     supervisor = CampaignSupervisor(config, env, tracker, log, run_dir, watchdog)
+    supervisor.briefing = brief_run
     loop = AgentLoop(
         env=env,
         planner=planner if planner is not None
@@ -679,6 +768,8 @@ def _run(config: HarnessConfig, planner: LLMClient | None, resume: bool, env: HO
         supervisor=supervisor,
     )
     supervisor.loop = loop
+    if first:
+        loop.memory.briefing = first[0]
     env.brief_hooks.append(supervisor.guidance.brief_lines)
     if hasattr(adapter, "interrupt"):
         adapter.interrupt = supervisor.guidance.waiting

@@ -203,7 +203,9 @@ class AgentLoop:
         # after every turn; the transcript only approximates it. Rebuild from
         # the transcript only when there is no checkpoint to keep.
         if not (self.memory.journal or self.memory.digest):
+            pinned = self.memory.briefing
             self.memory = state.memory
+            self.memory.briefing = pinned
         self.report.turns = state.turns
         self.report.planner_calls = state.planner_calls
         self.report.reflex_turns = state.reflex_turns

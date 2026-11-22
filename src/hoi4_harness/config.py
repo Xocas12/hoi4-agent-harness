@@ -421,6 +421,23 @@ class HarnessConfig:
     #: Screen points for the lobby steps nobody has recorded yet (campaign/lobby.py):
     #: ``{"rule_row": [x, y], "option:FASCIST": [x, y], "rules_close": [x, y]}``.
     campaign_lobby_points: dict = field(default_factory=dict)
+    #: A briefing agent (#165, docs/briefing.md): before the first turn a separately configured
+    #: model reads a dossier of the world and the country and writes an orientation (the
+    #: situation and the viable paths, no plan), saved in the run dir, shown to the person and
+    #: given to the player as context under the person's own instruction. Costs one call of
+    #: the ``briefing`` model, outside ``budget.max_usd``.
+    campaign_briefing: bool = False
+    #: When to brief again: a list (or comma string) of ``yearly``, ``halfyearly``, dates
+    #: ``YYYY-MM-DD`` and the events ``war``, ``capitulation``, ``faction``. Empty: never.
+    campaign_rebrief: list = field(default_factory=list)
+    #: Let the briefing model search the web for mods it cannot judge from files (opt-in;
+    #: the Workshop brief is read first; only providers that have a search tool).
+    briefing_web_search: bool = False
+    #: The save the first briefing reads (default: the newest save of the country).
+    briefing_save: Path | None = None
+    #: The briefing model. An empty provider means the planner's own client briefs. The
+    #: price per million tokens may go in ``extra`` (``usd_per_m_input``/``usd_per_m_output``).
+    briefing: LLMConfig = field(default_factory=lambda: LLMConfig(provider=""))
     #: The AI the game runs underneath (docs/expert-ai.md): ``vanilla``, ``expert_ai`` (the
     #: Workshop mod; the campaign then turns on the strong directive weights, because its own
     #: plans would drown the normal ones) or ``auto`` (read dlc_load.json at the start).
@@ -612,6 +629,16 @@ class HarnessConfig:
                     else:
                         raise KeyError(f"Unknown configuration key {key}.{sub_key!r}")
                 role.__post_init__()
+            elif key == "briefing" and isinstance(value, dict):
+                role = self.briefing
+                for sub_key, sub_value in value.items():
+                    if sub_key == "provider":
+                        role.switch_provider(sub_value)
+                    elif hasattr(role, sub_key):
+                        setattr(role, sub_key, sub_value)
+                    else:
+                        raise KeyError(f"Unknown configuration key briefing.{sub_key!r}")
+                role.__post_init__()
             elif key == "budget" and isinstance(value, dict):
                 for sub_key, sub_value in value.items():
                     if not hasattr(self.budget, sub_key):
@@ -621,7 +648,7 @@ class HarnessConfig:
             elif key in {"run_dir", "save_dir", "log_path", "system_prompt_path", "game_dir",
                          "ui_scripts_path", "calibration_path", "console_dir", "camera_path",
                          "fake_game_dir", "fake_game_files", "mod_context_cache_dir", "inbox_dir", "user_dir",
-                         "chat_path",
+                         "chat_path", "briefing_save",
                          "fake_human_script"} and value is not None:
                 setattr(self, key, Path(value))
             elif key in ("mod_dirs", "skills_dirs"):

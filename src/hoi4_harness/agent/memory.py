@@ -32,6 +32,9 @@ class Memory:
     max_digest: int = 6
     journal: list[JournalEntry] = field(default_factory=list)
     digest: list[str] = field(default_factory=list)
+    #: The briefing agent's orientation (briefing.context_block), shown above the journal and
+    #: below the standing objective. Pinned: neither trimmed nor reset (#165).
+    briefing: str = ""
 
     def note(self, date: str, turn: int, text: str) -> None:
         text = text.strip()
@@ -48,6 +51,8 @@ class Memory:
     def context_block(self) -> str:
         """Compact memory text for the prompt. Empty string when there is nothing."""
         parts: list[str] = []
+        if self.briefing:
+            parts.append(self.briefing)
         if self.journal:
             parts.append(
                 "Standing plan (your own notes):\n"
@@ -63,6 +68,7 @@ class Memory:
                 {
                     "journal": [e.__dict__ for e in self.journal],
                     "digest": self.digest,
+                    "briefing": self.briefing,
                 },
                 indent=2,
             ),
@@ -77,4 +83,5 @@ class Memory:
         memory = cls()
         memory.journal = [JournalEntry(**e) for e in data.get("journal", [])]
         memory.digest = list(data.get("digest", []))
+        memory.briefing = str(data.get("briefing", "") or "")
         return memory

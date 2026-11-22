@@ -9,6 +9,8 @@ first-class citizen rather than an afterthought.
 from __future__ import annotations
 
 import abc
+from collections.abc import Iterator
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -109,6 +111,16 @@ class LLMClient(abc.ABC):
     #: reject and fail every call on. It never changes what the harness does
     #: with the calls it gets back -- validate.py runs either way.
     supports_strict_tools: bool = False
+    #: The provider has a web search of its own the briefing agent may switch on (#165). False
+    #: for the scripted and mailbox clients, which never search.
+    web_search_support: bool = False
+
+    @contextmanager
+    def prose(self, web: bool = False) -> Iterator[None]:
+        """For the calls inside the block: plain text back rather than a tool-call envelope,
+        and the provider's web search when ``web`` and supported. Restores the client after,
+        so a briefing on the player's own client leaves its play untouched."""
+        yield
 
     @abc.abstractmethod
     def complete(
