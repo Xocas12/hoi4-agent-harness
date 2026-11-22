@@ -411,7 +411,8 @@ ACTIONS += [
         ),
         parameters=_schema(
             {"view": {"type": "string", "enum": [
-                "divisions", "battles", "fronts", "state", "country", "borders", "faction", "intel", "projects",
+                "divisions", "battles", "fronts", "state", "country", "borders", "faction", "intel",
+                "projects",
                 "navy",
                 "air", "politics", "economy", "diplomacy", "research", "occupation", "supply",
                 "commanders"]},

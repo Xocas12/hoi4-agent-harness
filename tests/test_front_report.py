@@ -296,7 +296,8 @@ def test_a_capitulated_enemy_is_not_a_front(tmp_path, grid):
 
 def test_the_capitulated_flag_is_read_from_the_countrys_diplomacy_block(tmp_path, grid):
     path = write_save(tmp_path, "a.hoi4", "1941.6.30.12", {11: "SWE"})
-    text = path.read_text(encoding="utf-8").replace("\n\tGER={\n", "\n\tGER={\n\t\tdiplomacy={\n\t\t\tcapitulated=yes\n\t\t}\n", 1)
+    block = "\n\tGER={\n\t\tdiplomacy={\n\t\t\tcapitulated=yes\n\t\t}\n"
+    text = path.read_text(encoding="utf-8").replace("\n\tGER={\n", block, 1)
     path.write_text(text, encoding="utf-8")
     assert W.read_world(path, "SWE", layer=grid).countries["GER"].capitulated is True
 

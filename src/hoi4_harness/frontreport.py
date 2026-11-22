@@ -544,5 +544,6 @@ def view(rows: list[dict], history: FrontHistory | None, limit: int = 60) -> dic
                     "compared between the saves read; battles over the period are the ones seen in "
                     "those saves (their winner is who held the province afterwards); in contact "
                     "means your divisions on or next to a province where an enemy division stands; "
-                    "reading (stuck or losing) is computed from these numbers, with the tools that address it",
+                    "reading (stuck or losing) is computed from these numbers, with the tools that "
+                    "address it",
             "fronts": rows[:limit]}
