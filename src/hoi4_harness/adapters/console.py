@@ -817,6 +817,7 @@ class ConsoleChannel:
             else:
                 kind, ident = str(args["kind"]), args.get("id")
             known = steering.known_ids(self.index) if self.index is not None else None
+            ident = steering.normalise(area, kind, ident)
             why = steering.refusal(area, kind, ident, level, known)
             if why:
                 raise Refused(why)
