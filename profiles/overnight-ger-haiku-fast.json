@@ -1,0 +1,31 @@
+{
+  "campaign": true,
+  "adapter": "headless",
+  "country": "GER",
+  "start_date": "1936-01-01",
+  "campaign_until": "1948-12-31",
+  "operational_control": "game_ai",
+  "guidance": "world-conquest+strategy",
+  "headless_reader": "logtail",
+  "headless_clock": "auto",
+  "headless_game_speed": 5,
+  "mod_context": true,
+  "campaign_review_peace_days": 45,
+  "campaign_review_war_days": 30,
+  "campaign_wake_gap_days": 14,
+  "campaign_save_months": 6,
+  "campaign_silence_minutes": 20,
+  "campaign_on_budget": "stop",
+  "max_tool_rounds_per_turn": 3,
+  "max_actions_per_turn": 8,
+  "planner": {
+    "provider": "claude-cli",
+    "model": "haiku",
+    "max_tokens": 8000
+  },
+  "budget": {
+    "max_llm_calls": 600
+  },
+  "observe_world": true,
+  "campaign_review_min_days": 21
+}
