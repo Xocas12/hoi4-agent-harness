@@ -244,7 +244,7 @@ def test_160_with_the_lobby_off_the_log_says_which_rule_to_set_by_hand(tmp_path)
 def test_160_the_rule_is_read_back_from_a_save_header(tmp_path):
     text = 'gameplaysettings={\n\thistorical=0\n}\ngame_rules={\n\tSWE_ai_behavior="FASCIST"\n}\n'
     assert game_rule(text, "SWE_ai_behavior") == "FASCIST"
-    assert game_rule(text, "GER_ai_behavior") is None
+    assert game_rule(text, "GER_ai_behavior") == "DEFAULT"   # absent from a block that is there
     save = tmp_path / "s.hoi4"
     save.write_text("HOI4txt\n" + text, encoding="utf-8")
     assert read_game_rule(save, "SWE_ai_behavior") == "FASCIST"
@@ -274,3 +274,14 @@ def test_160_a_save_with_another_option_logs_a_warning(tmp_path):
 def test_160_a_save_without_the_rule_is_logged_as_unconfirmed():
     line, = path_rule_lines({"rule": "SWE_ai_behavior", "option": "FASCIST"}, None)
     assert "does not record it" in line
+
+
+def test_160_an_empty_game_rules_block_means_the_default():
+    # A real 1.20 save started with default rules writes "game_rules={" and "}" with nothing
+    # in between (GER_1948_03_27_01, 2026-11-22).
+    from hoi4_harness.adapters.savegame import game_rule
+
+    head = 'date="1948.3.27.1"\ngame_rules={\n}\nid={ id=1 type=2 }\n'
+    assert game_rule(head, "GER_ai_behavior") == "DEFAULT"
+    assert game_rule('date="1936.1.1.12"\n', "GER_ai_behavior") is None
+    assert game_rule('game_rules={\n\tGER_ai_behavior="KAISER"\n}\n', "GER_ai_behavior") == "KAISER"

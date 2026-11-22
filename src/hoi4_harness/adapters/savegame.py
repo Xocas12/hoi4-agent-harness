@@ -312,7 +312,14 @@ def game_rule(text: str, token: str) -> str | None:
     ``token = "OPTION"`` (or a bare word) anywhere in the text it is given; #160's live check
     confirms the spot."""
     found = re.search(r"^[ \t]*" + re.escape(token) + r'[ \t]*=[ \t]*"?([A-Za-z0-9_]+)"?', text, re.M)
-    return found.group(1) if found else None
+    if found:
+        return found.group(1)
+    # A real 1.20 save has a top-level ``game_rules={ }`` block about 34 kB in, and it was empty
+    # in a game started with every rule at its default (GER_1948_03_27_01, 2026-11-22): a rule
+    # missing from a block that is there is at its default.
+    if re.search(r"^game_rules[ \t]*=[ \t]*\{", text, re.M):
+        return "DEFAULT"
+    return None
 
 
 def read_game_rule(path: Path, token: str, head_bytes: int = 262144) -> str | None:
