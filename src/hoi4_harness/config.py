@@ -375,6 +375,11 @@ class HarnessConfig:
     #: not sent, the model plays the country itself with the hands-on actions the headless
     #: adapter offers; not yet verified against the live game, docs/campaign.md).
     campaign_control: str = "game_ai"
+    #: Issue #161 step 1, an experiment. With the game's AI running the country (human_ai), also
+    #: offer the model ``add_production_line``, ``design_equipment`` and ``start_research`` (where
+    #: the adapter has it): the AI may undo, switch or double them, which is what the run measures
+    #: (``scripts/contested_report.py``). Off: the AI owns them, as before.
+    campaign_contested_production: bool = False
     #: In an independent campaign (``campaign_control = "llm"``): ``mouse`` (the default) adds
     #: the input driver's mouse to the headless adapter, for the actions the console cannot do
     #: (research, division orders, handing an army to the game's AI); ``none`` keeps the
@@ -697,6 +702,12 @@ class HarnessConfig:
             # posture stay out (the game's AI is not running the country), but handing an army
             # to the AI is what lets the model hold a front it is not ordering (adapters/hands.py).
             allowed.add("delegate_army_to_ai")
+        from .control import CONTESTED_PRODUCTION, PRODUCTION_LINE_ACTION
+
+        if self.campaign_contested_production and self.campaign and cmap.human_ai:
+            allowed |= CONTESTED_PRODUCTION & set(adapter_supports)
+        elif not self.campaign_contested_production:
+            allowed.discard(PRODUCTION_LINE_ACTION)
         if self.clock_owner != "harness":
             # The player owns the clock, so the model may not take it either --
             # structurally, not by asking it nicely in the prompt.

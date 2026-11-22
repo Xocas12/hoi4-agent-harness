@@ -43,6 +43,11 @@ construction, production, diplomacy, army: agent/hybrid.py ``GAME_AI_OWNED``, do
 (navy, air). ``allow_contested`` turns the refusals into warnings, for an experiment that wants
 to measure the clash.
 
+The experiment flag (issue #161 step 1): ``campaign_contested_production`` opens exactly
+``CONTESTED_PRODUCTION`` (add_production_line, design_equipment, start_research where the adapter
+has it) under ``human_ai``, and the prompt says the AI may undo them. ``scripts/contested_report.py``
+measures what the AI did to each line the model added.
+
 Tested on the simulators only: nothing here has been run against the live game.
 """
 
@@ -62,6 +67,7 @@ DOMAIN_ACTIONS: dict[str, frozenset[str]] = {
     "research": frozenset({"start_research"}),
     "construction": frozenset({"queue_construction", "queue_province_building"}),
     "production": frozenset({"set_production", "change_production_equipment", "set_trade",
+                             "add_production_line",
                              "design_division_template", "design_equipment",
                              "deploy_divisions"}),
     # diplomacy_act is the acts that need nobody's answer (guarantee, leave a faction): a country's
@@ -79,6 +85,10 @@ STEER_ACTIONS = frozenset({"set_ai_directive", "set_ai_posture", "clear_ai_direc
                            "set_front_order", "set_region_order", "steer_production", "steer_intelligence",
                            "steer_research", "steer_navy", "steer_air", "steer_spending",
                            "steer_market", "steer_army"})
+PRODUCTION_LINE_ACTION = "add_production_line"
+#: Issue #161 step 1: what ``campaign_contested_production`` opens under ``human_ai``, knowing the
+#: AI may undo or switch it: a new production line, a design, a research pick. Nothing else.
+CONTESTED_PRODUCTION = frozenset({PRODUCTION_LINE_ACTION, "design_equipment", "start_research"})
 DELEGATE_ACTION = "delegate_army_to_ai"
 CLOCK_ACTION = "set_game_speed"
 #: Never narrowed by control: notes, the clock handed back, the read-only playset queries.

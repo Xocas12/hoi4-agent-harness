@@ -1,0 +1,61 @@
+HOI4txt
+player="GER"
+date="1936.1.1.12"
+save_version=33
+equipments={
+	infantry_equipment_1={
+		id={ id=1505 type=70 }
+		is_frame=no
+		creator="GER"
+		origin="---"
+	}
+	infantry_equipment_2={
+		id={ id=1506 type=70 }
+		is_frame=no
+		creator="GER"
+		origin="---"
+	}
+	artillery_equipment_1={
+		id={ id=1510 type=70 }
+		is_frame=no
+		creator="GER"
+		origin="---"
+	}
+	medium_tank_chassis_1={
+		id={ id=3000 type=70 }
+		version=2
+		name="Tank_A"
+		is_frame=no
+		creator="GER"
+		modules={
+			gun_slot=gun_small_1
+		}
+		origin="---"
+	}
+}
+countries={
+	GER={
+		production={
+			military_lines={
+				id={ id=10 type=56 }
+				produced=10.0
+				active_factories=3
+				requested_factories=3
+				equipment_variant_index={ id=1505 type=70 }
+				factory_efficiencies={
+					40.00000 40.00000 40.00000
+				}
+			}
+			military_lines={
+				id={ id=11 type=56 }
+				produced=4.0
+				active_factories=2
+				requested_factories=2
+				equipment_variant_index={ id=1510 type=70 }
+				factory_efficiencies={
+					40.00000 40.00000
+				}
+			}
+		}
+	}
+}
