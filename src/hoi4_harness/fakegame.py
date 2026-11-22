@@ -521,6 +521,8 @@ class FakeGame:
         self.save_mode = "text"
         #: The "Historical AI Focuses" box on the new-game screen (the save's ``historical=``).
         self.historical = 0
+        #: The game rules the lobby set, as the save records them (``{"GER_ai_behavior": "FASCIST"}``).
+        self.game_rules: dict[str, str] = {}
         self.saves_written: list[Path] = []
         self._wall = 0.0
         self._pending_saves: list[tuple[float, str]] = []
