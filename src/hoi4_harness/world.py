@@ -106,6 +106,9 @@ class CountryPicture:
     production: list[ProductionLine] = field(default_factory=list)
     #: Everything but the army (world_full.FullCountry); None where it was not read.
     full: object | None = None
+    #: The country has surrendered (its ``diplomacy`` block says ``capitulated=yes``; an exile
+    #: keeps a few divisions and is still "at war").
+    capitulated: bool = False
 
 
 @dataclass
@@ -240,6 +243,14 @@ def read_templates(text: str) -> dict[str, dict[str, str]]:
         if isinstance(t, dict) and isinstance(t.get("country"), str):
             out.setdefault(t["country"], {})[sg._ident(t.get("id"))] = str(t.get("name", ""))
     return out
+
+
+def _capitulated(block: dict) -> bool:
+    """``diplomacy={ capitulated=yes }`` in a country's block (checked on a 1943 save: NOR, HOL,
+    FRA and POL have it, SOV and GER do not)."""
+    diplomacy = block.get("diplomacy") if isinstance(block, dict) else None
+    value = diplomacy.get("capitulated") if isinstance(diplomacy, dict) else None
+    return str(value).lower() in ("yes", "true")
 
 
 def _is_armour(kind: str) -> bool:
@@ -482,7 +493,8 @@ def read_world(path: Path, me: str, *, layer=None, also: tuple[str, ...] = ()) -
             continue
         country = CountryPicture(tag, read_divisions(block, tag, templates.get(tag, {}), layer,
                                                    armour.get(tag)),
-                                 read_production(block, names))
+                                 read_production(block, names),
+                                 capitulated=_capitulated(block))
         world.countries[tag] = country
         if shared is not None:
             try:

@@ -33,13 +33,15 @@ WINDOW_DAYS = 90
 #: provinces over two months or more of history.
 STUCK_DAYS = 30
 STUCK_MOVED = 2
+#: A front is losing when it gave up this many more provinces than it took over the period.
+LOSING_NET = 5
 #: An attack is piecemeal when the attacker had under this share of the defender's divisions.
 PIECEMEAL = 0.5
 #: Outnumbered: the foe in contact is at least this many times own.
 OUTNUMBERED = 1.5
 #: Armour: a division with this share of tank battalions counts as armoured; a front below
 #: ARMOUR_LOW of armoured divisions, with at least ARMOUR_MIN divisions in contact, is thin on tanks.
-ARMOUR_DIVISION = 0.4
+ARMOUR_DIVISION = 0.2
 ARMOUR_LOW = 0.15
 ARMOUR_MIN = 4
 #: Share of the divisions in contact that must be low on organisation / supply to be named.
@@ -323,15 +325,8 @@ def _force(pic, tag: str, layer) -> dict:
     return out
 
 
-def _stuck(move: dict, battles: dict, force: dict) -> dict | None:
-    if not move.get("known"):
-        return None
-    unchanged = move.get("unchanged_days") or 0
-    window = move.get("window", {})
-    moved = window.get("gained", 0) + window.get("lost", 0)
-    slow = window.get("days", 0) >= 2 * STUCK_DAYS and moved <= STUCK_MOVED
-    if unchanged < STUCK_DAYS and not slow:
-        return None
+def _causes(battles: dict, force: dict) -> tuple[list[str], list[str]]:
+    """The causes the numbers show on a front, and the tool kinds that answer each."""
     reasons: list[str] = []
     tools: list[str] = []
     own, foe = force["own_in_contact"], force["foe_in_contact"]
@@ -364,14 +359,53 @@ def _stuck(move: dict, battles: dict, force: dict) -> dict | None:
     if force.get("encircled"):
         reasons.append(f"{force['encircled']} divisions encircled")
         tools.append("reserve")
-    unchanged_text = (f"line unchanged for {unchanged} days" if unchanged >= STUCK_DAYS
-                      else f"{moved} provinces moved in {window.get('days', 0)} days")
-    return {"stuck": True, "numbers": f"{unchanged_text}; " + (
-        "; ".join(reasons) if reasons else "no single cause stands out in the numbers"),
-            "reasons": reasons, "tools": _tools(tools)}
+    return reasons, tools
+
+
+def _reading(tag: str, move: dict, battles: dict, force: dict) -> dict | None:
+    """``kind`` "losing" when the line is going backwards, "stuck" when it is not moving or the
+    attacks are mostly failing; None when the front is moving the right way or too new to tell."""
+    if not move.get("known"):
+        return None
+    unchanged = move.get("unchanged_days") or 0
+    window = move.get("window", {})
+    gained, lost = window.get("gained", 0), window.get("lost", 0)
+    days = window.get("days", 0)
+    theirs, mine = battles["their_attacks"], battles["your_attacks"]
+    their_decided = theirs["attacker_won"] + theirs["attacker_lost"]
+    my_decided = mine["attacker_won"] + mine["attacker_lost"]
+    kind = None
+    headline = ""
+    if lost - gained >= LOSING_NET or (lost > gained and their_decided >= MIN_ATTACKS
+                                       and theirs["attacker_won"] * 2 > their_decided):
+        kind = "losing"
+        headline = f"lost {lost} provinces and took {gained} in {days} days"
+        if their_decided >= MIN_ATTACKS:
+            headline += f"; their attacks {theirs['attacker_won']} won of {their_decided}"
+    elif unchanged >= STUCK_DAYS:
+        kind, headline = "stuck", f"line unchanged for {unchanged} days"
+    elif days >= 2 * STUCK_DAYS and gained + lost <= STUCK_MOVED:
+        kind, headline = "stuck", f"{gained + lost} provinces moved in {days} days"
+    elif (my_decided >= MIN_ATTACKS and mine["attacker_lost"] * 2 > my_decided
+          and gained <= LOSING_NET):
+        kind = "stuck"
+        headline = f"line barely moved ({gained} taken in {days} days)"
+    if kind is None:
+        return None
+    reasons, tools = _causes(battles, force)
+    if kind == "losing":
+        tools = ["defend", *tools]
+    numbers = headline + "; " + ("; ".join(reasons) if reasons
+                                 else "no single cause stands out in the numbers")
+    return {"kind": kind, "numbers": numbers, "reasons": reasons, "tools": _tools(tools, tag),
+            "brief": headline + (("; " + "; ".join(reasons[:3])) if reasons else ""),
+            "brief_tools": _brief_tools(tools, tag)}
 
 
 _TOOLS = {
+    "defend": "set_ai_posture defensive theater={tag} and set_front_order order=hold on the lines "
+              "being lost, with order=reserve behind them, so the line shortens and the "
+              "divisions rest",
     "concentration": "set_front_order order=push on one narrow sector where you can gather the "
                      "most divisions (it also aims the AI's concentrated offensives there), "
                      "order=hold on the rest of the line",
@@ -381,14 +415,25 @@ _TOOLS = {
                 "(tanks, units)",
     "supply": "steer_army (supply, fuel) and steer_production (infrastructure, building)",
 }
+#: The short forms for the brief, one line each.
+_SHORT = {
+    "defend": "set_ai_posture defensive {tag} + set_front_order hold/reserve",
+    "concentration": "set_front_order push one sector, hold elsewhere",
+    "reserve": "set_front_order reserve",
+    "template": "steer_army/steer_production for tanks",
+    "supply": "steer_army supply",
+}
+_ORDER = ["defend", "concentration", "reserve", "template", "supply"]
 
 
-def _tools(keys: list[str]) -> list[str]:
-    order = ["concentration", "reserve", "template", "supply"]
-    out = [_TOOLS[k] for k in order if k in keys]
-    if not out:
-        out = [_TOOLS["concentration"], _TOOLS["template"]]
-    return out
+def _tools(keys: list[str], tag: str = "") -> list[str]:
+    out = [_TOOLS[k].format(tag=tag) for k in _ORDER if k in keys]
+    return out or [_TOOLS["concentration"], _TOOLS["template"]]
+
+
+def _brief_tools(keys: list[str], tag: str = "", limit: int = 2) -> str:
+    picked = [_SHORT[k].format(tag=tag) for k in _ORDER if k in keys][:limit]
+    return "; ".join(picked or [_SHORT["concentration"], _SHORT["template"]])
 
 
 def report(history: FrontHistory | None, pic, layer, name_of=None) -> list[dict]:
@@ -397,6 +442,8 @@ def report(history: FrontHistory | None, pic, layer, name_of=None) -> list[dict]
     world = pic.world
     enemies = set(getattr(world, "enemies", None) or set())
     now = pic.date
+    done = {t for t, c in world.countries.items() if getattr(c, "capitulated", False)}
+    enemies -= done
     tags = {t for t in pic.contact if t in enemies}
     tags |= {b.get("front") for b in list(history.open.values()) + history.closed
              if b.get("front") in enemies
@@ -407,7 +454,7 @@ def report(history: FrontHistory | None, pic, layer, name_of=None) -> list[dict]
         battles = _battle_stats(history, tag, now)
         force = _force(pic, tag, layer)
         row = {"enemy": tag, "date": now, "movement": move, "battles": battles, "force": force,
-               "stuck": _stuck(move, battles, force)}
+               "reading": _reading(tag, move, battles, force)}
         if name_of is not None:
             recent = sorted([*history.open.values(), *(b for b in history.closed
                              if (days_between(b.get("ended"), now) or 0) < WINDOW_DAYS)],
@@ -420,7 +467,7 @@ def report(history: FrontHistory | None, pic, layer, name_of=None) -> list[dict]
                  "yours": b["own_side"], "outcome": b.get("outcome", "ongoing")}
                 for b in recent if b.get("front") == tag][-12:]
         out.append(row)
-    out.sort(key=lambda r: (-(r["force"]["foe_in_contact"] + r["battles"]["started"]), r["enemy"]))
+    out.sort(key=lambda r: (-r["force"]["foe_in_contact"], -r["battles"]["started"], r["enemy"]))
     return out
 
 
@@ -481,9 +528,9 @@ def brief_lines(rows: list[dict], limit: int = MAX_FRONTS) -> list[str]:
         lines.append(f"  * Front vs {r['enemy']}: {_movement_words(r['movement'])}; "
                      f"{_battle_words(r['battles'])}")
         lines.append(f"    {_force_words(r['force'])}")
-        if r["stuck"]:
-            lines.append(f"    STUCK: {r['stuck']['numbers']}. Change something: "
-                         + "; ".join(r["stuck"]["tools"]) + ".")
+        if r["reading"]:
+            lines.append(f"    {r['reading']['kind'].upper()}: {r['reading']['brief']}. "
+                         f"Try: {r['reading']['brief_tools']}.")
     if len(rows) > limit:
         lines.append(f"  (+{len(rows) - limit} more fronts: inspect_world view=fronts)")
     return lines
@@ -497,5 +544,5 @@ def view(rows: list[dict], history: FrontHistory | None, limit: int = 60) -> dic
                     "compared between the saves read; battles over the period are the ones seen in "
                     "those saves (their winner is who held the province afterwards); in contact "
                     "means your divisions on or next to a province where an enemy division stands; "
-                    "stuck is computed from these numbers, with the tools that address it",
+                    "reading (stuck or losing) is computed from these numbers, with the tools that address it",
             "fronts": rows[:limit]}

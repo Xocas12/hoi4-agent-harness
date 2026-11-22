@@ -101,7 +101,7 @@ def test_the_first_save_has_nothing_to_compare_with(tmp_path, grid):
     history = FR.FrontHistory()
     pic = feed(history, write_save(tmp_path, "a.hoi4", "1941.6.30.12", {11: "SWE"}), grid)
     assert "first look, no earlier save" in lines_for(history, pic, grid)
-    assert FR.report(history, pic, grid)[0]["stuck"] is None
+    assert FR.report(history, pic, grid)[0]["reading"] is None
 
 
 def test_an_older_or_repeated_save_is_not_recorded(tmp_path, grid):
@@ -149,8 +149,8 @@ def test_the_stuck_reading_fires_and_names_its_numbers_and_the_tools(tmp_path, g
                              ger_divisions=4), grid)
     pic = feed(history, write_save(tmp_path, "b.hoi4", "1941.8.31.12", {11: "SWE"}, ger_divisions=4),
                grid)
-    stuck = FR.report(history, pic, grid)[0]["stuck"]
-    assert stuck["stuck"]
+    stuck = FR.report(history, pic, grid)[0]["reading"]
+    assert stuck["kind"] == "stuck"
     assert "line unchanged for 62 days" in stuck["numbers"]
     assert "outnumbered 1 to 2.0 in contact (2 against 4)" in stuck["numbers"]
     assert "3 of 3 attacks lost" in stuck["numbers"]
@@ -159,7 +159,7 @@ def test_the_stuck_reading_fires_and_names_its_numbers_and_the_tools(tmp_path, g
     assert "set_front_order order=push" in joined and "order=hold" in joined
     text = lines_for(history, pic, grid)
     assert "STUCK: line unchanged for 62 days; outnumbered 1 to 2.0 in contact (2 against 4)" in text
-    assert "Change something:" in text and "set_front_order" in text
+    assert "Try: set_front_order push one sector, hold elsewhere" in text
     # a thin-armour reading needs enough divisions in contact: two of them is not enough
     assert "armour" not in stuck["numbers"]
 
@@ -174,17 +174,19 @@ def test_the_stuck_reading_names_thin_armour_when_enough_divisions_are_in_contac
         (path / name).write_text(save_text(swe, ger, "", controllers={11: "SWE"}, date=date),
                                  encoding="utf-8")
         pic = feed(history, path / name, grid)
-    stuck = FR.report(history, pic, grid)[0]["stuck"]
+    stuck = FR.report(history, pic, grid)[0]["reading"]
     assert stuck and "0% armour" in stuck["numbers"]
     assert any("steer_army" in t and "steer_production" in t for t in stuck["tools"])
 
 
 def test_the_stuck_reading_does_not_fire_when_the_line_moved(tmp_path, grid):
     history = FR.FrontHistory()
-    feed(history, write_save(tmp_path, "a.hoi4", "1941.6.30.12", {11: "SWE"}, combat=SEVEN_ATTACKS), grid)
-    pic = feed(history, write_save(tmp_path, "b.hoi4", "1941.8.31.12", {11: "SWE", 7: "SWE", 3: "SWE", 8: "SWE"}), grid)
+    won = attack(200, 7, 3, 2) + attack(201, 3, 3, 2) + attack(202, 8, 3, 2)
+    feed(history, write_save(tmp_path, "a.hoi4", "1941.6.30.12", {11: "SWE"}, combat=won), grid)
+    pic = feed(history, write_save(tmp_path, "b.hoi4", "1941.8.31.12",
+                                   {11: "SWE", 7: "SWE", 3: "SWE", 8: "SWE"}), grid)
     row = FR.report(history, pic, grid)[0]
-    assert row["stuck"] is None
+    assert row["reading"] is None
     assert "STUCK" not in lines_for(history, pic, grid)
 
 
@@ -193,7 +195,7 @@ def test_a_short_pause_is_not_stuck(tmp_path, grid):
     feed(history, write_save(tmp_path, "a.hoi4", "1941.7.20.12", {11: "SWE"}), grid)
     pic = feed(history, write_save(tmp_path, "b.hoi4", "1941.8.10.12", {11: "SWE"}), grid)
     row = FR.report(history, pic, grid)[0]
-    assert row["movement"]["unchanged_days"] == 21 and row["stuck"] is None
+    assert row["movement"]["unchanged_days"] == 21 and row["reading"] is None
 
 
 def test_the_brief_keeps_to_a_few_fronts():
@@ -202,7 +204,7 @@ def test_the_brief_keeps_to_a_few_fronts():
                          "their_attacks": {"total": 0}},
              "force": {"own_in_contact": 1, "foe_in_contact": 1, "ratio": "1 to 1.0",
                        "armour_share": None},
-             "stuck": None} for t in ("AAA", "BBB", "CCC", "DDD", "EEE")]
+             "reading": None} for t in ("AAA", "BBB", "CCC", "DDD", "EEE")]
     lines = FR.brief_lines(rows)
     assert sum(1 for x in lines if "Front vs" in x) == FR.MAX_FRONTS
     assert "+2 more fronts" in lines[-1]
@@ -234,3 +236,106 @@ def test_template_armour_share_comes_from_the_battalions_of_the_template():
             '\tdivision_template={\n\t\tid={ id=8 type=52 }\n\t\tname="Foot"\n\t\tcountry="GER"\n'
             '\t\tregiments={\n\t\t\tinfantry={ x=0 y=0 }\n\t\t}\n\t}\n}\n')
     assert W.read_template_armour(text) == {"GER": {"7": 0.5, "8": 0.0}}
+
+
+def test_a_front_where_most_attacks_fail_is_stuck_even_when_a_few_provinces_changed_hands(tmp_path, grid):
+    history = FR.FrontHistory()
+    far = attack(200, 12, 1, 3) + attack(201, 4, 1, 3) + attack(202, 12, 1, 4)
+    feed(history, write_save(tmp_path, "a.hoi4", "1941.6.30.12", {11: "SWE"}, combat=far), grid)
+    pic = feed(history, write_save(tmp_path, "b.hoi4", "1941.8.31.12",
+                                   {11: "SWE", 7: "SWE", 3: "SWE", 8: "SWE"}), grid)
+    reading = FR.report(history, pic, grid)[0]["reading"]
+    assert reading["kind"] == "stuck"
+    assert "line barely moved (3 taken in 62 days)" in reading["numbers"]
+    assert "3 of 3 attacks lost" in reading["numbers"]
+
+
+def test_a_front_that_gives_ground_gets_a_losing_reading_with_defensive_tools(tmp_path, grid):
+    history = FR.FrontHistory()
+    feed(history, write_save(tmp_path, "a.hoi4", "1941.6.30.12", {11: "SWE"}), grid)
+    pic = feed(history, write_save(tmp_path, "b.hoi4", "1941.8.31.12", {
+        11: "SWE", 1: "GER", 2: "GER", 5: "GER", 6: "GER", 9: "GER", 10: "GER"}), grid)
+    reading = FR.report(history, pic, grid)[0]["reading"]
+    assert reading["kind"] == "losing"
+    assert "lost 6 provinces and took 0 in 62 days" in reading["numbers"]
+    joined = " ".join(reading["tools"])
+    assert "set_ai_posture defensive theater=GER" in joined and "order=hold" in joined
+    text = lines_for(history, pic, grid)
+    assert "LOSING: lost 6 provinces and took 0 in 62 days" in text
+    assert "set_ai_posture defensive GER" in text
+
+
+def test_a_front_that_is_winning_ground_has_no_reading(tmp_path, grid):
+    history = FR.FrontHistory()
+    feed(history, write_save(tmp_path, "a.hoi4", "1941.6.30.12", {11: "SWE", 1: "GER"}), grid)
+    pic = feed(history, write_save(tmp_path, "b.hoi4", "1941.8.31.12", {
+        11: "SWE", 7: "SWE", 3: "SWE", 8: "SWE", 12: "SWE", 4: "SWE", 1: "GER"}), grid)
+    assert FR.report(history, pic, grid)[0]["reading"] is None
+
+
+def test_the_brief_reading_is_short_and_names_two_tools_at_most(tmp_path, grid):
+    history = FR.FrontHistory()
+    feed(history, write_save(tmp_path, "a.hoi4", "1941.6.30.12", {11: "SWE"}, combat=SEVEN_ATTACKS), grid)
+    pic = feed(history, write_save(tmp_path, "b.hoi4", "1941.8.31.12", {
+        11: "SWE", 1: "GER", 2: "GER", 5: "GER", 6: "GER", 9: "GER", 10: "GER"}), grid)
+    lines = FR.brief_lines(FR.report(history, pic, grid))
+    reading = next(x for x in lines if "LOSING" in x)
+    assert len(reading) < 300
+    assert reading.split("Try: ")[1].count("; ") <= 1
+
+
+def test_a_capitulated_enemy_is_not_a_front(tmp_path, grid):
+    history = FR.FrontHistory()
+    feed(history, write_save(tmp_path, "a.hoi4", "1941.6.30.12", {11: "SWE"}), grid)
+    world = W.read_world(write_save(tmp_path, "b.hoi4", "1941.8.31.12", {11: "SWE"}), "SWE", layer=grid)
+    history.record(world, "SWE", grid)
+    assert [r["enemy"] for r in FR.report(history, W.picture(world, "SWE", {}, grid), grid)] == ["GER"]
+    world.countries["GER"].capitulated = True
+    assert FR.report(history, W.picture(world, "SWE", {}, grid), grid) == []
+
+
+def test_the_capitulated_flag_is_read_from_the_countrys_diplomacy_block(tmp_path, grid):
+    path = write_save(tmp_path, "a.hoi4", "1941.6.30.12", {11: "SWE"})
+    text = path.read_text(encoding="utf-8").replace("\n\tGER={\n", "\n\tGER={\n\t\tdiplomacy={\n\t\t\tcapitulated=yes\n\t\t}\n", 1)
+    path.write_text(text, encoding="utf-8")
+    assert W.read_world(path, "SWE", layer=grid).countries["GER"].capitulated is True
+
+
+def test_fronts_rank_by_enemy_divisions_in_contact():
+    rows = [{"enemy": t, "date": None, "movement": {}, "battles": {"started": 0},
+             "force": {"foe_in_contact": n}} for t, n in (("HOL", 2), ("SOV", 30), ("NOR", 1))]
+    rows.sort(key=lambda r: (-r["force"]["foe_in_contact"], -r["battles"]["started"], r["enemy"]))
+    assert [r["enemy"] for r in rows] == ["SOV", "HOL", "NOR"]
+
+
+REAL_TEMPLATE = (
+    "HOI4txt\ndivision_templates={\n\tdivision_template={\n\t\tid={ id=1730 type=52 }\n"
+    "\t\tname=\"Medium Tank 1941 A\"\n\t\tobsolete=yes\n\t\tobsolete_change_date=\"1942.6.3.9\"\n"
+    "\t\tdivision_names_group=\"SOV_MEC_01\"\n\t\tcountry=\"SOV\"\n\t\toriginal_tag=\"SOV\"\n"
+    "\t\tforeign_template_tag=\"---\"\n\t\tpriority=1\n\t\tallow_new_equipment=yes\n"
+    "\t\tallow_foreign_equipment=yes\n\t\tregimental_support={\n\t\t\tanti_air_battery={ x=1 y=0 }\n"
+    "\t\t\tanti_air_battery={ x=2 y=0 }\n\t\t}\n\t\tsupport={\n\t\t\tengineer={ x=0 y=0 }\n"
+    "\t\t\tartillery={ x=0 y=1 }\n\t\t\tmot_recon={ x=0 y=2 }\n\t\t}\n\t\tregiments={\n"
+    "\t\t\tmedium_armor={ x=0 y=0 }\n\t\t\tmedium_armor={ x=0 y=1 }\n\t\t\tmedium_armor={ x=0 y=2 }\n"
+    "\t\t\tmotorized={ x=1 y=0 }\n\t\t\tmotorized={ x=1 y=1 }\n\t\t\tmotorized={ x=1 y=2 }\n"
+    "\t\t\tmotorized={ x=2 y=0 }\n\t\t\tmotorized={ x=2 y=1 }\n\t\t\tmotorized={ x=2 y=2 }\n"
+    "\t\t\tmotorized={ x=2 y=3 }\n\t\t}\n\t\ttemplate_counter=-1\n"
+    "\t\tingame_set_template_counter=no\n\t\trole=\"armor\"\n\t\torigin_type=master_host\n\t}\n}\n")
+
+
+def test_a_medium_tank_template_from_a_real_save_counts_as_armoured():
+    # the real save's Medium Tank 1941 A: 3 tank battalions of 10, so 30% of its battalions
+    share = W.read_template_armour(REAL_TEMPLATE)["SOV"]["1730"]
+    assert share == pytest.approx(0.3)
+
+    class D:
+        armour = share
+        template = "Medium Tank 1941 A"
+
+    assert FR._is_armoured(D())
+
+    class Foot:
+        armour = 0.0
+        template = "Infantry 1941"
+
+    assert not FR._is_armoured(Foot())
