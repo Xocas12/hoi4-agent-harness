@@ -83,11 +83,14 @@ def test_missing_template_reference_keeps_divisions_unknown(raw):
     assert not state.known("divisions") and state.divisions == []
 
 
-def test_unrecognized_collection_shape_does_not_become_known_empty(raw):
+def test_a_production_or_units_block_without_lines_is_known_and_empty(raw):
+    # A country that builds nothing or fields nothing writes the block with no lines in it
+    # (review of #86: reading that as unknown made the console refuse the first line).
     raw["country"]["production"] = {"unrecognized_lines": {}}
     raw["country"]["units"] = {"unrecognized_units": {}}
     state = mapped(raw)
-    assert not state.known("production") and not state.known("divisions")
+    assert state.known("production") and state.production == []
+    assert state.known("divisions") and state.divisions == []
 
 
 def test_known_military_metrics_and_active_research_from_84_are_preserved():
@@ -144,7 +147,7 @@ def test_delta_reports_collection_visibility_changes_without_invented_zeros():
     assert "Production: unknown" in delta and "-> 0 factories" not in delta
     delta = render_delta(after, before)
     assert "Research slots free: unknown -> 1" in delta
-    assert "Production infantry: unknown -> 1 factories" in delta
+    assert "Production: unknown -> 1 line(s)" in delta and "Production infantry" not in delta
 
 
 def test_unknown_production_assignment_is_unverified_rather_than_rejected():

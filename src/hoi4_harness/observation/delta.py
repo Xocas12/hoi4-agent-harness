@@ -84,16 +84,22 @@ def render_delta(previous: GameState, current: GameState) -> str:
         return counts
 
     before_lines, after_lines = production_counts(previous), production_counts(current)
-    if previous.known("production") and not current.known("production"):
-        lines.append("Production: unknown")
-    for equipment in sorted(set(before_lines) | set(after_lines)):
-        before = before_lines.get(equipment, 0) if previous.known("production") else None
-        after = after_lines.get(equipment, 0) if current.known("production") else None
-        if before != after:
-            lines.append(
-                f"Production {equipment}: {before if before is not None else 'unknown'} -> "
-                f"{after if after is not None else 'unknown'} factories"
-            )
+    if previous.known("production") != current.known("production"):
+        # The whole collection appeared or went out of view: one line says so, not one per
+        # equipment (each would read "N -> unknown" for a change that is about the reader).
+        if current.known("production"):
+            lines.append(f"Production: unknown -> {len(current.production)} line(s)")
+        else:
+            lines.append("Production: unknown")
+    else:
+        for equipment in sorted(set(before_lines) | set(after_lines)):
+            before = before_lines.get(equipment, 0) if previous.known("production") else None
+            after = after_lines.get(equipment, 0) if current.known("production") else None
+            if before != after:
+                lines.append(
+                    f"Production {equipment}: {before if before is not None else 'unknown'} -> "
+                    f"{after if after is not None else 'unknown'} factories"
+                )
 
     before_wars = {w.against for w in previous.wars}
     after_wars = {w.against for w in current.wars}

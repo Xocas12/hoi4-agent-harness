@@ -69,8 +69,12 @@ def latest_save(save_dir: Path) -> Path | None:
     return saves[0] if saves else None
 
 
-def _entry_spans(text: str, start: int = 0, end: int | None = None) -> dict[str, list[tuple[int, int]]]:
-    """Index direct assignments in a container, skipping nested data in one pass."""
+def _entry_spans(text: str, start: int = 0, end: int | None = None, *,
+                 root: bool = True) -> dict[str, list[tuple[int, int]]]:
+    """Index direct assignments in a container, skipping nested data in one pass.
+
+    ``root`` is the whole text; otherwise ``start`` is just inside a container, whose own
+    closing brace ends the index."""
     end = len(text) if end is None else end
     depth = 0
     spans: dict[str, list[tuple[int, int]]] = {}
@@ -87,8 +91,10 @@ def _entry_spans(text: str, start: int = 0, end: int | None = None) -> dict[str,
             depth += 1
         elif token == "}":
             if depth == 0:
+                if root:
+                    continue      # a stray closer at the root closes nothing; keep indexing
                 finish(match.start())
-                return spans
+                return spans      # a nested container's own closing brace ends it
             depth -= 1
         elif depth == 0 and match.group("key") is not None:
             finish(match.start())
@@ -129,7 +135,7 @@ def _children(text: str, span: tuple[int, int]) -> dict[str, list[tuple[int, int
     prefix = [next(tokens, None) for _ in range(3)]
     if prefix[2] is None or prefix[2].group() != "{":
         return {}
-    return _entry_spans(text, prefix[2].end(), end)
+    return _entry_spans(text, prefix[2].end(), end, root=False)
 
 
 def _root_blocks(text: str, key: str) -> list[tuple[int, int]]:
@@ -292,7 +298,10 @@ def parse_clausewitz(text: str) -> dict:
                 continue
             if pos < len(tokens) and tokens[pos] == "=":
                 pos += 1
-                if pos >= len(tokens) or tokens[pos] == "}":
+                if pos >= len(tokens):
+                    return block
+                if tokens[pos] == "}":
+                    pos += 1      # `key=}`: no value, and the brace closes THIS block, once
                     return block
                 value_tok = tokens[pos]
                 if value_tok == "{":
@@ -454,37 +463,67 @@ def _typed_ref(value) -> tuple[str, str] | None:
 
 
 class _Refs(dict):
-    """Typed reference ``(id, type)`` -> name (``{ id=21 type=52 }``)."""
+    """Typed reference ``(id, type)`` -> name. ``by_id`` lists every name an id was given,
+    including those of references withheld as duplicates, so a bare id can be matched only
+    when exactly one record carries it."""
+
+    def __init__(self):
+        super().__init__()
+        self.by_id: dict[str, list[str]] = {}
+        self._dropped: set = set()
+
+    def add(self, ref: tuple[str, str], name: str) -> None:
+        self.by_id.setdefault(ref[0], []).append(name)
+        if ref in self._dropped:
+            return
+        if ref in self:
+            del self[ref]            # the same reference twice is ambiguous: neither is trusted
+            self._dropped.add(ref)
+            return
+        self[ref] = name
+
+    def resolve(self, value) -> str | None:
+        """The name a save's reference points at: a typed ``{ id= type= }``, or a bare id
+        (``division_template_id=21``) when that id is unique among the records."""
+        ref = _typed_ref(value)
+        if ref is not None:
+            return self.get(ref)
+        if isinstance(value, str) and value.isdigit():
+            found = self.by_id.get(value, [])
+            if len(found) == 1:
+                return found[0]
+        return None
 
 
 def _resolve(names, value) -> str | None:
-    """The name a save's reference points at in a typed index; a mapping keyed on the plain
-    id (what the world reader builds) is looked up by the plain id."""
+    """:meth:`_Refs.resolve` for a typed index; a mapping keyed on the plain id (what the
+    world reader builds) is looked up by the plain id."""
     if isinstance(names, _Refs):
-        ref = _typed_ref(value)
-        return names.get(ref) if ref is not None else None
+        return names.resolve(value)
     return names.get(_ident(value))
 
 
-def _reference_names(records: list, name_key: str) -> _Refs | None:
+def _reference_names(records: list, name_key: str) -> _Refs:
+    """Records ``{ id={ id= type= } <name_key>=... }`` -> a reference index. A malformed
+    record is skipped and a duplicated reference withheld; neither costs the others."""
     names = _Refs()
     for record in records:
         if not isinstance(record, dict):
-            return None
+            continue
         ref, name = _typed_ref(record.get("id")), record.get(name_key)
-        if ref is None or ref in names or not isinstance(name, str) or not name:
-            return None
-        names[ref] = name
+        if ref is None or not isinstance(name, str) or not name:
+            continue
+        names.add(ref, name)
     return names
 
 
-def _equipment_names(equipments: dict) -> _Refs | None:
+def _equipment_names(equipments: dict) -> _Refs:
+    """Equipment reference -> its name (``infantry_equipment_1``), from the parsed block."""
     records = []
     for name, entries in equipments.items():
         for entry in _as_list(entries):
-            if not isinstance(entry, dict):
-                return None
-            records.append({"id": entry.get("id"), "name": name})
+            if isinstance(entry, dict):
+                records.append({"id": entry.get("id"), "name": name})
     return _reference_names(records, "name")
 
 
@@ -518,7 +557,7 @@ def _equipment_names_fast(text: str, typed: bool = False) -> dict:
     names = _Refs()
     for m in found:
         if m.group(3) is not None:
-            names[(m.group(2), m.group(3))] = m.group(1)
+            names.add((m.group(2), m.group(3)), m.group(1))
     return names
 
 
@@ -681,10 +720,10 @@ def _read_production(state: GameState, production, names: dict, unknown: set[str
     Nothing is invented: a line whose equipment cannot be named, or whose factory count is
     not a count, makes the whole set unknown (an incomplete list read as complete would have
     the reflex hand the idle factories to the wrong line). A line that says nothing about
-    factories at all keeps ``factories=None``. A production block that has no line list
-    at all is unknown, not empty.
+    factories at all keeps ``factories=None``. A production block with no line list is the
+    country's empty production, which is known: a country that builds nothing writes none.
     """
-    if not isinstance(production, dict) or not {"military_lines", "naval_lines"} & production.keys():
+    if not isinstance(production, dict):
         return
     lines: list[ProductionLine] = []
     for key, kind in (("military_lines", "military"), ("naval_lines", "naval")):
@@ -776,7 +815,7 @@ def _read_divisions(state: GameState, units, templates: dict, unknown: set[str])
     """Divisions counted by template name. Location and strength are not read:
     the save gives a province id and raw strength figures, neither in the units
     :class:`DivisionGroup` documents."""
-    if not isinstance(units, dict) or "division" not in units:
+    if not isinstance(units, dict):
         return
     counts: dict[str, int] = {}
     for division in _as_list(units.get("division")):
