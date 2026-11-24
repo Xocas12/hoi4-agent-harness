@@ -460,7 +460,7 @@ def read_world(path: Path, me: str, *, layer=None, also: tuple[str, ...] = ()) -
         armour = read_template_armour(text)
     except Exception:  # noqa: BLE001 - template composition is an extra; the army reads without it
         armour = {}
-    names = sg._equipment_names_fast(text) or sg._equipment_names(sg.top_block(text, "equipments") or {})
+    names = sg._equipment_names_fast(text) or sg._equipment_ids(sg.top_block(text, "equipments") or {})
     from . import world_full as F
 
     shared = _read_shared(text, world, me, layer, names)

@@ -246,11 +246,14 @@ def _verify_construction(before: GameState, after: GameState, args: dict) -> str
 
 
 def _verify_production(before: GameState, after: GameState, args: dict) -> str | None:
-    line = next((x for x in after.production if x.equipment == args["equipment"]), None)
-    have = line.factories if line else 0
+    # Every line of the equipment counts (the game may hold several, as the delta sums them),
+    # not whichever the list happens to name first.
+    lines = [x for x in after.production if x.equipment == args["equipment"]]
+    have = sum(x.factories or 0 for x in lines)
     if have == int(args["factories"]):
         return None
-    return f"{args['equipment']} has {have} factories, not {args['factories']}"
+    across = f" across {len(lines)} lines" if len(lines) > 1 else ""
+    return f"{args['equipment']} has {have} factories{across}, not {args['factories']}"
 
 
 def _verify_advisor(before: GameState, after: GameState, args: dict) -> str | None:
@@ -336,6 +339,11 @@ def verify(
         # and directives from the very event line the action makes the mod
         # write, which may land after the first read.
         unseen = [name for name in needs if not state.known(name)]
+        if call.name == "set_production" and any(
+            line.equipment == call.arguments["equipment"] and line.factories is None
+            for line in state.production
+        ):
+            unseen.append("production.factories")
         return unseen, None if unseen else check(before, state, call.arguments)
 
     def no_fresh_day(state: GameState) -> bool:

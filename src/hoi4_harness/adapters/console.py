@@ -421,7 +421,11 @@ class ConsoleChannel:
         if any(line.equipment == equipment for line in state.production):
             raise Refused(f"a {equipment} line already exists; the effect would add a second "
                           "line instead of changing it. Change an existing line on the ui channel")
-        used = sum(line.factories for line in state.production)
+        if any(line.factories is None for line in state.production if line.kind == "military"):
+            raise Refused("the reader cannot see military production assignments, so free "
+                          "factories cannot be counted")
+        # Dockyards build the naval lines; only military lines draw on military factories.
+        used = sum(line.factories or 0 for line in state.production if line.kind == "military")
         free = max(state.military_factories - used, 0)
         if factories > free:
             # A line just opened counts its requested factories though it may have

@@ -18,6 +18,7 @@ Constraints worth knowing before you build on this:
 
 from __future__ import annotations
 
+import math
 import re
 from pathlib import Path
 
@@ -33,9 +34,18 @@ from ..types import (
 )
 from .base import AdapterInfo, GameAdapter
 
-TOKEN = re.compile(r'"[^"]*"|[{}=]|[^\s{}=]+')
+# Strings and comments must be consumed together so their braces are inert.
+_QUOTED = r'"(?:\\.|[^"\\])*(?:"|\\?$)'
+TOKEN = re.compile(rf'{_QUOTED}|\#[^\r\n]*|[{{}}=]|[^\s{{}}="\#]+')
+# Scan structure without allocating a token for every number in the world save.
+_STRUCTURE = re.compile(rf'(?P<key>{_QUOTED}|[^\s{{}}="\#]+)\s*=|{_QUOTED}|\#[^\r\n]*|[{{}}]')
 
 
+def _unquote(token: str) -> str:
+    if token[:1] == '"' and token[-1:] == '"' and len(token) > 1:
+        body = token[1:-1]
+        return re.sub(r'\\(["\\])', r'\1', body) if "\\" in body else body
+    return token
 
 
 def read_text(path: Path) -> str:
@@ -59,82 +69,148 @@ def latest_save(save_dir: Path) -> Path | None:
     return saves[0] if saves else None
 
 
-#: A key at the very start of a line: how a text save lays out its top level.
-TOP_LEVEL = re.compile(r"^([A-Za-z0-9_\-]+)\s*=", re.M)
+def _entry_spans(text: str, start: int = 0, end: int | None = None, *,
+                 root: bool = True) -> dict[str, list[tuple[int, int]]]:
+    """Index direct assignments in a container, skipping nested data in one pass.
 
-
-def top_level_spans(text: str) -> dict[str, list[tuple[int, int]]]:
-    """Where each top-level entry of a save starts and ends, without parsing it.
-
-    Saves on the machine this was checked on run 68-96 MB, and tokenizing the
-    whole file to read a handful of numbers is most of the cost. A text save
-    writes its top level at column 0 and everything nested indented, so a key
-    at the start of a line opens an entry that runs to the next one. That is a
-    layout assumption, not a grammar: when it finds nothing (a file on one
-    line), callers fall back to a full parse.
-    """
-    starts = [(m.start(), m.group(1)) for m in TOP_LEVEL.finditer(text)]
+    ``root`` is the whole text; otherwise ``start`` is just inside a container, whose own
+    closing brace ends the index."""
+    end = len(text) if end is None else end
+    depth = 0
     spans: dict[str, list[tuple[int, int]]] = {}
-    for index, (start, key) in enumerate(starts):
-        end = starts[index + 1][0] if index + 1 < len(starts) else len(text)
-        spans.setdefault(key, []).append((start, end))
+    pending: tuple[str, int] | None = None
+
+    def finish(stop: int) -> None:
+        if pending is not None:
+            key, begin = pending
+            spans.setdefault(key, []).append((begin, stop))
+
+    for match in _STRUCTURE.finditer(text, start, end):
+        token = match.group()
+        if token == "{":
+            depth += 1
+        elif token == "}":
+            if depth == 0:
+                if root:
+                    continue      # a stray closer at the root closes nothing; keep indexing
+                finish(match.start())
+                return spans      # a nested container's own closing brace ends it
+            depth -= 1
+        elif depth == 0 and match.group("key") is not None:
+            finish(match.start())
+            pending = (_unquote(match.group("key")), match.start())
+    if depth == 0:
+        finish(end)
     return spans
 
 
-def extract(text: str, keys: set[str]) -> dict:
-    """Parse only the top-level entries named in ``keys``.
+def top_level_spans(text: str) -> dict[str, list[tuple[int, int]]]:
+    """Index top-level entries by brace depth, independent of indentation.
 
-    Equivalent to ``{k: parse_clausewitz(text)[k] for k in keys}`` for a
-    normally laid-out save, at the cost of the entries asked for rather than
-    the whole file.
+    Only assignments, braces, strings and comments are scanned. Nested blocks
+    are never materialized; numeric arrays do not become Python token lists.
     """
-    spans = top_level_spans(text)
-    if not spans or not keys <= set(spans):
-        # The layout did not show every key (a save on one line, or a key the
-        # heuristic missed): parse it all rather than report a key absent.
-        full = parse_clausewitz(text)
-        return {k: v for k, v in full.items() if k in keys}
+    return _entry_spans(text)
+
+
+def extract(text: str, keys: set[str], *, spans: dict | None = None) -> dict:
+    """Parse selected entries only. Missing keys never trigger a whole-save parse."""
+    if spans is None:
+        spans = top_level_spans(text)
     parsed: dict = {}
     for key in keys:
+        values = []
         for start, end in spans.get(key, []):
-            for k, v in parse_clausewitz(text[start:end]).items():
-                if k in parsed:
-                    if not isinstance(parsed[k], list):
-                        parsed[k] = [parsed[k]]
-                    parsed[k].append(v)
-                else:
-                    parsed[k] = v
+            chunk = parse_clausewitz(text[start:end])
+            if key in chunk:
+                values.append(chunk[key])
+        if values:
+            parsed[key] = values[0] if len(values) == 1 else values
     return parsed
 
 
-def country_block(text: str, tag: str) -> dict | None:
-    """The parsed block for one country, or None if this save does not lay it
-    out as ``countries={ TAG={ ... } }``.
+def _children(text: str, span: tuple[int, int]) -> dict[str, list[tuple[int, int]]]:
+    start, end = span
+    tokens = (m for m in TOKEN.finditer(text, start, end) if not m.group().startswith("#"))
+    prefix = [next(tokens, None) for _ in range(3)]
+    if prefix[2] is None or prefix[2].group() != "{":
+        return {}
+    return _entry_spans(text, prefix[2].end(), end, root=False)
 
-    The container name is the part most likely to have moved between patches,
-    which is why ``hoi4-harness save-inspect`` exists: it shows what a real save
-    calls it instead of this guessing harder.
+
+def _root_blocks(text: str, key: str) -> list[tuple[int, int]]:
+    """``(line start, index of the brace)`` for every ``key={`` that opens at column 0. Found
+    with ``str.find``, not an index of the whole save: indexing 95 MB by structure took 10 s,
+    and a regex over every line 1.6 s; this is milliseconds."""
+    after = re.compile(r"[ \t]*=[ \t]*\{")
+    needle = "\n" + key
+    starts = [0] if text.startswith(key) else []
+    pos = text.find(needle)
+    while pos != -1:
+        starts.append(pos + 1)
+        pos = text.find(needle, pos + 1)
+    return [(begin, m.end() - 1) for begin in starts
+            if (m := after.match(text, begin + len(key)))]
+
+
+#: What the search by layout returns when the text is not laid out the way a real save is
+#: (compact, quoted keys, everything on one line): the caller then indexes by structure.
+_UNSURE = object()
+
+
+def _country_by_layout(text: str, tag: str):
+    """The player's country found the way a real save lays it out, or ``_UNSURE``.
+
+    Countries sit at the indentation of the first key inside ``countries`` (one tab). Anything
+    deeper is nested in another country (``GER={ SWE={opinion=...} }``), and a country written
+    at column 0 cannot be told from a nested block at column 0 (``CAN={`` inside ENG's), so
+    that layout is ``_UNSURE``. The tag is searched for on from the start of ``countries``
+    instead of brace-matching the whole container first: on a 66 MB save it is 3 million
+    lines, and walking its braces was 1.8 s of the 4 s a read took. One country is 0.3 MB.
     """
-    match = re.search(r"^countries[ \t]*=[ \t]*\{", text, flags=re.M)
-    if not match:
-        return None
-    start = match.end() - 1
-    # Countries sit at the indentation of the first key inside the container.
-    # Anything deeper is nested in another country (GER={ SWE={opinion=...} }),
-    # and [ \t] rather than \s keeps the match from running across a newline.
+    containers = _root_blocks(text, "countries")
+    if len(containers) > 1:
+        return None                      # the same root block twice: ambiguous
+    if not containers:
+        return _UNSURE if "countries" in text else None
+    start = containers[0][1]
     first = re.compile(r"^([ \t]*)[A-Za-z0-9_\-]+[ \t]*=", re.M).search(text, start + 1)
-    if not first:
-        return None
+    if not first or not first.group(1):
+        return _UNSURE if first else None
     indent = first.group(1)
-    # Search on from the container's start instead of brace-matching the whole
-    # container first: on a 66 MB save `countries` is 3 million lines, and walking
-    # its braces was 1.8 s of the 4 s a read took. One country's block is 0.3 MB.
     found = re.compile(rf"^{re.escape(indent)}{re.escape(tag)}[ \t]*=[ \t]*\{{",
                        re.M).search(text, start)
     if not found:
         return None
-    chunk = text[found.start(): matching_brace(text, found.end() - 1)]
-    return parse_clausewitz(chunk).get(tag)
+    end = _closing_brace(text, found.end() - 1)
+    if end is None:
+        return None
+    block = parse_clausewitz(text[found.start():end]).get(tag)
+    return block if isinstance(block, dict) else None
+
+
+def country_block(text: str, tag: str, *, spans: dict | None = None) -> dict | None:
+    """Parse only countries' direct TAG child, never another country's reference.
+
+    A save laid out as the game writes it is searched by layout (:func:`_country_by_layout`,
+    fast); any other text, or a caller that passes the index it already built, uses the direct
+    children of ``countries`` found by structure. Either way a country that appears twice, or
+    whose block never closes, is withheld.
+    """
+    if spans is None:
+        found = _country_by_layout(text, tag)
+        if found is not _UNSURE:
+            return found
+        spans = top_level_spans(text)
+    ranges = []
+    for container in spans.get("countries", []):
+        ranges.extend(_children(text, container).get(tag, []))
+    # Duplicates anywhere in the countries containers are ambiguous.
+    if len(ranges) != 1:
+        return None
+    start, end = ranges[0]
+    block = parse_clausewitz(text[start:end]).get(tag)
+    return block if isinstance(block, dict) else None
 
 
 def save_date(raw: str) -> str | None:
@@ -144,42 +220,57 @@ def save_date(raw: str) -> str | None:
     return parse_date(str(raw).strip('"'))
 
 
-_BRACES = re.compile(r'[{}"]')
+_BRACE_SCAN = re.compile(rf'([{{}}])|{_QUOTED}|\#[^\r\n]*')
 
 
-def matching_brace(text: str, open_at: int) -> int:
-    """Index just past the ``}`` that closes the ``{`` at ``open_at``.
-
-    Counts braces and skips quoted strings; this is what finds a block's end,
-    because indentation cannot: a real save writes some nested blocks at column 0
-    (``CAN={`` inside ENG's country block), so "the next line at the same indent"
-    cuts a country short. Returns ``len(text)`` for a block that never closes,
-    which is how a save being written looks.
-    """
+def _closing_brace(text: str, open_at: int) -> int | None:
+    """Index just past the ``}`` that closes the ``{`` at ``open_at``, or None when it never
+    closes (a save being written). Strings and comments are skipped, so their braces are inert."""
     depth = 0
-    quoted = False
-    for match in _BRACES.finditer(text, open_at):
-        char = match.group()
-        if char == '"':
-            quoted = not quoted
-        elif quoted:
+    for match in _BRACE_SCAN.finditer(text, open_at):
+        brace = match.group(1)
+        if brace is None:
             continue
-        elif char == "{":
+        if brace == "{":
             depth += 1
         else:
             depth -= 1
             if depth == 0:
                 return match.end()
-    return len(text)
+    return None
 
 
-def top_block(text: str, key: str) -> dict | None:
-    """Parse the one top-level ``key={ ... }`` block, whole, or None if absent."""
-    match = re.search(rf"^{re.escape(key)}[ \t]*=[ \t]*\{{", text, flags=re.M)
-    if not match:
-        return None
-    end = matching_brace(text, match.end() - 1)
-    return parse_clausewitz(text[match.start():end]).get(key)
+def matching_brace(text: str, open_at: int) -> int:
+    """Index just past the ``}`` that closes the ``{`` at ``open_at``.
+
+    Counts braces and skips strings and comments; this is what finds a block's end, because
+    indentation cannot: a real save writes some nested blocks at column 0 (``CAN={`` inside
+    ENG's country block). Returns ``len(text)`` for a block that never closes, which is how a
+    save being written looks.
+    """
+    end = _closing_brace(text, open_at)
+    return len(text) if end is None else end
+
+
+def top_block(text: str, key: str, *, spans: dict | None = None) -> dict | None:
+    """Parse one complete root block, withholding absent, duplicate or unfinished entries.
+
+    A block at column 0 (every real save) is found by searching; a text laid out otherwise
+    (compact, quoted keys) is indexed by structure."""
+    if spans is None:
+        found = _root_blocks(text, key)
+        if len(found) > 1:
+            return None
+        if found:
+            end = _closing_brace(text, found[0][1])
+            if end is None:
+                return None
+            value = parse_clausewitz(text[found[0][0]:end]).get(key)
+            return value if isinstance(value, dict) else None
+        if key not in text:
+            return None
+    value = extract(text, {key}, spans=spans).get(key)
+    return value if isinstance(value, dict) else None
 
 
 def parse_clausewitz(text: str) -> dict:
@@ -189,6 +280,8 @@ def parse_clausewitz(text: str) -> dict:
     the ``"_items"`` key. This handles text saves; binary ironman is out of scope.
     """
     tokens = TOKEN.findall(text)
+    if "#" in text:      # comments are matched so their braces are inert, then dropped
+        tokens = [t for t in tokens if t[0] != "#"]
     pos = 0
 
     def parse_block() -> dict:
@@ -201,21 +294,23 @@ def parse_clausewitz(text: str) -> dict:
                 return block
             pos += 1
             if tok == "{":
-                # A block with no key: the members of a list of records, as in
-                # `country_leader={ { ideology=a } { ideology=b } }`. Reading the
-                # brace as a stray item used to close the enclosing block early.
                 block.setdefault("_items", []).append(parse_block())
                 continue
             if pos < len(tokens) and tokens[pos] == "=":
                 pos += 1
+                if pos >= len(tokens):
+                    return block
+                if tokens[pos] == "}":
+                    pos += 1      # `key=}`: no value, and the brace closes THIS block, once
+                    return block
                 value_tok = tokens[pos]
                 if value_tok == "{":
                     pos += 1
                     value: object = parse_block()
                 else:
                     pos += 1
-                    value = value_tok.strip('"')
-                key = tok.strip('"')
+                    value = _unquote(value_tok)
+                key = _unquote(tok)
                 if key in block:
                     if not isinstance(block[key], list):
                         block[key] = [block[key]]
@@ -223,7 +318,7 @@ def parse_clausewitz(text: str) -> dict:
                 else:
                     block[key] = value
             else:
-                block.setdefault("_items", []).append(tok.strip('"'))
+                block.setdefault("_items", []).append(_unquote(tok))
         return block
 
     return parse_block()
@@ -268,11 +363,11 @@ def read_save(path: Path) -> dict:
         if isinstance(state, dict) and state.get("owner") == player
     }
     templates = top_block(text, "division_templates") or {}
-    raw["division_templates"] = {
-        _ident(t.get("id")): t.get("name", "") for t in _as_list(templates.get("division_template"))
+    raw["division_templates"] = _reference_names([
+        t for t in _as_list(templates.get("division_template"))
         if isinstance(t, dict) and t.get("country") == player
-    }
-    raw["equipment_names"] = _equipment_names_fast(text) or _equipment_names(
+    ], "name")
+    raw["equipment_names"] = _equipment_names_fast(text, typed=True) or _equipment_names(
         top_block(text, "equipments") or {})
     return raw
 
@@ -353,14 +448,87 @@ def _as_list(value) -> list:
 
 
 def _ident(value) -> str:
-    """``{ id=21 type=52 }`` -> ``"21"``."""
+    """``{ id=21 type=52 }`` -> ``"21"``. The plain id, for the readers that key on it alone
+    (world, contested); the save mapping below keeps the type too (:func:`_typed_ref`)."""
     if isinstance(value, dict):
         value = value.get("id")
     return str(value) if value is not None else ""
 
 
-def _equipment_names(equipments: dict) -> dict[str, str]:
-    """Equipment variant id -> its name (``infantry_equipment_1``)."""
+def _typed_ref(value) -> tuple[str, str] | None:
+    """Keep both parts of a typed save reference, never just its numeric id."""
+    if isinstance(value, dict) and all(isinstance(value.get(k), str) for k in ("id", "type")):
+        return value["id"], value["type"]
+    return None
+
+
+class _Refs(dict):
+    """Typed reference ``(id, type)`` -> name. ``by_id`` lists every name an id was given,
+    including those of references withheld as duplicates, so a bare id can be matched only
+    when exactly one record carries it."""
+
+    def __init__(self):
+        super().__init__()
+        self.by_id: dict[str, list[str]] = {}
+        self._dropped: set = set()
+
+    def add(self, ref: tuple[str, str], name: str) -> None:
+        self.by_id.setdefault(ref[0], []).append(name)
+        if ref in self._dropped:
+            return
+        if ref in self:
+            del self[ref]            # the same reference twice is ambiguous: neither is trusted
+            self._dropped.add(ref)
+            return
+        self[ref] = name
+
+    def resolve(self, value) -> str | None:
+        """The name a save's reference points at: a typed ``{ id= type= }``, or a bare id
+        (``division_template_id=21``) when that id is unique among the records."""
+        ref = _typed_ref(value)
+        if ref is not None:
+            return self.get(ref)
+        if isinstance(value, str) and value.isdigit():
+            found = self.by_id.get(value, [])
+            if len(found) == 1:
+                return found[0]
+        return None
+
+
+def _resolve(names, value) -> str | None:
+    """:meth:`_Refs.resolve` for a typed index; a mapping keyed on the plain id (what the
+    world reader builds) is looked up by the plain id."""
+    if isinstance(names, _Refs):
+        return names.resolve(value)
+    return names.get(_ident(value))
+
+
+def _reference_names(records: list, name_key: str) -> _Refs:
+    """Records ``{ id={ id= type= } <name_key>=... }`` -> a reference index. A malformed
+    record is skipped and a duplicated reference withheld; neither costs the others."""
+    names = _Refs()
+    for record in records:
+        if not isinstance(record, dict):
+            continue
+        ref, name = _typed_ref(record.get("id")), record.get(name_key)
+        if ref is None or not isinstance(name, str) or not name:
+            continue
+        names.add(ref, name)
+    return names
+
+
+def _equipment_names(equipments: dict) -> _Refs:
+    """Equipment reference -> its name (``infantry_equipment_1``), from the parsed block."""
+    records = []
+    for name, entries in equipments.items():
+        for entry in _as_list(entries):
+            if isinstance(entry, dict):
+                records.append({"id": entry.get("id"), "name": name})
+    return _reference_names(records, "name")
+
+
+def _equipment_ids(equipments: dict) -> dict[str, str]:
+    """Equipment variant id -> its name, keyed on the plain id (what the world reader uses)."""
     names: dict[str, str] = {}
     for name, entries in equipments.items():
         for entry in _as_list(entries):
@@ -369,28 +537,41 @@ def _equipment_names(equipments: dict) -> dict[str, str]:
     return names
 
 
-_EQUIPMENT_ENTRY = re.compile(r"^\t([A-Za-z0-9_]+)=\{[ \t\r]*\n\t\tid=\{ id=(\d+) ", re.M)
+_EQUIPMENT_ENTRY = re.compile(
+    r"^\t([A-Za-z0-9_]+)=\{[ \t\r]*\n\t\tid=\{ id=(\d+)(?: type=(\d+))?", re.M)
 _COLUMN_ZERO_KEY = re.compile(r"^[A-Za-z_]", re.M)
 
 
-def _equipment_names_fast(text: str) -> dict[str, str]:
+def _equipment_names_fast(text: str, typed: bool = False) -> dict:
     """``_equipment_names`` without parsing the block: 72,000 lines in the checked
     save, of which only the name and id of each entry matter. Empty when the
-    layout is not the one a real save has, so the caller parses instead."""
+    layout is not the one a real save has, so the caller parses instead. Keyed on the
+    plain id, or with ``typed`` on ``(id, type)`` as :func:`_equipment_names` is."""
     start = re.search(r"^equipments=\{", text, re.M)
     if not start:
         return {}
     end = _COLUMN_ZERO_KEY.search(text, start.end())
-    names = {m.group(2): m.group(1)
-             for m in _EQUIPMENT_ENTRY.finditer(text, start.end(), end.start() if end else len(text))}
+    found = _EQUIPMENT_ENTRY.finditer(text, start.end(), end.start() if end else len(text))
+    if not typed:
+        return {m.group(2): m.group(1) for m in found}
+    names = _Refs()
+    for m in found:
+        if m.group(3) is not None:
+            names.add((m.group(2), m.group(3)), m.group(1))
     return names
 
 
 def _number(value) -> float | None:
     try:
-        return float(value)
+        number = float(value)
     except (TypeError, ValueError):
         return None
+    return number if math.isfinite(number) else None
+
+
+def _integer(value) -> int | None:
+    number = _number(value)
+    return int(number) if number is not None and number.is_integer() else None
 
 
 def _read_country(state: GameState, country: dict, raw: dict, unknown: set[str]) -> None:
@@ -434,22 +615,40 @@ def _read_states(state: GameState, owned, unknown: set[str]) -> None:
     "32.98K"); ``locked`` is population not yet recruitable."""
     if not isinstance(owned, dict) or not owned:
         return
-    levels = {"industrial_complex": 0, "arms_factory": 0, "dockyard": 0}
-    manpower = 0.0
+    if not all(isinstance(entry, dict) for entry in owned.values()):
+        return
+    amounts = []
     for entry in owned.values():
-        buildings = entry.get("buildings")
-        for name in levels:
-            building = buildings.get(name) if isinstance(buildings, dict) else None
-            level = _number(building.get("level")) if isinstance(building, dict) else None
-            levels[name] += int(level or 0)
         pool = entry.get("manpower_pool")
-        available = _number(pool.get("available")) if isinstance(pool, dict) else None
-        manpower += available or 0
-    state.civilian_factories = levels["industrial_complex"]
-    state.military_factories = levels["arms_factory"]
-    state.dockyards = levels["dockyard"]
-    state.manpower = int(manpower)
-    unknown.difference_update({"civilian_factories", "military_factories", "dockyards", "manpower"})
+        amount = _integer(pool.get("available")) if isinstance(pool, dict) else None
+        if amount is None or amount < 0:
+            break
+        amounts.append(amount)
+    if len(amounts) == len(owned):
+        state.manpower = sum(amounts)
+        unknown.discard("manpower")
+    for building, field in (
+        ("industrial_complex", "civilian_factories"),
+        ("arms_factory", "military_factories"),
+        ("dockyard", "dockyards"),
+    ):
+        levels = []
+        for entry in owned.values():
+            buildings = entry.get("buildings")
+            if not isinstance(buildings, dict):
+                break
+            if building not in buildings:
+                # A complete buildings object enumerates present buildings.
+                levels.append(0)
+            else:
+                data = buildings[building]
+                level = _integer(data.get("level")) if isinstance(data, dict) else None
+                if level is None or level < 0:
+                    break
+                levels.append(level)
+        if len(levels) == len(owned):
+            setattr(state, field, sum(levels))
+            unknown.discard(field)
 
 
 def _read_focus(state: GameState, focus, unknown: set[str]) -> None:
@@ -488,19 +687,28 @@ def _read_research(state: GameState, technology, unknown: set[str]) -> None:
     slots = technology.get("slots") if isinstance(technology, dict) else None
     if not isinstance(slots, dict):
         return
-    busy = [name for name, value in slots.items() if name != "empty" and isinstance(value, dict)]
-    free = len(_as_list(slots.get("empty")))
+    busy = []
+    free = 0
+    for name, value in slots.items():
+        records = _as_list(value)
+        if not records or not all(isinstance(record, dict) for record in records):
+            return
+        if name == "empty":
+            free += len(records)
+        else:
+            busy.extend([name] * len(records))
     state.research = [ResearchSlot(index=i + 1, technology=name) for i, name in enumerate(busy)]
     state.research += [ResearchSlot(index=len(busy) + i + 1) for i in range(free)]
     unknown.discard("research")
 
 
-def _read_production(state: GameState, production, names: dict[str, str], unknown: set[str]) -> None:
-    """One line per ``military_lines`` entry, and the construction queue.
+def _read_production(state: GameState, production, names: dict, unknown: set[str]) -> None:
+    """One line per ``military_lines`` and ``naval_lines`` entry, and the construction queue.
 
     Efficiency is the mean of the first ``active_factories`` of the line's
     per-factory ``factory_efficiencies`` (percent); output per day is
-    ``speed / cost``, the line's daily IC divided by one unit's IC cost.
+    ``speed / cost``, the line's daily IC divided by one unit's IC cost. Those two have
+    not been checked for naval lines, which carry neither.
 
     A line the player (or ``add_equipment_production``) has just opened carries
     ``queued_factories`` and no ``active_factories``, no ``produced``, no
@@ -508,31 +716,51 @@ def _read_production(state: GameState, production, names: dict[str, str], unknow
     line all the same -- skipping it hid the very line a ``set_production`` had
     made -- so ``factories`` is what the line *requested*, which is also what the
     UI's counter shows.
+
+    Nothing is invented: a line whose equipment cannot be named, or whose factory count is
+    not a count, makes the whole set unknown (an incomplete list read as complete would have
+    the reflex hand the idle factories to the wrong line). A line that says nothing about
+    factories at all keeps ``factories=None``. A production block with no line list is the
+    country's empty production, which is known: a country that builds nothing writes none.
     """
     if not isinstance(production, dict):
         return
     lines: list[ProductionLine] = []
-    for line in _as_list(production.get("military_lines")):
-        if not isinstance(line, dict):
-            continue
-        equipment = names.get(_ident(line.get("equipment_variant_index")))
-        active = _number(line.get("active_factories"))
-        factories = _number(line.get("requested_factories"))
-        if factories is None:
-            factories = active if active is not None else _number(line.get("queued_factories"))
-        if equipment is None or factories is None:
-            continue
-        speed, cost = _number(line.get("speed")), _number(line.get("cost"))
-        per_factory = line.get("factory_efficiencies")
-        items = per_factory.get("_items") if isinstance(per_factory, dict) else None
-        values = [_number(v) for v in _as_list(items)]
-        running = [v for v in values[: int(active or 0)] if v is not None]
-        lines.append(ProductionLine(
-            equipment=equipment,
-            factories=int(factories),
-            efficiency=round(sum(running) / len(running) / 100.0, 4) if running else 0.0,
-            output_per_day=round(speed / cost, 3) if speed is not None and cost else 0.0,
-        ))
+    for key, kind in (("military_lines", "military"), ("naval_lines", "naval")):
+        for line in _as_list(production.get(key)):
+            if not isinstance(line, dict):
+                return
+            equipment = _resolve(names, line.get("equipment_variant_index"))
+            if equipment is None:
+                return
+            counts = {k: _integer(line.get(k)) for k in
+                      ("requested_factories", "active_factories", "queued_factories")
+                      if k in line}
+            if any(v is None or v < 0 for v in counts.values()):
+                return
+            active = counts.get("active_factories")
+            factories = next((counts[k] for k in
+                              ("requested_factories", "active_factories", "queued_factories")
+                              if k in counts), None)
+            efficiency = output = None
+            if kind == "military":
+                speed, cost = _number(line.get("speed")), _number(line.get("cost"))
+                if speed is not None and speed >= 0 and cost is not None and cost > 0:
+                    output = round(speed / cost, 3)
+                per_factory = line.get("factory_efficiencies")
+                items = per_factory.get("_items") if isinstance(per_factory, dict) else None
+                values = [_number(v) for v in _as_list(items)]
+                if active is None and factories is not None:
+                    efficiency, output = 0.0, output or 0.0   # opened, nothing running yet
+                elif active == 0:
+                    efficiency = 0.0
+                elif (active is not None and len(values) >= active
+                        and all(v is not None and 0 <= v <= 100 for v in values[:active])):
+                    efficiency = round(sum(values[:active]) / active / 100.0, 4)
+            lines.append(ProductionLine(
+                equipment=equipment, factories=factories, efficiency=efficiency,
+                output_per_day=output, kind=kind,
+            ))
     state.production = lines
     unknown.discard("production")
     _read_construction(state, production.get("general_lines"), unknown)
@@ -583,7 +811,7 @@ def _read_construction(state: GameState, general_lines, unknown: set[str]) -> No
     unknown.discard("construction")
 
 
-def _read_divisions(state: GameState, units, templates: dict[str, str], unknown: set[str]) -> None:
+def _read_divisions(state: GameState, units, templates: dict, unknown: set[str]) -> None:
     """Divisions counted by template name. Location and strength are not read:
     the save gives a province id and raw strength figures, neither in the units
     :class:`DivisionGroup` documents."""
@@ -592,12 +820,15 @@ def _read_divisions(state: GameState, units, templates: dict[str, str], unknown:
     counts: dict[str, int] = {}
     for division in _as_list(units.get("division")):
         if not isinstance(division, dict):
-            continue
-        name = templates.get(_ident(division.get("division_template_id")))
+            return
+        name = _resolve(templates, division.get("division_template_id"))
         if not name:
             return  # a template we cannot name: say nothing, not a partial count
         counts[name] = counts.get(name, 0) + 1
-    state.divisions = [DivisionGroup(template=name, count=n) for name, n in counts.items()]
+    state.divisions = [
+        DivisionGroup(template=name, count=n, location="unknown", strength=None)
+        for name, n in counts.items()
+    ]
     unknown.discard("divisions")
 
 
@@ -684,7 +915,7 @@ class SaveGameAdapter(GameAdapter):
         raise TimeoutError(f"No new save within {timeout_s}s.")
 
 
-def inspect(path: Path, limit: int = 60) -> str:
+def inspect(path: Path, limit: int = 100) -> str:
     """What a real save actually contains, for finishing the mapping (#6).
 
     The mapping from save blocks to GameState has to be checked against a real
@@ -695,7 +926,7 @@ def inspect(path: Path, limit: int = 60) -> str:
     """
     text = read_text(Path(path))
     spans = top_level_spans(text)
-    head = extract(text, {"date", "player"})
+    head = extract(text, {"date", "player"}, spans=spans)
     lines = [
         f"{path}  ({len(text) / 1_000_000:.1f} MB)",
         f"date     {head.get('date', '?')}  -> {save_date(head.get('date', '')) or 'unparsed'}",
@@ -715,7 +946,7 @@ def inspect(path: Path, limit: int = 60) -> str:
     player = head.get("player")
     if not isinstance(player, str):
         return "\n".join(lines)
-    block = country_block(text, player)
+    block = country_block(text, player, spans=spans)
     lines.append("")
     if block is None:
         lines.append(f"no countries={{ {player}={{...}} }} block: the player country lives somewhere "

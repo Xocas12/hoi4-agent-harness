@@ -93,11 +93,26 @@ read is **0.85-1.0 s**, of which about half is reading and decoding the file.
 `scripts/trim_save.py` cuts such a save down to the committed fixture
 (`tests/fixtures/swe_1938_02_04.hoi4`, 57 kB: account name scrubbed, seeds gone).
 
+Within those blocks nothing is guessed. A string or comment is skipped while braces
+are counted (escaped quotes included), so a name with a `}` in it cannot cut a block
+short. A root block that appears twice, or never closes (a save being written), is
+withheld rather than read in part. The player's country is the direct child of
+`countries`; a country that appears twice is withheld. Equipment and division
+templates are matched on the typed reference (`{ id=21 type=52 }`, both parts), and a
+bare id (`division_template_id=21`) only when exactly one record has that id. A
+reference that is duplicated is dropped without costing the others. Indexing every
+top-level key by structure (`top_level_spans`, which `extract` and the
+`spans=` arguments use) takes about 10 s on the 95 MB save, so `read_save()` does
+not use it: it is there for a caller that has the index already or reads a small text.
+
 ### What the 1.19.5 save contains, and where each field comes from
 
 Checked against the live game at 23 April 1937 (Sweden, started from the 1936
 bookmark; `tests/fixtures/swe_1937_04_23.hoi4` is a trimmed copy and
 `tests/test_savegame_mapping.py` asserts each figure).
+An additional initial SWE snapshot (1936-01-01) is reduced to 7,787 bytes in
+`tests/fixtures/savegame/`; `tests/test_savegame_followup.py` checks the extra
+naval lines, typed references, and unknown-data behavior against it.
 
 | GameState field | Where | Checked against |
 | --- | --- | --- |
@@ -107,7 +122,7 @@ bookmark; `tests/fixtures/swe_1937_04_23.hoi4` is a trimmed copy and
 | `stability`, `war_support` | country `variables.llmb_stab`, `llmb_ws` (percent, from the bridge mod), divided by 100 | 82.6% and 0% |
 | `national_focus` | country `focus.current` | `SWE_defense_act` |
 | `research` | country `technology.slots`: one key per busy technology, plus `empty` entries | 1 busy (`infantry_weapons2`), 2 free |
-| `production` | country `production.military_lines`; equipment name from `equipments` via `equipment_variant_index` | two lines, 1 factory each |
+| `production` | `production.military_lines` and `naval_lines`; typed equipment reference resolved through `equipments` | two military lines in the 1937 fixture; two military and four naval lines in the 1936 fixture |
 | `divisions` | country `units.division`, grouped by `division_template_id` -> `division_templates` name | 12 |
 | `ideology` | `politics.ruling_party` | `democratic` |
 
@@ -128,7 +143,14 @@ Things that are not what they look like:
   entries of its `factory_efficiencies` (percent), and `output_per_day` is the
   line's `speed` over its unit `cost`. Both are derived, not stored under those
   names; the efficiencies (53, 50) look right but only the factory counts were
-  checked against the game.
+  checked against the game. Missing inputs leave these metrics `None`, and
+  naval efficiency/output remain unknown. Active assignments missing from a
+  queued naval line remain `None`; requested counts are not substituted.
+* Invalid or missing manpower pools/building levels keep the affected total
+  unknown. Non-finite and fractional counts are rejected instead of becoming
+  zero or being rounded down.
+* Equipment and template references retain both `(id, type)`. Unresolved or
+  duplicate references leave the corresponding collection unknown.
 * `days_remaining` for research and focus is not stored (only points so far), so
   it stays unset.
 
@@ -159,17 +181,19 @@ tick.
 (`delegated_armies`, `ai_directives`, `posture`, `theater_postures`), and now
 `fuel` and `convoys`, which the brief used to print as `0`. Division `location`
 and `strength` are not read either: the save gives a province id and raw
-strength figures, not the units `DivisionGroup` documents.
+strength figures, not the units `DivisionGroup` documents. They are explicitly
+reported as `location="unknown"` and `strength=None`. Naval dockyards are kept
+separate from military assignments in briefs and reflexes. Deltas aggregate
+repeated equipment lines and report lost visibility as unknown.
 
 ```bash
 hoi4-harness save-inspect                   # newest save in HOI4_SAVE_DIR
 hoi4-harness save-inspect path/to/save.hoi4
 ```
 
-prints the top-level entries by size and the player country's keys with a sample
-of each value. Its size table splits on any key at column 0, so on a real save it
-lists thousands of numeric entries: those are artefacts of the heuristic, not
-blocks.
+prints the top-level entries by size and up to 100 country keys with sample
+values. On the 1936 SWE save it identifies 77 distinct root keys and all 64
+country keys; unindented nested keys are not counted as root entries.
 
 Constraints: text saves only; a save is a snapshot, so pair it with a short
 autosave interval; read-only, so compose it with a writer.

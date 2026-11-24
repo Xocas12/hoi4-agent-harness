@@ -182,9 +182,9 @@ def test_extract_parses_only_what_it_was_asked_for(monkeypatch):
     assert all("provinces" not in chunk and "countries" not in chunk for chunk in seen)
 
 
-def test_a_save_on_one_line_falls_back_to_a_full_parse():
+def test_a_save_on_one_line_is_indexed_structurally():
     one_line = "date=1936.1.1 player=SWE countries={ SWE={ political_power=5 } }"
-    assert list(top_level_spans(one_line)) == ["date"]      # the layout hides the rest
+    assert list(top_level_spans(one_line)) == ["date", "player", "countries"]
     assert extract(one_line, {"player"}) == {"player": "SWE"}
 
 
