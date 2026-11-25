@@ -121,6 +121,21 @@ UNDER_HUMAN_AI: dict[str, tuple[str, str]] = {
     "air": (UNKNOWN, "nothing in the docs says what the AI does with air wings"),
 }
 
+#: Named parts of a map (issue #137): ``economy`` is a person's desk work, the country run by hand
+#: without the armies. Research, production and construction, with the focus, politics and
+#: diplomacy a player does between them, are the model's; nobody runs the armies, navy and air (add
+#: ``army=script`` or ``army=llm`` after it to give them to someone), and the game's AI owns
+#: nothing, so nothing it does can undo or double an order. Written as a bare word in a spec
+#: (``economy``, ``economy,army=script``) or as ``{"base": "economy", ...}``.
+ALIASES: dict[str, dict[str, str]] = {
+    "economy": {"focus": "llm", "research": "llm", "construction": "llm", "production": "llm",
+                "politics": "llm", "diplomacy": "llm", "army": "off", "navy": "off", "air": "off",
+                "steer": "off"},
+}
+ECONOMY = "economy"
+#: The domains an economy map runs by hand.
+ECONOMY_DOMAINS = ("research", "production", "construction")
+
 #: Said of ``steer`` when only armies are delegated, because nothing has shown it.
 STEER_DELEGATED_WARNING = ("steer with delegated armies only (no human_ai): unverified whether "
                            "ai_strategy affects a human country's delegated armies")
@@ -142,6 +157,8 @@ class ControlMap:
     #: The tactical controller the ``army`` script runs (``tactics.registry``).
     army_controller: str = "scripted"
     warnings: tuple[str, ...] = field(default=())
+    #: The named part the map was written from (``ALIASES``), None for a plain map.
+    alias: str | None = None
 
     # --- what the map means ------------------------------------------------------------
 
@@ -244,7 +261,7 @@ def parse_spec(value) -> dict:
     A bare preset name becomes ``{"preset": name}``."""
     if isinstance(value, str):
         text = value.strip()
-        if "=" not in text:
+        if "=" not in text and text not in ALIASES:
             return {"preset": text}
         spec = {}
         for part in text.split(","):
@@ -252,11 +269,22 @@ def parse_spec(value) -> dict:
                 continue
             key, sep, val = part.partition("=")
             if not sep:
-                raise ControlError(f"control entry {part.strip()!r} is not domain=controller")
+                if key.strip() not in ALIASES:
+                    raise ControlError(f"control entry {part.strip()!r} is not domain=controller "
+                                       f"or one of {', '.join(ALIASES)}")
+                spec = {**ALIASES[key.strip()], **{k: v for k, v in spec.items() if k != "base"},
+                        "base": key.strip()}
+                continue
             spec[key.strip()] = val.strip()
         return spec
     if isinstance(value, dict):
-        return {str(k): v for k, v in value.items()}
+        spec = {str(k): v for k, v in value.items()}
+        base = spec.get("base")
+        if base is not None:
+            if base not in ALIASES:
+                raise ControlError(f"unknown control base {base!r}: one of {', '.join(ALIASES)}")
+            spec = {**ALIASES[base], **spec}
+        return spec
     raise ControlError(f"control must be a preset name, a 'domain=controller,...' string or a "
                        f"table, not {type(value).__name__}")
 
@@ -279,6 +307,7 @@ def resolve(value, *, steer: str | None = None, army_controller: str = "scripted
         out = preset(named, army_controller)
         _check_army_controller(out)
         return out
+    alias = spec.pop("base", None)
     default = spec.pop("default", "llm")
     spec_steer = spec.pop("steer", None)
     for key in spec:
@@ -340,7 +369,7 @@ def resolve(value, *, steer: str | None = None, army_controller: str = "scripted
             warnings.append(f"no model is running, so nothing runs {', '.join(idle)} "
                             "(llm domains stay idle)")
     out = ControlMap(domains, steer_mode, preset=None, army_controller=army_controller,
-                     warnings=tuple(warnings))
+                     warnings=tuple(warnings), alias=alias)
     _check_army_controller(out)
     return out
 
