@@ -217,6 +217,7 @@ class InputDriverAdapter(GameAdapter):
         #: Performs the division orders, once ``enable_unit_orders`` has set it.
         self.order_executor = None
         self.plan_executor = None
+        self.army_executor = None
         #: Edits production lines by click (adapters/production_ui.py).
         self.production_executor = None
         #: Click points computed for the action in flight (see ui_resolve.py).
@@ -528,6 +529,16 @@ class InputDriverAdapter(GameAdapter):
         self.plan_executor = executor
         self.supported_actions = self.supported_actions | frozenset(PLAN_ACTIONS)
 
+    def enable_army_ui(self, executor) -> None:
+        """Offer the army actions (create_army, assign_divisions, assign_army_front, ...), performed
+        by ``executor`` (adapters/armies.py). UNVERIFIED against the real game."""
+        from .armies import ARMY_UI_ACTIONS
+
+        if not self.config.mouse:
+            raise MouseDisabled("armies are managed with the mouse and this driver has none")
+        self.army_executor = executor
+        self.supported_actions = self.supported_actions | frozenset(ARMY_UI_ACTIONS)
+
     def enable_events(self, executor) -> None:
         """Offer ``choose_event_option``, performed by ``executor`` (adapters/event_choice.py).
         UNVERIFIED against the real game."""
@@ -729,7 +740,7 @@ class InputDriverAdapter(GameAdapter):
             return False          # answering the window is the point: it is not cleared first
         if call.name in self.scripts:
             return any(step.kind == "click" for step in self.scripts[call.name])
-        for executor in (self.production_executor, self.plan_executor):
+        for executor in (self.production_executor, self.plan_executor, self.army_executor):
             if (executor is not None and call.name in executor.actions
                     and call.name in self.supported_actions):
                 return True
@@ -757,6 +768,9 @@ class InputDriverAdapter(GameAdapter):
         if (self.plan_executor is not None and call.name in self.plan_executor.actions
                 and call.name in self.supported_actions):
             return self.plan_executor(call)
+        if (self.army_executor is not None and call.name in self.army_executor.actions
+                and call.name in self.supported_actions):
+            return self.army_executor(call)
         if self.order_executor is not None and call.name in self.supported_actions:
             return self.order_executor(call)
         return self.unsupported(call)

@@ -806,6 +806,101 @@ ACTIONS += [
 
 BY_NAME = {spec.name: spec for spec in ACTIONS}
 
+# --- armies by click (#8, #137): adapters/armies.py, docs/armies.md ---------------------------
+_ARMY = {"type": "string", "description": "A recorded army name (army.<name> point)."}
+_MODE = {"type": "string", "enum": ["careful", "balanced", "rush"],
+         "description": "How the plan is executed (the game's pace window)."}
+
+ACTIONS += [
+    ActionSpec(
+        name="create_army",
+        category="army",
+        description=(
+            "Select the player's divisions in one state (a box over its counters, or one stack with "
+            "from_province) and press the create-army card: a new army, named by the game (Army N), "
+            "appears in the next save. Needs the recorded point army.create. Unverified in the game."
+        ),
+        parameters=_schema(
+            {"from_state": {**_STATE_ID, "description": "State holding the divisions (front picture)."},
+             "from_province": {"type": "integer", "minimum": 1,
+                               "description": "Optional: click this province's stack only."}},
+            ["from_state"],
+        ),
+    ),
+    ActionSpec(
+        name="assign_divisions",
+        category="army",
+        description=(
+            "Select the player's divisions in one state and drop them on an army's card, so they "
+            "join that army. Same selection rules as create_army; the army needs a recorded point. "
+            "Unverified in the game: the next save's member count says whether it took."
+        ),
+        parameters=_schema(
+            {"army": _ARMY,
+             "from_state": {**_STATE_ID, "description": "State holding the divisions (front picture)."},
+             "from_province": {"type": "integer", "minimum": 1,
+                               "description": "Optional: click this province's stack only."}},
+            ["army", "from_state"],
+        ),
+    ),
+    ActionSpec(
+        name="assign_army_front",
+        category="army",
+        description=(
+            "Give an army a front against a named enemy and set it to carry it out: select the army, "
+            "the front-line tool, click an enemy province on the border (the one you name, else the "
+            "one next to your strongest state), then set the pace. This is how an army is handed a "
+            "job the game runs itself. Needs the army's recorded point and the pace button's "
+            "(plan.execute_<mode>). Unverified until a save shows the plan: the brief's Army order "
+            "line says when it does, and only then is the army listed as delegated."
+        ),
+        parameters=_schema(
+            {"army": _ARMY,
+             "enemy": {"type": "string", "description": "Tag of the country the front faces."},
+             "province": {"type": "integer", "minimum": 1,
+                          "description": "Optional: an enemy-held province that borders yours."},
+             "mode": _MODE},
+            ["army", "enemy"],
+        ),
+    ),
+    ActionSpec(
+        name="draw_fallback_line",
+        category="army",
+        description=(
+            "Draw a fallback line with the battle-plan tool through a chain of the player's own "
+            "states, where the army pulls back to. Same refusals as draw_front_line, with no enemy. "
+            "Unverified in the game."
+        ),
+        parameters=_schema(
+            {"army": _ARMY,
+             "states": {"type": "array", "minItems": 1, "maxItems": 8, "items": _STATE_ID,
+                        "description": "Own states along the line, in order."}},
+            ["army", "states"],
+        ),
+    ),
+    ActionSpec(
+        name="set_army_execution",
+        category="army",
+        description=(
+            "Set how an army carries out its plan: careful (hold, spare men), balanced, or rush "
+            "(attack at once). Select the army, open the pace window, click the recorded button "
+            "plan.execute_<mode>. The next save's execution_type says whether it took."
+        ),
+        parameters=_schema({"army": _ARMY, "mode": _MODE}, ["army", "mode"]),
+    ),
+    ActionSpec(
+        name="release_army",
+        category="army",
+        description=(
+            "Take an army off its plan (unassign its divisions), back to manual control. Unverified "
+            "until a save shows the army with no plan assigned."
+        ),
+        parameters=_schema({"army": _ARMY}, ["army"]),
+    ),
+]
+
+BY_NAME = {spec.name: spec for spec in ACTIONS}
+
 
 # --- politics the effects can do faithfully, and steering where only steering is -------------
 # Each is guarded by the game's own conditions and charged what the screen charges (docs/interaction.md).

@@ -101,6 +101,34 @@ class StateForces:
 
 
 @dataclass
+class ArmyPlan:
+    """One battle plan of an army, as the text save records it (``order_instance``)."""
+
+    #: ``front`` / ``offensive`` / ``defensive`` / ``fallback`` / ``garrison`` / ``line``: read from
+    #: the instance's ``postfix`` and keys (see ``armies.py``); ``line`` when the save says no more.
+    kind: str
+    #: Provinces the line passes through, in drawing order.
+    path: list[int] = field(default_factory=list)
+    #: States of a garrison (area defence) order.
+    states: list[int] = field(default_factory=list)
+    #: Divisions the plan has assigned to it (``scheduled_member``): 0 is a plan nobody carries out.
+    assigned: int = 0
+
+
+@dataclass
+class ArmyGroup:
+    """An army (the save's ``orders_group``): its divisions and the plans it holds."""
+
+    id: str
+    name: str
+    #: Divisions that are members (reinforcement requests are not counted).
+    members: int = 0
+    plans: list[ArmyPlan] = field(default_factory=list)
+    #: How the plan is executed: 0 careful, 1 balanced, 2 rush (``execution_type``); None unread.
+    execution: int | None = None
+
+
+@dataclass
 class War:
     against: str
     since: str | None = None
@@ -328,6 +356,9 @@ class GameState:
     observed: ModObserved | None = None
     # --- hybrid control: what the native AI has been told to do ---------
     delegated_armies: list[str] = field(default_factory=list)
+    #: The country's armies and their plans, from a text save (armies.py). None is "not read":
+    #: a log-only reader cannot see them; [] is "read, the country has no army group".
+    army_groups: list[ArmyGroup] | None = None
     ai_directives: list[str] = field(default_factory=list)
     posture: str | None = None
     #: Posture scoped to one theater, overriding ``posture`` there. A theater is

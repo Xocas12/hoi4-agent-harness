@@ -132,6 +132,18 @@ AI owns something to steer:
 `army: game`, no `human_ai` and `steer = off`, nobody could hand the armies over, so the harness
 does it once (`auto/army.py` `ArmyDelegate`, the AI-only arm of the hybrid experiment).
 
+### Armies the model runs, and armies it hands a front
+
+`army: llm` without `human_ai` is the model's own army control: it is offered `create_army`,
+`assign_divisions`, `assign_army_front`, `draw_fallback_line`, `set_army_execution` and
+`release_army` besides the older `move_division`, `attack_province` and the plan drawing actions,
+when the profile sets `army_ui = true` and the camera record is good ([armies.md](armies.md)).
+With `army: game` (no `human_ai`) and `steer = llm`, only `assign_army_front`, `set_army_execution`
+and `release_army` are kept: the game has no per-army AI toggle, so handing an army a front against
+a named enemy at a pace IS the delegation. `create_army` and `assign_divisions` are the model's
+army management and stay out. That is the mode where the model owns the country and the game's AI
+runs only the armies (#161 step 2). It is built and tested on the fake game only.
+
 ## Direct economy (#137, economy part)
 
 `--control economy` is a named part of a map: the model runs the desk work of the country by hand,

@@ -292,6 +292,10 @@ class HarnessConfig:
     #: Offer draw_front_line / draw_offensive / assign_battle_plan (adapters/battle_plans.py).
     #: NOT live-verified, so off unless asked for; needs what unit_orders needs.
     battle_plans: bool = False
+    #: Offer create_army / assign_divisions / assign_army_front / draw_fallback_line /
+    #: set_army_execution / release_army (adapters/armies.py, docs/armies.md). NOT live-verified, so
+    #: off unless asked for; needs what unit_orders needs.
+    army_ui: bool = False
     # --- headless play (adapters/headless.py) -----------------------------------
     # adapter = "headless": the log for eyes, the console and the keyboard for
     # hands, no mouse and no screen. The fields below only matter there.

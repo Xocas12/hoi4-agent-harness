@@ -232,6 +232,8 @@ class CombinedReader(GameAdapter):
             if saved.known(name):
                 setattr(merged, name, copy.deepcopy(getattr(saved, name)))
                 self._known(merged, name)
+        if saved.army_groups is not None:
+            merged.army_groups = copy.deepcopy(saved.army_groups)
         for name in LOG_FIRST:
             if not merged.known(name) and saved.known(name):
                 setattr(merged, name, copy.deepcopy(getattr(saved, name)))

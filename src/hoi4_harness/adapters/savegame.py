@@ -606,6 +606,9 @@ def _read_country(state: GameState, country: dict, raw: dict, unknown: set[str])
     _read_research(state, country.get("technology"), unknown)
     _read_production(state, country.get("production"), raw.get("equipment_names") or {}, unknown)
     _read_divisions(state, country.get("units"), raw.get("division_templates") or {}, unknown)
+    from ..armies import read_army_groups
+
+    state.army_groups = read_army_groups(country)
 
 
 def _read_states(state: GameState, owned, unknown: set[str]) -> None:

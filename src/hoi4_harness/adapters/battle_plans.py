@@ -63,6 +63,8 @@ from .unit_orders import (
 #: ``interface/battleplantools.gui`` l.131-134 and l.148-152.
 FRONT_LINE_KEY = "z"
 OFFENSIVE_KEY = "x"
+#: ``btn_order_draw_fallback``, l.184-188.
+FALLBACK_KEY = "c"
 #: A recorded point (nothing computes it): the "assign units" button, which has no shortcut.
 ASSIGN_POINT = "plan.assign_units"
 MAX_LINE_STATES = 8
@@ -156,6 +158,27 @@ def plan_front_line(layer: MapLayer, call: ActionCall, state: GameState, coordin
     return PlanOrder("draw_front_line", army, own_tag, tuple(states), states[0], enemy)
 
 
+def plan_fallback(layer: MapLayer, call: ActionCall, state: GameState, coordinates: dict) -> PlanOrder:
+    """A fallback line: a connected chain of the player's own states, with no enemy named (it is
+    where the army pulls back to, behind the front)."""
+    args = call.arguments
+    army = _check_army(args.get("army"), coordinates)
+    states = [int(s) for s in args.get("states", [])]
+    if not 1 <= len(states) <= MAX_LINE_STATES:
+        raise OrderRefused(f"a fallback line passes through 1 to {MAX_LINE_STATES} states, "
+                           f"not {len(states)}")
+    if len(set(states)) != len(states):
+        raise OrderRefused("the same state is named twice in the line")
+    forces = _picture(state)
+    own_tag = (state.country or "").upper()
+    for sid in states:
+        _own_listed(layer, forces, own_tag, sid, "part of the fallback line")
+    for a, b in zip(states, states[1:], strict=False):
+        if not _borders(layer, a, b):
+            raise OrderRefused(f"states {a} and {b} do not border: a fallback line is a connected chain")
+    return PlanOrder("draw_fallback_line", army, own_tag, tuple(states), states[0])
+
+
 def plan_offensive(layer: MapLayer, call: ActionCall, state: GameState, coordinates: dict) -> PlanOrder:
     args = call.arguments
     army = _check_army(args.get("army"), coordinates)
@@ -210,8 +233,9 @@ def plan_steps(layer: MapLayer, camera, order: PlanOrder) -> list[PlanStep]:
     if len(points) == 1:  # a one-state line is a short stroke across the state's middle
         x, y = points[0]
         points = [(x - 3 * MIN_SEPARATION, y), (x + 3 * MIN_SEPARATION, y)]
-    key = FRONT_LINE_KEY if order.action == "draw_front_line" else OFFENSIVE_KEY
-    tool = "front line tool" if order.action == "draw_front_line" else "offensive tool"
+    key, tool = {"draw_front_line": (FRONT_LINE_KEY, "front line tool"),
+                 "draw_fallback_line": (FALLBACK_KEY, "fallback line tool")}.get(
+        order.action, (OFFENSIVE_KEY, "offensive tool"))
     steps = [PlanStep("click_recorded", f"army.{order.army}", "select the army"),
              PlanStep("key", key, tool),
              PlanStep("path", tuple(points), f"{order.action} over states {list(order.states)}")]

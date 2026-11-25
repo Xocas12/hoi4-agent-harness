@@ -32,6 +32,7 @@ from pathlib import Path
 from ..baseai import game_version
 from ..config import HarnessConfig
 from ..types import ActionCall, ActionResult, GameState
+from .armies import ARMY_UI_ACTIONS, enable_armies
 from .base import AdapterInfo, GameAdapter
 from .battle_plans import PLAN_ACTIONS, enable_battle_plans
 from .channels import ChannelRouter, resolve_channels
@@ -59,6 +60,8 @@ MOUSE_ACTIONS = frozenset({
     "move_division", "attack_province",
     # Battle plans are drawn with the mouse too (adapters/battle_plans.py; not live-verified).
     "draw_front_line", "draw_offensive", "assign_battle_plan",
+    # Armies by click (adapters/armies.py; not live-verified).
+    *ARMY_UI_ACTIONS,
     # Editing a production line is a click on the production screen (adapters/production_ui.py).
     "change_production_equipment",
     # Choosing an event option is a click on the window (adapters/event_choice.py).
@@ -506,6 +509,8 @@ def build_headless(config: HarnessConfig, fake=None) -> CompositeAdapter:
     else:
         adapter = HeadlessComposite(reader, writer, **kwargs)
     adapter.fake_game = fake
+    if ledger is not None:
+        adapter.army_ledger = getattr(driver, "army_ledger", None)
     adapter.hands = hands
     adapter.event_reader = hands.event_reader
     if hands.mouse:
@@ -661,6 +666,17 @@ def _wire_hands(driver, console, config: HarnessConfig, hands: Hands, fake):
     else:
         enable_battle_plans(driver, orders_ok.layer, orders_ok._camera, orders_ok.centre,
                             unattended=bool(config.campaign))
+    if not config.army_ui:
+        hands.refuse(ARMY_UI_ACTIONS, "army_ui is off in the profile (the click path is not "
+                                      "verified in the game)")
+    elif orders_ok is None:
+        hands.refuse(ARMY_UI_ACTIONS, "the army actions need what division orders need (the map and "
+                                      "a recorded camera): "
+                     + hands.refused.get("move_division", "unit_orders is off"))
+    else:
+        armies = enable_armies(driver, orders_ok.layer, orders_ok._camera, orders_ok.centre,
+                               unattended=bool(config.campaign))
+        driver.army_ledger = armies.ledger
     _wire_production(driver, console, config, hands, driver.index)
     _wire_events(driver, config, hands, fake)
     _wire_event_reader(driver, config, hands, fake)
