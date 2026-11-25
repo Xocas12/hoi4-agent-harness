@@ -316,7 +316,7 @@ def build_system(
     hands = (campaign_hands or {}).get("offered") if independent else None
     modular = control_map is not None and control_map.explicit
     parts = [MECHANICS,
-             describe_map(control_map, hands) if modular
+             describe_map(control_map, hands, campaign_hands) if modular
              else describe(operational_control, campaign=independent, hands=hands)]
     if contested:
         parts.append(CONTESTED)
