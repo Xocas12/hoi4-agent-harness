@@ -51,10 +51,13 @@ def live(request):
     reason = lc.skip_reason(provider, os.environ)
     if reason:
         pytest.skip(reason)
-    if lc.SPECS[provider].key_env:
+    if lc.SPECS[provider].key_env or lc.SPECS[provider].cli:
         _announce(request.config)
     if provider == "scripted":
         client = build_llm(LLMConfig(provider="scripted"))
+    elif provider == "claude-cli":
+        model = os.environ.get("HOI4_LIVE_CLAUDE_CLI_MODEL") or DEFAULT_MODELS[provider]
+        client = lc.CappedClient(build_llm(LLMConfig(provider=provider, model=model)), _budget())
     else:
         model = os.environ.get(f"HOI4_LIVE_{provider.upper()}_MODEL") or DEFAULT_MODELS[provider]
         base_url = os.environ.get(lc.SPECS[provider].base_url_env or "") or None
@@ -76,3 +79,9 @@ def first_response(live):
     if key not in _state:
         _state[key] = lc.first_call(client)
     return _state[key]
+
+
+@pytest.fixture
+def call_budget():
+    """The run-wide call counter, for a check that builds its own client."""
+    return _budget()

@@ -13,6 +13,7 @@ from __future__ import annotations
 import json
 from collections.abc import Callable, Iterable
 
+from . import targets
 from .actions import registry
 from .actions.catalog import PLAYSET_QUERIES, QUERY_ACTIONS
 from .adapters.base import GameAdapter
@@ -378,6 +379,9 @@ class HOI4Env:
     def _refused(self, call: ActionCall) -> ActionResult | None:
         """The co-op and multiplayer refusals (coop.py): a domain the player holds, a country
         another person plays. Checked at queue time and again when a queued call runs."""
+        named = targets.check(call)
+        if named is not None:
+            return named
         why = refusal(self.config, call)
         if why is None:
             return None
@@ -399,7 +403,7 @@ class HOI4Env:
             )
         if result.ok:
             self._track_directive(call)
-        return result
+        return targets.annotate(call, result)
 
     def run_handover(self) -> HandoverReport | None:
         """Run the queued actions if the player has granted a window.
@@ -442,7 +446,7 @@ class HOI4Env:
                 for call, result in zip(valid, results, strict=True):
                     if result.ok:
                         self._track_directive(call)
-                    out[id(call)] = result
+                    out[id(call)] = targets.annotate(call, result)
             return [out[id(call)] for call in calls]
 
         report = self.handover.run(self.adapter.read_state, apply, apply_batch)

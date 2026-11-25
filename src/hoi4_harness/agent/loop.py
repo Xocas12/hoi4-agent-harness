@@ -547,6 +547,7 @@ class AgentLoop:
             self.report.planner_calls += 1
             self.transcript.write(
                 "llm",
+                provider=getattr(self.planner, "name", ""),
                 model=response.model,
                 stop_reason=response.stop_reason,
                 text=response.text,

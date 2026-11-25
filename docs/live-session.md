@@ -348,11 +348,25 @@ and production answers. They go in the UNVERIFIED list in adapters.md as settled
 
 **Conformance (#22).** The suite in `tests/live` runs the same checks on every provider:
 tool schema accepted, a call parsed back into a valid `ActionCall`, a tool result
-accepted for a second round, usage populated, and prefix caching where promised.
+accepted for a second round, usage populated, a neutral stop reason, a rejected key
+classified fatal, and prefix caching where promised. The same claims run offline, on every
+`pytest`, against recorded responses for all four providers (anthropic, openai-compatible,
+gemini, claude-cli) in `tests/test_provider_conformance.py`.
 A paid provider runs only when **both** are set: `HOI4_LIVE_PROVIDER_TESTS=1` and that
 provider's key (`ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GOOGLE_API_KEY`; for a local
 OpenAI-compatible server, `HOI4_LIVE_OPENAI_BASE_URL` instead of a key). The `scripted`
 provider runs the same checks for free, so a bare `pytest` never bills anything.
+
+The one-command way (any of `HOI4_LIVE_PROVIDER_TESTS`, `HOI4_LIVE_TESTS` or
+`HOI4_LIVE_PROVIDERS` set to `1` opts in; the command sets it for you and never prints a key):
+
+```bash
+hoi4-harness provider-check --plan                       # what would run and the worst-case cost; sends nothing
+hoi4-harness provider-check --provider anthropic         # keys come from your shell: ANTHROPIC_API_KEY, OPENAI_API_KEY, GOOGLE_API_KEY
+hoi4-harness provider-check --provider claude-cli --max-calls 4   # needs `claude` on PATH, uses the subscription login, no key
+```
+
+The raw form, for a fork or a CI job:
 
 ```bash
 # what it would cost, before anything is sent: set the rates, run with -k nothing
@@ -363,8 +377,8 @@ HOI4_LIVE_PROVIDER_TESTS=1 OPENAI_API_KEY=... pytest tests/live -v -rs
 HOI4_LIVE_PROVIDER_TESTS=1 HOI4_LIVE_OPENAI_BASE_URL=http://localhost:11434/v1   HOI4_LIVE_OPENAI_MODEL=<local model> pytest tests/live -v -rs
 ```
 
-Before the first call it prints the plan: calls per provider (Anthropic 4, OpenAI and
-Gemini 2 each), a worst-case token and dollar bound (no cache discount, every call at
+Before the first call it prints the plan: calls per provider (Anthropic 5, OpenAI and
+Gemini 3 each, claude-cli 2), a worst-case token and dollar bound (no cache discount, every call at
 `max_tokens`; dollars only when the rates are set), and the hard cap. `HOI4_LIVE_MAX_CALLS`
 (default 12) is counted across every provider in the run; the call past it is refused
 before it is sent. `HOI4_LIVE_<PROVIDER>_MODEL` picks the model. The skip logic, the cap

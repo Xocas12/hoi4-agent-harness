@@ -18,6 +18,8 @@ from hoi4_harness.eval import live_conformance as lc
 
 HAVE_SDK = lambda name: True  # noqa: E731
 NO_SDK = lambda name: False  # noqa: E731
+NO_CLI = lambda name: None  # noqa: E731
+HAVE_CLI = lambda name: "/bin/claude"  # noqa: E731
 
 
 # --- skip logic -----------------------------------------------------------------------
@@ -86,11 +88,11 @@ def test_the_call_past_the_cap_is_refused_before_it_reaches_the_client():
 def test_the_plan_states_calls_cap_and_dollars_when_rates_are_set():
     env = {lc.OPT_IN: "1", "ANTHROPIC_API_KEY": "k", "GOOGLE_API_KEY": "k",
            "HOI4_USD_PER_M_INPUT": "5", "HOI4_USD_PER_M_OUTPUT": "25", lc.CAP_ENV: "5"}
-    text = lc.render_plan(env, lc.runnable(env, HAVE_SDK))
-    assert "6 call(s) planned, hard cap 5" in text
-    assert "anthropic: 4 call(s)" in text and "google: 2 call(s)" in text
+    text = lc.render_plan(env, lc.runnable(env, HAVE_SDK, NO_CLI))
+    assert "8 call(s) planned, hard cap 5" in text
+    assert "anthropic: 5 call(s)" in text and "google: 3 call(s)" in text
     assert "worst case total: $" in text
-    assert "WARNING" in text                 # 6 planned against a cap of 5
+    assert "WARNING" in text                 # 8 planned against a cap of 5
 
 
 def test_the_plan_never_echoes_a_key_and_says_so_when_unpriced():

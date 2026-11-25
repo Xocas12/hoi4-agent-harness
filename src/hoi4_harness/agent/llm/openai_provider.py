@@ -19,7 +19,7 @@ import json
 import os
 
 from ...actions.registry import ToolSpec
-from .base import LLMClient, LLMResponse, Msg, ToolCall, Usage
+from .base import LLMClient, LLMResponse, Msg, ToolCall, Usage, normalise_stop
 
 # Reasoning-capable families that accept `reasoning_effort`. Unknown models are
 # tried without it; a server that rejects the field would otherwise fail the run.
@@ -236,7 +236,7 @@ class OpenAIClient(LLMClient):
         return LLMResponse(
             text=choice.message.content or "",
             tool_calls=calls,
-            stop_reason="tool_use" if calls else (choice.finish_reason or "end_turn"),
+            stop_reason=normalise_stop(choice.finish_reason, calls=bool(calls)),
             usage=usage,
             model=self.model,
             raw=response,

@@ -1,0 +1,98 @@
+{
+  "_note": "Wire shapes as each provider's API reference documents them, one scenario per ending. Replace a block with a captured response (keys and ids scrubbed) when a live run shows the shape drifted; tests/test_provider_conformance.py reads this file and nothing else.",
+  "anthropic": {
+    "tool_call": {
+      "content": [
+        {"type": "text", "text": "Starting research."},
+        {"type": "tool_use", "id": "toolu_01A", "name": "start_research", "input": {"technology": "construction1"}}
+      ],
+      "stop_reason": "tool_use",
+      "usage": {"input_tokens": 120, "output_tokens": 35, "cache_read_input_tokens": 900, "cache_creation_input_tokens": 300}
+    },
+    "end_turn": {
+      "content": [{"type": "text", "text": "Nothing to do this turn."}],
+      "stop_reason": "end_turn",
+      "usage": {"input_tokens": 50, "output_tokens": 8, "cache_read_input_tokens": 0, "cache_creation_input_tokens": 0}
+    },
+    "max_tokens": {
+      "content": [{"type": "text", "text": "The plan is long and"}],
+      "stop_reason": "max_tokens",
+      "usage": {"input_tokens": 50, "output_tokens": 2048}
+    },
+    "refusal": {
+      "content": [],
+      "stop_reason": "refusal",
+      "usage": {"input_tokens": 50, "output_tokens": 0}
+    }
+  },
+  "openai": {
+    "tool_call": {
+      "choices": [{"finish_reason": "tool_calls", "message": {"content": null, "tool_calls": [
+        {"id": "call_abc", "function": {"name": "start_research", "arguments": "{\"technology\": \"construction1\"}"}}]}}],
+      "usage": {"prompt_tokens": 1200, "completion_tokens": 40, "prompt_tokens_details": {"cached_tokens": 900}}
+    },
+    "end_turn": {
+      "choices": [{"finish_reason": "stop", "message": {"content": "Nothing to do this turn.", "tool_calls": null}}],
+      "usage": {"prompt_tokens": 50, "completion_tokens": 8}
+    },
+    "max_tokens": {
+      "choices": [{"finish_reason": "length", "message": {"content": "The plan is long and", "tool_calls": null}}],
+      "usage": {"prompt_tokens": 50, "completion_tokens": 2048}
+    },
+    "refusal": {
+      "choices": [{"finish_reason": "content_filter", "message": {"content": null, "tool_calls": null}}],
+      "usage": {"prompt_tokens": 50, "completion_tokens": 0}
+    },
+    "malformed_arguments": {
+      "choices": [{"finish_reason": "tool_calls", "message": {"content": null, "tool_calls": [
+        {"id": "call_bad", "function": {"name": "start_research", "arguments": "{\"technology\": "}}]}}],
+      "usage": {"prompt_tokens": 60, "completion_tokens": 9}
+    }
+  },
+  "google": {
+    "tool_call": {
+      "function_calls": [{"name": "start_research", "args": {"technology": "construction1"}}],
+      "text": "",
+      "candidates": [{"finish_reason": "STOP"}],
+      "usage_metadata": {"prompt_token_count": 1200, "candidates_token_count": 12, "thoughts_token_count": 30, "cached_content_token_count": 900}
+    },
+    "end_turn": {
+      "function_calls": null,
+      "text": "Nothing to do this turn.",
+      "candidates": [{"finish_reason": "STOP"}],
+      "usage_metadata": {"prompt_token_count": 50, "candidates_token_count": 8}
+    },
+    "max_tokens": {
+      "function_calls": null,
+      "text": "The plan is long and",
+      "candidates": [{"finish_reason": "MAX_TOKENS"}],
+      "usage_metadata": {"prompt_token_count": 50, "candidates_token_count": 2048}
+    },
+    "refusal": {
+      "function_calls": null,
+      "text": "",
+      "candidates": [{"finish_reason": "SAFETY"}],
+      "usage_metadata": {"prompt_token_count": 50, "candidates_token_count": 0}
+    }
+  },
+  "claude-cli": {
+    "tool_call": {
+      "type": "result", "is_error": false, "total_cost_usd": 0.0123,
+      "result": "{\"text\": \"Starting research.\", \"calls\": [{\"name\": \"start_research\", \"arguments\": {\"technology\": \"construction1\"}}]}",
+      "usage": {"input_tokens": 120, "output_tokens": 35, "cache_read_input_tokens": 900, "cache_creation_input_tokens": 300}
+    },
+    "fenced": {
+      "type": "result", "is_error": false, "total_cost_usd": 0.01,
+      "result": "```json\n{\"text\": \"ok\", \"calls\": [{\"name\": \"note\", \"arguments\": {\"text\": \"x\"}}]}\n```",
+      "usage": {"input_tokens": 10, "output_tokens": 5}
+    },
+    "prose_only": {
+      "type": "result", "is_error": false, "total_cost_usd": 0.0,
+      "result": "I think we should wait.",
+      "usage": {"input_tokens": 10, "output_tokens": 5}
+    },
+    "error": {
+      "type": "result", "is_error": true, "result": "Credit balance is too low"
+    }
+  }
+}

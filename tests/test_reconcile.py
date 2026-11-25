@@ -139,3 +139,106 @@ def test_the_command_refuses_a_missing_file_and_a_transcript_with_no_calls(tmp_p
     empty.write_text('{"kind": "observe"}\n', encoding="utf-8")
     assert cli.main(["reconcile", str(empty), str(FIX / "usage.csv")]) == 2
     assert "no llm records" in capsys.readouterr().err
+
+
+# --- per model and day -------------------------------------------------------------------------
+
+DAYS = FIX / "transcript_days.jsonl"
+
+
+def test_the_transcript_is_split_by_provider_model_and_utc_day():
+    keyed = rc.read_transcript_keyed(DAYS)
+    assert sorted(keyed) == [("anthropic", MODEL, "2026-11-16"), ("anthropic", MODEL, "2026-11-17"),
+                             ("openai", "gpt-5", "2026-11-17")]
+    first = keyed[("anthropic", MODEL, "2026-11-16")]
+    assert first.calls == 2 and first.usage.input_tokens == 35000 and first.usage.output_tokens == 2700
+
+
+def test_the_exports_carry_their_days_and_providers():
+    anthropic = rc.read_export_keyed(FIX / "anthropic_usage_days.json")
+    assert sorted(anthropic) == [("anthropic", MODEL, "2026-11-16"), ("anthropic", MODEL, "2026-11-17")]
+    csv_keys = rc.read_export_keyed(FIX / "usage_days.csv")
+    assert ("openai", "gpt-5", "2026-11-17") in csv_keys
+    assert csv_keys[("anthropic", MODEL, "2026-11-16")].billed_usd == pytest.approx(0.11)
+    openai = rc.read_export_keyed(FIX / "openai_usage.json")        # start_time 1 = 1970-01-01
+    assert list(openai) == [("openai", MODEL, "1970-01-01")]
+
+
+def test_the_folded_readers_still_give_per_model_totals():
+    assert rc.fold(rc.read_transcript_keyed(DAYS))[MODEL].usage.input_tokens == 45724
+
+
+def test_a_matching_day_by_day_export_is_within_tolerance():
+    report = rc.reconcile_daily(rc.read_transcript_keyed(DAYS),
+                                rc.read_export_keyed(FIX / "usage_days.csv"), tolerance=0.03)
+    assert [(d.provider, d.model, d.day) for d in report.days] == [
+        ("anthropic", MODEL, "2026-11-16"), ("anthropic", MODEL, "2026-11-17"),
+        ("openai", "gpt-5", "2026-11-17")]
+    assert report.ok, rc.render_daily(report)
+
+
+def test_a_drift_on_one_day_is_flagged_on_that_day_only():
+    report = rc.reconcile_daily(rc.read_transcript_keyed(DAYS),
+                                rc.read_export_keyed(FIX / "anthropic_usage_days_drift.json"))
+    assert not report.ok
+    failing = {(d.model, d.day): d.row.failures() for d in report.days if d.row.failures()}
+    assert failing[(MODEL, "2026-11-17")] == ["output"]
+    assert (MODEL, "2026-11-16") not in failing
+    text = rc.render_daily(report)
+    assert "2026-11-17" in text and "<--" in text and "OUTSIDE TOLERANCE" in text
+    assert "anthropic/gpt-5" not in text                   # openai's day is its own row
+
+
+def test_the_daily_cost_uses_the_billed_amount_and_names_the_difference_per_day():
+    rates = dict([rc.parse_rate(RATE[0])])
+    report = rc.reconcile_daily(rc.read_transcript_keyed(DAYS),
+                                rc.read_export_keyed(FIX / "usage_days.csv"), rates, tolerance=0.5)
+    day = next(d for d in report.days if d.day == "2026-11-16" and d.model == MODEL)
+    assert day.row.export_usd == pytest.approx(0.11) and day.row.export_usd_billed
+    assert "cost " in rc.render_daily(report)
+
+
+def test_a_side_without_dates_falls_back_to_one_row_per_model_and_says_so():
+    report = rc.reconcile_daily(rc.read_transcript_keyed(DAYS),
+                                rc.read_export_keyed(FIX / "usage.csv"))
+    assert "no dates" in report.note and {d.day for d in report.days} == {""}
+    assert any(d.model == MODEL for d in report.days)
+
+
+def test_an_export_day_the_run_never_touched_is_reported_not_dropped():
+    keyed = rc.read_transcript_keyed(DAYS)
+    export = rc.read_export_keyed(FIX / "anthropic_usage_days.json")
+    seen = export[("anthropic", MODEL, "2026-11-16")]
+    export[("anthropic", MODEL, "2026-11-18")] = rc.Totals(usage=seen.usage)
+    report = rc.reconcile_daily({k: v for k, v in keyed.items() if k[0] == "anthropic"}, export)
+    extra = next(d for d in report.days if d.day == "2026-11-18")
+    assert extra.row.failures() and "[export only]" in rc.render_daily(report)
+
+
+def test_a_dated_export_model_still_matches_by_prefix_per_day():
+    export = {("anthropic", MODEL + "-20261101", d): t
+              for (_, _, d), t in rc.read_export_keyed(FIX / "anthropic_usage_days.json").items()}
+    keyed = {k: v for k, v in rc.read_transcript_keyed(DAYS).items() if k[0] == "anthropic"}
+    assert rc.reconcile_daily(keyed, export).ok
+
+
+def test_a_csv_with_a_bad_date_is_refused():
+    with pytest.raises(rc.ReconcileError, match="YYYY-MM-DD"):
+        rc.read_csv_keyed("date,model,uncached_input_tokens,output_tokens\n16/11/2026,m,1,1\n")
+
+
+def test_by_day_through_the_command(capsys):
+    args = ["reconcile", str(DAYS), str(FIX / "usage_days.csv"), "--by", "day"]
+    assert cli.main(args) == 0
+    assert "2026-11-17" in capsys.readouterr().out
+    drift = ["reconcile", str(DAYS), str(FIX / "anthropic_usage_days_drift.json"), "--by", "day"]
+    assert cli.main(drift) == 1
+
+
+def test_a_real_loop_run_records_provider_and_a_day_that_reconcile_reads(tmp_path):
+    from test_agent_smoke import run
+
+    _, _, _, records = run(tmp_path)
+    assert {r["provider"] for r in records if r["kind"] == "llm"} == {"scripted"}
+    keyed = rc.read_transcript_keyed(tmp_path / "run.jsonl")
+    assert keyed and all(p == "scripted" and len(d) == 10 for p, _, d in keyed)

@@ -831,7 +831,7 @@ class MockAdapter(GameAdapter):
 
     def _do_set_ai_directive(self, call: ActionCall) -> ActionResult:
         directive = call.arguments["directive"]
-        target = call.arguments["target"]
+        target = str(call.arguments["target"]).strip().upper()
         weight = int(call.arguments.get("weight", 100))
         entry = f"{directive} {target} ({weight})"
         self.state.ai_directives = [
