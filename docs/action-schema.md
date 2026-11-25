@@ -1,6 +1,6 @@
 # The action catalog
 
-The catalog is the agent's entire vocabulary. It is small on purpose: 53 verbs,
+The catalog is the agent's entire vocabulary. It is small on purpose: 59 verbs,
 listed by `hoi4-harness actions` (add `--json` for schemas).
 
 | Action | Category | Notes |
@@ -58,6 +58,12 @@ listed by `hoi4-harness actions` (add `--json` for schemas).
 | `draw_front_line` | army | Battle-plan front line through own states, by click; off unless `battle_plans = true`; NOT live-verified (`docs/unit-orders.md` section 7) |
 | `draw_offensive` | army | Battle-plan offensive arrow from an own state into a hostile one; as above |
 | `assign_battle_plan` | army | Select a recorded army and press assign-units (a recorded point); as above |
+| `create_army` | army | Select the divisions in a state and press the create-army card (`army.create`); off unless `army_ui = true`; NOT live-verified (`docs/armies.md`) |
+| `assign_divisions` | army | Select the divisions in a state and drop them on a recorded army's card; as above |
+| `assign_army_front` | army | Army, front-line tool, one click on an enemy province on the border, then the pace: how an army is handed a front (#8); the next save confirms; as above |
+| `draw_fallback_line` | army | Fallback line through a chain of own states (`c` tool); as above |
+| `set_army_execution` | army | Careful, balanced or rush: `shift+s` and a recorded pace button; as above |
+| `release_army` | army | `ctrl+h` with the army selected: its divisions come off the plan; as above |
 
 The four `strategy` verbs are the hybrid vocabulary (`docs/hybrid-control.md`); the `steer` verbs extend it (`set_front_order`, `steer_production`, `steer_intelligence`, `steer_research`, `steer_navy`, `steer_air`, `steer_spending`, `steer_market`, `steer_army`), and `set_ai_directive` also carries diplomacy (`prepare_war`, `declare_war`, `volunteers`, `lend_lease`, `ally`) and intelligence (`spy_on`, `sabotage`, `steal_tech`) intent.
 

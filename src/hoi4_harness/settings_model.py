@@ -67,6 +67,7 @@ GROUP_EXACT: dict[str, str] = {
     "army_controller": "Control map", "allow_contested": "Control map",
     "auto_options": "Control map",
     "unit_orders": "Unit orders", "camera_path": "Unit orders", "battle_plans": "Unit orders",
+    "army_ui": "Unit orders",
     "handover": "Co-op and multiplayer", "multiplayer": "Co-op and multiplayer",
     "country": "Playset and DLC", "start_date": "Playset and DLC", "game_dir": "Playset and DLC",
     "mod_dirs": "Playset and DLC", "dlcs": "Playset and DLC", "user_dir": "Playset and DLC",

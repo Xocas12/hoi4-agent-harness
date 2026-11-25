@@ -226,6 +226,7 @@ against the game.
 | `fakearmy.py`, `fakegame.py` | divisions, movement, mouse, telemetry |
 | `tactics/bridge.py` | simulator controller <-> actions |
 | `adapters/battle_plans.py` | plan actions by click (section 7) |
+| `adapters/armies.py`, `armies.py` | create / fill / front / pace / release an army, and the save reader that confirms them (`docs/armies.md`) |
 | `scripts/record_camera.py` | fit and write `camera.json` |
 
 ## 7. Battle plans (NOT live-verified)

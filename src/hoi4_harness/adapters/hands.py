@@ -42,6 +42,9 @@ HAND_ACTIONS = frozenset({"start_research"}) | ARMY_ACTIONS
 #: Battle plans by click (adapters/battle_plans.py): a fourth hand, off unless the profile asks
 #: (``battle_plans = true``) and NOT live-verified, so not in HAND_ACTIONS.
 PLAN_ACTIONS = ("draw_front_line", "draw_offensive", "assign_battle_plan")
+#: Armies by click (adapters/armies.py): also off unless the profile asks (``army_ui = true``).
+ARMY_UI_ACTIONS = ("create_army", "assign_divisions", "assign_army_front", "draw_fallback_line",
+                   "set_army_execution", "release_army")
 
 #: The live-verified 1.19 research click path (the same steps as profiles/ui_scripts.1.19.json).
 RESEARCH_SCRIPT = [
@@ -144,6 +147,12 @@ class Hands:
                        "(docs/unit-orders.md section 7)")
         elif PLAN_ACTIONS[0] in self.refused:
             out.append(f"battle plans not offered: {self.refused[PLAN_ACTIONS[0]]}")
+        armies = sorted(set(ARMY_UI_ACTIONS) & set(offered))
+        if armies:
+            out.append(f"army actions live: {', '.join(armies)}: UNVERIFIED against the real game "
+                       "(docs/armies.md); the next text save confirms or denies each")
+        elif ARMY_UI_ACTIONS[0] in self.refused:
+            out.append(f"army actions not offered: {self.refused[ARMY_UI_ACTIONS[0]]}")
         if {"move_division", "attack_province"} & set(live):
             out.append("division orders are UNVERIFIED against the real game (docs/unit-orders.md)")
         return out

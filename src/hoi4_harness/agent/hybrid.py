@@ -37,6 +37,8 @@ from __future__ import annotations
 OPERATIONAL_ACTIONS = frozenset({
     "set_army_order", "set_air_mission", "set_naval_mission", "move_division", "attack_province",
     "draw_front_line", "draw_offensive", "assign_battle_plan",
+    # Managing armies (adapters/armies.py): the model's own army control, not a handed-over one.
+    "create_army", "assign_divisions", "draw_fallback_line",
 })
 
 #: Actions that only make sense when the native AI is executing.
@@ -58,6 +60,8 @@ GAME_AI_OWNED = frozenset({
     "change_production_equipment",
     "design_division_template", "design_equipment", "deploy_divisions", "delegate_army_to_ai",
     "set_trade", "set_game_speed", "diplomacy",
+    # Handing an army a front and a pace is delegation: with the whole country on the AI it is moot.
+    "assign_army_front", "set_army_execution", "release_army",
 })
 
 MODES = ("llm", "ai", "game_ai")
@@ -219,7 +223,9 @@ def describe_map(cmap, hands=None) -> str:
         parts.append(
             "You steer the game's AI with set_ai_directive, clear_ai_directives and set_ai_posture "
             "(globally or per theater)"
-            + (", and delegate_army_to_ai hands it an army or takes one back"
+            + (", and delegate_army_to_ai hands it an army or takes one back (where the click tools "
+               "are on, assign_army_front gives an army a front against a named enemy and a pace, "
+               "which the game then carries out)"
                if cmap.delegated else "")
             + ". Directives and postures are standing orders.")
     else:

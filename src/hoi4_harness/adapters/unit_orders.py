@@ -788,5 +788,11 @@ class OrdersComposite(CompositeAdapter):
         self.ledger = ledger
         self.names = names or {}
 
+    #: The army actions' ledger (adapters/armies.py), set when they are wired.
+    army_ledger = None
+
     def read_state(self) -> GameState:
-        return decorate_state(super().read_state(), self.ledger, self.names)
+        state = decorate_state(super().read_state(), self.ledger, self.names)
+        if self.army_ledger is not None:
+            state = self.army_ledger.decorate(state)
+        return state

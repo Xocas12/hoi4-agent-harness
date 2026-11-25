@@ -76,7 +76,10 @@ DOMAIN_ACTIONS: dict[str, frozenset[str]] = {
                            "set_occupation_law", "diplomacy_act", "fire_advisor"}),
     "diplomacy": frozenset({"diplomacy"}),
     "army": frozenset({"set_army_order", "move_division", "attack_province",
-                       "draw_front_line", "draw_offensive", "assign_battle_plan"}),
+                       "draw_front_line", "draw_offensive", "assign_battle_plan",
+                       # Armies by click (adapters/armies.py, docs/armies.md; #8, #137).
+                       "create_army", "assign_divisions", "assign_army_front",
+                       "draw_fallback_line", "set_army_execution", "release_army"}),
     "navy": frozenset({"set_naval_mission"}),
     "air": frozenset({"set_air_mission"}),
 }
@@ -90,6 +93,10 @@ PRODUCTION_LINE_ACTION = "add_production_line"
 #: AI may undo or switch it: a new production line, a design, a research pick. Nothing else.
 CONTESTED_PRODUCTION = frozenset({PRODUCTION_LINE_ACTION, "design_equipment", "start_research"})
 DELEGATE_ACTION = "delegate_army_to_ai"
+#: Handing an army a front and a pace, which the game's AI then carries out (#8): the one way to
+#: delegate that does not need an AI toggle the game does not have. Offered with ``army: llm`` (the
+#: model's own army control) and, as delegation, with ``army: game`` while the model steers.
+DELEGATION_ACTIONS = frozenset({"assign_army_front", "set_army_execution", "release_army"})
 CLOCK_ACTION = "set_game_speed"
 #: Never narrowed by control: notes, the clock handed back, the read-only playset queries.
 ALWAYS = frozenset({"note", "advance_time", "list_decisions", "describe_action",
@@ -187,8 +194,11 @@ class ControlMap:
             out -= STEER_ACTIONS
         # Handing an army over is the model's call only where armies are the AI's one by one
         # and the model is steering; with human_ai the AI has them all already.
-        if not (self.domains["army"] == "game" and not self.human_ai and self.steer == "llm"):
+        delegating = self.domains["army"] == "game" and not self.human_ai and self.steer == "llm"
+        if not delegating:
             out.discard(DELEGATE_ACTION)
+        else:
+            out |= DELEGATION_ACTIONS & allowed
         if self.human_ai:
             out.discard(CLOCK_ACTION)       # the clock is the harness's under human_ai
         return out
