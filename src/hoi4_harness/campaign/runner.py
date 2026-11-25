@@ -237,6 +237,8 @@ class CampaignSupervisor(Supervisor):
         self.loop: AgentLoop | None = None
         #: The briefing agent (briefer.BriefingRun) when ``campaign_briefing`` is on (#165).
         self.briefing = None
+        #: The micro controller's runtime (micro/runtime.py), built on the first turn it is on.
+        self.micro = None
         self._rule_misses = 0
         self._path_misses = 0
         #: The person's guidance (``hoi4-harness guide``): the board the brief reads from.
@@ -283,7 +285,25 @@ class CampaignSupervisor(Supervisor):
             self.saves.prune()
             self.note_rule()
         self._rebrief(state)
+        self._micro(state)
         return self._memory_check(state)
+
+    def _micro(self, state: GameState) -> None:
+        """#85: the micro controller under the LLM, when the profile asks for one (off by default).
+        A controller that fails costs its own turn's orders, never the run."""
+        kind = getattr(self.config, "micro_controller", "off")
+        if kind == "off" or self.config.dry_run:
+            return
+        try:
+            if self.micro is None:
+                from ..micro.runtime import MicroRuntime, build_controller
+
+                self.micro = MicroRuntime(build_controller(kind, self.config.micro_model),
+                                          self.env, self.run_dir, self.log.line)
+            for line in self.micro.step(state):
+                self.log.line(line)
+        except Exception as exc:  # noqa: BLE001
+            self.log.line(f"micro controller: {type(exc).__name__}: {exc}")
 
     def _rebrief(self, state: GameState) -> None:
         """#165: brief again when the schedule says so (a date, a year, a new war, a
@@ -612,6 +632,10 @@ def begin(env: HOI4Env, config: HarnessConfig, log: CampaignLog,
             # the recorded points are things a person provides, so say it where it is read.
             for line in hands.lines(env.allowed_actions):
                 log.line(line)
+        from ..economy import lines as economy_lines
+
+        for line in economy_lines(cmap, env.allowed_actions, config.campaign_hands):
+            log.line(line)
         return state
     if not config.campaign_human_ai:
         log.line("human_ai is off by configuration: the game is not handed to the AI")

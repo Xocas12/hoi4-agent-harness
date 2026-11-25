@@ -144,6 +144,33 @@ a named enemy at a pace IS the delegation. `create_army` and `assign_divisions` 
 army management and stay out. That is the mode where the model owns the country and the game's AI
 runs only the armies (#161 step 2). It is built and tested on the fake game only.
 
+## Direct economy (#137, economy part)
+
+`--control economy` is a named part of a map: the model runs the desk work of the country by hand,
+as a player does, and nothing else.
+
+| Domain | Controller | How it reaches the game |
+|---|---|---|
+| `research` | llm | `start_research` clicks the tech tree (mouse, game window in front) |
+| `production` | llm | `set_production` edits an existing line by click and opens a new one by console; `change_production_equipment` switches a line by click (both need the recorded production points, `docs/live-session.md` section 14b) |
+| `construction` | llm | `queue_construction` / `queue_province_building` through the console, checked against the save |
+| `focus`, `politics`, `diplomacy` | llm | as in an independent campaign |
+| `army`, `navy`, `air` | off | nobody; add `army=script` or `army=llm` after `economy` to give the armies to someone |
+
+The game's AI owns nothing (`human_ai` is never sent, `steer` is off), so nothing it does can undo
+or double an order, and what the model leaves empty stays empty. Overrides follow the word
+(`economy,army=script`, or `{"base": "economy", "diplomacy": "off"}` in a profile); putting a
+domain the model runs on `game` is refused as contested, like any map.
+
+The start log says how each part is reached (`economy research: start_research (mouse)`) and warns
+when a part the model owns has no tool in this run; the prompt says the same, so it never promises a
+click path the run does not have (`hoi4_harness/economy.py`). Without the production points a
+line that exists cannot be edited and the model is told so.
+
+Built and tested on the fake game only (`tests/test_137_economy_control.py`). Not done here: the
+army half of #137 (front lines, battle plans, division moves), research or production read as a
+human reads the screen (the harness reads the save), and the live check.
+
 ## Presets: the old levels
 
 `operational_control` and the campaign's `campaign_control` resolve to these maps, and a run
