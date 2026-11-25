@@ -632,6 +632,10 @@ def begin(env: HOI4Env, config: HarnessConfig, log: CampaignLog,
             # the recorded points are things a person provides, so say it where it is read.
             for line in hands.lines(env.allowed_actions):
                 log.line(line)
+        from ..economy import lines as economy_lines
+
+        for line in economy_lines(cmap, env.allowed_actions, config.campaign_hands):
+            log.line(line)
         return state
     if not config.campaign_human_ai:
         log.line("human_ai is off by configuration: the game is not handed to the AI")

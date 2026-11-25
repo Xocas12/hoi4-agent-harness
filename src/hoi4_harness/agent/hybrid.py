@@ -177,7 +177,7 @@ def _words(domains) -> str:
     return ", ".join(_DOMAIN_WORDS[d] for d in domains)
 
 
-def describe_map(cmap, hands=None) -> str:
+def describe_map(cmap, hands=None, campaign_hands=None) -> str:
     """The prompt paragraph for a control map the operator wrote (``control.py``): which parts
     of the country the model owns, which a script runs, which the game's AI runs, and whether it
     steers. The old settings keep ``describe``'s own text."""
@@ -224,4 +224,29 @@ def describe_map(cmap, hands=None) -> str:
             + ". Directives and postures are standing orders.")
     else:
         parts.append("You do not steer the game's AI: no directive or posture tools exist here.")
+    from ..economy import describe as economy_text
+
+    economy = economy_text(cmap, set(hands or ()) | _economy_offered(cmap, campaign_hands),
+                           campaign_hands)
+    if economy:
+        parts.append(economy)
     return " ".join(parts)
+
+
+def _economy_offered(cmap, campaign_hands) -> set[str]:
+    """The economy tools a run offers, from what the adapter summary says is live (the prompt is
+    built before any tool list exists). The console ones are on when the model owns the domain;
+    the two that need the mouse (a research pick, an equipment change) only when the run says its
+    click path is live."""
+    from ..control import DOMAIN_ACTIONS, ECONOMY_DOMAINS
+
+    hands = campaign_hands or {}
+    mouse_only = {"start_research", "change_production_equipment"}
+    out = {a for d in ECONOMY_DOMAINS if cmap.controller(d) == "llm"
+           for a in DOMAIN_ACTIONS[d] if a not in mouse_only}
+    out -= set(hands.get("refused") or ())
+    if "start_research" in set(hands.get("offered") or ()):
+        out.add("start_research")
+    if (hands.get("production") or {}).get("equipment"):
+        out.add("change_production_equipment")
+    return out
