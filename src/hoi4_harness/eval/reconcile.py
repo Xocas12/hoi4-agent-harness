@@ -38,7 +38,8 @@ header row, then one row per model; extra columns are ignored::
 
 ``cache_read_tokens``, ``cache_write_tokens`` and ``cost_usd`` may be left out or
 blank. Optional ``date`` (``YYYY-MM-DD``, UTC) and ``provider`` columns let ``--by day``
-split the export; the JSON formats carry their own days. ``uncached_input_tokens`` excludes cache reads and writes (the Anthropic
+split the export; the JSON formats carry their own days.
+``uncached_input_tokens`` excludes cache reads and writes (the Anthropic
 meaning); add them to ``input`` yourself if your console reports one total.
 Optional ``requests`` is the call count.
 
