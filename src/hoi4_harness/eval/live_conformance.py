@@ -84,10 +84,13 @@ def _importable(name: str) -> bool:
 
 
 def skip_reason(provider: str, env: Mapping[str, str],
-                importable: Callable[[str], bool] = _importable,
+                importable: Callable[[str], bool] | None = None,
                 which: Callable[[str], str | None] = shutil.which) -> str | None:
     """Why this provider must not run now, or None. The opt-in is checked first so
     a shell full of keys is never billed by a bare ``pytest``."""
+    # Looked up at call time, not bound as a default: a test patches the module's
+    # _importable, and a default bound at import kept the real one (CI without the SDK).
+    importable = importable or _importable
     spec = SPECS[provider]
     if spec.key_env is None and spec.cli is None:
         return None                         # scripted: free, always runs
@@ -107,7 +110,7 @@ def skip_reason(provider: str, env: Mapping[str, str],
     return None
 
 
-def runnable(env: Mapping[str, str], importable: Callable[[str], bool] = _importable,
+def runnable(env: Mapping[str, str], importable: Callable[[str], bool] | None = None,
              which: Callable[[str], str | None] = shutil.which) -> list[str]:
     """Providers that would spend money or a subscription (scripted excluded), in a fixed
     order."""
