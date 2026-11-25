@@ -32,25 +32,77 @@ hoi4-harness play --mp-client --country FRA --mp-human GER \
   the click-backed actions. Combine with `--human` and `--handover-mode` as in a single-player
   co-op game if a person also shares the harness's client.
 
-Tested on the mock and the fake game only: `tests/test_coop.py` (refusal, brief, checks, eval
-refusal).
+Tested on the mock and on the fake multiplayer game: `tests/test_coop.py` (refusal, brief,
+checks, eval refusal) and `tests/test_91_multiplayer_fake.py` (the whole loop, below).
 
-## Setting up a hosted session
+## What the harness needs, and where each part is
 
-1. Two machines, two licences, two Steam accounts. The person hosts. The harness's client
-   runs on the second machine (or a VM) with the same playset, the LLM Bridge mod
-   ([mod-bridge.md](mod-bridge.md)) and this repository.
-2. Host: Multiplayer, create a game, pick Germany for yourself, leave France for the second
-   client, **ironman off** (the console is unavailable otherwise), start.
-3. Harness client: join, pick France, ready up. Let the host start. Do not touch the harness
-   machine's keyboard once the run is going.
-4. Run the command above on the second machine.
-5. Only the host saves. Production and construction verification fall back to the log on a
-   client (`log+save` loses its on-demand save).
+| It needs | Where | Proved on the fake |
+|---|---|---|
+| The player clock: the harness never pauses, resumes or sets the speed | `--mp-client` sets `clock_owner player`; `set_game_speed` is not offered; `validate` refuses `clock_owner harness` | `test_91_the_harness_never_pauses_resumes_or_sets_the_speed`: the fake client counts every space / speed key and gamespeed command, and there are none |
+| It waits for the host's clock | the composite's clock wait polls the date | `test_91_the_game_clock_is_the_hosts_and_the_loop_waits_for_it` (the host pauses mid-run) |
+| The country it plays, and only that country's telemetry | `--country` keeps the log reader to that tag; both players are `is_ai = no`, so both are on the log | `test_91_per_country_telemetry_never_shows_the_other_players_numbers` (the other player's numbers are on the log and in no brief) |
+| Refuse actions on a human country | `coop.refusal`, at queue time and again at run time | `test_91_an_action_aimed_at_the_human_country_is_refused...`, `...refused_again_when_it_runs` |
+| Who plays whom, said every turn | `coop_lines` | `test_91_the_brief_says_who_plays_whom_every_turn` |
+| MP chat as the message channel | `adapters/mp_chat.py`, through the input driver | `test_91_the_message_channel_is_the_games_chat...` |
+| The harness says what it did | `CoopGuidance.after_turn` | `test_91_what_the_model_did_is_said_in_the_games_chat` |
+| The host can hand a domain over or take it back | `hoi4-harness domains`, or a chat line (`take army`, `give army`) | `test_91_the_host_can_move_a_domain_by_chat` (the chat line comes through a seam, see below) |
+| A console that may be shut | the fake's `console="blocked"` | `test_91_a_client_without_the_console_cannot_apply_a_console_order` |
+
+`FakeMultiplayerGame` (`fakemultiplayer.py`) is the fake: the harness's country and a person's,
+both human, on one log; a host who owns the clock (a client's space and speed keys do nothing and
+are recorded); an optional shut console; an in-game chat box that Enter opens and sends. **It is a
+model of what the live game is believed to do, not of what it does.** Not simulated: the lobby,
+latency between the two clients, desync, a real chat box's length and character limits, the
+host's saves.
+
+Found while building it: the chat line used to begin `[SWE to GER]`, and the key layer cannot type
+brackets (it refuses the whole string before sending a key), so no chat line would ever have been
+sent. The line is now `SWE to GER, text`, and anything the key layer cannot type in the text
+(brackets, colon, question mark, accents) is dropped or flattened first (`typable`). The chat was
+also unreachable from the headless adapter (`find_driver` did not look through the router).
+
+**Reading the other player's chat is not built.** The game's chat is not in `game.log`. A person
+tells the harness to move a domain with the command (`hoi4-harness domains --run-dir ... --take
+army`) or the file chat on the harness machine (`hoi4-harness chat`); the in-game chat reaches it
+only through the `incoming` reader a live session would have to supply.
+
+## Setting up a hosted session: the exact live steps
+
+Two machines (the person's PC and a second one for the harness; the same PC cannot run two
+copies), two Steam accounts that both own HOI4 1.20, the same playset and the LLM Bridge mod
+([mod-bridge.md](mod-bridge.md)) enabled on both, this repository on the harness machine.
+
+1. **Host (the person).** Launch HOI4, Multiplayer, Host game. Pick Germany. Leave France open.
+   **Ironman off.** The harness never touches the clock either way. Do not start yet.
+2. **Harness machine.** Launch HOI4 from the launcher with **Open game in Debug Mode** (the
+   console needs it). Multiplayer, Join game (Steam friend or the host's address). Pick
+   France, ready up.
+3. **Host starts the game** and unpauses.
+4. **Settle stage 0 first**, before any model call: on the harness machine, with the game in
+   front, open the console by hand and type `run llmb_turn.txt`, `gamespeed 3`, `savegame`,
+   and press space, as the client; fill the table below. What fails decides which of the two
+   commands in step 5 is the real one.
+5. **Harness machine, a terminal in the repository:**
+
+   ```bash
+   hoi4-harness doctor
+   hoi4-harness play --mp-client --country FRA --mp-human GER      --adapter headless --headless-reader logtail --live      --handover-mode approve --run-dir runs/mp --max-usd 5
+   ```
+
+   If the console is blocked for a client: `--adapter logtail+input`, with `--actions` narrowed
+   to what the clicks can do.
+6. **Talk.** The model's `send_message` to GER types into the game's chat (Enter, text, Enter);
+   watch whether the line arrives. To move a domain mid-game, on the harness machine:
+   `hoi4-harness domains --run-dir runs/mp --take diplomacy` or `--give diplomacy`.
+7. **Stage 2, the acceptance run:** one game-year with the host playing Germany, then a written
+   report (what the model did, what was refused, what went stale, the latency).
+8. Only the host saves. Production and construction verification fall back to the log on a client
+   (`log+save` loses its on-demand save).
 
 ## Talking to the other player
 
-In a multiplayer game (`--mp-client` / `--mp-human`) the person is in the game, not at a chat file, so the model's `send_message` to a human (`person`, `global` or a country in `--mp-human`) is typed into the **game's own chat**: Enter opens the chat box, the line goes in as `[FRA to GER] text`, Enter sends it (`adapters/mp_chat.py`, behind the input driver, so the focus check, the key guard and dry-run all apply). `send_message` to another LLM country still goes to the file chat when the run has one; single-player runs are unchanged.
+In a multiplayer game (`--mp-client` / `--mp-human`) the person is in the game, not at a chat file, so the model's `send_message` to a human (`person`, `global` or a country in `--mp-human`) is typed into the **game's own chat**: Enter opens the chat box, the line goes in as `FRA to GER, text`, Enter sends it (`adapters/mp_chat.py`, behind the input driver, so the focus check, the key guard and dry-run all apply). `send_message` to another LLM country still goes to the file chat when the run has one; single-player runs are unchanged.
 
 **UNVERIFIED.** Nothing here has run in a live multiplayer game. Unconfirmed: that Enter opens and sends in the chat box on a client, the line length it accepts (200 characters is a guess), characters beyond plain ASCII, and whether a line typed while the host has the game paused is taken. The two keys are `OPEN_KEY` and `SEND_KEY` in `mp_chat.py`. Reading the other player's chat back is not built: the model only sends. Tested with a fake driver in `tests/test_chat.py`.
 

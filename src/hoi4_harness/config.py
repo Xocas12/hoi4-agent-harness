@@ -511,6 +511,10 @@ class HarnessConfig:
     #: ``mp_human_tags`` play theirs. An action aimed at one of those countries is refused.
     multiplayer: bool = False
     mp_human_tags: list[str] = field(default_factory=list)
+    #: Co-op, changed mid-game (coop.py, ``hoi4-harness domains``): ``{domain: "human" | "llm"}``
+    #: laid over ``human_domains`` / ``control``. The person taking a domain back or handing it
+    #: over writes here; the run's control map is rebuilt from it.
+    coop_overrides: dict = field(default_factory=dict)
     # The player's tag. Unset, the mock plays Sweden and the log reader follows
     # whichever human country the game reports; set, the reader keeps to it.
     country: str | None = None
@@ -672,12 +676,18 @@ class HarnessConfig:
         from .control import ControlError, parse_spec, preset, resolve
 
         control = self.control
-        if self.human_domains:
+        if self.human_domains or self.coop_overrides:
             spec = parse_spec(control) if control else {}
             if "preset" in spec:
                 raise ControlError("human_domains cannot be combined with a control preset; "
                                    "write the map as domain=controller pairs")
-            control = {**spec, **{d.strip(): "human" for d in self.human_domains}}
+            if self.coop_overrides and not control and self.operational_control != "llm":
+                raise ControlError("co-op domain changes need the model to own the country "
+                                   "(operational_control llm) or an explicit control map")
+            held = {d.strip(): "human" for d in self.human_domains}
+            held.update({d: ("human" if who == "human" else "llm")
+                         for d, who in self.coop_overrides.items()})
+            control = {**spec, **held}
         if control:
             cmap = resolve(
                 control, steer=None if self.steer == "auto" else self.steer,

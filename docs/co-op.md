@@ -10,6 +10,7 @@ and three settings fix them.
 | Player clock | `--player-clock` | Either, but the harness never pauses, resumes or sets speed. |
 | Handover | `play --handover` | The model decides whenever it likes; its actions wait in a queue until you hand it the keyboard. |
 | Split by domain | `play --human army,navy,diplomacy` | You hold those domains; the model acts in the rest and never in yours. |
+| Handing a domain over / taking it back | `hoi4-harness domains --take army` / `--give army`, or `take army` in the chat | You or the model, changed mid-game. |
 | Multiplayer | `play --mp-client --country FRA --mp-human GER` | The model plays one country and a person another: [multiplayer.md](multiplayer.md). |
 
 ## Handover
@@ -113,6 +114,42 @@ domain (the game's AI would act there too) unless `allow_contested` is set. The 
 **Guidance.** `hoi4-harness guide --run-dir runs/coop "I will hold the Rhine, put the factories
 on rifles"` works in a co-op run as it does in a campaign: shown in the brief, marked new once,
 the model woken for it once, recorded in the transcript. Advice the model weighs, never executed.
+
+### Moving a domain mid-game, and what the model says
+
+The split is not fixed for the run. The person can take a domain back, or hand one over, at any
+time, and the change is in force before the model's next decision:
+
+```bash
+hoi4-harness domains --run-dir runs/coop --take army        # you hold it from now on
+hoi4-harness domains --run-dir runs/coop --give army        # the model holds it
+hoi4-harness domains --run-dir runs/coop                    # what has moved so far
+hoi4-harness chat take back the navy and air                # the same, in the chat
+hoi4-harness chat give the economy back                     # economy = focus, research, construction, production
+```
+
+- **Which chat lines count.** A line that *starts* with `take`, `keep`, `give`, `hand over`,
+  `release` or `you take` and names only domains (`all`, `economy`, `fleet`... included). "I will
+  take a look at the army" is talk and moves nothing. Chat commands work in a co-op run on the
+  file chat, which a plain co-op run now has (`--chat` is not needed); in multiplayer the game's
+  own chat cannot be read back, so use the command there ([multiplayer.md](multiplayer.md)).
+- **Taking a domain back** removes the model's tools for it, puts it in the "Held by the
+  player" line of the brief and the system prompt, and refuses anything the model had already
+  queued there when its turn to run comes (a handover or approve window included). The model is
+  told once, in its next brief.
+- **Handing one over** gives the model the domain's tools, wakes it once for it and says so in the
+  brief. Only domains the model or the person hold can move: a domain the game's AI, a script or
+  nobody runs is refused, and so is a hand-over that would put the model beside a `game` domain
+  (the same contested rule as at the start).
+- **Every move is answered in chat** ("Army is mine now", "Navy is yours again; I will not touch
+  it") and recorded in the transcript (`domain_change`, with who asked: command or chat).
+- **The model explains itself.** After a turn it acted in, the person gets one chat line in the
+  same place: either what the model chose to say with `send_message`, or, if it said nothing, a
+  plain `This turn I did: set_national_focus industrial_effort; ...` (failed and queued actions
+  marked). It is written by the harness from what actually ran, not by the model.
+
+Tested on the fake game in `tests/test_31_coop_domains.py`. Whether a real model keeps to its side
+after a hand-over is `docs/live-session.md`, section 15.
 
 ## Not for scoring
 

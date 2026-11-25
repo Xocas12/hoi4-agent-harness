@@ -608,6 +608,37 @@ def cmd_guide(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_domains(args: argparse.Namespace) -> int:
+    """``domains``: move a co-op domain between the person and the model, mid-game (#31)."""
+    from .control import DOMAINS
+    from .coop import DomainBoard
+
+    run_dir = Path(args.run_dir)
+    if not run_dir.is_dir():
+        print(f"domains: {run_dir} is not a run directory", file=sys.stderr)
+        return 1
+    board = DomainBoard(run_dir)
+    moves = [(d, "human") for d in args.take] + [(d, "llm") for d in args.give]
+    for domain, to in moves:
+        names = list(DOMAINS) if domain == "all" else [domain]
+        for name in names:
+            try:
+                row = board.post(name, to)
+            except ValueError as exc:
+                print(f"domains: {exc}", file=sys.stderr)
+                return 1
+            who = "you hold" if to == "human" else "the model holds"
+            print(f"#{row['id']}: {who} {name} from the run's next turn")
+    if not moves:
+        rows = board.rows()
+        if not rows:
+            print("no domain has moved in this run")
+        for row in rows:
+            print(f"#{row['id']} {row['domain']} -> {'you' if row['to'] == 'human' else 'the model'}"
+                  f" ({row.get('source', 'command')})")
+    return 0
+
+
 def cmd_play(args: argparse.Namespace) -> int:
     config = _config_from_args(args)
     if config.campaign:
@@ -668,6 +699,13 @@ def cmd_play(args: argparse.Namespace) -> int:
     from .coop import CoopGuidance, wants_guidance
 
     if wants_guidance(config) and loop.supervisor is None:
+        if env.chat is None and (config.chat or not config.multiplayer):
+            # The person talks to the model, and gets "here is what I did", in the file chat
+            # (`hoi4-harness chat`); a multiplayer game talks through the game's own chat.
+            from .chat import ChatChannel, ChatLog
+
+            tag = (config.country or first.state.country or "LLM").upper()
+            env.attach_chat(ChatChannel(ChatLog(config.chat_path), tag, run_dir / "chat_seen.json"))
         loop.supervisor = CoopGuidance(run_dir, loop)
     listener = None
     if env.handover is not None:
@@ -2050,6 +2088,18 @@ def build_parser() -> argparse.ArgumentParser:
     guide.add_argument("--expire", type=float, metavar="DAYS",
                        help="remove items older than DAYS days")
     guide.set_defaults(func=cmd_guide)
+
+    domains = sub.add_parser(
+        "domains",
+        help="co-op: take a domain back from the model or hand it over, mid-game "
+             "(--take army, --give army; no flags lists what moved)")
+    domains.add_argument("--run-dir", dest="run_dir", required=True, metavar="PATH",
+                         help="the co-op run's directory")
+    domains.add_argument("--take", action="append", default=[], metavar="DOMAIN",
+                         help="you hold DOMAIN from now on (or all); the model stops acting there")
+    domains.add_argument("--give", action="append", default=[], metavar="DOMAIN",
+                         help="the model holds DOMAIN from now on (or all)")
+    domains.set_defaults(func=cmd_domains)
 
     chat = sub.add_parser(
         "chat", help="talk to the LLM countries in a single-player game: send a message, show the "

@@ -187,6 +187,17 @@ class AgentLoop:
         # not comparable to one on the base game, and nothing else records it.
         self.transcript.write("playset", **env.playset)
 
+    def refresh_control(self) -> None:
+        """Re-read the control map after the person moved a domain (co-op, coop.py): the wake
+        rules, the reflex layer and the system prompt follow it; the tool list already does,
+        because ``env.allowed_actions`` reads the map on every call."""
+        self.control = self.config.control_map()
+        self.policy.owned = (frozenset(self.control.owned_by("llm"))
+                             if self.control.explicit else None)
+        self.policy.steer = self.control.steer == "llm"
+        self.policy.reflex_enabled = self.config.reflex_enabled and not self.control.explicit
+        self.system = system_for(self.config, self.env.index)
+
     def _resume_from(self, transcript_path: Path) -> None:
         """Carry forward what the interrupted run knew.
 

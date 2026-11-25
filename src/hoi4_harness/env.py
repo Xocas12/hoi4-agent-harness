@@ -70,6 +70,19 @@ class HOI4Env:
         self.chat = None
         #: Multiplayer: the in-game chat for messages to a human (adapters/mp_chat.py); None: off.
         self.mp_chat = None
+        #: What this turn did, as ``(call, result)`` pairs, for co-op's "here is what I did" line
+        #: (coop.CoopGuidance); emptied by ``take_turn_log``. ``chat_sent`` counts chat lines sent.
+        self.turn_log: list[tuple[ActionCall, ActionResult]] = []
+        self.chat_sent = 0
+
+    def take_turn_log(self) -> list[tuple[ActionCall, ActionResult]]:
+        log, self.turn_log = self.turn_log, []
+        return log
+
+    def say(self, to: str, text: str, date: str = "") -> ActionResult:
+        """The harness speaks in chat (co-op explanations, answers to a domain command), as the
+        model's ``send_message`` does: the game's own chat in multiplayer, the file chat else."""
+        return self._send_message(ActionCall("send_message", {"to": to, "text": text}), date)
 
     def attach_mp_chat(self, sender) -> None:
         """Route send_message to a human through the game's own chat (multiplayer runs)."""
@@ -310,6 +323,12 @@ class HOI4Env:
     # --- acting --------------------------------------------------------------
 
     def act(self, call: ActionCall, date: str = "", *, auto: bool = False) -> ActionResult:
+        result = self._act(call, date, auto=auto)
+        if call.name not in ("note", "advance_time", "send_message", *QUERY_ACTIONS):
+            self.turn_log.append((call, result))
+        return result
+
+    def _act(self, call: ActionCall, date: str = "", *, auto: bool = False) -> ActionResult:
         """Validate, gate, then apply one action.
 
         ``date`` is the game date the caller is acting against. It is only used
@@ -502,6 +521,7 @@ class HOI4Env:
             sent = channel.send(to, text, date or None)
         except ValueError as exc:
             return result(False, f"not sent: {exc}")
+        self.chat_sent += 1
         return result(True, f"sent to {sent.to} (message #{sent.id})")
 
     def act_many(self, calls: list[ActionCall], date: str = "", *,
