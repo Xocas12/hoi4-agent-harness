@@ -275,7 +275,7 @@ def _verify_delegation(before: GameState, after: GameState, args: dict) -> str |
 
 
 def _verify_posture(before: GameState, after: GameState, args: dict) -> str | None:
-    theater = args.get("theater")
+    theater = str(args["theater"]).strip().upper() if args.get("theater") else None
     now = after.theater_postures.get(theater) if theater else after.posture
     if now == args["posture"]:
         return None
@@ -284,10 +284,13 @@ def _verify_posture(before: GameState, after: GameState, args: dict) -> str | No
 
 
 def _verify_directive(before: GameState, after: GameState, args: dict) -> str | None:
-    wanted = f"{args['directive']} {args['target']}"
+    target = str(args["target"]).strip().upper()
+    wanted = f"{args['directive']} {target}"
     if any(entry == wanted or entry.startswith(wanted + " ") for entry in after.ai_directives):
         return None
-    return f"no standing directive '{wanted}'"
+    same = [e for e in after.ai_directives if e.startswith(f"{args['directive']} ")]
+    instead = f"; standing {args['directive']} directives: {'; '.join(same)}" if same else ""
+    return f"no standing directive '{wanted}' (the target asked for was {target}){instead}"
 
 
 def _verify_cleared(before: GameState, after: GameState, args: dict) -> str | None:

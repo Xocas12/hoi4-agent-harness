@@ -85,6 +85,28 @@ class Usage:
         )
 
 
+STOP_REASONS = ("end_turn", "tool_use", "max_tokens", "refusal", "error")
+
+#: What each vendor calls the same four endings. A reason nobody mapped is kept as the vendor
+#: wrote it (lower-cased), so a new one is visible in the transcript rather than hidden.
+_STOP_WORDS = {
+    "end_turn": "end_turn", "stop": "end_turn", "stop_sequence": "end_turn",
+    "tool_use": "tool_use", "tool_calls": "tool_use", "function_call": "tool_use",
+    "max_tokens": "max_tokens", "length": "max_tokens",
+    "refusal": "refusal", "content_filter": "refusal", "safety": "refusal",
+    "prohibited_content": "refusal", "blocklist": "refusal", "spii": "refusal",
+    "recitation": "refusal", "error": "error",
+}
+
+
+def normalise_stop(raw: object, *, calls: bool = False) -> str:
+    """The neutral stop reason for a vendor's finish reason. A tool call always wins."""
+    if calls:
+        return "tool_use"
+    word = str(getattr(raw, "name", raw) or "").strip().lower()
+    return _STOP_WORDS.get(word, word or "end_turn")
+
+
 @dataclass
 class LLMResponse:
     text: str = ""

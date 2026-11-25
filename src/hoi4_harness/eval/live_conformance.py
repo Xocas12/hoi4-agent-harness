@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import importlib
 import json
+import shutil
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 
@@ -27,7 +28,12 @@ OPT_IN = "HOI4_LIVE_PROVIDER_TESTS"
 #: The name the first version of the suite shipped with; still honoured so a
 #: shell that already exports it keeps working.
 LEGACY_OPT_IN = "HOI4_LIVE_TESTS"
+#: The name the maintainer's instructions use for the same switch (``hoi4-harness provider-check``
+#: sets it); any of the three, set to exactly 1, opts in.
+ALT_OPT_IN = "HOI4_LIVE_PROVIDERS"
 CAP_ENV = "HOI4_LIVE_MAX_CALLS"
+#: Comma-separated providers to run (``hoi4-harness provider-check --provider``); unset = all.
+ONLY_ENV = "HOI4_LIVE_ONLY"
 DEFAULT_CAP = 12
 #: Output ceiling for every conformance call (the live fixture builds clients with it).
 MAX_TOKENS = 2048
@@ -46,24 +52,27 @@ class ProviderSpec:
     sdk: str | None
     #: Calls one conformance run makes: the first call (shared by the parse and
     #: usage checks), the tool-result round trip, and, where caching is promised,
-    #: two identical calls.
+    #: two identical calls, plus one with a rejected key (never billed).
     calls: int
     caching: bool = False
     #: OpenAI-compatible only: a local server (Ollama, vLLM) stands in for a key.
     base_url_env: str | None = None
+    #: A CLI on PATH stands in for a key (claude-cli: the person's subscription login).
+    cli: str | None = None
 
 
 SPECS: dict[str, ProviderSpec] = {
-    "anthropic": ProviderSpec("ANTHROPIC_API_KEY", "anthropic", calls=4, caching=True),
-    "openai": ProviderSpec("OPENAI_API_KEY", "openai", calls=2,
+    "anthropic": ProviderSpec("ANTHROPIC_API_KEY", "anthropic", calls=5, caching=True),
+    "openai": ProviderSpec("OPENAI_API_KEY", "openai", calls=3,
                            base_url_env="HOI4_LIVE_OPENAI_BASE_URL"),
-    "google": ProviderSpec("GOOGLE_API_KEY", "google.genai", calls=2),
+    "google": ProviderSpec("GOOGLE_API_KEY", "google.genai", calls=3),
+    "claude-cli": ProviderSpec(None, None, calls=2, cli="claude"),
     "scripted": ProviderSpec(None, None, calls=2),
 }
 
 
 def opted_in(env: Mapping[str, str]) -> bool:
-    return env.get(OPT_IN) == "1" or env.get(LEGACY_OPT_IN) == "1"
+    return any(env.get(name) == "1" for name in (OPT_IN, LEGACY_OPT_IN, ALT_OPT_IN))
 
 
 def _importable(name: str) -> bool:
@@ -75,14 +84,23 @@ def _importable(name: str) -> bool:
 
 
 def skip_reason(provider: str, env: Mapping[str, str],
-                importable: Callable[[str], bool] = _importable) -> str | None:
+                importable: Callable[[str], bool] | None = None,
+                which: Callable[[str], str | None] = shutil.which) -> str | None:
     """Why this provider must not run now, or None. The opt-in is checked first so
     a shell full of keys is never billed by a bare ``pytest``."""
+    # Looked up at call time, not bound as a default: a test patches the module's
+    # _importable, and a default bound at import kept the real one (CI without the SDK).
+    importable = importable or _importable
     spec = SPECS[provider]
-    if spec.key_env is None:
+    if spec.key_env is None and spec.cli is None:
         return None                         # scripted: free, always runs
     if not opted_in(env):
         return f"live provider tests are opt-in: set {OPT_IN}=1 (they cost money)"
+    only = [p.strip() for p in (env.get(ONLY_ENV) or "").split(",") if p.strip()]
+    if only and provider not in only:
+        return f"not selected ({ONLY_ENV}={','.join(only)})"
+    if spec.cli:
+        return None if which(spec.cli) else f"the {spec.cli} CLI is not on PATH"
     has_key = bool(env.get(spec.key_env))
     local = bool(spec.base_url_env and env.get(spec.base_url_env))
     if not has_key and not local:
@@ -92,9 +110,12 @@ def skip_reason(provider: str, env: Mapping[str, str],
     return None
 
 
-def runnable(env: Mapping[str, str], importable: Callable[[str], bool] = _importable) -> list[str]:
-    """Providers that would spend money (scripted excluded), in a fixed order."""
-    return [p for p, s in SPECS.items() if s.key_env and skip_reason(p, env, importable) is None]
+def runnable(env: Mapping[str, str], importable: Callable[[str], bool] | None = None,
+             which: Callable[[str], str | None] = shutil.which) -> list[str]:
+    """Providers that would spend money or a subscription (scripted excluded), in a fixed
+    order."""
+    return [p for p, s in SPECS.items() if (s.key_env or s.cli)
+            and skip_reason(p, env, importable, which) is None]
 
 
 def call_cap(env: Mapping[str, str]) -> int:
@@ -192,7 +213,8 @@ def render_plan(env: Mapping[str, str], providers: list[str] | None = None) -> s
     total_calls = sum(r.calls for r in rows)
     lines = [f"live provider conformance: {total_calls} call(s) planned, hard cap {cap} ({CAP_ENV})"]
     for r in rows:
-        cost = (f"<= ${r.usd:.4f}" if r.usd is not None
+        cost = ("subscription login, no key and no per-call bill" if SPECS[r.provider].cli
+                else f"<= ${r.usd:.4f}" if r.usd is not None
                 else "no dollar figure (set HOI4_USD_PER_M_INPUT and HOI4_USD_PER_M_OUTPUT)")
         lines.append(f"  {r.provider}: {r.calls} call(s), <= {r.input_tokens:,} input + "
                      f"<= {r.output_tokens:,} output tokens, {cost}")
@@ -219,6 +241,30 @@ def check_tool_call_parses(response: LLMResponse) -> None:
     action = ActionCall(name=call.name, arguments=call.arguments, call_id=call.id)
     assert registry.check(action, set(TOOLS)) is None, f"invalid call: {call}"
     assert call.id, "a tool call needs an id to send its result back"
+
+
+def check_stop_reason(response: LLMResponse) -> None:
+    """A tool call ends as ``tool_use`` and every reason is one of the neutral words."""
+    from ..agent.llm.base import STOP_REASONS
+
+    assert response.stop_reason in STOP_REASONS, (
+        f"stop reason {response.stop_reason!r} is not one of {STOP_REASONS}: map it in base.py")
+    if response.tool_calls:
+        assert response.stop_reason == "tool_use", response.stop_reason
+
+
+def check_bad_key_is_fatal(client: LLMClient) -> None:
+    """A rejected key must classify as fatal, so a run stops instead of retrying for hours."""
+    from ..agent.errors import classify
+
+    try:
+        client.complete(build_system("minimal"), [Msg(role="user", text="hi")], None)
+    except Exception as exc:  # noqa: BLE001 - the classification is the claim
+        assert classify(exc) == "fatal", (
+            f"a rejected key was classed {classify(exc)!r}: {type(exc).__name__} "
+            f"(status {getattr(exc, 'status_code', None)})")
+        return
+    raise AssertionError("a bad key was accepted by the provider")
 
 
 def check_usage(response: LLMResponse) -> None:

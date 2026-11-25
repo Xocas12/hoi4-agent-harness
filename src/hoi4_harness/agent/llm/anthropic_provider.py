@@ -19,7 +19,7 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 
 from ...actions.registry import ToolSpec
-from .base import LLMClient, LLMResponse, Msg, ToolCall, Usage
+from .base import LLMClient, LLMResponse, Msg, ToolCall, Usage, normalise_stop
 
 #: The API's server-side web search tool (no harness code runs it).
 WEB_SEARCH_TOOL = "web_search_20250305"
@@ -173,7 +173,7 @@ class AnthropicClient(LLMClient):
             provider_blocks=_thinking_blocks(message.content),
             text=text,
             tool_calls=calls,
-            stop_reason=message.stop_reason or "end_turn",
+            stop_reason=normalise_stop(message.stop_reason),
             usage=usage,
             model=self.model,
             raw=message,

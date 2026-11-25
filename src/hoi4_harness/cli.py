@@ -43,6 +43,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 import time
 from contextlib import nullcontext
@@ -887,18 +888,56 @@ def cmd_reconcile(args: argparse.Namespace) -> int:
             if not Path(path).is_file():
                 print(f"reconcile: no such file {path}", file=sys.stderr)
                 return 2
-        harness = rc.read_transcript(args.transcript)
+        harness = rc.read_transcript_keyed(args.transcript)
         if not harness:
             print(f"reconcile: {args.transcript} has no llm records (a scripted or empty run?)",
                   file=sys.stderr)
             return 2
-        export = rc.read_export(args.export, args.format)
-        report = rc.reconcile(harness, export, rates, args.tolerance)
+        export = rc.read_export_keyed(args.export, args.format)
+        if args.by == "day":
+            report = rc.reconcile_daily(harness, export, rates, args.tolerance)
+            print(rc.render_daily(report))
+            return 0 if report.ok else 1
+        report = rc.reconcile(rc.fold(harness), rc.fold(export), rates, args.tolerance)
     except rc.ReconcileError as exc:
         print(f"reconcile: {exc}", file=sys.stderr)
         return 2
     print(rc.render(report))
     return 0 if report.ok else 1
+
+
+def provider_check_env(args: argparse.Namespace, base: dict[str, str]) -> dict[str, str]:
+    """The environment a live conformance run gets: the opt-in, the cap, the chosen providers.
+    Keys are inherited from ``base`` and never read or printed here."""
+    env = dict(base)
+    env["HOI4_LIVE_PROVIDERS"] = "1"
+    if args.max_calls is not None:
+        env["HOI4_LIVE_MAX_CALLS"] = str(args.max_calls)
+    if args.provider:
+        env["HOI4_LIVE_ONLY"] = ",".join(args.provider)
+    return env
+
+
+def cmd_provider_check(args: argparse.Namespace) -> int:
+    """Run the live provider conformance suite (#22), opt-in, capped, keys never printed."""
+    import subprocess
+
+    from .eval import live_conformance as lc
+
+    suite = Path(__file__).resolve().parents[2] / "tests" / "live"
+    if not suite.is_dir():
+        print("provider-check: tests/live is not here (run it from a source checkout)",
+              file=sys.stderr)
+        return 2
+    env = provider_check_env(args, dict(os.environ))
+    plan = lc.render_plan(env, lc.runnable(env))
+    print(plan)
+    if "nothing will run" in plan:
+        return 2
+    if args.plan:
+        return 0
+    cmd = [sys.executable, "-m", "pytest", str(suite), "-v", "-rs", "-p", "no:cacheprovider"]
+    return subprocess.run(cmd, env=env, cwd=str(suite.parent.parent)).returncode
 
 
 def cmd_mailbox(args: argparse.Namespace) -> int:
@@ -2230,10 +2269,23 @@ def build_parser() -> argparse.ArgumentParser:
                              default="auto")
     reconcile_p.add_argument("--tolerance", type=float, default=0.03,
                              help="allowed relative difference, as a fraction of the export (default 0.03)")
+    reconcile_p.add_argument("--by", choices=["model", "day"], default="model",
+                             help="one block per model (default), or one row per model and UTC day")
     reconcile_p.add_argument("--rate", action="append", metavar="MODEL:input=..,output=..",
                              help="dollars per million tokens for MODEL (or * for all); repeatable. "
                                   "Without it only tokens are compared")
     reconcile_p.set_defaults(func=cmd_reconcile)
+
+    provider_p = sub.add_parser(
+        "provider-check", help="run the provider conformance suite against live keys (#22)")
+    provider_p.add_argument("--provider", action="append",
+                            choices=["anthropic", "openai", "google", "claude-cli"],
+                            help="only this provider (repeatable); default: every one with a key")
+    provider_p.add_argument("--max-calls", type=int, metavar="N",
+                            help="hard cap on live calls (default 12)")
+    provider_p.add_argument("--plan", action="store_true",
+                            help="print the calls and worst-case cost, send nothing")
+    provider_p.set_defaults(func=cmd_provider_check)
 
     handover = sub.add_parser("handover", help="hand the keyboard to a --handover session")
     common(handover)

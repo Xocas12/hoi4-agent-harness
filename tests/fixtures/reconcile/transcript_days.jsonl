@@ -1,0 +1,4 @@
+{"t": 1794826740, "kind": "llm", "provider": "anthropic", "model": "claude-opus-5-5", "stop_reason": "tool_use", "usage": {"input_tokens": 20000, "output_tokens": 1500, "cached_input_tokens": 15000, "cache_write_input_tokens": 1000}}
+{"t": 1794826770, "kind": "llm", "provider": "anthropic", "model": "claude-opus-5-5", "stop_reason": "tool_use", "usage": {"input_tokens": 15000, "output_tokens": 1200, "cached_input_tokens": 12000, "cache_write_input_tokens": 0}}
+{"t": 1794875400, "kind": "llm", "provider": "anthropic", "model": "claude-opus-5-5", "stop_reason": "end_turn", "usage": {"input_tokens": 10724, "output_tokens": 1138, "cached_input_tokens": 6964, "cache_write_input_tokens": 1426}}
+{"t": 1794875460, "kind": "llm", "provider": "openai", "model": "gpt-5", "stop_reason": "end_turn", "usage": {"input_tokens": 4000, "output_tokens": 500, "cached_input_tokens": 1000, "cache_write_input_tokens": 0}}

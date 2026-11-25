@@ -37,7 +37,9 @@ header row, then one row per model; extra columns are ignored::
     model,uncached_input_tokens,cache_read_tokens,cache_write_tokens,output_tokens,cost_usd
 
 ``cache_read_tokens``, ``cache_write_tokens`` and ``cost_usd`` may be left out or
-blank. ``uncached_input_tokens`` excludes cache reads and writes (the Anthropic
+blank. Optional ``date`` (``YYYY-MM-DD``, UTC) and ``provider`` columns let ``--by day``
+split the export; the JSON formats carry their own days.
+``uncached_input_tokens`` excludes cache reads and writes (the Anthropic
 meaning); add them to ``input`` yourself if your console reports one total.
 Optional ``requests`` is the call count.
 
@@ -50,7 +52,9 @@ from __future__ import annotations
 import csv
 import io
 import json
+import re
 from dataclasses import dataclass, field
+from datetime import datetime, timezone
 from pathlib import Path
 
 from ..agent.budget import BudgetGuard
@@ -73,9 +77,45 @@ class ReconcileError(ValueError):
 
 # --- reading -----------------------------------------------------------------------------
 
-def read_transcript(path: str | Path) -> dict[str, Totals]:
-    """Per-model totals from the ``llm`` records of a transcript."""
+Key = tuple[str, str, str]      # (provider, model, UTC day "YYYY-MM-DD", "" when unknown)
+Keyed = dict[Key, Totals]
+
+
+def _day_of_epoch(value) -> str:
+    try:
+        return datetime.fromtimestamp(float(value), tz=timezone.utc).strftime("%Y-%m-%d")
+    except (TypeError, ValueError, OverflowError, OSError):
+        return ""
+
+
+def _day_of_text(value) -> str:
+    """``2026-11-16T01:00:00Z`` or ``2026-11-16`` -> ``2026-11-16``; anything else -> ``""``."""
+    text = str(value or "").strip()
+    return text[:10] if re.match(r"^\d{4}-\d{2}-\d{2}", text) else ""
+
+
+def _add_k(out: Keyed, key: Key, usage: Usage, calls: int = 0, billed: float | None = None) -> None:
+    total = out.setdefault(key, Totals())
+    total.calls += calls
+    total.usage = total.usage + usage
+    if billed is not None:
+        total.billed_usd = (total.billed_usd or 0.0) + billed
+
+
+def fold(keyed: Keyed) -> dict[str, Totals]:
+    """The per-model totals: provider and day summed away."""
     out: dict[str, Totals] = {}
+    for (_, model, _), total in keyed.items():
+        _add(out, model, total.usage, total.calls, total.billed_usd)
+    return out
+
+
+def read_transcript_keyed(path: str | Path) -> Keyed:
+    """Totals per (provider, model, UTC day) from the ``llm`` records of a transcript.
+
+    The day is the record's own wall-clock ``t``; ``provider`` is missing from transcripts
+    written before it was recorded and reads as ``""``."""
+    out: Keyed = {}
     for line in Path(path).read_text(encoding="utf-8").splitlines():
         try:
             record = json.loads(line)
@@ -84,12 +124,17 @@ def read_transcript(path: str | Path) -> dict[str, Totals]:
         if record.get("kind") != "llm":
             continue
         usage = record.get("usage") or {}
-        total = out.setdefault(str(record.get("model", "")), Totals())
-        total.calls += 1
-        total.usage = total.usage + Usage(
-            int(usage.get("input_tokens", 0)), int(usage.get("output_tokens", 0)),
-            int(usage.get("cached_input_tokens", 0)), int(usage.get("cache_write_input_tokens", 0)))
+        _add_k(out, (str(record.get("provider") or ""), str(record.get("model", "")),
+                     _day_of_epoch(record.get("t"))),
+               Usage(int(usage.get("input_tokens", 0)), int(usage.get("output_tokens", 0)),
+                     int(usage.get("cached_input_tokens", 0)),
+                     int(usage.get("cache_write_input_tokens", 0))), calls=1)
     return out
+
+
+def read_transcript(path: str | Path) -> dict[str, Totals]:
+    """Per-model totals from the ``llm`` records of a transcript."""
+    return fold(read_transcript_keyed(path))
 
 
 def _add(out: dict[str, Totals], model: str, usage: Usage, calls: int = 0,
@@ -115,38 +160,55 @@ def _pages(data) -> list[dict]:
     return pages
 
 
-def _results(data):
+def _buckets(data):
     for page in _pages(data):
         for bucket in page["data"]:
-            yield from bucket.get("results", [])
+            yield bucket, bucket.get("results", [])
+
+
+def _results(data):
+    for _, results in _buckets(data):
+        yield from results
+
+
+def read_anthropic_keyed(data) -> Keyed:
+    out: Keyed = {}
+    for bucket, results in _buckets(data):
+        day = _day_of_text(bucket.get("starting_at"))
+        for row in results:
+            if "uncached_input_tokens" not in row:
+                raise ReconcileError("not an Anthropic usage_report result (no uncached_input_tokens)")
+            created = row.get("cache_creation") or {}
+            read = _int(row.get("cache_read_input_tokens"))
+            written = (_int(created.get("ephemeral_5m_input_tokens"))
+                       + _int(created.get("ephemeral_1h_input_tokens")))
+            uncached = _int(row["uncached_input_tokens"])
+            _add_k(out, ("anthropic", str(row.get("model") or ""), day),
+                   Usage(uncached + read + written, _int(row.get("output_tokens")), read, written))
+    return out
+
+
+def read_openai_keyed(data) -> Keyed:
+    out: Keyed = {}
+    for bucket, results in _buckets(data):
+        day = _day_of_epoch(bucket.get("start_time")) if bucket.get("start_time") else ""
+        for row in results:
+            cached = _int(row.get("input_cached_tokens"))
+            _add_k(out, ("openai", str(row.get("model") or ""), day),
+                   Usage(_int(row.get("input_tokens")), _int(row.get("output_tokens")), cached),
+                   calls=_int(row.get("num_model_requests")))
+    return out
 
 
 def read_anthropic(data) -> dict[str, Totals]:
-    out: dict[str, Totals] = {}
-    for row in _results(data):
-        if "uncached_input_tokens" not in row:
-            raise ReconcileError("not an Anthropic usage_report result (no uncached_input_tokens)")
-        created = row.get("cache_creation") or {}
-        read = _int(row.get("cache_read_input_tokens"))
-        written = (_int(created.get("ephemeral_5m_input_tokens"))
-                   + _int(created.get("ephemeral_1h_input_tokens")))
-        uncached = _int(row["uncached_input_tokens"])
-        _add(out, str(row.get("model") or ""),
-             Usage(uncached + read + written, _int(row.get("output_tokens")), read, written))
-    return out
+    return fold(read_anthropic_keyed(data))
 
 
 def read_openai(data) -> dict[str, Totals]:
-    out: dict[str, Totals] = {}
-    for row in _results(data):
-        cached = _int(row.get("input_cached_tokens"))
-        _add(out, str(row.get("model") or ""),
-             Usage(_int(row.get("input_tokens")), _int(row.get("output_tokens")), cached),
-             calls=_int(row.get("num_model_requests")))
-    return out
+    return fold(read_openai_keyed(data))
 
 
-def read_csv(text: str) -> dict[str, Totals]:
+def read_csv_keyed(text: str) -> Keyed:
     reader = csv.DictReader(io.StringIO(text))
     if not reader.fieldnames:
         raise ReconcileError("the CSV has no header row")
@@ -159,29 +221,33 @@ def read_csv(text: str) -> dict[str, Totals]:
         key = columns.get(name)
         return row.get(key, "") if key else ""
 
-    out: dict[str, Totals] = {}
+    out: Keyed = {}
     for row in reader:
         model = (get(row, "model") or "").strip()
         if not model:
             continue
+        raw_day = (get(row, "date") or get(row, "day") or "").strip()
+        if raw_day and not _day_of_text(raw_day):
+            raise ReconcileError(f"the CSV's date {raw_day!r} is not YYYY-MM-DD")
         read, written = _int(get(row, "cache_read_tokens")), _int(get(row, "cache_write_tokens"))
         cost = get(row, "cost_usd")
-        _add(out, model,
-             Usage(_int(get(row, "uncached_input_tokens")) + read + written,
-                   _int(get(row, "output_tokens")), read, written),
-             calls=_int(get(row, "requests")), billed=float(cost) if cost not in ("", None) else None)
+        _add_k(out, ((get(row, "provider") or "").strip().lower(), model, _day_of_text(raw_day)),
+               Usage(_int(get(row, "uncached_input_tokens")) + read + written,
+                     _int(get(row, "output_tokens")), read, written),
+               calls=_int(get(row, "requests")), billed=float(cost) if cost not in ("", None) else None)
     return out
 
 
-def read_export(path: str | Path, fmt: str = "auto") -> dict[str, Totals]:
+def read_csv(text: str) -> dict[str, Totals]:
+    return fold(read_csv_keyed(text))
+
+
+def read_export_keyed(path: str | Path, fmt: str = "auto") -> Keyed:
     text = Path(path).read_text(encoding="utf-8-sig")
     if fmt == "auto":
-        if text.lstrip()[:1] in "[{":
-            fmt = "json"
-        else:
-            fmt = "csv"
+        fmt = "json" if text.lstrip()[:1] in "[{" else "csv"
     if fmt == "csv":
-        return read_csv(text)
+        return read_csv_keyed(text)
     try:
         data = json.loads(text)
     except json.JSONDecodeError as exc:
@@ -192,10 +258,14 @@ def read_export(path: str | Path, fmt: str = "auto") -> dict[str, Totals]:
             raise ReconcileError("the export has no usage rows")
         fmt = "anthropic" if "uncached_input_tokens" in first else "openai"
     if fmt == "anthropic":
-        return read_anthropic(data)
+        return read_anthropic_keyed(data)
     if fmt == "openai":
-        return read_openai(data)
+        return read_openai_keyed(data)
     raise ReconcileError(f"unknown format {fmt!r} (auto, csv, anthropic, openai)")
+
+
+def read_export(path: str | Path, fmt: str = "auto") -> dict[str, Totals]:
+    return fold(read_export_keyed(path, fmt))
 
 
 # --- rates ---------------------------------------------------------------------------------
@@ -335,3 +405,114 @@ def _line(row: Row, name: str, h: float, e: float, hs: str, es: str, ds: str) ->
     pct = "n/a" if rel is None else f"{rel:+.1%}"
     flag = "" if row.within(h, e) else "  <-- outside"
     return f"  {name:<12}{hs:>14}{es:>14}{ds:>12}{pct:>9}{flag}"
+
+
+# --- per model and day ---------------------------------------------------------------------------
+
+
+@dataclass
+class DayRow:
+    provider: str
+    model: str
+    day: str
+    row: Row
+
+    @property
+    def label(self) -> str:
+        return f"{self.provider + '/' if self.provider else ''}{self.model or '(no model)'}"
+
+
+@dataclass
+class DailyReport:
+    days: list[DayRow]
+    tolerance: float
+    priced: bool
+    #: Why the day split was not possible (a side without dates), or "".
+    note: str = ""
+
+    @property
+    def ok(self) -> bool:
+        return all(not d.row.failures() for d in self.days)
+
+
+def _fold_days(keyed: Keyed) -> Keyed:
+    out: Keyed = {}
+    for (provider, model, _), total in keyed.items():
+        _add_k(out, (provider, model, ""), total.usage, total.calls, total.billed_usd)
+    return out
+
+
+def reconcile_daily(harness: Keyed, export: Keyed, rates: dict[str, BudgetConfig] | None = None,
+                    tolerance: float = DEFAULT_TOLERANCE) -> DailyReport:
+    """The same comparison as ``reconcile``, one row per (model, UTC day).
+
+    A side whose records carry no date (a CSV without a ``date`` column) cannot be split, so
+    both sides fall back to one row per model and ``note`` says so. The provider is a label:
+    taken from the transcript when it recorded one, else from the export."""
+    rates = rates or {}
+    note = ""
+    if any(not k[2] for k in harness) or any(not k[2] for k in export):
+        note = "a side has no dates, so the days are summed: one row per model"
+        harness, export = _fold_days(harness), _fold_days(export)
+    h_models, e_models = {m for _, m, _ in harness}, {m for _, m, _ in export}
+    alias = {}                      # an export's dated model name -> the harness's name for it
+    for name in h_models - e_models:
+        near = [e for e in e_models if e.startswith(name + "-") or name.startswith(e + "-")]
+        if len(near) == 1 and near[0] not in h_models:
+            alias[near[0]] = name
+    h_by = {(m, d): (p, t) for (p, m, d), t in harness.items()}
+    e_by = {(alias.get(m, m), d): (p, t) for (p, m, d), t in export.items()}
+    days = []
+    for model, day in sorted(set(h_by) | set(e_by)):
+        hp, h = h_by.get((model, day), ("", Totals()))
+        ep, e = e_by.get((model, day), ("", Totals()))
+        row = Row(model, h, e, tolerance=tolerance)
+        rate = rates.get(model) or rates.get("*")
+        if rate is not None:
+            guard = BudgetGuard(rate)
+            row.harness_usd = guard.price(h.usage)
+            if e.billed_usd is not None:
+                row.export_usd, row.export_usd_billed = e.billed_usd, True
+            else:
+                row.export_usd = guard.price(e.usage)
+        days.append(DayRow(hp or ep, model, day, row))
+    return DailyReport(days, tolerance, priced=bool(rates), note=note)
+
+
+def _cell(row: Row, name: str, h: float, e: float, hs: str, es: str) -> str:
+    _, rel = row.delta(h, e)
+    pct = "n/a" if rel is None else f"{rel:+.1%}"
+    flag = "" if row.within(h, e) else " <--"
+    return f"{name} {hs}/{es} ({pct}){flag}"
+
+
+def render_daily(report: DailyReport) -> str:
+    lines = [f"tolerance {report.tolerance:.1%} of the export's figure (the export is the side "
+             "billed); each cell is harness/export (difference)"]
+    if report.note:
+        lines.append(f"note: {report.note}")
+    current = None
+    for item in report.days:
+        if item.label != current:
+            current = item.label
+            lines += ["", item.label]
+        row = item.row
+        no_export = not row.export.calls and not any(_tokens(row.export.usage))
+        no_harness = not row.harness.calls and not any(_tokens(row.harness.usage))
+        side = "  [harness only]" if no_export else "  [export only]" if no_harness else ""
+        cells = [_cell(row, name, h, e, f"{h:,}", f"{e:,}")
+                 for name, h, e in zip(METRICS, _tokens(row.harness.usage),
+                                       _tokens(row.export.usage), strict=True)]
+        if row.harness_usd is not None and row.export_usd is not None:
+            cells.append(_cell(row, "cost" if row.export_usd_billed else "cost*", row.harness_usd,
+                               row.export_usd, f"${row.harness_usd:.4f}", f"${row.export_usd:.4f}"))
+        lines.append(f"  {item.day or 'all days':<10}  " + "  ".join(cells) + side)
+    if not report.priced:
+        lines += ["", "no --rate given: tokens only, no cost comparison"]
+    elif any(d.row.export_usd is not None and not d.row.export_usd_billed for d in report.days):
+        lines += ["", "cost* = the export's tokens priced at your rates (the export has no billed amount)"]
+    lines.append("")
+    bad = [f"{d.label} {d.day or 'all days'}: {', '.join(d.row.failures())}"
+           for d in report.days if d.row.failures()]
+    lines.append("WITHIN TOLERANCE" if report.ok else "OUTSIDE TOLERANCE -- " + "; ".join(bad))
+    return "\n".join(lines)

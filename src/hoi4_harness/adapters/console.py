@@ -241,6 +241,12 @@ def _result(call: ActionCall, ok: bool, kind: str | None, message: str,
                         error_kind=kind, changed={"channel": "console", **changed})
 
 
+def _with_tag(call: ActionCall, argument: str) -> ActionCall:
+    """The call as verified: the tag the lines select, which is the tag that is acted on."""
+    tag = str(call.arguments[argument]).strip().upper()
+    return dataclasses.replace(call, arguments={**call.arguments, argument: tag})
+
+
 class Refused(Exception):
     """A precondition failed; nothing was written and nothing will be sent."""
 
@@ -1057,8 +1063,11 @@ class ConsoleChannel:
         def decision(name: str) -> str:
             return self._inline(country, f"activate_decision = {name}")
 
-        def target(tag: str) -> list[str]:
-            tag = tag.upper()
+        def target(tag: object) -> list[str]:
+            if not isinstance(tag, str) or not tag.strip():
+                raise Refused("no country was named: pass the tag the directive or posture "
+                              "acts on (nothing falls back to the previous target)")
+            tag = tag.strip().upper()
             if not _TAG.match(tag):
                 raise Refused(f"{tag!r} is not a country tag")
             if self.index is not None and self.index.tags and tag not in self.index.tags:
@@ -1073,19 +1082,19 @@ class ConsoleChannel:
             directive = str(args["directive"])
             if directive not in AI_DIRECTIVES:
                 raise Refused(f"unknown directive {directive!r}")
-            lines = target(str(args["target"]))
+            lines = target(args.get("target"))
             lines.append(decision(f"llmb_directive_{directive}") if via == "decision"
                          else scripted(f"llm_bridge_raise_{directive}"))
-            return Planned(call, lines)
+            return Planned(call, lines, verify_call=_with_tag(call, "target"))
         if call.name == "set_ai_posture":
             posture, theater = str(args["posture"]), args.get("theater")
-            if theater:
+            if theater is not None:
                 if posture not in modgen.THEATER_POSTURE_CHOICES:
                     raise Refused(f"unknown posture {posture!r}")
-                lines = target(str(theater))
+                lines = target(theater)
                 lines.append(decision(f"llmb_theater_{posture}") if via == "decision"
                              else scripted(f"llm_bridge_raise_theater_{posture}"))
-                return Planned(call, lines)
+                return Planned(call, lines, verify_call=_with_tag(call, "theater"))
             if posture == "balanced":
                 raise Refused("the mod has no effect that sets a global balanced posture "
                               "(clearing directives would drop them too); pick defensive or "

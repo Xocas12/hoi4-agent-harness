@@ -282,7 +282,7 @@ tight time window. Formats:
 |---|---|---|
 | `anthropic` | JSON from `GET /v1/organizations/usage_report/messages` (Admin API key; the Console Usage page shows the same data). Reads `uncached_input_tokens`, `cache_read_input_tokens`, `cache_creation.ephemeral_5m/1h_input_tokens`, `output_tokens`, `model` | field names checked against the [reference page](https://platform.claude.com/docs/en/api/beta/organization/usage_report/retrieve_messages); never run on a real export. Group by `model` |
 | `openai` | JSON from `GET /v1/organization/usage/completions`: `input_tokens` (includes cached), `input_cached_tokens`, `output_tokens`, `num_model_requests`, `model` | **not verified**: the docs page refused automated fetches; names are from memory |
-| `csv` | `model,uncached_input_tokens,cache_read_tokens,cache_write_tokens,output_tokens[,requests][,cost_usd]` | this tool's own format, for numbers copied out of a console by hand; I know of no documented CSV export from either console |
+| `csv` | `model,uncached_input_tokens,cache_read_tokens,cache_write_tokens,output_tokens[,requests][,cost_usd][,date][,provider]` (`date` is `YYYY-MM-DD`, UTC) | this tool's own format, for numbers copied out of a console by hand; I know of no documented CSV export from either console |
 
 A dated export model name (`claude-opus-5-5-20261101`) matches the harness's
 `claude-opus-5-5` when that is the only near match. A model on one side only is reported
@@ -290,6 +290,36 @@ and fails. OpenAI has no cache writes, so an OpenAI run reconciled against a har
 transcript that recorded writes will flag "cache write"; that is the expected shape, not a
 bug. Tested on fixtures only (`tests/test_reconcile.py`); the real-invoice clause of #23
 is still to do.
+
+### Per model and per day
+
+`--by day` prints one row per provider/model and UTC day instead of one block per model, each
+cell `harness/export (difference)`, and the run fails when any day is outside tolerance. The
+harness side gets its day from each `llm` record's own timestamp and its provider from the
+`provider` field the loop now writes (older transcripts have none; the export's provider is
+used as the label). The export side gets the day from the Anthropic bucket's `starting_at`,
+the OpenAI bucket's `start_time` and the CSV's `date` column, so ask for **daily buckets**
+(see below). If either side has no dates the days are summed and the report says so. A run
+that crossed midnight UTC shows as two rows; the invoice's day is also UTC, so they line up.
+
+### Getting the export (what the maintainer runs)
+
+1. Use a key or workspace that only this run used, and note the run's start and end in UTC.
+2. **Anthropic.** Console, Settings, Usage (group by model, daily) for a look; for the file,
+   call the Admin API with an Admin API key (`sk-ant-admin...`; the key is read from your
+   shell, never put in a file):
+   `curl -s "https://api.anthropic.com/v1/organizations/usage_report/messages?starting_at=2026-11-16T00:00:00Z&ending_at=2026-11-18T00:00:00Z&bucket_width=1d&group_by[]=model&limit=31" -H "anthropic-version: 2023-06-01" -H "x-api-key: $ANTHROPIC_ADMIN_KEY" > usage.json`
+   (follow `next_page` when `has_more` is true and pass the pages as a JSON list). The
+   invoice's dollar total for the same days goes in a CSV `cost_usd` column if you want the
+   cost line to compare against the bill and not against your own rates.
+3. **OpenAI.** `GET /v1/organization/usage/completions?start_time=<unix>&bucket_width=1d&group_by=model`
+   with an admin key (field names unverified, see above), or copy the Usage page by hand
+   into the CSV.
+4. Then:
+   `hoi4-harness reconcile runs/priced/transcript.jsonl usage.json --by day --rate "<model>:input=..,output=..,cached=..,write=.."`
+   and paste the output on #23. A difference beyond a few percent in one column points at
+   the cause: output high on the harness side is thinking counted twice, cache read low is
+   a cache breakpoint that stopped reaching the wire.
 
 ## What would break this
 

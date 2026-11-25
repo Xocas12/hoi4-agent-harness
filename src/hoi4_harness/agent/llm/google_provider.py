@@ -11,7 +11,7 @@ from __future__ import annotations
 import os
 
 from ...actions.registry import ToolSpec
-from .base import LLMClient, LLMResponse, Msg, ToolCall, Usage
+from .base import LLMClient, LLMResponse, Msg, ToolCall, Usage, normalise_stop
 
 
 def wire_declarations(tools: list[ToolSpec] | None) -> list[dict]:
@@ -73,6 +73,12 @@ def usage_from_wire(meta) -> Usage:
         cached_input_tokens=getattr(meta, "cached_content_token_count", 0) or 0,
     )
 
+
+def _finish_reason(response) -> object:
+    candidates = getattr(response, "candidates", None) or []
+    return getattr(candidates[0], "finish_reason", None) if candidates else None
+
+
 class GoogleClient(LLMClient):
     name = "google"
 
@@ -123,7 +129,7 @@ class GoogleClient(LLMClient):
         return LLMResponse(
             text=getattr(response, "text", "") or "",
             tool_calls=calls,
-            stop_reason="tool_use" if calls else "end_turn",
+            stop_reason=normalise_stop(_finish_reason(response), calls=bool(calls)),
             usage=usage,
             model=self.model,
             raw=response,
