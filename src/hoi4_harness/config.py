@@ -439,6 +439,12 @@ class HarnessConfig:
     #: When to brief again: a list (or comma string) of ``yearly``, ``halfyearly``, dates
     #: ``YYYY-MM-DD`` and the events ``war``, ``capitulation``, ``faction``. Empty: never.
     campaign_rebrief: list = field(default_factory=list)
+    #: A micro controller under the LLM (docs/micro-controller.md, #85): "off" (default), "rule"
+    #: (the rule-based baseline) or "learned" (a model from `python -m hoi4_harness.micro train`,
+    #: named by ``micro_model``). It reads the newest save's picture each turn and sets front orders
+    #: on the sectors the LLM has not ordered itself. Needs ``observe_world``.
+    micro_controller: str = "off"
+    micro_model: Path | None = None
     #: Let the briefing model search the web for mods it cannot judge from files (opt-in;
     #: the Workshop brief is read first; only providers that have a search tool).
     briefing_web_search: bool = False
@@ -657,7 +663,7 @@ class HarnessConfig:
             elif key in {"run_dir", "save_dir", "log_path", "system_prompt_path", "game_dir",
                          "ui_scripts_path", "calibration_path", "console_dir", "camera_path",
                          "fake_game_dir", "fake_game_files", "mod_context_cache_dir", "inbox_dir", "user_dir",
-                         "chat_path", "briefing_save",
+                         "chat_path", "briefing_save", "micro_model",
                          "fake_human_script"} and value is not None:
                 setattr(self, key, Path(value))
             elif key in ("mod_dirs", "skills_dirs"):
