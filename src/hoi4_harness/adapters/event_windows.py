@@ -59,6 +59,14 @@ DEFAULT_ANSWERS: dict[str, list[dict]] = {
 ANSWER_POINTS = {"country": "event.option1", "news": "event.news_close"}
 
 
+#: What the guard does with a COUNTRY event (the player's own; a news window is always closed):
+#: ``default`` answers it blind with the recorded first option (the game's usual default),
+#: ``model`` refuses the mouse tool until the model has read it (``read_event``) and chosen
+#: (``choose_event_option``), falling back to ``default`` when the event reader is off, and
+#: ``refuse`` always refuses (a person answers).
+POLICIES = ("default", "model", "refuse")
+
+
 class EventOpen(RuntimeError):
     """An event window is open and could not be closed: no mouse tool may click."""
 
@@ -121,7 +129,12 @@ class EventGuard:
     def __init__(self, probe: Callable[[], EventSighting | None],
                  answers: dict[str, list[dict]] | None = None, *,
                  sleep: Callable[[float], None] = time.sleep, attempts: int = 3,
-                 settle: float = 0.5, log_path: Path | None = None):
+                 settle: float = 0.5, log_path: Path | None = None, policy: str = "default"):
+        if policy not in POLICIES:
+            raise ValueError(f"event_windows.policy {policy!r} is not one of {', '.join(POLICIES)}")
+        self.policy = policy
+        #: Whether the model can read and answer an open event (set when the reader is wired).
+        self.reading = False
         raw = {**DEFAULT_ANSWERS, **(answers or {})}
         self.answers = {kind: parse_steps(steps) for kind, steps in raw.items()}
         self.probe = probe
@@ -160,6 +173,8 @@ class EventGuard:
                     f"a {sighting.kind} event window is open and {tool} was not run: there is no "
                     f"recorded way to close it (record {', '.join(missing) or sighting.kind}: "
                     f"hoi4-harness calibrate {' '.join(missing)}). Nothing was clicked")
+            if sighting.kind == "country" and self._leaves_to_others():
+                self._refuse(driver, sighting, tool, attempt)
             entry = {"t": round(time.time(), 3), "tool": tool, "kind": sighting.kind,
                      "title": sighting.title or (self.namer() if self.namer else ""),
                      "attempt": attempt,
@@ -177,6 +192,27 @@ class EventGuard:
             raise EventOpen(f"an event window is still open after {self.attempts} answers, so "
                             f"{tool} was not run. Nothing further was clicked")
         return answered
+
+    def _leaves_to_others(self) -> bool:
+        return self.policy == "refuse" or (self.policy == "model" and self.reading)
+
+    def _refuse(self, driver, sighting: EventSighting, tool: str, attempt: int) -> None:
+        """Policy: this event is not answered here. Record the refusal, click nothing."""
+        title = sighting.title or (self.namer() if self.namer else "")
+        if self.policy == "model":
+            why = ("it is your country's event and the policy is that you answer it: call "
+                   "read_event to see it, then choose_event_option with your pick, and then "
+                   f"repeat {tool}")
+        else:
+            why = "the event policy is refuse: a person has to answer it"
+        entry = {"t": round(time.time(), 3), "tool": tool, "kind": "country", "title": title,
+                 "attempt": attempt, "answer": f"refused the tool (policy {self.policy})",
+                 "closed": False}
+        self.record.append(entry)
+        self._write(entry)
+        driver.log.append(f"event window: country, refused {tool} (policy {self.policy})")
+        raise EventOpen(f"a country event window is open and {tool} was not run: {why}. "
+                        "Nothing was clicked")
 
     def _write(self, entry: dict) -> None:
         if self.log_path is None:
@@ -201,4 +237,4 @@ def guard_from_config(spec: dict, run_dir: Path, *, sleep: Callable[[float], Non
         probe = PixelProbe(probes)
     return EventGuard(probe, spec.get("answers"), sleep=sleep,
                       attempts=int(spec.get("attempts", 3)), settle=float(spec.get("settle", 0.5)),
-                      log_path=Path(run_dir) / "events.jsonl")
+                      log_path=Path(run_dir) / "events.jsonl", policy=spec.get("policy", "default"))

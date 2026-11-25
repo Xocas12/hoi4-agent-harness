@@ -96,3 +96,14 @@ def _no_real_game_memory(monkeypatch):
     """The campaign's memory guard reads the real hoi4.exe; a test injects a reader instead
     (a live game left running on this machine must not stop a fake campaign)."""
     monkeypatch.setattr("hoi4_harness.campaign.watch.process_private_gb", lambda _name: None)
+
+
+@pytest.fixture(autouse=True)
+def _no_real_idle_clock(monkeypatch):
+    """The input guard and take-focus gate read the OS idle clock. A test never reads this
+    machine's (a person typing during the run would fail it, and Linux CI has none, which reads
+    as "someone is there"): it sees a keyboard idle for a long time, unless it injects a watch."""
+    from hoi4_harness.rival import safety
+
+    monkeypatch.setattr(safety, "system_input_watch",
+                        lambda: safety.InputWatch(lambda: 0, lambda: 10 ** 9))
