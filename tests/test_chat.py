@@ -134,7 +134,7 @@ def test_multiplayer_send_message_types_into_the_games_chat(tmp_path):
     assert "send_message" in env.allowed_actions
     result = env.act(ActionCall("send_message", {"to": "GER", "text": "Let us talk"}), "1936-03-01")
     assert result.ok and "sent to GER" in result.message
-    assert driver.calls == [("press", "enter"), ("type", "[FRA to GER] Let us talk"), ("press", "enter")]
+    assert driver.calls == [("press", "enter"), ("type", "FRA to GER, Let us talk"), ("press", "enter")]
     assert ChatLog(tmp_path / "chat.jsonl").messages() == []       # not the file chat
 
 
@@ -142,7 +142,7 @@ def test_multiplayer_person_and_global_mean_the_game_chat_too(tmp_path):
     env, driver = _mp_env(tmp_path)
     for target in ("person", "global"):
         assert env.act(ActionCall("send_message", {"to": target, "text": "hello"}), "").ok
-    assert ("type", "[FRA to everyone] hello") in driver.calls
+    assert ("type", "FRA to everyone, hello") in driver.calls
 
 
 def test_multiplayer_talk_to_another_llm_stays_in_the_file_chat(tmp_path):
@@ -202,5 +202,5 @@ def test_the_sender_goes_through_the_input_driver_and_its_guards():
     sender = attach(env, config)
     assert sender is not None and env.mp_chat is sender
     assert env.act(ActionCall("send_message", {"to": "GER", "text": "Peace?"}), "").ok
-    assert driver.log[-3:] == ["press enter", "type [FRA to GER] Peace?", "press enter"]
+    assert driver.log[-3:] == ["press enter", "type FRA to GER, Peace", "press enter"]
     assert attach(HOI4Env(MockAdapter(), config), config) is None        # nothing to type with

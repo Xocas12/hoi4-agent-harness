@@ -4,8 +4,9 @@ In single player the chat is a file beside the game (chat.py). In a multiplayer 
 (``config.multiplayer``) the person on the other end is in the game, reading the game's own chat,
 so ``send_message`` to a human (``person``, ``global`` or a country in ``mp_human_tags``) is typed
 into that chat through the input driver's key layer instead: Enter opens the chat box, the text
-goes in, Enter sends it. A message to another LLM country is not routed here (it is not in the
-game's chat to read); it goes to the file chat when the run has one.
+goes in, Enter sends it. Only what the key layer can type goes in (``typable``): a bracket or a
+colon would make it refuse the whole line. A message to another LLM country is not routed here
+(it is not in the game's chat to read); it goes to the file chat when the run has one.
 
 UNVERIFIED against a live multiplayer game: that Enter opens the chat box in a lobby-less client
 session and Enter sends it, that the box takes ``/`` and ``:`` and non-ASCII text, how long a line
@@ -28,6 +29,22 @@ SEND_KEY = "enter"
 MAX_CHARS = 200
 #: Where a message addressed to "person" or "global" means the game's chat.
 HUMAN_TARGETS = ("person", "global")
+
+
+#: What the key layer can type (adapters/keys.py): letters, digits, space and  - ' , . _
+_TYPABLE = set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 -',._")
+
+
+def typable(text: str) -> str:
+    """``text`` as the key layer can type it: accents dropped (``o`` for the o-umlaut), anything
+    else with no scan code (brackets, colon, question mark, quotes) replaced by a space, spaces
+    squeezed. ``type_text`` refuses a whole string over one such character, so a chat line
+    with a ``[`` in it would never have been sent."""
+    import unicodedata
+
+    plain = unicodedata.normalize("NFKD", text or "")
+    plain = "".join(c for c in plain if not unicodedata.combining(c))
+    return " ".join("".join(c if c in _TYPABLE else " " for c in plain).split())
 
 
 @dataclass(frozen=True)
@@ -56,16 +73,16 @@ class MultiplayerChat:
         return to.lower() in HUMAN_TARGETS or to.upper() in self.human_tags
 
     def send(self, to: str, text: str, date: str | None = None) -> SentLine:
-        text = " ".join((text or "").split())
+        text = typable(text)
         if not text:
-            raise ValueError("an empty message")
+            raise ValueError("an empty message (nothing in it can be typed into the game's chat)")
         to = (to or "").strip()
         if not self.reaches(to):
             raise ValueError(f"{to!r} is not a person in this game (person, global, or one of "
                              f"{', '.join(sorted(self.human_tags)) or 'no human countries'})")
         # The game's chat has no addressee in a plain line, so say who it is from and to.
         who = "everyone" if to.lower() in ("person", "global") else to.upper()
-        line = f"[{self.tag} to {who}] {text}"[:MAX_CHARS]
+        line = f"{self.tag} to {who}, {text}"[:MAX_CHARS]
         self.driver.press(self.open_key)
         self._sleep(self.settle)
         self.driver.type_text(line)
@@ -76,12 +93,23 @@ class MultiplayerChat:
 
 
 def find_driver(adapter):
-    """The input driver inside ``adapter`` (a composite's writer, or the adapter itself), or None."""
+    """The input driver inside ``adapter`` (a composite's writer, the headless writer's router,
+    or the adapter itself), or None."""
     from .input_driver import InputDriverAdapter
 
-    for candidate in (adapter, getattr(adapter, "writer", None)):
+    seen = []
+    queue = [adapter]
+    while queue:
+        candidate = queue.pop(0)
+        if candidate is None or any(candidate is s for s in seen):
+            continue
+        seen.append(candidate)
         if isinstance(candidate, InputDriverAdapter):
             return candidate
+        # ``vars`` and not getattr: the router forwards unknown names to its driver, which
+        # would answer for anything.
+        held = vars(candidate) if hasattr(candidate, "__dict__") else {}
+        queue += [held.get(name) for name in ("writer", "router", "driver")]
     return None
 
 

@@ -1252,9 +1252,21 @@ never propose an army order, and the brief must carry the `Held by the player` l
 guidance with `hoi4-harness guide --run-dir runs/coop-live "..."` and confirm the model is
 woken for it and the transcript has a `guidance` record.
 
+**6b. Moving a domain mid-game.** Continue step 6's run. `hoi4-harness domains --run-dir
+runs/coop-live --give army`: at the model's next turn the transcript has a `domain_change`
+record, the brief says the player handed it army, the model is woken and may now propose army
+orders (check it does, and that they run). `--take army`: the tool list loses the army again and
+an army order the model had queued does not run. Then type `take navy` in the file chat
+(`hoi4-harness chat take navy`) and check the same. After each model turn the chat
+(`hoi4-harness chat --follow`) must carry what it did, from the model or the harness's
+`This turn I did:` line, once.
+
 **7. Multiplayer, stage 0 (#91).** Needs a second machine and licence: fill the table in
 [multiplayer.md](multiplayer.md), one row per channel, each from the non-host client, with the
-log line or a screenshot as evidence. Stage 2 is the acceptance run of #91.
+log line or a screenshot as evidence. Then, as the non-host client, check the harness's chat:
+a `send_message` to the host must show as `FRA to GER, text` in the game's chat (the key path is
+unverified: Enter opens, Enter sends), and a space or speed key sent on the client must do
+nothing to the host's clock. Stage 2 is the acceptance run of #91.
 
 **What to paste where.** Steps 1 to 5 settle the acceptance of #33 (no input until handed
 over, the queue runs, stale is reported, it hands back) and the handover half of #31; step 6

@@ -335,6 +335,22 @@ def build_fake(config: HarnessConfig):
         config.log_path, config.console_dir = fake.log_path, fake.user_dir
         config.save_dir = config.save_dir or fake.save_dir
         return fake
+    if config.multiplayer:
+        # A client in a multiplayer game (fakemultiplayer.py): the harness's country and a
+        # person's, both human; the host's clock and, if asked, a console that is shut.
+        from ..fakemultiplayer import FakeMultiplayerGame
+        from ..fakerival import human_cycle, load_script
+
+        config.country = config.country or "FRA"
+        human = next((t for t in config.mp_human_tags if t != config.country), "GER")
+        script = (load_script(config.fake_human_script) if config.fake_human_script
+                  else human_cycle())
+        fake = FakeMultiplayerGame(base / "user", harness=config.country, human=human,
+                                   human_script=script, seed=config.seed,
+                                   start=config.start_date, index=index)
+        config.log_path, config.console_dir = fake.log_path, fake.user_dir
+        config.save_dir = config.save_dir or fake.save_dir
+        return fake
     config.country = config.country or "SWE"
     fake = FakeGame(base / "user", country=config.country, seed=config.seed,
                     start=config.start_date, index=index)

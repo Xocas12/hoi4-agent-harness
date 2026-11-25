@@ -44,7 +44,7 @@ from .rival.safety import (
     WindowPolicy,
     system_input_watch,
 )
-from .types import ActionCall, GameState
+from .types import ActionCall
 
 HANDOVER_MODES = ("hotkey", "idle", "approve")
 
@@ -361,35 +361,252 @@ def build_hotkey_listener(config) -> HotkeyListener | None:
 # --- the guidance channel -----------------------------------------------------------------
 
 
+# --- domains that change hands mid-game (#31) -------------------------------------------------
+
+DOMAINS_FILENAME = "domains.json"
+_STOP = frozenset({"the", "my", "to", "me", "you", "back", "over", "and", "domain", "domains",
+                   "please", "for", "your", "now", "model", "llm", "ai", "agent", "harness",
+                   "claude", "it", "mine", "yours"})
+_ECONOMY = ("focus", "research", "construction", "production")
+_ALIASES = {"fleet": "navy", "fleets": "navy", "armies": "army", "land": "army",
+            "diplo": "diplomacy", "politic": "politics", "economy": None, "all": None,
+            "everything": None}
+
+
+def parse_domain_message(text: str, domains: tuple[str, ...]) -> list[tuple[str, str]]:
+    """The domain commands in a chat line: ``[(domain, "human" | "llm"), ...]``, [] when the line
+    is ordinary talk. Strict on purpose: the line must START with a command word and every other
+    word must be a domain (or filler), so "I will take a look at the economy later" moves
+    nothing.
+
+    ``take army``, ``take back the navy and air``, ``/take all``  ->  the person holds them;
+    ``give army``, ``hand over diplomacy``, ``give the economy back``, ``you take the navy``  ->
+    the model does. The economy is focus, research, construction and production."""
+    import re
+
+    tokens = re.findall(r"[a-z]+", (text or "").lower())
+    if not tokens:
+        return []
+    if tokens[0] in ("take", "taking", "keep"):
+        direction, rest = "human", tokens[1:]
+    elif tokens[0] in ("give", "hand", "release"):
+        direction, rest = "llm", tokens[1:]
+    elif tokens[:2] == ["you", "take"]:
+        direction, rest = "llm", tokens[2:]
+    elif tokens[:3] == ["you", "can", "have"]:
+        direction, rest = "llm", tokens[3:]
+    else:
+        return []
+    out: list[str] = []
+    for word in rest:
+        if word in _STOP:
+            continue
+        mapped = _ALIASES.get(word, word)
+        if word == "economy":
+            out += _ECONOMY
+        elif word in ("all", "everything"):
+            out += list(domains)
+        elif mapped in domains:
+            out.append(mapped)
+        else:
+            return []           # an unknown word: this is talk, not a command
+    return [(d, direction) for d in dict.fromkeys(out)]
+
+
+class DomainBoard:
+    """``hoi4-harness domains``: the person's commands to move a domain, a file in the run
+    directory (``domains.json``) the way ``handover.grant`` and the guidance inbox are. Append-only
+    with ids, so a command is read once and the record of who held what stays."""
+
+    def __init__(self, run_dir: Path, clock=None):
+        import time
+
+        self.path = Path(run_dir) / DOMAINS_FILENAME
+        self.clock = clock or time.time
+        self._done = 0
+
+    def rows(self) -> list[dict]:
+        import json
+
+        try:
+            data = json.loads(self.path.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            return []
+        return [r for r in data if isinstance(r, dict) and "id" in r] if isinstance(data, list) else []
+
+    def post(self, domain: str, to: str, source: str = "command") -> dict:
+        import json
+
+        from .control import DOMAINS
+
+        if domain not in DOMAINS:
+            raise ValueError(f"unknown domain {domain!r}: one of {', '.join(DOMAINS)}")
+        if to not in ("human", "llm"):
+            raise ValueError("to must be human (the person holds it) or llm (the model does)")
+        rows = self.rows()
+        row = {"id": (rows[-1]["id"] + 1) if rows else 1, "ts": self.clock(), "domain": domain,
+               "to": to, "source": source}
+        rows.append(row)
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        tmp = self.path.with_suffix(".tmp")
+        tmp.write_text(json.dumps(rows), encoding="utf-8")
+        tmp.replace(self.path)
+        return row
+
+    def poll(self) -> list[dict]:
+        """Commands not yet taken, oldest first."""
+        fresh = [r for r in self.rows() if r["id"] > self._done]
+        if fresh:
+            self._done = fresh[-1]["id"]
+        return fresh
+
+
+def _describe_call(call: ActionCall, result) -> str:
+    args = [str(v) for v in call.arguments.values() if isinstance(v, (str, int, float))][:2]
+    text = " ".join([call.name, *args])
+    if not result.ok:
+        return f"{text} (failed)"
+    if "queued" in (result.message or "").lower():
+        return f"{text} (queued for you)"
+    return text
+
+
 class CoopGuidance:
-    """``hoi4-harness guide`` for a plain co-op run: the campaign's channel, reused.
+    """What a plain co-op run hangs off the loop: the person's guidance, domain handovers and the
+    model's explanation of what it did.
 
-    The person leaves advice in the run directory (``guide --run-dir ...``); each turn it is
-    read, written to the transcript once, shown in the brief (new items marked) and the model
-    is woken for it once. It is advice the model weighs; nothing here executes it."""
+    * **Guidance** (``hoi4-harness guide``): the campaign's channel, reused. Read each turn,
+      written to the transcript once, shown in the brief (new items marked) and the model is woken
+      for it once. Advice the model weighs; nothing here executes it.
+    * **Domains** (#31): the person moves a domain with ``hoi4-harness domains --take army`` /
+      ``--give army``, or by typing ``take army`` / ``give army`` in the chat (``incoming`` is where
+      the chat's lines come from: the file chat by default; in multiplayer the game's chat cannot
+      be read back, so the file chat or the command is the way). The change takes effect before
+      the next decision: the tool list, the wake rules, the system prompt and the refusal all
+      follow ``config.coop_overrides``; what the model had queued in a domain taken back is
+      refused when it comes to run. The model is woken when it gains a domain, told once in the
+      brief, and the person gets an answer in chat.
+    * **Explanation**: after a turn the model acted in, one chat line says what it did, unless the
+      model already said something itself that turn.
+    """
 
-    def __init__(self, run_dir: Path, loop):
+    def __init__(self, run_dir: Path, loop, incoming=None):
         from .campaign.inbox import GuidanceBoard
 
         self.board = GuidanceBoard(run_dir)
+        self.domains = DomainBoard(run_dir)
         self.loop = loop
+        self.env = loop.env
+        self.incoming = incoming
         self._logged: set[int] = set()
-        loop.env.brief_hooks.append(self.board.brief_lines)
+        self._chat_done: set[int] = set()
+        self._notice: list[str] = []
+        self._wake: str | None = None
+        self._said_at = 0
+        loop.env.brief_hooks.append(self._brief)
 
-    def before_turn(self, state: GameState) -> str | None:
+    # --- the brief --------------------------------------------------------------------
+
+    def _brief(self, state) -> list[str]:
+        lines = list(self.board.brief_lines(state))
+        if self._notice:
+            lines.append("Domain changes since your last turn: " + "; ".join(self._notice))
+        if self.env.chat is not None or self.env.mp_chat is not None:
+            lines.append("The player reads the chat: say in one send_message what you did and "
+                         "why (the harness adds a plain line if you do not).")
+        return lines
+
+    # --- the person's commands ----------------------------------------------------------
+
+    def _chat_commands(self) -> list[tuple[str, str, str]]:
+        """``(domain, to, source)`` from the person's chat lines, each line once."""
+        from .control import DOMAINS
+
+        out: list[tuple[str, str, str]] = []
+        if self.incoming is not None:
+            for text in self.incoming():
+                out += [(d, to, "chat") for d, to in parse_domain_message(text, DOMAINS)]
+        chat = self.env.chat
+        if chat is not None:
+            for m in chat.new():
+                if m.id in self._chat_done or m.frm != "person":
+                    continue
+                self._chat_done.add(m.id)
+                out += [(d, to, "chat") for d, to in parse_domain_message(m.text, DOMAINS)]
+        return out
+
+    def _apply(self, changes: list[tuple[str, str, str]], date: str) -> None:
+        config = self.loop.config
+        gained: list[str] = []
+        answers: list[str] = []
+        for domain, to, source in changes:
+            now = self.loop.control.controller(domain)
+            if now not in ("llm", "human"):
+                answers.append(f"{domain} is {now}, not something to hand back and forth")
+                continue
+            if now == to:
+                answers.append(f"{domain} is already " + ("yours" if to == "human" else "mine"))
+                continue
+            before = dict(config.coop_overrides)
+            config.coop_overrides[domain] = to
+            try:
+                self.loop.refresh_control()
+            except ValueError as exc:       # ControlError: a map that cannot be honoured
+                config.coop_overrides.clear()
+                config.coop_overrides.update(before)
+                self.loop.refresh_control()
+                answers.append(f"{domain} stays where it was: {exc}")
+                continue
+            if to == "llm":
+                gained.append(domain)
+                self._notice.append(f"the player handed {domain} to you; it is yours now")
+                answers.append(f"{domain} is mine now")
+            else:
+                self._notice.append(f"the player took {domain} back; do not act there. Anything "
+                                    "you queued in it will be refused")
+                answers.append(f"{domain} is yours again; I will not touch it")
+            self.loop.transcript.write("domain_change", date=date, domain=domain, to=to,
+                                       source=source)
+        if gained:
+            self._wake = f"the player handed you {', '.join(gained)}"
+        if answers:
+            self.env.say("person", "; ".join(answers).capitalize() + ".", date)
+
+    # --- the loop's hooks -----------------------------------------------------------------
+
+    def before_turn(self, state) -> str | None:
         for item in self.board.poll():
             if item.id in self._logged:
                 continue
             self._logged.add(item.id)
             self.loop.transcript.write("guidance", date=state.date, id=item.id, ts=item.ts,
                                        text=item.text)
-        self.loop.policy.pending_wake = self.board.wake_reason()
+        changes = [(r["domain"], r["to"], r.get("source", "command")) for r in self.domains.poll()]
+        changes += self._chat_commands()
+        self._wake = None
+        if changes:
+            self._notice = []
+            self._apply(changes, state.date)
+        self.env.take_turn_log()                   # what the reflexes did is not this turn's talk
+        self._said_at = self.env.chat_sent
+        self.loop.policy.pending_wake = self.board.wake_reason() or self._wake
         return None
 
-    def after_turn(self, state: GameState, *, woke: bool, reason: str, actions: list[str],
+    def after_turn(self, state, *, woke: bool, reason: str, actions: list[str],
                    tokens: int) -> None:
+        log = self.env.take_turn_log()
         if woke:
             self.board.shown()
+            self._notice = []
+        if not woke or not log or self.env.chat_sent != self._said_at:
+            return
+        if self.env.chat is None and self.env.mp_chat is None:
+            return
+        done = "; ".join(_describe_call(c, r) for c, r in log[:6])
+        more = f" and {len(log) - 6} more" if len(log) > 6 else ""
+        reply = self.env.say("person", f"This turn I did: {done}{more}.", state.date)
+        self.loop.transcript.write("coop_explained", date=state.date, ok=reply.ok, text=done,
+                                   note=None if reply.ok else reply.message)
 
 
 def wants_guidance(config) -> bool:
