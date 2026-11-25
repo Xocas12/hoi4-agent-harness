@@ -167,6 +167,18 @@ mouse tool first, option 1 is taken blind"), as does the tool description, and t
 identify is still answered blind, and the brief says that too. Without probes nothing knows a window is open
 and the mouse tools click under it (the start log says `event windows: NOT guarded`).
 
+### Policy: who answers a country event (#125)
+
+`event_windows.policy` in the profile picks what the guard does with an open COUNTRY event (the
+player's own); a news window is always closed.
+
+* `default` (as before): the recorded first option, blind.
+* `model`: the mouse tool is refused with the reason ("call read_event, then choose_event_option,
+  then repeat the tool"), nothing is clicked, and the refusal is a line in `events.jsonl`. Once the
+  model has chosen, the window is gone and the next mouse tool runs. Where the event reader is off
+  (no OCR, no playset), the model cannot answer, so this falls back to `default`.
+* `refuse`: always refused; a person answers.
+
 ## Rival mode
 
 In rival mode the LLM does not hold the keyboard and mouse: the person plays another country, and the

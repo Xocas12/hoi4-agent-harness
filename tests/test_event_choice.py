@@ -24,7 +24,7 @@ from hoi4_harness.adapters.event_choice import (
     option_boxes,
     window_box,
 )
-from hoi4_harness.adapters.event_windows import EventGuard, EventSighting
+from hoi4_harness.adapters.event_windows import EventGuard, EventOpen, EventSighting
 from hoi4_harness.adapters.input_driver import InputConfig, InputDriverAdapter
 from hoi4_harness.adapters.ocr import OcrLine
 from hoi4_harness.adapters.window import FocusCheck
@@ -475,3 +475,67 @@ def test_the_two_actions_are_in_the_catalog_and_the_choice_does_not_count_agains
 
 def test_the_executor_names_its_one_action():
     assert EventExecutor.actions == frozenset({"choose_event_option"})
+
+
+# --- issue #125: the event policy (the model answers its own event, or the tool is refused) ----
+
+
+def _model_world(tmp_path, policy):
+    """A country event on the fake screen, a guard whose probe sees it, and a mouse tool that
+    would click through it: the click goes to the research list, so any click is visible."""
+    state = {}
+
+    def probe():
+        return EventSighting("country") if state["screen"].event_id else None
+
+    guard = EventGuard(probe, sleep=lambda s: None, policy=policy, settle=0,
+                       log_path=tmp_path / "events.jsonl")
+    screen, driver, reader, _ = build(tmp_path, guard=guard,
+                                      coordinates={"event.option1": (960, 620),
+                                                   "event.news_close": (1500, 300)})
+    state["screen"] = screen
+    guard.reading = True
+    driver.config.mouse = True
+    screen.open("germany.75")
+    return screen, driver, guard
+
+
+def test_125_model_policy_refuses_the_mouse_tool_with_the_reason_and_clicks_nothing(tmp_path):
+    screen, driver, guard = _model_world(tmp_path, "model")
+    before = list(screen.clicks)
+    with pytest.raises(EventOpen, match="read_event.*choose_event_option"):
+        guard.clear(driver, "start_research")
+    assert screen.clicks == before and screen.chosen == []
+    assert guard.record[-1]["answer"] == "refused the tool (policy model)"
+    assert json.loads((tmp_path / "events.jsonl").read_text().splitlines()[-1])["closed"] is False
+
+
+def test_125_model_answers_then_the_next_mouse_tool_resumes(tmp_path):
+    screen, driver, guard = _model_world(tmp_path, "model")
+    with pytest.raises(EventOpen):
+        guard.clear(driver, "start_research")
+    result = choose(driver, 2)
+    assert result.ok and screen.chosen == [("germany.75", 2)]
+    assert guard.clear(driver, "start_research") == []          # the window is gone: nothing to do
+
+
+def test_125_model_policy_without_a_reader_falls_back_to_the_blind_first_option(tmp_path):
+    screen, driver, guard = _model_world(tmp_path, "model")
+    guard.reading = False
+    driver.run_event_steps = lambda steps: screen.close()
+    answered = guard.clear(driver, "start_research")
+    assert answered and answered[0]["answer"].startswith("first option")
+
+
+def test_125_refuse_policy_never_answers_a_country_event_but_still_closes_news(tmp_path):
+    screen, driver, guard = _model_world(tmp_path, "refuse")
+    with pytest.raises(EventOpen, match="policy is refuse"):
+        guard.clear(driver, "start_research")
+    guard.probe = lambda: EventSighting("news")
+    driver.run_event_steps = lambda steps: setattr(guard, "probe", lambda: None)
+    assert guard.clear(driver, "start_research")[0]["kind"] == "news"
+
+
+def test_125_an_unknown_policy_is_refused_naming_the_choices():
+    with pytest.raises(ValueError, match="default, model, refuse"):
+        EventGuard(lambda: None, policy="ask")

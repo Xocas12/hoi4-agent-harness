@@ -52,7 +52,8 @@ OTHER = "Other"
 GROUP_EXACT: dict[str, str] = {
     "adapter": "Run", "turns": "Run", "dry_run": "Run", "advisor": "Run", "run_dir": "Run",
     "save_dir": "Run", "log_path": "Run", "window_title": "Run", "ui_scripts_path": "Run",
-    "calibration_path": "Run", "enforce_window_focus": "Run", "clock_owner": "Run",
+    "calibration_path": "Run", "enforce_window_focus": "Run", "input_quiet_seconds": "Run",
+    "input_wait_seconds": "Run", "clock_owner": "Run",
     "clock_probe_seconds": "Run", "seed": "Run", "telemetry_hours": "Run",
     "guidance": "Prompt and guidance", "system_prompt_extra": "Prompt and guidance",
     "instruction": "Prompt and guidance", "objective": "Prompt and guidance",

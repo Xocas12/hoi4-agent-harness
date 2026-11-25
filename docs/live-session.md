@@ -1109,6 +1109,13 @@ events apart). Then rename the profile's `event_windows` key and confirm the old
 so the check can fail. If the probe fires with no window open, or never fires with one, say where
 the pixel was and its colour in both states.
 
+**4. The policy (#125).** With `"policy": "model"` in `event_windows` and event reading on
+(docs/events.md), leave a country event open and send a mouse tool: it is refused with `call
+read_event ... choose_event_option`, nothing is clicked, `events.jsonl` has a `refused the tool`
+line. Answer with `choose_event_option`, send the tool again: it runs. With `"policy": "refuse"` the
+same tool is refused until you answer by hand. Say whether the refusal text reached the model in
+`transcript.jsonl`.
+
 ### 14b. Production by click: edit a line, never duplicate it (#112)
 
 **Run live 2026-11-21 (1.20.0, 1920x1080, UI scale 1, GER 1936, `runs/hands-1`, `runs/hands-2`).**
@@ -1239,3 +1246,27 @@ log line or a screenshot as evidence. Stage 2 is the acceptance run of #91.
 over, the queue runs, stale is reported, it hands back) and the handover half of #31; step 6
 the domain half of #31; step 7 is #91.
 
+## 16. The input guard: the harness never types over you (#33)
+
+Headless runs (`--adapter headless`, not the fake game, not a dry run) wrap every key, typed line
+(the console, `run <file>`), click and drag in `adapters/input_guard.py`. `input_quiet_seconds`
+(5) is how long keyboard and mouse must have been quiet before a sequence starts; it waits up to
+`input_wait_seconds` (30) and then refuses with `not_executed`. Every handover goes to
+`handovers.jsonl` in the run dir and the driver log. Built and tested with injected stamps
+(`tests/test_input_guard.py`); only the real idle clock is left.
+
+1. **Start refused.** Start a headless run with the game in front, then keep moving the mouse
+   when an action is due: the log has `handover: waiting`, and after 30 s `refused`, with nothing
+   typed or clicked in the game. Stop moving: the next action runs (`resumed`, `completed`).
+2. **Stop mid-line.** During a console run-file (`run ...`), press a key of your own. The game's
+   console must not receive a half command: `handovers.jsonl` has `aborted` for `type` or `key`,
+   and the console is closed (the console key is the one key that still goes out). Try it in the
+   gap after the console key, mid-text, and just before Enter, as #33's comments ask.
+3. **Mid-click.** During a research click path, touch the mouse. The path stops (`aborted` for
+   `click`); a drag never leaves the button down.
+4. **Focus.** With `campaign_take_focus` on and the game behind another window, keep typing in
+   that window: it stays in front (`focus_withheld`); stop for 5 s (and the 120 s of
+   `campaign_take_focus_idle_seconds`): it is taken (`focus_taken`).
+
+Not covered, in principle: input in the milliseconds between the last look and the event itself
+(also true of rival mode, docs/rival.md).

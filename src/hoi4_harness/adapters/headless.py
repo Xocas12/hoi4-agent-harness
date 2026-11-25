@@ -495,6 +495,7 @@ def build_headless(config: HarnessConfig, fake=None) -> CompositeAdapter:
     if hands.mouse:
         _announce_hands(config, hands, adapter)
     adapter.watchdog = adapter.patient_focus = None
+    adapter.input_guard = _wire_input_guard(driver, config, fake, sleep)
     if config.campaign:
         _watch_for_campaign(adapter, config, fake, driver, sleep)
     return adapter
@@ -526,11 +527,33 @@ def _watch_for_campaign(adapter, config: HarnessConfig, fake, driver, sleep) -> 
 
         take = idle_gated(take_focus, system_input_watch().idle_seconds,
                           config.campaign_take_focus_idle_seconds)
+        if getattr(adapter, "input_guard", None) is not None:
+            take = adapter.input_guard.gate_take(take)
     patient = PatientFocus(inner, sleep=sleep, max_wait_seconds=config.campaign_focus_wait_minutes * 60,
                            take=take)
     driver._focus_check = patient
     adapter.patient_focus = patient
 
+
+
+def _wire_input_guard(driver, config: HarnessConfig, fake, sleep, watch=None):
+    """The shared person-activity guard (adapters/input_guard.py, issue #33) on a real run. None
+    for the fake game, a dry run, or ``input_quiet_seconds = 0``."""
+    from ..rival.safety import system_input_watch
+    from .input_guard import InputGuard
+    from .keys import ScanCodeKeys
+
+    if fake is not None or config.dry_run or config.input_quiet_seconds <= 0:
+        return None
+    guard = InputGuard(watch or system_input_watch(), quiet_seconds=config.input_quiet_seconds,
+                       wait_seconds=config.input_wait_seconds, sleep=sleep,
+                       console_key=config.console_key, log=driver.log.append,
+                       log_path=Path(config.run_dir) / "handovers.jsonl")
+    driver.input_guard = guard
+    keys = driver._keys()
+    if isinstance(keys, ScanCodeKeys):
+        guard.attach_keys(keys)
+    return guard
 
 
 def idle_gated(take, idle_seconds, quiet: float):
@@ -691,6 +714,7 @@ def _wire_event_reader(driver, config: HarnessConfig, hands: Hands, fake) -> Non
         centre_growth=bool(spec.get("centre_growth", False)))
     if driver.event_guard is not None:
         driver.event_guard.namer = reader.open_title
+        driver.event_guard.reading = True
     ec.enable_events(driver, reader, settle=float(spec.get("settle", 0.8)))
     hands.event_reader = reader
     hands.event_reading = {"on": True, "ocr": type(backend).__name__,

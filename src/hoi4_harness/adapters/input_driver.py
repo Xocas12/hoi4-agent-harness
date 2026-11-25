@@ -21,6 +21,7 @@ from __future__ import annotations
 import re
 import time
 from collections.abc import Callable
+from contextlib import nullcontext
 from dataclasses import dataclass, field, replace
 from pathlib import Path
 
@@ -157,6 +158,15 @@ class InputConfig:
     us_layout: bool = True
 
 
+class PersonActive(InputInterrupted):
+    """A person used the keyboard or mouse, so the harness did not start (``phase`` ``start``)
+    or stopped sending partway (``mid``). Raised by ``input_guard.InputGuard`` (issue #33)."""
+
+    def __init__(self, message: str, *, phase: str, path: str, label: str):
+        super().__init__(message)
+        self.phase, self.path, self.label = phase, path, label
+
+
 class InputDriverAdapter(GameAdapter):
     """Applies actions through synthetic input. Reads nothing on its own.
 
@@ -222,6 +232,9 @@ class InputDriverAdapter(GameAdapter):
         #: Rival mode's guard (``rival.safety.KeyWatch``): asked before every key and every
         #: typed character, it may raise ``InputInterrupted``. None: no guard.
         self.key_watch = None
+        #: The shared person-activity guard (``input_guard.InputGuard``, issue #33): every key,
+        #: typed text, click and drag goes through it. None: no guard.
+        self.input_guard = None
         #: Clears the event and news windows before a mouse tool runs (event_windows.py); None
         #: when no probe is configured, in which case nothing here knows a window is open.
         self.event_guard = None
@@ -321,18 +334,55 @@ class InputDriverAdapter(GameAdapter):
             self._keys_cache = ScanCodeKeys(sleep=self._sleep)
         return self._keys_cache
 
+    def _guarded(self, path: str, label: str):
+        """The shared guard's bracket around one input sequence (a no-op without a guard and in a
+        dry run, where nothing is sent)."""
+        if self.input_guard is None or self.dry_run:
+            return nullcontext()
+        return self.input_guard.sequence(path, label)
+
+    def _checkpoint(self, key: str | None = None) -> None:
+        """Before each key, character, click or drag step: stop if a person has taken over. The
+        console key that closes a console the guard saw opened is the one that still goes."""
+        if self.input_guard is not None and not self.dry_run:
+            self.input_guard.checkpoint(closing=key is not None and key == self.input_guard.console_key)
+
+    def _person_took_over(self) -> bool:
+        """A soft look (nothing raised): True once a person has taken over, so a caller holding a
+        mouse button can let go before the hard checkpoint raises."""
+        if self.input_guard is None or self.dry_run:
+            return False
+        self.input_guard.checkpoint(soft=True)
+        return self.input_guard.tripped is not None
+
+    def _sent_keys(self) -> None:
+        """After keys we sent: the key layer reports each event itself when the guard is hooked
+        to it (reading the stamp here would swallow a person's key pressed in a chord's gaps)."""
+        if self.input_guard is not None and not self.input_guard.keys_hooked:
+            self._sent()
+
+    def _sent(self) -> None:
+        if self.input_guard is not None and not self.dry_run:
+            self.input_guard.sent()
+
     def press(self, key: str) -> None:
         """Press a key or chord (``alt+q``); a name in HOTKEYS means its binding."""
         key = HOTKEYS.get(key, key)
-        if self.key_watch is not None and not self.dry_run:
-            self.key_watch.before("press", key)
-        self._require_focus()
-        self._require_layout()
-        self.log.append(f"press {key}")
-        if not self.dry_run:
-            self._keys().chord(key)
-            if self.key_watch is not None:
-                self.key_watch.after("press", key)
+        with self._guarded("key", key):
+            if self.key_watch is not None and not self.dry_run:
+                self.key_watch.before("press", key)
+            self._checkpoint(key)
+            self._require_focus()
+            self._require_layout()
+            self.log.append(f"press {key}")
+            if not self.dry_run:
+                self._keys().chord(key)
+                self._sent_keys()
+                if self.input_guard is not None:
+                    self.input_guard.key_pressed(key)
+                    self._checkpoint(key)      # a keypress inside our chord is raised now
+                if self.key_watch is not None:
+                    self.key_watch.after("press", key)
 
     def _event_gate(self, what: str) -> None:
         """Refuse a click while an event window is known to be open (a window that opened in the
@@ -365,16 +415,20 @@ class InputDriverAdapter(GameAdapter):
     def click(self, target: str) -> None:
         if not self.config.mouse:
             raise MouseDisabled(f"click {target}: this driver has no mouse (headless)")
-        self._require_focus()
-        self._event_gate(f"click {target}")
-        point = self._computed.get(target) or self.config.coordinates.get(target)
-        if point is None:
-            raise KeyError(f"No calibrated coordinate for {target!r}. Run: hoi4-harness calibrate")
-        self.log.append(f"click {target} at {point}")
-        if not self.dry_run:
-            gui = self._gui()
-            gui.moveTo(point[0], point[1], duration=self.config.move_duration)
-            gui.click()
+        with self._guarded("click", target):
+            self._require_focus()
+            self._event_gate(f"click {target}")
+            point = self._computed.get(target) or self.config.coordinates.get(target)
+            if point is None:
+                raise KeyError(f"No calibrated coordinate for {target!r}. Run: hoi4-harness calibrate")
+            self.log.append(f"click {target} at {point}")
+            if not self.dry_run:
+                gui = self._gui()
+                self._checkpoint()
+                gui.moveTo(point[0], point[1], duration=self.config.move_duration)
+                self._checkpoint()
+                gui.click()
+                self._sent()
 
     def _checked_point(self, point: tuple[int, int]) -> tuple[int, int]:
         """A computed click point, refused when it is off the screen it was fitted for."""
@@ -392,18 +446,24 @@ class InputDriverAdapter(GameAdapter):
         if not self.config.mouse:
             raise MouseDisabled(f"{button}-click at {point}: this driver has no mouse (headless)")
         x, y = self._checked_point(point)
-        self._require_focus()
-        self._event_gate(f"click {label or 'point'} at ({x}, {y})")
-        self.log.append(f"{'shift+' if shift else ''}{button}-click {label or 'point'} at ({x}, {y})")
-        if self.dry_run:
-            return
-        gui = self._gui()
-        gui.moveTo(x, y, duration=self.config.move_duration)
-        if shift:
-            with self._keys().held("shift"):
+        with self._guarded("click", label or f"({x}, {y})"):
+            self._require_focus()
+            self._event_gate(f"click {label or 'point'} at ({x}, {y})")
+            self.log.append(
+                f"{'shift+' if shift else ''}{button}-click {label or 'point'} at ({x}, {y})")
+            if self.dry_run:
+                return
+            gui = self._gui()
+            self._checkpoint()
+            gui.moveTo(x, y, duration=self.config.move_duration)
+            self._checkpoint()
+            if shift:
+                with self._keys().held("shift"):
+                    self._sent()
+                    gui.click(button=button)
+            else:
                 gui.click(button=button)
-        else:
-            gui.click(button=button)
+            self._sent()
 
     def drag(self, start: tuple[int, int], end: tuple[int, int], *, label: str = "") -> None:
         """Press at ``start``, move to ``end``, release: a selection box."""
@@ -411,17 +471,23 @@ class InputDriverAdapter(GameAdapter):
             raise MouseDisabled(f"drag {start} -> {end}: this driver has no mouse (headless)")
         x0, y0 = self._checked_point(start)
         x1, y1 = self._checked_point(end)
-        self._require_focus()
-        self.log.append(f"drag {label or 'box'} {(x0, y0)} -> {(x1, y1)}")
-        if self.dry_run:
-            return
-        gui = self._gui()
-        gui.moveTo(x0, y0, duration=self.config.move_duration)
-        gui.mouseDown(button="left")
-        try:
-            gui.moveTo(x1, y1, duration=self.config.move_duration * 3)
-        finally:
-            gui.mouseUp(button="left")
+        with self._guarded("drag", label or "box"):
+            self._require_focus()
+            self.log.append(f"drag {label or 'box'} {(x0, y0)} -> {(x1, y1)}")
+            if self.dry_run:
+                return
+            gui = self._gui()
+            self._checkpoint()
+            gui.moveTo(x0, y0, duration=self.config.move_duration)
+            self._checkpoint()
+            gui.mouseDown(button="left")
+            self._sent()
+            try:
+                gui.moveTo(x1, y1, duration=self.config.move_duration * 3)
+            finally:
+                gui.mouseUp(button="left")      # a button is never left down
+                self._sent()
+            self._checkpoint()
 
     def drag_path(self, points: list[tuple[int, int]], *, label: str = "") -> None:
         """Press at the first point, move through the others, release at the last: a line drawn
@@ -431,18 +497,26 @@ class InputDriverAdapter(GameAdapter):
         if len(points) < 2:
             raise ValueError("a path needs at least two points")
         checked = [self._checked_point(p) for p in points]
-        self._require_focus()
-        self.log.append(f"drag path {label or 'line'} " + " -> ".join(str(p) for p in checked))
-        if self.dry_run:
-            return
-        gui = self._gui()
-        gui.moveTo(checked[0][0], checked[0][1], duration=self.config.move_duration)
-        gui.mouseDown(button="left")
-        try:
-            for x, y in checked[1:]:
-                gui.moveTo(x, y, duration=self.config.move_duration * 3)
-        finally:
-            gui.mouseUp(button="left")
+        with self._guarded("drag", label or "line"):
+            self._require_focus()
+            self.log.append(f"drag path {label or 'line'} " + " -> ".join(str(p) for p in checked))
+            if self.dry_run:
+                return
+            gui = self._gui()
+            self._checkpoint()
+            gui.moveTo(checked[0][0], checked[0][1], duration=self.config.move_duration)
+            self._checkpoint()
+            gui.mouseDown(button="left")
+            self._sent()
+            try:
+                for x, y in checked[1:]:
+                    if self._person_took_over():
+                        break          # let go below, then the stop is raised
+                    gui.moveTo(x, y, duration=self.config.move_duration * 3)
+            finally:
+                gui.mouseUp(button="left")      # a button is never left down
+                self._sent()
+            self._checkpoint()
 
     def enable_battle_plans(self, executor) -> None:
         """Offer ``draw_front_line``, ``draw_offensive`` and ``assign_battle_plan``, performed by
@@ -486,17 +560,23 @@ class InputDriverAdapter(GameAdapter):
         self.supported_actions = self.supported_actions | frozenset(ORDER_ACTIONS)
 
     def type_text(self, text: str) -> None:
-        self._require_focus()
-        self._require_layout()
-        self.log.append(f"type {text}")
-        if not self.dry_run:
-            if self.key_watch is None:
-                self._keys().type_text(text)
-                return
-            text_chords(text)             # every character checked before any is sent
-            for char in text:             # one at a time, so a guard can stop between them
-                self.key_watch.before("type", char)
-                self._keys().type_text(char)
+        with self._guarded("type", text):
+            self._checkpoint()
+            self._require_focus()
+            self._require_layout()
+            self.log.append(f"type {text}")
+            if not self.dry_run:
+                if self.key_watch is None and self.input_guard is None:
+                    self._keys().type_text(text)
+                    return
+                text_chords(text)         # every character checked before any is sent
+                for char in text:         # one at a time, so a guard can stop between them
+                    if self.key_watch is not None:
+                        self.key_watch.before("type", char)
+                    self._checkpoint()
+                    self._keys().type_text(char)
+                    self._sent_keys()
+                self._checkpoint()
 
     def _run_step(self, step: Step) -> None:
         if step.kind == "repeat":      # expanded before the run (_expand_repeats)
@@ -594,6 +674,11 @@ class InputDriverAdapter(GameAdapter):
     def apply(self, call: ActionCall) -> ActionResult:
         try:
             return self._apply(call)
+        except PersonActive as exc:
+            # A person is at the keyboard: say so and that nothing (more) was sent. Not "rejected":
+            # the action was fine, the moment was not.
+            return ActionResult(ok=False, action=call.name, call_id=call.call_id,
+                                message=str(exc), error_kind="not_executed")
         except (NotFocused, MouseDisabled, ClockUnobservable, EventOpen, KeyError,
                 ValueError) as exc:
             # The same contract as every other adapter failure: report it, do not

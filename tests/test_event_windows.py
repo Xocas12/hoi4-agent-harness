@@ -185,3 +185,26 @@ def test_the_guard_lists_the_points_its_answers_click():
     guard = EventGuard(lambda: None)
     assert guard.needed_points() == ["event.news_close", "event.option1"]
     assert guard.missing({"event.option1": (1, 1)}) == ["event.news_close"]
+
+
+# --- issue #125: the policy, end to end on the fake game ------------------------------------------
+
+
+def test_125_refuse_policy_stops_the_research_and_says_why_while_the_window_stays(tmp_path):
+    world = world_with(tmp_path, guarded=False, event_windows={"settle": 0, "policy": "refuse"})
+    world.fake.open_event("country", "Some decision")
+    clicks = len(world.fake.gui.calls)
+    play(world, Recorder(RESEARCH))
+    result = results(tmp_path)["start_research"]
+    assert result["is_error"] and "policy is refuse" in result["content"]
+    assert len(world.fake.gui.calls) == clicks and world.fake.event_swallowed == []
+    assert world.fake.events_open and world.fake.event_answers == []
+    assert events_record(tmp_path)[0]["answer"] == "refused the tool (policy refuse)"
+
+
+def test_125_refuse_policy_still_closes_a_news_window_and_the_research_runs(tmp_path):
+    world = world_with(tmp_path, guarded=False, event_windows={"settle": 0, "policy": "refuse"})
+    world.fake.open_event("news", "Rhineland")
+    play(world, Recorder(RESEARCH))
+    assert not results(tmp_path)["start_research"]["is_error"]
+    assert [a["kind"] for a in world.fake.event_answers] == ["news"]

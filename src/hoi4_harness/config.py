@@ -222,6 +222,13 @@ class HarnessConfig:
     # Refuse to send input unless the game is the focused window. Turning
     # this off is an explicit choice to let keystrokes land wherever they land.
     enforce_window_focus: bool = True
+    # Never send a key or click while a person has used the keyboard or mouse in the last this
+    # many seconds, stop mid-sequence if they start, never take the window focus from them, and
+    # record each handover (adapters/input_guard.py, issue #33). 0 turns the guard off. Real
+    # headless runs only (the fake game has no person; rival and co-op have their own policies).
+    input_quiet_seconds: float = 5.0
+    # How long a sequence waits for the person to go quiet before it is refused.
+    input_wait_seconds: float = 30.0
     # Which layer owns operations. "llm" = the model moves every army;
     # "ai" = the native AI runs fronts and the model sets intent (hybrid).
     operational_control: str = "llm"
@@ -390,6 +397,8 @@ class HarnessConfig:
     #: "attempts": 3, "settle": 0.5}``. With probes, every mouse tool first closes the windows that
     #: are open and refuses to click while one is; without them nothing knows a window is open
     #: (the start log says so). The points and colours are measured in the live game.
+    #: ``"policy"``: ``default`` (a country event gets the recorded first option), ``model`` (the
+    #: mouse tool is refused until the model has read and chosen; docs/events.md) or ``refuse``.
     event_windows: dict = field(default_factory=dict)
     #: Reading the open event window and choosing its option (adapters/event_choice.py,
     #: docs/events.md): ``{"enabled": true, "upscale": 2.0, "settle": 0.8, "grow": 0.0,
