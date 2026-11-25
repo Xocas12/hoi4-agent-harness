@@ -58,7 +58,7 @@ from .agent.memory import Memory
 from .calibration import DEFAULT_FILENAME, DEFAULT_TARGETS
 from .config import HarnessConfig
 from .confirm import TerminalConfirmer
-from .control import ControlError
+from .control import ALIASES, ControlError
 from .env import HOI4Env
 from .eval.runner import PlaysetMismatch
 from .guidance import available as guidance_packs
@@ -272,13 +272,13 @@ def _config_from_args(args: argparse.Namespace) -> HarnessConfig:
         config.campaign_lobby_rule = True
     spec = getattr(args, "control", None)
     if spec:
-        if "=" in spec:
+        if "=" in spec or spec in ALIASES:
             config.control = spec            # a control map: --control focus=llm,research=script
         elif spec in ("game_ai", "llm"):
             config.campaign_control = spec
         else:
-            raise SystemExit(f"play: --control wants game_ai, llm or domain=controller pairs "
-                             f"(focus=llm,research=script), not {spec!r}")
+            raise SystemExit(f"play: --control wants game_ai, llm, economy or domain=controller "
+                             f"pairs (focus=llm,research=script), not {spec!r}")
     if getattr(args, "control_map", None):
         config.control = _read_control_map(args.control_map)
     if getattr(args, "steer", None):
@@ -2013,7 +2013,7 @@ def build_parser() -> argparse.ArgumentParser:
                       help="with --choose-path: click the rule and Historical AI Focuses off into "
                            "the new-game lobby before starting (needs calibration; see "
                            "docs/campaign.md)")
-    play.add_argument("--control", metavar="game_ai|llm|DOMAIN=CONTROLLER,...",
+    play.add_argument("--control", metavar="game_ai|llm|economy|DOMAIN=CONTROLLER,...",
                       help="campaign: who plays the country. game_ai (default): the game's AI "
                            "runs it, the model steers. llm: independent mode, the model plays "
                            "it itself with the hands-on actions (not live-verified; "
