@@ -29,6 +29,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from ..adapters.hands import ARMY_ACTIONS
+from ..control import SOVEREIGN_ARMY_ACTIONS
 from ..observation.fronts import LOW_SUPPLY, is_quiet
 from ..types import ActionCall, GameState
 
@@ -102,6 +103,8 @@ class Policy:
         hands_on: frozenset[str] | None = None,
         owned: frozenset[str] | None = None,
         steer: bool = True,
+        sovereign: bool = False,
+        front_readings=None,
     ):
         #: Domains the model owns (control.py): a domain's wake rules fire only when it is one
         #: of them. None is the old levels: every rule on its own flag, as it always was.
@@ -112,7 +115,18 @@ class Policy:
         #: Independent campaign (``campaign_control = "llm"``): the actions the model has,
         #: and so which idle slots are worth a wake. None is the game-AI campaign.
         self.hands_on = hands_on
-        if hands_on is not None and not hands_on & ARMY_ACTIONS:
+        #: Sovereign mode (sovereign.py): the model hands armies to the game's AI by giving them
+        #: fronts, so the wartime rules are on when it has those tools, and it is woken for an
+        #: army with no front, a division in no army and a front the front report reads as losing.
+        self.sovereign = sovereign
+        #: ``state -> {enemy: "losing" | "stuck"}``, the front report's reading (frontreport.py),
+        #: or None when nothing computes it. Only sovereign mode asks.
+        self.front_readings = front_readings
+        self._gaps_seen: tuple | None = None
+        self._losing_seen: set[str] = set()
+        if sovereign and hands_on is not None and hands_on & SOVEREIGN_ARMY_ACTIONS:
+            pass        # the front tools are there: the wartime rules stay as the config has them
+        elif hands_on is not None and not hands_on & ARMY_ACTIONS:
             # The wartime rules are for a model that can act on a front: with no army tool in
             # its list a "front went quiet" wake would spend money on news it cannot use.
             wake_on_front_quiet = wake_on_losing_ground = False
@@ -267,6 +281,10 @@ class Policy:
         mod's front picture (``state_forces``): a state of yours the enemy now controls, or a
         contact that is gone while the war goes on."""
         can = self.hands_on
+        if self.sovereign and can and can & SOVEREIGN_ARMY_ACTIONS:
+            found = self._sovereign_wake(state, previous, can)
+            if found is not None:
+                return found
         if not can or not can & ARMY_ACTIONS or not state.wars:
             return None
         if self.wake_on_losing_ground:
@@ -280,6 +298,32 @@ class Policy:
             quiet = _went_quiet(state, previous) or _contact_ended(state, previous)
             if quiet:
                 return f"front {quiet} went quiet", "opportunity"
+        return None
+
+    def _sovereign_wake(self, state: GameState, previous: GameState | None,
+                        can) -> tuple[str, str] | None:
+        """Sovereign mode, at war only: an army with divisions and no front, a division in no
+        army, a front the front report reads as losing. Each fires on onset (the set of gaps
+        changed, the front turned to losing), so a gap the model chose to leave does not wake it
+        again every gap-days."""
+        from ..sovereign import gaps
+
+        if not state.wars:
+            self._gaps_seen, self._losing_seen = None, set()
+            return None
+        found = gaps(state) if "assign_army_front" in can else None
+        if not found:
+            self._gaps_seen = None
+        elif found.signature() != self._gaps_seen:
+            self._gaps_seen = found.signature()
+            return found.words(), "opportunity"
+        if self.front_readings is not None and self.wake_on_losing_ground:
+            losing = {enemy for enemy, kind in (self.front_readings(state) or {}).items()
+                      if kind == "losing"}
+            fresh = sorted(losing - self._losing_seen)
+            self._losing_seen = losing
+            if fresh:
+                return f"front vs {', '.join(fresh)} is LOSING per the front report", "critical"
         return None
 
     def _delegate(self, state: GameState) -> list[ActionCall]:

@@ -106,7 +106,8 @@ def build_layer(cmap: ControlMap, config, env=None) -> AutoLayer | None:
     scripts: dict[str, Script] = {}
     for domain in cmap.script_domains():
         scripts[domain] = SCRIPTS[domain](ctx)
-    if cmap.delegated and cmap.steer == "off":
+    if cmap.delegated and cmap.steer == "off" and cmap.alias != "sovereign":
+        # (Sovereign hands armies over by a front, not by the unverified toggle: sovereign.py.)
         scripts["army"] = ArmyDelegate(ctx)
     if not scripts:
         return None

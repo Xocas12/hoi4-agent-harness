@@ -360,6 +360,9 @@ class FakeMouse(FakeGui):
         if self.game.ui_click(self.army.pos, button):
             self.calls.append(("ui-click", button, self.army.pos))
             return
+        if (button == "left" and self.game.army_groups is not None
+                and hasattr(self.army, "_province_at")):
+            self.game.map_click(self.army._province_at(*self.army.pos))
         super().click(button)
 
 
@@ -460,6 +463,18 @@ class FakeGame:
         self.army_ui: dict | None = None
         self.ai_armies: dict[str, bool] = {}
         self._army_selected: str | None = None
+        #: The armies the way a text save records them (armies.py): a list of ``{"id", "name",
+        #: "members": divisions, "plans": [{"path": [provinces], "assigned": n}], "execution":
+        #: 0|1|2|None}``, written into every save as ``theatres``. None: the save has no
+        #: ``theatres`` block (the reader then says "not read"). With ``army_ui`` carrying
+        #: ``"execute": {mode: (x, y)}`` and ``"create": (x, y)``, the click path of
+        #: adapters/armies.py works on it: the army card, ``z`` and a click on a province draw a
+        #: front, ``shift+s`` and a pace button set the pace, ``ctrl+h`` releases, the create
+        #: card makes an army of the box-selected divisions. A DRAFT model of a click path
+        #: nobody has driven in the real game (docs/armies.md, A1-A6).
+        self.army_groups: list[dict] | None = None
+        self._army_tool: str | None = None
+        self._pace_open = False
         #: The production screen, for the click path (adapters/production_ui.py):
         #: ``{"rows": {n: (x, y)}, "plus": .., "minus": .., "remove": .., "change": ..,
         #: "picker": {equipment: (x, y)}}`` with ``tolerance`` px. Row n is the nth line of
@@ -784,15 +799,72 @@ class FakeGame:
         army = self.army_ui
         if army is not None:
             tol = army.get("tolerance", 12)
+            for mode, point in (army.get("execute") or {}).items():
+                if self._pace_open and self._near(pos, point, tol):
+                    self._set_pace(mode)
+                    return True
+            if army.get("create") and self._near(pos, army["create"], tol):
+                self._create_army()
+                return True
             for name, point in army["entries"].items():
                 if self._near(pos, point, tol):
                     self._army_selected = name
+                    self._army_tool, self._pace_open = None, False
                     self.ui_log.append(f"army list: {name} selected")
                     return True
-            if self._near(pos, army["toggle"], tol):
+            if army.get("toggle") and self._near(pos, army["toggle"], tol):
                 self._toggle_army_ai()
                 return True
         return False
+
+    # --- armies as the save records them (army_groups) --------------------------------
+
+    def _selected_group(self) -> dict | None:
+        for g in self.army_groups or []:
+            if g["name"] == self._army_selected:
+                return g
+        return None
+
+    def map_click(self, province: int | None) -> None:
+        """A left click on the map at ``province``: with an army selected and the front tool lit
+        (``z``), it draws a line through that province and assigns the army's divisions."""
+        group = self._selected_group()
+        if self.army_groups is None or self._army_tool != "front" or group is None:
+            return
+        if province is None:
+            self.ui_log.append("army: the front click hit no province")
+            return
+        group["plans"] = [p for p in group["plans"] if p.get("fallback")] + [
+            {"path": [province], "assigned": group["members"]}]
+        self.ui_log.append(f"army: {group['name']} front through province {province}")
+        self._army_tool = None
+
+    def _set_pace(self, mode: str) -> None:
+        group = self._selected_group()
+        code = {"careful": 0, "balanced": 1, "rush": 2}.get(mode)
+        if group is None or code is None:
+            self.ui_log.append(f"army: pace {mode} pressed with no army selected")
+        else:
+            group["execution"] = code
+            self.ui_log.append(f"army: {group['name']} executes {mode}")
+        self._pace_open = False
+
+    def _create_army(self) -> None:
+        picked = list(self.army.selected) if self.army is not None else []
+        if self.army_groups is None or not picked:
+            self.ui_log.append("army: the create card was pressed with nothing selected")
+            return
+        number = max([int(g["id"]) for g in self.army_groups] + [0]) + 1
+        self.army_groups.append({"id": str(number), "name": f"Army {number}",
+                                 "members": len(picked), "plans": [], "execution": None})
+        self.ui_log.append(f"army: Army {number} created from {len(picked)} division(s)")
+
+    def _release_army(self) -> None:
+        group = self._selected_group()
+        if group is not None:
+            for plan in group["plans"]:
+                plan["assigned"] = 0
+            self.ui_log.append(f"army: {group['name']} released")
 
     def _production_click(self, pos) -> bool:
         """A click on the production screen: select a row, +/- the selected line, remove it,
@@ -1160,6 +1232,16 @@ class FakeGame:
         if name == "enter" and not mods:
             self._enter()
             return
+        if self.army_groups is not None and self.army_ui is not None:
+            if name == "z" and not mods:
+                self._army_tool = "front"
+                return
+            if name == "s" and mods == {"shift"}:
+                self._pace_open = True
+                return
+            if name == "h" and mods == {"ctrl"}:
+                self._release_army()
+                return
         if name == "f" and mods == {"ctrl"}:
             self.search = ""
             return

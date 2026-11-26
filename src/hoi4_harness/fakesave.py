@@ -110,6 +110,7 @@ def render_save(game, hour: int) -> str:
     out.append(_production(state, equipment_ids, game))
     out.append(_focus(state, world))
     out.append(_units(state, template_ids, tag))
+    out.append(_theatres(game))
     out.append(_technology(state))
     out.append(f"\t\tfuel_status={{\n\t\t\tfuel={state.fuel:.5f}\n\t\t\tmax_fuel=76875.00000\n\t\t}}\n")
     out.append("\t\tcapital=141\n\t\tresearch_slot=3\n")
@@ -177,6 +178,34 @@ def _units(state: GameState, template_ids: dict[str, int], tag: str) -> str:
                        "\t\t\t\tstrength=154.2\n\t\t\t}\n")
             unit += 1
     out.append("\t\t}\n")
+    return "".join(out)
+
+
+def _theatres(game) -> str:
+    """The armies (``FakeGame.army_groups``) as the save's ``theatres`` block; nothing when the
+    fake has none, which the reader takes as "no army block in this save"."""
+    groups = getattr(game, "army_groups", None)
+    if groups is None:
+        return ""
+    out = ["\t\ttheatres={\n\t\t\ttheatre={\n\t\t\t\tid={ id=1 type=67 }\n"]
+    unit = 90000
+    for g in groups:
+        out.append(f'\t\t\t\torders_group={{\n\t\t\t\t\tid={{ id={g["id"]} type=53 }}\n'
+                   f'\t\t\t\t\tname="{g["name"]}"\n')
+        ids = list(range(unit, unit + g["members"]))
+        unit += g["members"]
+        for plan in g["plans"]:
+            members = "".join(f"scheduled_member={{ id={i} type=4713 }} "
+                              for i in ids[:plan["assigned"]])
+            path = " ".join(str(p) for p in plan["path"])
+            kind = "fallback=yes " if plan.get("fallback") else 'postfix="o_strat_offensive_default" '
+            out.append(f"\t\t\t\t\torder_instance={{ type=2 path={{ {path} }} {kind}{members}}}\n")
+        for i in ids:
+            out.append(f"\t\t\t\t\tmember={{ unit={{ id={i} type=4713 }} }}\n")
+        if g.get("execution") is not None:
+            out.append(f"\t\t\t\t\texecution_type={g['execution']}\n")
+        out.append("\t\t\t\t}\n")
+    out.append("\t\t\t}\n\t\t}\n")
     return "".join(out)
 
 

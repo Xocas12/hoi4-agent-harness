@@ -146,6 +146,9 @@ class AgentLoop:
             country=self.config.country or "",
             owned=frozenset(self.control.owned_by("llm")) if self.control.explicit else None,
             steer=self.control.steer == "llm",
+            sovereign=self.control.alias == "sovereign",
+            front_readings=((lambda st: env.world.front_readings(st) if env.world else {})
+                            if self.control.alias == "sovereign" else None),
             hands_on=(frozenset(env.allowed_actions)
                       if self.config.campaign and self.config.campaign_control == "llm" else None),
             campaign=(CampaignPacing(

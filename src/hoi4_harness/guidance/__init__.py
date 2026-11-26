@@ -15,6 +15,8 @@ Built-in packs:
     coach          a prescriptive checklist, for weaker or smaller models
     world-conquest the unattended campaign: the game's AI executes, the model steers
     rival          rival mode: the game's AI runs a country a person is not playing
+    sovereign      the model owns the country, the game's AI runs only the armies it is
+                   handed (``--control sovereign``, #161): combine it, ``sovereign+strategy``
     strategy       how 1.20 works and what plays well now (a knowledge sheet, not a
                    role): combine it with another, ``rival+strategy``
 
@@ -33,7 +35,7 @@ from pathlib import Path
 
 BUILTIN_DIR = Path(__file__).parent
 BUILTIN = ("none", "unconstrained", "minimal", "doctrine", "historical", "coach", "world-conquest", "rival",
-           "strategy")
+           "strategy", "sovereign")
 SKILL_PATH = Path(".claude") / "skills" / "hoi4-strategy" / "SKILL.md"
 _SKILL_DESCRIPTION = (
     "How Hearts of Iron IV works and how to play a country well, in vanilla or any mod: the engine "

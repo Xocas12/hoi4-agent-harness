@@ -171,6 +171,64 @@ Built and tested on the fake game only (`tests/test_137_economy_control.py`). No
 army half of #137 (front lines, battle plans, division moves), research or production read as a
 human reads the screen (the harness reads the save), and the live check.
 
+## Sovereign mode (#161 step 2)
+
+`--control sovereign` is the economy above plus the whole country's choices, with the game's AI
+running **only the armies**. It is the full mode step 1's experiment (contested production under
+`human_ai`, `docs/contested-production.md`) was meant to lead to: `human_ai` is never sent, so the
+AI cannot undo or double a production line, a design or a pick.
+
+| Domain | Controller | How |
+|---|---|---|
+| `focus`, `politics`, `diplomacy`, `research`, `production`, `construction` | llm | as in `economy` (`hoi4_harness/economy.py`) |
+| `army` | game | per army, by a front: `assign_army_front(army, enemy)` draws the line on the border and sets the pace, and the AI carries the plan out (HOI4 has no per-army AI toggle, `docs/armies.md`) |
+| `navy`, `air` | off | **policy: nobody orders fleets and wings.** They keep the game's default missions; the prompt, the start log and every brief say so, and there is no tool |
+| `steer` | off | the model gives fronts, not directives (their effect on delegated armies is unverified) |
+
+The model has `assign_army_front`, `set_army_execution`, `release_army`, `create_army` and
+`assign_divisions` for the armies; `delegate_army_to_ai` (the unverified toggle) and the steering
+tools are not offered, and the script that would delegate every army by the toggle is not built
+for this mode. `resolve("sovereign,production=game")` is refused as contested, like any map.
+
+**Starting.** The campaign setup (`campaign/setup.py`) turns `army_ui` and the mouse on, sends no
+`human_ai`, and takes a text save at least every 7 game days, since a front is confirmed only by a
+save that shows its plan. `begin()` then refuses to start (`CampaignStartError`, in the log as
+`cannot start`) unless:
+
+- the state line reads `ai=0` (`ai=1`, or no `ai=` field, is refused; the harness never toggles it);
+- the five army tools are offered, with the adapter's reason for any that is not (no camera record,
+  `army_ui` off, ...);
+- every recorded point they need exists. The message names each one missing and the command:
+  `army.create`, `plan.execute_careful`, `plan.execute_balanced`, `plan.execute_rush`, and
+  `army.<name>` for each army the first save shows, as
+  `hoi4-harness calibrate army.create plan.execute_careful ...` (`plan.assign_units` is optional).
+  An army that appears later without a point is refused when it is ordered, with the same command.
+
+**Wakes** (`agent/policy.py`, `sovereign.py`), at war only and on onset, so a gap the model chose to
+leave does not wake it again every `campaign_wake_gap_days`:
+
+- an army that has divisions and holds no front (a garrison or a fallback line is not a front);
+- divisions the country has that are in no army;
+- a front the front report reads as LOSING (`frontreport.py`, via `WorldObserver.front_readings`;
+  needs `observe_world`), plus the focus and research-slot wakes of any independent campaign.
+
+**The brief** says in two lines who runs what and how many armies hold a front, naming those that do
+not; **the prompt** (`describe_map`) says how an army is handed over and that navy and air are
+nobody's; the guidance pack `sovereign` (use `sovereign+strategy`) tells the model that production
+is its job now. The profile is `profiles/sovereign-ger.json`.
+
+One live detail the fake game could not settle and the code now assumes: a production edit leaves
+the production screen up, and the army card, the map and the pace window are under it, so the army
+click path presses the production hotkey first when the last production edit left it open
+(`InputDriverAdapter.open_panel`; assumption P2 of `adapters/production_ui.py`).
+
+Built and tested on the fake game only (`tests/test_161_sovereign.py`: a four-month campaign with a
+research pick, a production edit, a building, fronts for every army, a raised division that wakes
+the model and gets an army and a front, and no `human_ai` sent). Not done, and what the live run
+needs, is in the comment on #161: the army click assumptions A1-A6 of `docs/armies.md`, a calibration
+of the army cards and pace buttons, the front report over a real war, and a run of at least a game
+year against `docs/results/` numbers.
+
 ## Presets: the old levels
 
 `operational_control` and the campaign's `campaign_control` resolve to these maps, and a run

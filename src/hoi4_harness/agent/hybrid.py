@@ -236,7 +236,22 @@ def describe_map(cmap, hands=None, campaign_hands=None) -> str:
                            campaign_hands)
     if economy:
         parts.append(economy)
+    from ..sovereign import describe as sovereign_text
+
+    sovereign = sovereign_text(cmap, set(hands or ()) | _sovereign_offered(cmap, campaign_hands))
+    if sovereign:
+        parts.append(sovereign)
     return " ".join(parts)
+
+
+def _sovereign_offered(cmap, campaign_hands) -> set[str]:
+    """The army click tools a sovereign run offers: the ones the adapter did not refuse (the
+    prompt is built before any tool list exists, so the refusals are what it can read)."""
+    from ..control import SOVEREIGN_ARMY_ACTIONS
+
+    if cmap.alias != "sovereign":
+        return set()
+    return set(SOVEREIGN_ARMY_ACTIONS) - set((campaign_hands or {}).get("refused") or ())
 
 
 def _economy_offered(cmap, campaign_hands) -> set[str]:

@@ -174,6 +174,9 @@ class InputDriverAdapter(GameAdapter):
     """
 
     BUILT_IN = frozenset({"set_game_speed", "advance_time", "note"})
+    #: The full-screen panel a click path left open (``"production"`` after a production edit, whose
+    #: screen stays up), so the next path that needs the map can close it first. None: none known.
+    open_panel: str | None = None
 
     def __init__(
         self,
