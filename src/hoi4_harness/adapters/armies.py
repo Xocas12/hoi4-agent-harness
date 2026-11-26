@@ -493,6 +493,12 @@ class ArmyExecutor:
             self.centre(order.centre_province)
         if not driver.dry_run:
             self._sleep(self.settle)
+            if getattr(driver, "open_panel", None) == "production":
+                # A production edit leaves its screen up and the army card, the map and the pace
+                # window are under it: its hotkey toggles it shut (production_ui.py, P2).
+                driver.press("production")
+                driver.open_panel = None
+                self._sleep(self.settle)
         for step in steps:
             self._perform(step)
             if not driver.dry_run:

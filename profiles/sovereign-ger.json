@@ -1,0 +1,38 @@
+{
+  "campaign": true,
+  "adapter": "headless",
+  "country": "GER",
+  "start_date": "1936-01-01",
+  "campaign_until": "1938-01-01",
+  "control": "sovereign",
+  "guidance": "sovereign+strategy",
+  "headless_reader": "log+save",
+  "headless_clock": "auto",
+  "headless_game_speed": 4,
+  "mod_context": true,
+  "unit_orders": true,
+  "army_ui": true,
+  "campaign_input": "mouse",
+  "camera_path": "runs/camera.json",
+  "campaign_review_peace_days": 30,
+  "campaign_review_war_days": 14,
+  "campaign_wake_gap_days": 7,
+  "campaign_save_months": 1,
+  "campaign_keep_saves": 24,
+  "campaign_silence_minutes": 20,
+  "campaign_on_budget": "stop",
+  "max_tool_rounds_per_turn": 3,
+  "max_actions_per_turn": 10,
+  "planner": {
+    "provider": "claude-cli",
+    "model": "haiku",
+    "max_tokens": 4000
+  },
+  "budget": {
+    "max_llm_calls": 600,
+    "max_input_tokens": 12000000,
+    "max_output_tokens": 1200000
+  },
+  "observe_world": true,
+  "campaign_review_min_days": 21
+}

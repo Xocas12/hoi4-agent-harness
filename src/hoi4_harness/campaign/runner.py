@@ -616,6 +616,21 @@ def begin(env: HOI4Env, config: HarnessConfig, log: CampaignLog,
     if config.campaign_control == "llm":
         cmap = config.control_map()
         not_game = {d for d, c in cmap.domains.items() if c in ("llm", "script")}
+        from .. import sovereign
+
+        if sovereign.is_sovereign(cmap):
+            driver = getattr(getattr(getattr(adapter, "writer", None), "router", None), "driver", None)
+            coordinates = getattr(getattr(driver, "config", None), "coordinates", None) or {}
+            problems = sovereign.preflight(
+                cmap, offered=env.allowed_actions,
+                refused=(config.campaign_hands or {}).get("refused"),
+                coordinates=coordinates, state=state)
+            if problems:
+                raise CampaignStartError(
+                    "sovereign mode cannot start (the model owns the country and the game's AI "
+                    "runs only the armies, which are handed over by clicks): "
+                    + " | ".join(problems))
+            env.brief_hooks.append(sovereign.brief_lines)
         if state.ai_controlled is True:
             raise CampaignStartError(
                 f"independent mode (campaign_control=llm) needs {tag} to be a human country, but "
@@ -635,6 +650,8 @@ def begin(env: HOI4Env, config: HarnessConfig, log: CampaignLog,
         from ..economy import lines as economy_lines
 
         for line in economy_lines(cmap, env.allowed_actions, config.campaign_hands):
+            log.line(line)
+        for line in (*sovereign.lines(cmap, env.allowed_actions), *sovereign.notes(state)):
             log.line(line)
         return state
     if not config.campaign_human_ai:

@@ -21,7 +21,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from .control import DOMAIN_ACTIONS, ECONOMY, ECONOMY_DOMAINS, ControlMap
+from .control import DOMAIN_ACTIONS, ECONOMY, ECONOMY_DOMAINS, SOVEREIGN, ControlMap
 
 MOUSE, CONSOLE, MISSING = "mouse", "console", "missing"
 
@@ -40,7 +40,9 @@ class Channel:
 
 
 def is_economy(cmap: ControlMap) -> bool:
-    return cmap.alias == ECONOMY
+    """The economy half of the map is the model's by hand: ``economy`` and ``sovereign`` (which
+    adds the armies' fronts, sovereign.py)."""
+    return cmap.alias in (ECONOMY, SOVEREIGN)
 
 
 def channels(cmap: ControlMap, offered, hands: dict | None = None) -> list[Channel]:
@@ -86,8 +88,13 @@ def lines(cmap: ControlMap, offered, hands: dict | None = None) -> list[str]:
     if not is_economy(cmap):
         return []
     chans = channels(cmap, offered, hands)
-    out = ["economy mode: the model runs research, production and construction by hand; the "
-           "game's AI owns nothing and nothing here has been run against the real game"]
+    if cmap.alias == SOVEREIGN:
+        out = ["economy (sovereign mode): the model runs research, production and construction by "
+               "hand; the game's AI runs only the armies handed to it, and nothing here has been "
+               "run against the real game"]
+    else:
+        out = ["economy mode: the model runs research, production and construction by hand; the "
+               "game's AI owns nothing and nothing here has been run against the real game"]
     for domain in ECONOMY_DOMAINS:
         mine = [c for c in chans if c.domain == domain]
         if not mine:

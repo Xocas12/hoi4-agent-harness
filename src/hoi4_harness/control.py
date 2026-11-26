@@ -140,6 +140,17 @@ ALIASES: dict[str, dict[str, str]] = {
                 "steer": "off"},
 }
 ECONOMY = "economy"
+#: Issue #161 step 2: the model owns the country, the game's AI runs only the armies. Everything
+#: ``economy`` gives the model, plus the whole country's choices (focus, politics, diplomacy), and
+#: ``army: game`` WITHOUT ``human_ai``: each army is handed over by giving it a front
+#: (``assign_army_front``), since HOI4 has no per-army AI toggle (docs/armies.md). Navy and air are
+#: ``off`` on purpose: nobody orders fleets and wings, and the prompt says so. ``steer`` is off: the
+#: model gives fronts, not directives (the directives' effect on delegated armies is unverified).
+SOVEREIGN = "sovereign"
+ALIASES[SOVEREIGN] = {**ALIASES[ECONOMY], "army": "game"}
+#: What the model has on the armies in sovereign mode: the three delegation actions, and the two
+#: that organise divisions into armies, so each new army or division can be given a front.
+SOVEREIGN_ARMY_ACTIONS = DELEGATION_ACTIONS | {"create_army", "assign_divisions"}
 #: The domains an economy map runs by hand.
 ECONOMY_DOMAINS = ("research", "production", "construction")
 
@@ -212,7 +223,12 @@ class ControlMap:
         # Handing an army over is the model's call only where armies are the AI's one by one
         # and the model is steering; with human_ai the AI has them all already.
         delegating = self.domains["army"] == "game" and not self.human_ai and self.steer == "llm"
-        if not delegating:
+        if self.alias == SOVEREIGN:
+            # The model owns the country and gives each army a front; the AI toggle (unverified)
+            # and the steering vocabulary stay out.
+            out.discard(DELEGATE_ACTION)
+            out |= SOVEREIGN_ARMY_ACTIONS & allowed
+        elif not delegating:
             out.discard(DELEGATE_ACTION)
         else:
             out |= DELEGATION_ACTIONS & allowed
@@ -365,7 +381,7 @@ def resolve(value, *, steer: str | None = None, army_controller: str = "scripted
             elif kind == UNKNOWN:
                 warnings.append(f"{domain}={who} under human_ai: {why}; it may be undone or doubled")
     if wanted in (None, "auto"):
-        steer_mode = "llm" if ai_owns else "off"
+        steer_mode = "llm" if ai_owns and alias != SOVEREIGN else "off"
     else:
         steer_mode = wanted
     if steer_mode == "llm" and not ai_owns:

@@ -1006,6 +1006,17 @@ class WorldObserver:
         steers = SteerStanding(self.run_dir).line()
         return lines + [line for line in (standing, steers) if line]
 
+    def front_readings(self, state: GameState) -> dict[str, str]:
+        """``{enemy: "losing" | "stuck"}`` from the front report (frontreport.py), for the wake
+        rules; empty when there is no text save yet."""
+        pic = self.picture(state)
+        if pic is None:
+            return {}
+        from . import frontreport as FR
+
+        return {r["enemy"]: r["reading"]["kind"] for r in FR.report(self.history, pic, self.layer)
+                if r.get("reading")}
+
     def variants(self, state: GameState) -> list | None:
         """The country's own designs from the newest text save; None when there is no save yet."""
         world = self.refresh(state)

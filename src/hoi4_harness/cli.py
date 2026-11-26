@@ -277,7 +277,7 @@ def _config_from_args(args: argparse.Namespace) -> HarnessConfig:
         elif spec in ("game_ai", "llm"):
             config.campaign_control = spec
         else:
-            raise SystemExit(f"play: --control wants game_ai, llm, economy or domain=controller "
+            raise SystemExit(f"play: --control wants game_ai, llm, economy, sovereign or domain=controller "
                              f"pairs (focus=llm,research=script), not {spec!r}")
     if getattr(args, "control_map", None):
         config.control = _read_control_map(args.control_map)
@@ -2051,11 +2051,14 @@ def build_parser() -> argparse.ArgumentParser:
                       help="with --choose-path: click the rule and Historical AI Focuses off into "
                            "the new-game lobby before starting (needs calibration; see "
                            "docs/campaign.md)")
-    play.add_argument("--control", metavar="game_ai|llm|economy|DOMAIN=CONTROLLER,...",
+    play.add_argument("--control", metavar="game_ai|llm|economy|sovereign|DOMAIN=CONTROLLER,...",
                       help="campaign: who plays the country. game_ai (default): the game's AI "
                            "runs it, the model steers. llm: independent mode, the model plays "
                            "it itself with the hands-on actions (not live-verified; "
-                           "docs/campaign.md). Or a control map, domain=controller pairs "
+                           "docs/campaign.md). economy: the model runs research, production "
+                           "and construction by hand. sovereign: the model owns the country "
+                           "and the game's AI runs only the armies it gives a front "
+                           "(docs/modular-control.md). Or a control map, domain=controller pairs "
                            "(focus=llm,research=script,army=game; controllers llm, script, game, "
                            "off; docs/modular-control.md)")
     play.add_argument("--campaign-input", dest="campaign_input", choices=["mouse", "none"],

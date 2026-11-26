@@ -27,6 +27,8 @@ CONTROLS = ("game_ai", "llm")
 INPUTS = ("mouse", "none")
 #: The guidance packs an independent campaign picks for itself (a pack the operator named
 #: is left alone): the keyboard-only one, and the one that knows about the mouse tools.
+#: How old the text save may get in a sovereign run, in game days (``headless_save_days``).
+SOVEREIGN_SAVE_DAYS = 7
 GUIDANCE_LLM = "world-conquest-llm"
 GUIDANCE_LLM_HANDS = "world-conquest-llm-hands"
 
@@ -51,6 +53,12 @@ def apply_defaults(config: HarnessConfig) -> HarnessConfig:
                          f"not {config.campaign_input!r}")
     config.campaign = True
     config.adapter = "headless"
+    if cmap.alias == "sovereign":
+        # The armies are handed over by clicks (adapters/armies.py): they are the mode, so the
+        # click path is on and the mouse is not optional. The game's AI is never handed the
+        # country (campaign_control is llm, human_ai is not sent).
+        config.army_ui = True
+        config.campaign_input = "mouse"
     if config.campaign_control == "llm":
         # Independent mode: nothing runs the country but the model and the reflex layer. The
         # game's AI is not handed the country (no human_ai), so the things it would have done
@@ -82,6 +90,11 @@ def apply_defaults(config: HarnessConfig) -> HarnessConfig:
         config.wake_on_losing_ground = False
     config.require_confirmation = False
     config.headless_save_days = 0
+    if cmap.alias == "sovereign":
+        # A front is confirmed only by a text save that shows its plan (docs/armies.md), and the
+        # brief's gaps (armies with no front, divisions in no army) are read from the same save,
+        # so a sovereign run takes one at least this often. Needs save_as_binary=no.
+        config.headless_save_days = SOVEREIGN_SAVE_DAYS
     if config.guidance == "doctrine" and not cmap.explicit:
         config.guidance = (
             (GUIDANCE_LLM_HANDS if config.hands_mouse else GUIDANCE_LLM)

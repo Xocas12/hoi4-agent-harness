@@ -315,6 +315,7 @@ class ProductionExecutor:
             else:
                 self._sleep(float(value))
         self._sleep(self.settle)
+        driver.open_panel = "production"        # P2: the screen stays up after the edit
         return self._check(call, order)
 
     def _add(self, call: ActionCall, order: ProductionOrder) -> ActionResult:
