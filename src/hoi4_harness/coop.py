@@ -480,8 +480,9 @@ class CoopGuidance:
       for it once. Advice the model weighs; nothing here executes it.
     * **Domains** (#31): the person moves a domain with ``hoi4-harness domains --take army`` /
       ``--give army``, or by typing ``take army`` / ``give army`` in the chat (``incoming`` is where
-      the chat's lines come from: the file chat by default; in multiplayer the game's chat cannot
-      be read back, so the file chat or the command is the way). The change takes effect before
+      the chat's lines come from: the file chat by default; in multiplayer the game's chat is read
+      off the screen, adapters/mp_chat_reader.py, when it can be, else the file chat or the
+      command is the way). The change takes effect before
       the next decision: the tool list, the wake rules, the system prompt and the refusal all
       follow ``config.coop_overrides``; what the model had queued in a domain taken back is
       refused when it comes to run. The model is woken when it gains a domain, told once in the
@@ -511,6 +512,9 @@ class CoopGuidance:
         lines = list(self.board.brief_lines(state))
         if self._notice:
             lines.append("Domain changes since your last turn: " + "; ".join(self._notice))
+        talk = getattr(self.incoming, "brief_lines", None)
+        if talk is not None:
+            lines += talk(state)
         if self.env.chat is not None or self.env.mp_chat is not None:
             lines.append("The player reads the chat: say in one send_message what you did and "
                          "why (the harness adds a plain line if you do not).")
@@ -587,6 +591,9 @@ class CoopGuidance:
         if changes:
             self._notice = []
             self._apply(changes, state.date)
+        heard = getattr(self.incoming, "heard", None)
+        if heard and not self._wake:
+            self._wake = self.incoming.wake_reason()
         self.env.take_turn_log()                   # what the reflexes did is not this turn's talk
         self._said_at = self.env.chat_sent
         self.loop.policy.pending_wake = self.board.wake_reason() or self._wake
