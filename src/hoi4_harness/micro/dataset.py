@@ -29,6 +29,8 @@ from .interface import ORDERS
 DECISIONS_FILE = "micro_decisions.jsonl"
 HORIZON_DAYS = 60
 DIVISION_LOSS_CHARGE = 0.02
+#: In the sector reward, one battle won (lost) on the sector counts as this many provinces gained (lost).
+BATTLE_WEIGHT = 0.25
 _PICTURE = re.compile(r"Front picture \([^)]*\): own (\d+) vs foe (\d+)")
 _ORDER_DAYS = 90
 
@@ -85,6 +87,95 @@ def _history_features(history: dict, date: str) -> tuple[int, int, int | None]:
     return gained, lost, None
 
 
+def _window(history: dict, date: str, horizon: int) -> list[dict] | None:
+    """The saves after ``date`` up to and including the first one at least ``horizon`` days on;
+    None when the history does not reach that far (the decision is censored)."""
+    t0 = ordinal(date)
+    if t0 is None:
+        return None
+    snaps = sorted(((ordinal(s.get("date")), s) for s in history.get("snapshots", [])),
+                   key=lambda x: (x[0] is None, x[0]))
+    snaps = [(o, s) for o, s in snaps if o is not None and o > t0]
+    end = next((o for o, _ in snaps if o >= t0 + horizon), None)
+    if end is None:
+        return None
+    return [s for o, s in snaps if o <= end]
+
+
+def _battles(history: dict, date: str, end: int, enemy: str, sector: int | None) -> dict:
+    """Battles on the front (and, when ``sector`` is given, the state) that ended in (date, end]."""
+    t0 = ordinal(date)
+    won = lost = 0
+    for b in history.get("closed", []):
+        o = ordinal(b.get("ended"))
+        if o is None or not t0 < o <= end or b.get("front") != enemy:
+            continue
+        if sector is not None and b.get("state") != sector:
+            continue
+        if b.get("outcome") not in ("attacker", "defender"):
+            continue
+        if b["outcome"] == b.get("own_side"):
+            won += 1
+        else:
+            lost += 1
+    return {"battles_won": won, "battles_lost": lost}
+
+
+def horizon_outcomes(history: dict, date: str, enemy: str, sector: int | None,
+                     horizon: int = HORIZON_DAYS) -> dict | None:
+    """What happened on one front and (when the history can say) one sector over the ``horizon`` days
+    after ``date``, from the front history that successive saves build (frontreport.FrontHistory):
+
+    * ``front``: provinces and states gained and lost against ``enemy``, battles won and lost;
+    * ``sector``: the same for the sector's own state: provinces of that state gained, and lost
+      again, and the battles fought on it. A province the enemy took from our own states is not
+      in any sector (it is not an enemy state), so those losses are in ``front`` only.
+
+    None when the history does not reach ``horizon`` days past ``date``. ``sector`` is None inside
+    the result when the history predates the per-state counts.
+    """
+    snaps = _window(history, date, horizon)
+    if not snaps:
+        return None
+    end = ordinal(snaps[-1]["date"]) or 0
+    front = {"gained": 0, "lost": 0, "gained_states": 0, "lost_states": 0, "saves": 0}
+    sec_g = sec_l = 0
+    known = True
+    for snap in snaps:
+        entry = snap.get("fronts", {}).get(enemy)
+        if entry is None or entry.get("baseline"):
+            continue
+        front["saves"] += 1
+        for k in ("gained", "lost", "gained_states", "lost_states"):
+            front[k] += entry.get(k, 0)
+        if sector is not None:
+            if "gained_by_state" not in entry:
+                known = False
+            sec_g += entry.get("gained_by_state", {}).get(str(sector), 0)
+            sec_l += entry.get("lost_by_state", {}).get(str(sector), 0)
+    if not front["saves"]:
+        return None
+    front.update(_battles(history, date, end, enemy, None))
+    out: dict = {"front": front, "end_date": snaps[-1]["date"], "sector": None}
+    if sector is not None and known:
+        out["sector"] = {"gained": sec_g, "lost": sec_l, **_battles(history, date, end, enemy, sector)}
+    return out
+
+
+def sector_reward(sector: dict, own_change: float | None = None) -> float:
+    """Provinces gained less lost on the sector, plus BATTLE_WEIGHT per battle won less lost there,
+    less DIVISION_LOSS_CHARGE per division fewer than at the decision (when the later log says)."""
+    r = sector["gained"] - sector["lost"] + BATTLE_WEIGHT * (sector["battles_won"] - sector["battles_lost"])
+    if own_change is not None and own_change < 0:
+        r -= DIVISION_LOSS_CHARGE * -own_change
+    return float(r)
+
+
+def _later_view(decisions: list[tuple[int, dict]], t0: int, horizon: int) -> dict | None:
+    """The sector as the controller saw it at its first logged decision at least ``horizon`` days on."""
+    return next((rec for o, rec in decisions if o >= t0 + horizon), None)
+
+
 def extract_run(run_dir: Path, horizon: int = HORIZON_DAYS) -> list[dict]:
     """Every decision of one run with its features and outcome. Censored decisions (no sample
     ``horizon`` days later) are kept with ``reward`` None so counts stay honest; training drops them."""
@@ -99,14 +190,43 @@ def extract_run(run_dir: Path, horizon: int = HORIZON_DAYS) -> list[dict]:
             history = {}
     rows: list[dict] = []
 
-    for rec in read_jsonl(run_dir / DECISIONS_FILE):
-        if rec.get("order") not in ORDERS or not rec.get("features"):
-            continue
-        rows.append({"episode": episode, "date": rec.get("date"), "source": "micro",
-                     "state": rec.get("state"), "action": rec["order"],
-                     "features": rec["features"], "controller": rec.get("controller"),
-                     "reward": outcome(series, rec.get("date") or "", horizon),
-                     "horizon_days": horizon})
+    logged = [r for r in read_jsonl(run_dir / DECISIONS_FILE)
+              if r.get("order") in ORDERS and r.get("features")]
+    seen: dict[tuple, list[tuple[int, dict]]] = {}
+    for rec in logged:
+        o = ordinal(rec.get("date"))
+        if o is not None and rec.get("enemy") and rec.get("sector_state") is not None:
+            seen.setdefault((rec["enemy"], rec["sector_state"]), []).append((o, rec))
+    for v in seen.values():
+        v.sort(key=lambda x: x[0])
+    for rec in logged:
+        row = {"episode": episode, "date": rec.get("date"), "source": "micro",
+               "state": rec.get("state"), "action": rec["order"],
+               "features": rec["features"], "controller": rec.get("controller"),
+               "reward": None, "reward_kind": "theatre", "horizon_days": horizon}
+        for k in ("propensity", "valid", "alternatives", "explored", "epsilon", "seed", "base_order",
+                  "enemy", "sector_state", "is_sector"):
+            if k in rec:
+                row[k] = rec[k]
+        enemy, sector = rec.get("enemy"), rec.get("sector_state")
+        res = None
+        if history and enemy:
+            res = horizon_outcomes(history, rec.get("date") or "", enemy, sector, horizon)
+        if res is not None and res["sector"] is not None:
+            later = _later_view(seen.get((enemy, sector), []), ordinal(rec["date"]) or 0, horizon)
+            own_change = (later["own"] - rec["own"]) if later and "own" in later and "own" in rec else None
+            org_change = None
+            if later and later.get("org_average") is not None and rec.get("org_average") is not None:
+                org_change = later["org_average"] - rec["org_average"]
+            res["sector"].update({"own_change": own_change, "org_change": org_change})
+            row["outcome"] = res
+            row["reward"] = sector_reward(res["sector"], own_change)
+            row["reward_kind"] = "sector"
+        elif history and enemy and "propensity" in rec:
+            row["reward_kind"] = "sector"       # an exploration row is never scored with the theatre outcome
+        else:
+            row["reward"] = outcome(series, rec.get("date") or "", horizon)
+        rows.append(row)
 
     date, own, foe = None, 0, 0
     pending: dict[str, dict] = {}
@@ -134,6 +254,7 @@ def extract_run(run_dir: Path, horizon: int = HORIZON_DAYS) -> list[dict]:
                     "features": feature_dict(call["own"], call["foe"], gained=gained, lost=lost,
                                              unchanged_days=unchanged),
                     "controller": "llm", "reward": outcome(series, call["date"], horizon),
+                    "reward_kind": "theatre",
                     "horizon_days": horizon})
     rows.sort(key=lambda r: (ordinal(r["date"]) or 0, str(r["state"])))
     return rows

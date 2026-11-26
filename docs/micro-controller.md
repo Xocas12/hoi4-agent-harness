@@ -3,8 +3,10 @@
 Issue #85 asks for a learned controller good enough to beat competitive players. That is a research
 project, and this is its infrastructure, not a strong player. What exists is a place to put a
 controller, a rule-based one to beat, a way to collect training data from real runs, and an offline
-loop that fits and scores a small model. What it does not have is data, a simulator the policy can
-practise in, or a model class that could play well. Those are listed at the end.
+loop that fits and scores a small model, an exploration mode that logs what an off-policy estimate
+needs, per-sector outcomes, that estimator, and a toy simulator to check the loop on. What it does not
+have is real exploration data (no campaign has been run with it on), a simulator faithful to the game,
+a model class that could play well, or an opponent to measure against. Those are listed at the end.
 
 ## What exists
 
@@ -20,7 +22,10 @@ speak of, and no numpy; the learner is a ridge regression solved with Gaussian e
 | Learner | `learn.py` | `LinearBandit`: one ridge model per order predicting the outcome; the policy takes the best predicted order among those with at least 5 logged examples, else the baseline's. `LearnedController` is the rule controller with its main-effort order chosen by the model. |
 | Evaluation | `evaluate.py` | Held-out comparison of learned, baseline and logged policies. |
 | Runtime | `runtime.py` | Runs a controller each turn of a campaign and logs every decision with its features. |
-| CLI | `__main__.py` | `python -m hoi4_harness.micro extract / train / eval / report`. |
+| Exploration | `explore.py` | `ExploringController`: epsilon exploration per sector, with the propensity of each choice logged. |
+| Off-policy evaluation | `ope.py` | Inverse propensity, self-normalised and doubly robust estimates of a policy's value from logged exploration, with bootstrap intervals. |
+| Simulator | `sim.py` | A toy sector-graph front simulator, for testing the loop. Not the game. |
+| CLI | `__main__.py` | `python -m hoi4_harness.micro extract / train / eval / report / simulate`. |
 
 ## Putting a controller under the LLM
 
@@ -42,6 +47,101 @@ It has not been run against the real game; see "Live check" in the PR.
 Every order it gives is appended to `micro_decisions.jsonl` in the run directory with the sector's
 features. That file is the data the learner wants.
 
+## Exploration: data a different policy can be scored on
+
+A controller that always does what it thinks best logs only that, so nothing can be said about any
+other policy. With exploration on:
+
+```json
+{ "observe_world": true, "micro_controller": "rule", "micro_explore": 0.2, "micro_explore_seed": 11 }
+```
+
+each turn, for every sector the controller orders (an enemy state we have divisions against), it draws
+from a coin seeded by (seed, date, state): with probability `1 - epsilon` its own order, otherwise one
+of the other four, uniformly (`epsilon / 4` each). Every sector decision goes to
+`micro_decisions.jsonl`, including the ones that left the standing order unchanged, as one record:
+
+| field | meaning |
+|---|---|
+| `date`, `state`, `order` | the decision; `state` is the sector (or the rear state for a rotation order) |
+| `enemy`, `sector_state` | the front and the sector it belongs to, which the outcome joins on |
+| `base_order`, `explored` | what the controller would have done, and whether the coin overrode it |
+| `propensity` | the probability that this policy chose `order` on this sector: `1 - epsilon` or `epsilon / 4` |
+| `valid`, `alternatives` | the orders it could have chosen, and those it did not |
+| `epsilon`, `seed` | the settings |
+| `features`, `own`, `foe`, `org_average` | what it saw |
+
+Rules worth knowing. The LLM's own orders are not perturbed and not logged (they are its intent). A
+sector with none of our divisions has one valid order, `hold`, with propensity 1. Rotation (`reserve`
+on a rear state) is not a choice among a sector's orders: it is logged with propensity 1 and
+`is_sector: false` and left out of the estimate. A decision the order cap dropped is not logged, since
+the order did not stand. Because the draw is per sector, a theatre with 10 sectors and epsilon 0.2 has
+two or three sectors on a different order each month; that is deliberate (it is what makes the outcome
+attributable to the sector), and it is also a real cost in a real game, so keep epsilon small there.
+
+## Outcomes per sector and per front
+
+`front_history.json` (frontreport.py) now also keeps, per save and front, the provinces taken and lost
+per state (`gained_by_state`, `lost_by_state`) next to the front totals. `dataset.horizon_outcomes`
+reads the saves after a decision up to and including the first one at least N days later (`--horizon`,
+default 60) and returns:
+
+* `front`: provinces and states gained and lost against that enemy, battles won and lost on it;
+* `sector`: provinces of the sector's own state gained and lost, battles won and lost on it, and from
+  the controller's own later log the change in our divisions there (`own_change`) and in average
+  organisation (`org_change`).
+
+A decision whose N days are not yet covered by a save is censored (`reward: null`), not zero. The
+sector reward, `dataset.sector_reward`, is provinces gained less lost, plus 0.25 per battle won less
+lost, less 0.02 per division fewer than at the decision. The weights are a judgement, not a
+measurement. Limits: the saves are monthly, so a battle that begins and ends between two saves is
+invisible; a province the enemy takes from our own states is not in any enemy sector, so those losses
+are in `front` only; a run whose history predates the per-state counts gives front outcomes and no
+sector reward, and an exploration row is then left censored rather than scored with the theatre
+number. The outcome over N days also includes the orders of the next turn(s) on the same sector;
+`--horizon 30` (one save) keeps one decision per outcome, 60 does not.
+
+## Off-policy evaluation
+
+`ope.py` scores a policy that was never run from exploration rows, three ways: inverse propensity
+(`1[a == pi(x)] / p * r`, unbiased given overlap, noisy), self-normalised (weighted mean, biased a
+little, steadier) and doubly robust (the reward model's estimate plus a propensity-weighted correction;
+right if either the propensities or the model are right). `compare` gives the paired difference of two
+policies with a bootstrap interval that resamples whole runs when there are five or more. Each estimate
+reports `off_support` (the share of rows where the policy picks an order the logger could not have),
+`ess` (effective sample size after weighting) and `max_weight`. `evaluate` uses it whenever the held-out
+rows carry propensities, and its verdict then reads the interval, not matched rows: "learned ahead"
+only if the 95% interval on the doubly robust difference excludes zero and each policy has an
+effective sample of 30. A log from a controller that never explored (propensity 1 everywhere) cannot
+score another policy, and the numbers say so (low `ess`, mostly unmatched) instead of returning a
+confident value.
+
+## The toy simulator
+
+`sim.py` is a toy, and says so at the top. A line of sectors, each with our and their divisions,
+terrain, organisation, supply and a breakthrough meter; push, attack, probe, hold and reserve differ in
+effort, losses and how much a push depends on supply; 30 day turns, like the monthly save. Rates were
+set by hand to roughly the battle numbers in `docs/results/overnight-2026-11-22.md` (piecemeal attacks
+mostly bounced, 2 to 1 or better mostly succeeding; `calibrate()`), not fitted, and the toy is harsher
+on piecemeal attacks than the 14 to 41 per cent seen there. Terrain is in the dynamics but not in the
+controller's features, so some of what matters is hidden, as in the game. It writes
+`micro_decisions.jsonl` and `front_history.json` in the real formats, so the extractor, learner and
+evaluator run on it unchanged.
+
+```
+python -m hoi4_harness.micro simulate -o data/sim --episodes 60 --epsilon 0.3
+python -m hoi4_harness.micro report data/sim/sim-* --horizon 30
+```
+
+What the test (`tests/test_85_micro_exploration.py`) does with it: logs 56 episodes with the baseline as
+the logging policy at epsilon 0.4, trains the linear bandit on 40, and scores baseline and learned on
+the other 16 from the log alone. The simulator is then asked what the log cannot say: both policies
+replayed from the same logged states. In that run the baseline is worth about +0.09 per sector decision
+and the learned policy +0.25; the doubly robust estimates from the log were +0.08 and +0.27, and the
+interval on their difference excluded zero. With no exploration the same data cannot tell. This shows
+the loop recovers a better policy when one exists and the features can express it. It shows nothing
+about the game.
+
 ## Data capture
 
 ```
@@ -52,7 +152,9 @@ A row: `episode` (the run), `date`, `source`, `state`, `action`, `features`, `re
 Sources, best first:
 
 * `micro_decisions.jsonl` (`source: micro`): real per-sector features and the order given. Only runs
-  made with a controller on have it.
+  made with a controller on have it. When the run kept a `front_history.json` and the row names its
+  sector, the reward is the sector reward above (`reward_kind: sector`, with the `outcome` detail);
+  otherwise it is the theatre outcome below (`reward_kind: theatre`).
 * `transcript.jsonl` (`source: transcript`): every accepted `set_front_order` the LLM gave. The log
   holds no per-sector forces, so the features are the theatre-wide "Front picture" line of that turn's
   brief (own against foe divisions in the visible states), plus front movement when the run kept a
@@ -97,23 +199,39 @@ where the best order really depends on the force ratio the same code recovers th
 
 ## The path to a strong player
 
-1. **Data with real sector features and varied actions.** Turn on `micro_controller: rule` for runs,
-   with a randomised mode for exploration (not built: it needs a per-turn coin flip over orders and its
-   propensity logged, so that off-policy estimates are unbiased). Dozens of campaigns, not one.
-2. **A better outcome.** Per-order outcome rather than theatre-wide: provinces gained and lost on the
-   sector's own front, division losses, from `front_history.json` and the battle list. The theatre
-   reward moves with annexations and other fronts.
+Done here: item 1's exploration mode and item 2's per-sector outcome (code and tests, not data), and a
+toy for item 4. Not done: everything that needs the game or a new dependency.
+
+1. **Real exploration data.** The mode exists (`micro_explore`); nothing has been run with it. It needs
+   dozens of campaigns with `micro_controller: rule` and a small epsilon, and the live check below.
+   A learned policy scored by `ope.py` on that data is the first honest number this project can get.
+2. **A better outcome.** Sector and front outcomes from the front history exist. Still missing: the
+   division losses and organisation of the sector from the saves themselves (today they come from the
+   controller's own next-turn log), and the weights of the sector reward, which are a guess.
 3. **Finer actions than the front tools.** `set_front_order` steers the game's AI; it cannot move a
    division. A player-level micro controller needs division and battle-plan orders (`docs/unit-orders.md`,
    the tactical simulator in `docs/tactics.md`), which are gated on the live camera work in #85's
    comments (perspective model for aiming).
-4. **A simulator to practise in.** The tactical simulator exists, but #111 and #117 found its learned
-   plan chooser did not beat the hand planner. A policy needs a faster and more faithful environment
-   than a month-long save cycle: learning from 50 campaigns of saves is not going to get there.
+4. **A simulator worth practising in.** `sim.py` is a hand-set toy that tests the loop. A policy that
+   is meant to play the game needs a simulator fitted to logged sector transitions (own and foe
+   strength, organisation, supply, terrain, order -> next state), and #111 and #117 found the tactical
+   simulator's learned plan chooser did not beat the hand planner, so fidelity is the open problem.
 5. **A real model class and its dependency.** Linear per-order reward models cannot represent
-   sequencing, timing or multi-sector coordination. That means a sequence or graph model and a
-   training library (torch or similar), which this repo does not carry and this change does not add.
+   sequencing, timing or multi-sector coordination, and the bandit treats each sector-month as
+   independent. A sequence or graph model needs a training library (numpy at the least, torch or jax
+   for a graph network or a policy-gradient method) and a place to run it; this repo carries none and
+   this change adds none. The logged format (features, order, propensity, outcome) is what such a
+   model would train on.
 6. **A yardstick.** Beating "competitive players" needs an opponent: a rating against the game's AI at
-   a fixed difficulty first (`docs/evaluation.md`), then human matches.
+   a fixed difficulty first (`docs/evaluation.md`), then human matches. Nothing here measures that.
 
-Until 1 to 3 exist, a learned controller here will at best match the rule baseline.
+Until real exploration data exists, a learned controller here will at best match the rule baseline, and
+the verdict will say "inconclusive" until the effective sample is large enough to say otherwise.
+
+## Live check (needs the game)
+
+Not run. On a campaign profile with `observe_world: true`, `micro_controller: "rule"`,
+`micro_explore: 0.1`: play two or three game months, then confirm `micro_decisions.jsonl` has one
+record per sector per turn with `propensity` 0.9 or 0.025, that `front_history.json` snapshots carry
+`gained_by_state`, and that `python -m hoi4_harness.micro extract <run> --horizon 30` gives rows with
+`reward_kind: sector` for decisions at least a month old.
