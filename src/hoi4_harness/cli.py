@@ -708,6 +708,16 @@ def cmd_play(args: argparse.Namespace) -> int:
             tag = (config.country or first.state.country or "LLM").upper()
             env.attach_chat(ChatChannel(ChatLog(config.chat_path), tag, run_dir / "chat_seen.json"))
         loop.supervisor = CoopGuidance(run_dir, loop)
+        if config.multiplayer and env.mp_chat is not None:
+            from .adapters.mp_chat import find_driver
+            from .adapters.mp_chat_reader import build_reader
+
+            fake = getattr(env.adapter, "fake_game", None)
+            reader, note = build_reader(config, find_driver(env.adapter), env.mp_chat,
+                                        backend=getattr(fake, "chat_ocr", None))
+            if reader is not None:
+                loop.supervisor.incoming = reader
+            echo(f"multiplayer chat: {note if reader is not None else 'not read (' + note + ')'}")
     listener = None
     if env.handover is not None:
         from .coop import build_hotkey_listener, wire_handover
@@ -915,6 +925,40 @@ def cmd_measure(args: argparse.Namespace) -> int:
             return 1
     print(measure(path).render())
     return 0
+
+
+def cmd_memory_probe(args: argparse.Namespace) -> int:
+    from . import memory_probe as mp
+
+    if args.compare:
+        print(mp.compare(Path(args.compare)))
+        return 0
+    if not args.save or not args.variant:
+        print("memory-probe: give --save and --variant (or --compare DIR)", file=sys.stderr)
+        return 2
+    print(f"memory-probe {args.variant}: {mp.VARIANTS[args.variant].question}")
+    print("Set the game up like this, then the probe samples (it never touches the game):")
+    for line in mp.manual_steps(args.variant, args.save):
+        print("  " + line)
+    if args.steps_only:
+        return 0
+    from .campaign.watch import process_private_bytes
+
+    log = args.log or os.environ.get("HOI4_LOG_PATH")
+    clock = None
+    if log:
+        from .rival.safety import LogClock
+
+        clock = LogClock(Path(log))
+    name = args.process
+    result = mp.run_probe(
+        save=args.save, minutes=args.minutes, variant=args.variant, out_dir=Path(args.out),
+        read_bytes=lambda: process_private_bytes(name), interval=args.interval, label=args.label or "",
+        read_date=(clock.last_date if clock else (lambda: None)))
+    print(result.render())
+    print(f"csv: {result.csv_path}")
+    print(f"summary: {result.summary_path}")
+    return 0 if result.summary()["samples"] else 1
 
 
 def cmd_reconcile(args: argparse.Namespace) -> int:
@@ -2308,6 +2352,23 @@ def build_parser() -> argparse.ArgumentParser:
                            help="play a long measurement campaign first, then measure it "
                                 "(peacetime_1936_1939, wartime_1939_1941)")
     measure_p.set_defaults(func=cmd_measure)
+
+    from .memory_probe import VARIANTS as PROBE_VARIANTS
+
+    probe_mem = sub.add_parser(
+        "memory-probe", help="record hoi4.exe's private bytes every minute and fit GB/hour (#157)")
+    probe_mem.add_argument("--save", metavar="NAME", help="the save the game was loaded from (a label)")
+    probe_mem.add_argument("--minutes", type=float, default=30.0, help="how long to sample (default 30)")
+    probe_mem.add_argument("--variant", choices=list(PROBE_VARIANTS), help="the setup being measured")
+    probe_mem.add_argument("--label", help="extra words for the file names, e.g. nomod-nodebug")
+    probe_mem.add_argument("--interval", type=float, default=60.0, help="seconds between samples")
+    probe_mem.add_argument("--out", default="memory-probe-results", help="folder for the CSV and summary")
+    probe_mem.add_argument("--process", default="hoi4.exe", help="process image name")
+    probe_mem.add_argument("--log", metavar="PATH", help="game.log, for the in-game date column "
+                                                          "(default HOI4_LOG_PATH)")
+    probe_mem.add_argument("--steps-only", action="store_true", help="print the setup steps and stop")
+    probe_mem.add_argument("--compare", metavar="DIR", help="table of every summary in DIR, then exit")
+    probe_mem.set_defaults(func=cmd_memory_probe)
 
     reconcile_p = sub.add_parser(
         "reconcile", help="compare a run's token log with a provider usage export (#23)")
