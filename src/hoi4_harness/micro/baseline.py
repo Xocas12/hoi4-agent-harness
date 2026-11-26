@@ -54,6 +54,14 @@ class RuleController:
         return baseline_action(sec.own, sec.foe, sector_features(sec)["low_org_share"])
 
     def decide(self, intents: list[Intent], obs: Observation) -> list[MicroOrder]:
+        wanted = self.plan(intents, obs)
+        orders = [o for o in wanted.values() if obs.current.get(o.state) != o.order]
+        orders.sort(key=lambda o: (_RANK[o.order], o.state))
+        return orders[: self.max_orders]
+
+    def plan(self, intents: list[Intent], obs: Observation) -> dict[int, MicroOrder]:
+        """The order the controller wants on every state it has a view on, before standing orders
+        are filtered out and the cap applied (exploration.py perturbs this)."""
         wanted: dict[int, MicroOrder] = {}
         by_front: dict[str, list[SectorState]] = {}
         for sec in obs.sectors:
@@ -85,6 +93,4 @@ class RuleController:
                     wanted.setdefault(sec.rear_state, MicroOrder(
                         sec.rear_state, "reserve",
                         f"rotate: {sec.own_low_org} of {sec.own} low on organisation"))
-        orders = [o for o in wanted.values() if obs.current.get(o.state) != o.order]
-        orders.sort(key=lambda o: (_RANK[o.order], o.state))
-        return orders[: self.max_orders]
+        return wanted

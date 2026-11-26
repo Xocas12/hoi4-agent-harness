@@ -41,6 +41,12 @@ class FakeMultiplayerGame(FakeRivalGame):
         #: ``(date, text)`` of each line the harness's client sent to the game's chat.
         self.chat_sent: list[tuple[str, str]] = []
         self._incoming: list[str] = []
+        #: The chat box as drawn: ``Name: text`` rows, oldest first (what OCR would read).
+        self.chat_box: list[str] = []
+        self.human_name, self.harness_name = "Hans", "Claude_bot"
+        #: Characters per row in the box; a longer line wraps onto the next row.
+        self.chat_width = 60
+        self.chat_rows = 8
         super().__init__(user_dir, rival=harness, human=human, human_script=human_script, **kwargs)
         self.human_ai = False           # a human client: the mod logs it by is_ai = no
 
@@ -57,11 +63,31 @@ class FakeMultiplayerGame(FakeRivalGame):
     def host_says(self, text: str) -> None:
         """The person types a line to the harness's country (in a real game, into the chat)."""
         self._incoming.append(text)
+        self.chat_box.append(f"{self.human_name}: {text}")
 
     def read_chat(self) -> list[str]:
         """What the person has said since the last read: the seam a real harness would need."""
         out, self._incoming = self._incoming, []
         return out
+
+    def box_rows(self) -> list[str]:
+        """The rows the box shows now: the last ``chat_rows`` after wrapping at ``chat_width``."""
+        import textwrap
+
+        rows: list[str] = []
+        for entry in self.chat_box:
+            rows += textwrap.wrap(entry, self.chat_width) or [entry]
+        return rows[-self.chat_rows:]
+
+    @property
+    def chat_ocr(self):
+        """An OCR backend that 'sees' the chat box (what ``mp_chat_reader`` reads)."""
+        from .adapters.ocr import FakeOcr, OcrLine
+
+        def source(rect):
+            return [OcrLine(row, rect[0] + 4, rect[1] + 4 + 20 * i, 8 * len(row), 16)
+                    for i, row in enumerate(self.box_rows())]
+        return FakeOcr(source)
 
     # --- keys ----------------------------------------------------------------------------
 
@@ -74,6 +100,7 @@ class FakeMultiplayerGame(FakeRivalGame):
                 line, self._chat_line = self._chat_line, ""
                 if line:
                     self.chat_sent.append((self.date, line))
+                    self.chat_box.append(f"{self.harness_name}: {line}")
             elif name == "escape":
                 self.chat_open, self._chat_line = False, ""
             elif name == "backspace":

@@ -306,6 +306,16 @@ def check_focus_policy(config: HarnessConfig) -> list[Check]:
                          "window to the front, over whatever you are doing"))
     else:
         out.append(Check(PASS, "focus", "the harness waits for the game window and never takes the focus"))
+    if config.campaign_on_memory == "restart":
+        if config.game_dir is None or not (Path(config.game_dir) / "hoi4.exe").is_file():
+            out.append(Check(FAIL, "restart", "campaign_on_memory is restart but game_dir does not "
+                             "hold hoi4.exe, so the game cannot be relaunched"))
+        else:
+            out.append(Check(WARN, "restart", "campaign_on_memory is restart: past the memory limit the "
+                             "harness kills this run's hoi4.exe, relaunches it and clicks through the "
+                             "menus, pulling the game to the front when the keyboard is idle "
+                             f"({config.campaign_take_focus_idle_seconds:g} s). Menu points are for "
+                             "1920x1080 scaled to the window; run a live check first (docs/campaign.md)"))
     return out
 
 

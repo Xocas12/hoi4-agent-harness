@@ -375,6 +375,22 @@ class HarnessConfig:
     #: or ``warn`` (a log line each turn). 0 turns the check off.
     campaign_memory_limit_gb: float = 48.0
     campaign_on_memory: str = "stop"
+    #: ``campaign_on_memory = "restart"`` (issue #157; off unless chosen): past the limit the run
+    #: takes the recovery save, waits for it to be complete, kills the game it knows, relaunches
+    #: it with -debug_mode outside its own process tree, loads the newest save by the menu and
+    #: carries on in the same process (campaign/restart.py). At most this many restarts in a run;
+    #: after that the guard stops the run as ``stop`` does.
+    campaign_restart_max: int = 10
+    #: Seconds to wait for the recovery save to be complete on disk.
+    campaign_restart_save_wait_seconds: float = 300.0
+    #: Seconds to wait for the relaunched game's window.
+    campaign_restart_window_wait_seconds: float = 300.0
+    #: Seconds the main menu gets to draw after its window exists.
+    campaign_restart_menu_settle_seconds: float = 20.0
+    #: Seconds to wait for the loaded save (game.log goes quiet) before START.
+    campaign_restart_load_wait_seconds: float = 900.0
+    #: Seconds to get the game window in front before a menu click, in all.
+    campaign_restart_focus_wait_seconds: float = 360.0
     #: Stop, with a reason, at the next turn boundary once the PLAYER's own country
     #: capitulates. Off (the default): play on in exile. A capitulated country lives on in
     #: HOI4 (government in exile, whatever states it still holds), so the run wakes the
@@ -449,6 +465,11 @@ class HarnessConfig:
     #: on the sectors the LLM has not ordered itself. Needs ``observe_world``.
     micro_controller: str = "off"
     micro_model: Path | None = None
+    #: Exploration for the micro controller (#85): per sector, with this probability (0 to 1) a
+    #: different order than the controller's own, seeded by ``micro_explore_seed``. Every decision is
+    #: logged in micro_decisions.jsonl with the propensity of the order chosen. 0: off.
+    micro_explore: float = 0.0
+    micro_explore_seed: int = 0
     #: Let the briefing model search the web for mods it cannot judge from files (opt-in;
     #: the Workshop brief is read first; only providers that have a search tool).
     briefing_web_search: bool = False
@@ -530,6 +551,11 @@ class HarnessConfig:
     #: ``mp_human_tags`` play theirs. An action aimed at one of those countries is refused.
     multiplayer: bool = False
     mp_human_tags: list[str] = field(default_factory=list)
+    #: Reading the other player's lines from the game's chat box (adapters/mp_chat_reader.py):
+    #: ``{"enabled": true, "rect": [x, y, w, h] as fractions of the game window, "upscale": 2.0,
+    #: "own_names": ["my in-game name"], "pattern": regex with sender and text groups,
+    #: "baseline": true}``. Without ``rect`` an UNCALIBRATED default is used (docs/multiplayer.md).
+    mp_chat_screen: dict = field(default_factory=dict)
     #: Co-op, changed mid-game (coop.py, ``hoi4-harness domains``): ``{domain: "human" | "llm"}``
     #: laid over ``human_domains`` / ``control``. The person taking a domain back or handing it
     #: over writes here; the run's control map is rebuilt from it.

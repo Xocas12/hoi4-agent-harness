@@ -99,8 +99,9 @@ def refuse_if_running(lister: Callable[[], list[str]]) -> None:
 
 # --- pure edits ---------------------------------------------------------------------------
 
-def edit_dlc_load(text: str | None, expert_ai: bool) -> str:
-    """The new dlc_load.json text. Other keys and the order of other mods are kept."""
+def edit_dlc_load(text: str | None, expert_ai: bool, with_mod: bool = True) -> str:
+    """The new dlc_load.json text. Other keys and the order of other mods are kept. ``with_mod``
+    False leaves llm_bridge OUT (a mod-less baseline, e.g. ``hoi4-harness memory-probe``)."""
     if text is None:
         data: dict = {"enabled_mods": [], "disabled_dlcs": []}
     else:
@@ -116,7 +117,8 @@ def edit_dlc_load(text: str | None, expert_ai: bool) -> str:
     mods = [m for m in mods if m != MOD_ENTRY]
     if expert_ai and EXPERT_AI_ENTRY not in mods:
         mods.append(EXPERT_AI_ENTRY)
-    mods.append(MOD_ENTRY)                      # last, always
+    if with_mod:
+        mods.append(MOD_ENTRY)                  # last, always
     data["enabled_mods"] = mods
     data.setdefault("disabled_dlcs", [])
     return json.dumps(data, indent=4) + "\n"
@@ -308,7 +310,7 @@ def regenerate_playset(user_dir: Path, installed_mod: Path, game_dir: Path | Non
 
 def prepare(user_dir: Path, *, apply: bool, expert_ai: bool, repo_mod: Path,
             lister: Callable[[], list[str]], out=print, now: dt.datetime | None = None,
-            game_dir: Path | None = None) -> int:
+            game_dir: Path | None = None, with_mod: bool = True) -> int:
     refuse_if_running(lister)
     mod_dir = user_dir / "mod"
     mods = ModPlan(repo_mod, mod_dir / MOD_NAME, mod_dir / f"{MOD_NAME}.mod")
@@ -316,7 +318,7 @@ def prepare(user_dir: Path, *, apply: bool, expert_ai: bool, repo_mod: Path,
         raise SetupError(f"{user_dir / EXPERT_AI_ENTRY} does not exist: subscribe to Expert AI on the "
                          f"Workshop (id {EXPERT_AI_ID}) and start the launcher once so it writes it")
     old_dlc, old_settings = _read(user_dir / "dlc_load.json"), _read(user_dir / "settings.txt")
-    new_dlc, new_settings = edit_dlc_load(old_dlc, expert_ai), edit_settings(old_settings)
+    new_dlc, new_settings = edit_dlc_load(old_dlc, expert_ai, with_mod), edit_settings(old_settings)
 
     out(f"HOI4 user folder: {user_dir}")
     out(mods.render())
@@ -403,6 +405,9 @@ def build_parser() -> argparse.ArgumentParser:
                                 "HOI4_GAME_DIR or the Steam folder)")
             p.add_argument("--expert-ai", action="store_true",
                            help=f"also enable Expert AI (Workshop {EXPERT_AI_ID}), just before llm_bridge")
+            p.add_argument("--no-mod", action="store_true",
+                           help="do NOT enable llm_bridge (a mod-less run for hoi4-harness memory-probe); "
+                                "restore puts the old list back")
         else:
             p.add_argument("--backup", metavar="NAME", help="a folder name under live_setup_backups "
                                                             "(default: the newest prepare backup)")
@@ -416,7 +421,8 @@ def main(argv: list[str] | None = None, *, lister: Callable[[], list[str]] = lis
         user_dir = find_user_dir(args.user_dir)
         if args.command == "prepare":
             return prepare(user_dir, apply=args.apply, expert_ai=args.expert_ai, repo_mod=repo_mod,
-                           lister=lister, out=out, game_dir=default_game_dir(args.game_dir))
+                           lister=lister, out=out, game_dir=default_game_dir(args.game_dir),
+                           with_mod=not args.no_mod)
         return restore(user_dir, apply=args.apply, backup_name=args.backup, lister=lister, out=out)
     except SetupError as exc:
         print(f"live_setup: {exc}", file=sys.stderr)
