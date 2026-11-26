@@ -86,8 +86,8 @@ class LinearBandit:
     def save(self, path: Path) -> None:
         path = Path(path)
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(json.dumps({"version": 1, "features": list(self.features), "l2": self.l2,
-                                    "weights": self.weights, "counts": self.counts}, indent=1),
+        path.write_text(json.dumps({"version": 1, "kind": "linear", "features": list(self.features),
+                                    "l2": self.l2, "weights": self.weights, "counts": self.counts}, indent=1),
                         encoding="utf-8")
 
     @classmethod
@@ -98,13 +98,23 @@ class LinearBandit:
         return cls(data["weights"], data["counts"], data.get("l2", 1.0), FEATURES)
 
 
+def load_model(path: Path):
+    """A model file from ``micro train``, whichever class wrote it (the linear one or the boosted one)."""
+    data = json.loads(Path(path).read_text(encoding="utf-8"))
+    if data.get("kind") == "boosted":
+        from .boosted import BoostedBandit
+
+        return BoostedBandit.load(path)
+    return LinearBandit.load(path)
+
+
 class LearnedController(RuleController):
     """The rule controller's structure (intent, hold elsewhere, rotation) with the main effort's
     order chosen by the learned model."""
 
     name = "learned"
 
-    def __init__(self, model: LinearBandit, max_orders: int = 6):
+    def __init__(self, model, max_orders: int = 6):
         super().__init__(max_orders)
         self.model = model
 
