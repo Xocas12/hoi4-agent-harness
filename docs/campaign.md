@@ -325,6 +325,7 @@ open paths, no plan) that the player reads under its own objective; `--rebrief` 
 | Situation | What happens |
 |---|---|
 | End date (`--until`, default 1948-12-31) | the last turn is cut to the days left; the pause lands at most a day late |
+| Memory | past `campaign_memory_limit_gb` a recovery save and a resumable stop (`campaign_on_memory = "stop"`), a log line (`warn`), or the harness restarts the game and carries on (`restart`, docs/memory-probe.md) |
 | Budget | stops with the game paused and `budget: ...` as the reason; `campaign_on_budget = "coast"` lets the AI play on with no calls |
 | Game process gone (`tasklist`, `campaign_game_process`) or `game.log` silent for `campaign_silence_minutes` (20) while the clock runs | `GameLost`: a clean stop with the reason; also the case of the mod not reporting for the player |
 | Historical AI Focuses off (`historical=0` in the first recovery save's header) | logged as `historical AI focuses: off`, kept in `campaign_state.json` and shown in the report summary; with `campaign_historical_ai = "on"` (`on`, `off` or `any`, default `any`) it is also a `WARNING` line. The run is never stopped for it: the AI picks the focuses, so on and off runs are not comparable |
