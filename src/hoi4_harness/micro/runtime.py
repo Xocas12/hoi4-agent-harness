@@ -33,11 +33,11 @@ def build_controller(kind: str, model_path: Path | None = None, explore: float =
     if kind == "rule":
         ctl = RuleController()
     elif kind == "learned":
-        from .learn import LearnedController, LinearBandit
+        from .learn import LearnedController, load_model
 
         if model_path is None:
             raise ValueError("micro_controller 'learned' needs micro_model (a file from `micro train`)")
-        ctl = LearnedController(LinearBandit.load(model_path))
+        ctl = LearnedController(load_model(model_path))
     else:
         raise ValueError(f"micro_controller must be one of {KINDS}, not {kind!r}")
     if explore and explore > 0:

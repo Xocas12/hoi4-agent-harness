@@ -10,8 +10,9 @@ a model class that could play well, or an opponent to measure against. Those are
 
 ## What exists
 
-All of it is in `src/hoi4_harness/micro/`, pure Python, no new dependencies (the project has none to
-speak of, and no numpy; the learner is a ridge regression solved with Gaussian elimination).
+All of it is in `src/hoi4_harness/micro/`, pure Python, no required dependencies (the learner is a
+ridge regression solved with Gaussian elimination). An optional `ml` extra adds a boosted-tree model
+class (`boosted.py`, see "The ML model class" below).
 
 | piece | file | what it does |
 |---|---|---|
@@ -24,6 +25,7 @@ speak of, and no numpy; the learner is a ridge regression solved with Gaussian e
 | Runtime | `runtime.py` | Runs a controller each turn of a campaign and logs every decision with its features. |
 | Exploration | `explore.py` | `ExploringController`: epsilon exploration per sector, with the propensity of each choice logged. |
 | Off-policy evaluation | `ope.py` | Inverse propensity, self-normalised and doubly robust estimates of a policy's value from logged exploration, with bootstrap intervals. |
+| ML model | `boosted.py` | `BoostedBandit`: gradient-boosted trees per order, trained from logged propensities (doubly robust or importance-weighted). Training needs the `ml` extra; a saved model runs without it. |
 | Simulator | `sim.py` | A toy sector-graph front simulator, for testing the loop. Not the game. |
 | CLI | `__main__.py` | `python -m hoi4_harness.micro extract / train / eval / report / simulate`. |
 
@@ -171,6 +173,59 @@ all `transcript`, all with an outcome (hold 19, attack 8, push 2, reserve 2, pro
 an order here is the whole theatre's, and the LLM gave several orders a turn, so an order and a result
 are confounded. This is enough to test the pipeline and nowhere near enough to learn from.
 
+## The ML model class (optional `ml` extra)
+
+```
+pip install 'hoi4-agent-harness[ml]'          # numpy + scikit-learn, to train
+python -m hoi4_harness.micro train data/micro.jsonl --model-type boosted -o data/micro-model.json
+python -m hoi4_harness.micro report runs/* --model-type boosted --mode dr
+```
+
+`micro_controller: "learned"` with `micro_model` pointing at that file works as before; `eval` and the
+runtime detect the model class from the file. Without the extra, `--model-type boosted` stops with
+exit code 2 and a message naming the install command; the linear model needs nothing.
+
+**Library choice: scikit-learn (numpy), primary.** Constraints: Windows and Linux, Python 3.10 to 3.12,
+CPU only, offline training on hundreds to tens of thousands of logged rows with propensities.
+
+* scikit-learn gradient boosting takes `sample_weight` (importance weights) and arbitrary real targets
+  (doubly robust pseudo-outcomes), ships wheels for every platform and Python version here, and on a
+  few thousand rows trains in seconds. Trees handle the nonlinearities that matter in this data
+  (force ratio thresholds, supply and organisation cliffs) with the nine features as they are.
+* LightGBM would do the same and is faster on large data, but adds a compiled dependency (and an OpenMP
+  runtime on some Linux images) for a speed this data size does not need. It is the drop-in swap if
+  logs reach millions of rows.
+* PyTorch is the right tool for a neural or graph policy over the sector graph, and it is a poor
+  default: a 200 MB-plus install, CPU and CUDA wheel variants to choose between, and nothing to gain
+  on a nine-feature table with a few thousand rows. It becomes worth it with a graph model where
+  neighbouring sectors' state is part of the input, which needs the logs to carry it (they do not yet).
+
+**Training from logged propensities.** `--mode dr` (default) fits a ridge reward model, cross-fitted by
+episode, and gives every row and every order the pseudo-outcome
+`q(x, a) + 1[A = a] / p * (r - q(x, a))`, then fits one boosted regressor per order on it. `--mode ipw`
+fits each order only on the rows where it was taken, weighted `1 / p` (clipped at 10). A log without
+propensities (no exploration) counts as `p = 1`, and the model then only knows what the logger did.
+
+**Storage.** The model file is JSON (the trees as arrays) and prediction is pure Python, so a machine
+with no extra can run a model trained elsewhere, and there is no pickle to trust.
+
+**Measured on the toy simulator** (`tests/test_85_micro_boosted.py`, 40 training and 16 held-out
+exploration episodes at epsilon 0.4, 2,880 and 1,152 rows; every policy scored by the same doubly
+robust estimator, the simulator's own one-step value as the truth):
+
+| policy | doubly robust estimate (95% interval) | simulator truth | minus baseline (95% interval) |
+|---|---|---|---|
+| rule baseline | +0.077 (-0.022, +0.186) | +0.093 | |
+| ridge bandit | +0.271 (+0.079, +0.469) | +0.254 | +0.194 (+0.085, +0.307) |
+| boosted, dr | +0.245 (+0.086, +0.406) | +0.258 | +0.168 (+0.097, +0.237) |
+| boosted, ipw | +0.246 (+0.080, +0.430) | +0.249 | +0.169 (+0.079, +0.283) |
+
+Boosted dr minus ridge: -0.026 (-0.092, +0.046). So the boosted model clearly beats the baseline, and
+**does not beat the ridge bandit** here: the toy's rewards are close to linear in the features, so
+trees have nothing extra to find. That is the expected result and a statement about the toy, not about
+the game. Boosted trees are the model to try once real exploration data exists and the ridge model's
+held-out error stops improving; until then the linear one is the cheaper default.
+
 ## The offline loop
 
 ```
@@ -216,12 +271,11 @@ toy for item 4. Not done: everything that needs the game or a new dependency.
    is meant to play the game needs a simulator fitted to logged sector transitions (own and foe
    strength, organisation, supply, terrain, order -> next state), and #111 and #117 found the tactical
    simulator's learned plan chooser did not beat the hand planner, so fidelity is the open problem.
-5. **A real model class and its dependency.** Linear per-order reward models cannot represent
-   sequencing, timing or multi-sector coordination, and the bandit treats each sector-month as
-   independent. A sequence or graph model needs a training library (numpy at the least, torch or jax
-   for a graph network or a policy-gradient method) and a place to run it; this repo carries none and
-   this change adds none. The logged format (features, order, propensity, outcome) is what such a
-   model would train on.
+5. **A real model class.** Done in part: the boosted bandit above (optional `ml` extra) handles
+   nonlinear sector features. It still treats each sector-month as independent and cannot represent
+   sequencing, timing or multi-sector coordination. A sequence or graph model needs torch or jax for a
+   graph network or a policy-gradient method, and logs that carry the neighbouring sectors. The logged
+   format (features, order, propensity, outcome) is what such a model would train on.
 6. **A yardstick.** Beating "competitive players" needs an opponent: a rating against the game's AI at
    a fixed difficulty first (`docs/evaluation.md`), then human matches. Nothing here measures that.
 

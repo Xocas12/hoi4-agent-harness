@@ -18,8 +18,9 @@ import sys
 from pathlib import Path
 
 from . import dataset as D
+from .boosted import BoostedBandit, MissingExtra
 from .evaluate import evaluate, render
-from .learn import LinearBandit, split_episodes
+from .learn import LinearBandit, load_model, split_episodes
 
 
 def _rows(paths: list[str], horizon: int) -> list[dict]:
@@ -48,6 +49,11 @@ def main(argv: list[str] | None = None) -> int:
         p.add_argument("--horizon", type=int, default=D.HORIZON_DAYS)
         p.add_argument("--test-fraction", type=float, default=0.3)
         p.add_argument("--l2", type=float, default=1.0)
+        if name in ("train", "report"):
+            p.add_argument("--model-type", choices=("linear", "boosted"), default="linear",
+                           help="boosted needs the ml extra: pip install 'hoi4-agent-harness[ml]'")
+            p.add_argument("--mode", choices=("dr", "ipw"), default="dr",
+                           help="boosted only: doubly robust targets or importance-weighted regression")
         if name == "train":
             p.add_argument("-o", "--out", required=True)
         if name == "eval":
@@ -73,15 +79,28 @@ def main(argv: list[str] | None = None) -> int:
         D.write_jsonl(rows, Path(args.out))
         print(json.dumps(D.summary(rows)))
         return 0
+    try:
+        return _learn(args)
+    except MissingExtra as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+
+
+def _fit(args, train):
+    if getattr(args, "model_type", "linear") == "boosted":
+        return BoostedBandit(mode=args.mode).fit(train, args.l2)
+    return LinearBandit().fit(train, args.l2)
+
+
+def _learn(args) -> int:
     rows = _rows(args.data, args.horizon)
     train, test = split_episodes(rows, args.test_fraction)
     if args.cmd == "train":
-        model = LinearBandit().fit(train, args.l2)
+        model = _fit(args, train)
         model.save(Path(args.out))
         print(f"trained on {len(train)} rows ({len(test)} held out); counts {model.counts}")
         return 0
-    model = (LinearBandit.load(Path(args.model)) if args.cmd == "eval"
-             else LinearBandit().fit(train, args.l2))
+    model = load_model(Path(args.model)) if args.cmd == "eval" else _fit(args, train)
     report = evaluate(model, train, test)
     print(json.dumps(report, indent=1) if args.json else render(report))
     return 0

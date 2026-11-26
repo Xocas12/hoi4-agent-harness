@@ -49,6 +49,8 @@ def usable(rows: list[dict]) -> list[dict]:
 def q_hat(model, features: dict, order: str, fallback: float = 0.0) -> float:
     """The reward model's prediction for any order, trusted or not (a model with no data for an order
     falls back to ``fallback``, which the caller sets to the training mean)."""
+    if model is not None and hasattr(model, "q"):         # a model class with its own q (boosted.py)
+        return model.q(features, order, fallback)
     w = getattr(model, "weights", {}).get(order) if model is not None else None
     if w is None:
         return fallback
