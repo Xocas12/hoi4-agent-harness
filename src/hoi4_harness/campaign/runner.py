@@ -241,6 +241,14 @@ class CampaignSupervisor(Supervisor):
         self.micro = None
         self._rule_misses = 0
         self._path_misses = 0
+        #: The automatic restart (campaign/restart.py), when ``campaign_on_memory = "restart"``
+        #: and the run is live; None otherwise. ``resume_game`` marks the country and sets
+        #: ``human_ai`` again once the game is back.
+        self.restarter = None
+        self.resume_game: Callable[[], None] = self._resume_game
+        self.restarts = 0                 # automatic restarts made by this process
+        self.sleep: Callable[[float], None] = time.sleep
+        self.wall: Callable[[], float] = time.time
         #: The person's guidance (``hoi4-harness guide``): the board the brief reads from.
         self._logged_guidance: set[int] = set(load_state(run_dir).get("guidance_seen") or [])
         self.guidance = GuidanceBoard(run_dir, load_state(run_dir).get("guidance_seen"))
@@ -357,18 +365,63 @@ class CampaignSupervisor(Supervisor):
             from .watch import process_private_gb
             read = process_private_gb
         used = read(self.config.campaign_game_process or "hoi4.exe")
+        restarting = self.config.campaign_on_memory == "restart" and self.restarter is not None
+        if restarting:
+            self.restarter.remember_pid()          # the pid this run knows, while one game runs
         if used is None or used < limit:
             return None
         self.log.line(f"HOI4 holds {used:.0f} GB of private memory (limit {limit:g} GB): it "
                       "leaks over a long run and crashes when the system's commit runs out")
-        if self.config.campaign_on_memory != "stop":
+        if self.config.campaign_on_memory not in ("stop", "restart"):
             return None
         self.last_save = None                     # a save now, not in N months
+        asked_at = self.wall()
+        saves_before = self.saves_taken
         self._recovery_save(state)
+        if restarting and self.restarts < self.config.campaign_restart_max:
+            if self.saves_taken == saves_before:
+                return (f"HOI4 holds {used:.0f} GB of private memory and the recovery save could "
+                        "not be asked for, so the game was not restarted. Restart it by hand "
+                        "and run the same command with --resume")
+            return self._restart_game(state, asked_at)
+        if self.config.campaign_on_memory == "restart":
+            why = ("no live game to restart (a fake game, or no input driver)"
+                   if self.restarter is None else
+                   f"{self.restarts} automatic restarts already made (campaign_restart_max)")
+            self.log.line(f"restart not done: {why}; stopping as campaign_on_memory = stop would")
         return (f"HOI4 holds {used:.0f} GB of private memory (limit {limit:g} GB). A recovery "
                 f"save was asked for at {state.date}. Restart the game with -debug_mode, load "
                 "that save, and run the same command with --resume: the run marks the country, "
                 "turns human_ai on and carries on")
+
+    def _restart_game(self, state: GameState, asked_at: float) -> str | None:
+        """The game restarts itself (campaign/restart.py), then the country is marked and
+        ``human_ai`` turned on again in this process. None: carry on; a string: stop, resumably."""
+        from .restart import RestartFailed
+
+        self.log.line(f"restarting the game at {state.date} (campaign_on_memory = restart)")
+        try:
+            result = self.restarter.restart(asked_at)
+        except RestartFailed as exc:
+            self.log.line(f"restart failed: {exc}")
+            return str(exc)
+        self.restarts += 1
+        save_state(self.run_dir, game_restarts=self.restarts)
+        self.log.line(f"game restarted from {result.save.name}; marking the country and "
+                      "handing it to the AI again")
+        try:
+            self.resume_game()
+        except (CampaignStartError, GameLost, RuntimeError) as exc:
+            self.log.line(f"after the restart the run could not continue: {exc}")
+            return (f"the game was restarted and {result.save.name} is loading, but the run could "
+                    f"not pick it up: {exc}. Run the same command with --resume")
+        if self.watchdog is not None:
+            self.watchdog.reset()
+        self.log.line(f"restart #{self.restarts} done; the campaign goes on")
+        return None
+
+    def _resume_game(self) -> None:
+        begin(self.env, self.config, self.log, sleep=self.sleep, run_dir=self.run_dir)
 
     def _player_capitulated(self, state: GameState) -> str | None:
         """Note the player's own capitulation (the brief, ``campaign_state.json`` and the
@@ -780,6 +833,16 @@ def _run(config: HarnessConfig, planner: LLMClient | None, resume: bool, env: HO
     save_state(run_dir, save_dir=str(_save_dir(config) or ""))
     supervisor = CampaignSupervisor(config, env, tracker, log, run_dir, watchdog)
     supervisor.briefing = brief_run
+    supervisor.sleep = sleep
+    if config.campaign_on_memory == "restart":
+        from .restart import build_for_run
+
+        supervisor.restarter = build_for_run(
+            config, adapter, log.line, lambda: load_state(run_dir),
+            lambda **kw: save_state(run_dir, **kw), _save_dir(config))
+        if supervisor.restarter is None:
+            log.line("campaign_on_memory = restart, but there is no live game to restart here: "
+                     "the guard will stop the run as `stop` does")
     loop = AgentLoop(
         env=env,
         planner=planner if planner is not None

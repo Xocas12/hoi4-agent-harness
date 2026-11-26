@@ -108,12 +108,11 @@ def check_focus(expected_title: str) -> FocusCheck:
     return FocusCheck(False, title, reason=f"focused window is {title!r}")
 
 
-def take_focus(title: str) -> bool:
-    """Ask Windows to bring the visible top-level window whose title contains ``title`` to
-    the front. Used only when ``campaign_take_focus`` is on; True if one was found and the
-    request was made. Sends no key. Windows only: False elsewhere."""
+def _find_window(title: str) -> int | None:
+    """The handle of the first visible top-level window whose title contains ``title``
+    (case-insensitive), or None. Windows only."""
     if sys.platform != "win32" or not title.strip():
-        return False
+        return None
     import ctypes
     from ctypes import wintypes
 
@@ -132,9 +131,25 @@ def take_focus(title: str) -> bool:
         return True
 
     user32.EnumWindows(callback_type(visit), 0)
-    if not found:
+    return found[0] if found else None
+
+
+def window_visible(title: str) -> bool:
+    """Whether a visible top-level window whose title contains ``title`` exists (Windows only;
+    False elsewhere). Sends nothing, moves nothing."""
+    return _find_window(title) is not None
+
+
+def take_focus(title: str) -> bool:
+    """Ask Windows to bring the visible top-level window whose title contains ``title`` to
+    the front. Used only when ``campaign_take_focus`` is on; True if one was found and the
+    request was made. Sends no key. Windows only: False elsewhere."""
+    hwnd = _find_window(title)
+    if hwnd is None:
         return False
-    hwnd = found[0]
+    import ctypes
+
+    user32 = ctypes.windll.user32
     if user32.IsIconic(hwnd):
         user32.ShowWindow(hwnd, 9)           # SW_RESTORE
     # Windows only lets the foreground thread hand the focus over; attaching to its input
@@ -150,6 +165,24 @@ def take_focus(title: str) -> bool:
         if attached:
             user32.AttachThreadInput(this_thread, fg_thread, False)
     return True
+
+
+_FRESH_TAKE = ("import sys; from hoi4_harness.adapters.window import take_focus; "
+               "sys.exit(0 if take_focus(sys.argv[1]) else 1)")
+
+
+def take_focus_fresh(title: str, *, run=subprocess.run, timeout: float = 30.0) -> bool:
+    """``take_focus`` from a NEW python process. Windows refused the foreground to a long-running
+    harness process twice on 2026-11-22 (the rules for who may take the foreground depend on the
+    caller), while a fresh process got it at once. True when the child found the window and made
+    the request. Sends no key."""
+    if not title.strip():
+        return False
+    try:
+        done = run([sys.executable, "-c", _FRESH_TAKE, title], capture_output=True, timeout=timeout)
+    except (OSError, subprocess.SubprocessError):
+        return False
+    return done.returncode == 0
 
 
 def client_rect() -> tuple[int, int, int, int] | None:

@@ -14,6 +14,7 @@ after a long time. Neither presses a key, and neither presses Escape.
 
 from __future__ import annotations
 
+import csv
 import subprocess
 import sys
 import time
@@ -45,11 +46,11 @@ def process_running(name: str) -> bool | None:
     return name.lower() in out.stdout.lower()
 
 
-def process_private_gb(name: str) -> float | None:
-    """The private (committed) memory of the process called ``name``, in GB; None where that
-    cannot be told. Windows only. Private bytes, not the working set: HOI4 1.20 in an overnight
-    campaign (2026-11-22) held 78 GB private against a 20 GB working set, and it is the commit
-    limit that ends the game (a 109 GB limit was 107.5 GB full)."""
+def process_private_bytes(name: str) -> int | None:
+    """The private (committed) bytes of the process called ``name``; None where that cannot be
+    told. Windows only. Private bytes, not the working set: HOI4 1.20 in an overnight campaign
+    (2026-11-22) held 78 GB private against a 20 GB working set, and it is the commit limit that
+    ends the game (a 109 GB limit was 107.5 GB full)."""
     if not name or sys.platform != "win32":
         return None
     stem = name[:-4] if name.lower().endswith(".exe") else name
@@ -61,9 +62,34 @@ def process_private_gb(name: str) -> float | None:
     except (OSError, subprocess.SubprocessError):
         return None
     try:
-        return int(out.stdout.strip()) / 1024 ** 3
+        return int(out.stdout.strip())
     except ValueError:
         return None
+
+
+def process_private_gb(name: str) -> float | None:
+    """``process_private_bytes`` in GB (2**30); None where it cannot be told."""
+    used = process_private_bytes(name)
+    return None if used is None else used / 1024 ** 3
+
+
+def process_pids(name: str) -> list[int] | None:
+    """The ids of every running process called ``name`` (``tasklist``); None where that cannot
+    be told (not Windows, the call failed). An empty list means none is running."""
+    if not name or sys.platform != "win32":
+        return None
+    try:
+        out = subprocess.run(["tasklist", "/FI", f"IMAGENAME eq {name}", "/FO", "CSV", "/NH"],
+                             capture_output=True, text=True, timeout=20)
+    except (OSError, subprocess.SubprocessError):
+        return None
+    if out.returncode != 0:
+        return None
+    pids = []
+    for row in csv.reader(out.stdout.splitlines()):
+        if len(row) > 1 and row[0].lower() == name.lower() and row[1].isdigit():
+            pids.append(int(row[1]))
+    return pids
 
 
 class Watchdog:
