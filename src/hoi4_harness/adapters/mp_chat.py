@@ -5,15 +5,16 @@ In single player the chat is a file beside the game (chat.py). In a multiplayer 
 so ``send_message`` to a human (``person``, ``global`` or a country in ``mp_human_tags``) is typed
 into that chat through the input driver's key layer instead: Enter opens the chat box, the text
 goes in, Enter sends it. Only what the key layer can type goes in (``typable``): a bracket or a
-colon would make it refuse the whole line. A message to another LLM country is not routed here
+colon would make it refuse the whole line. The other player's lines are read back off the screen
+(adapters/mp_chat_reader.py). A message to another LLM country is not routed here
 (it is not in the game's chat to read); it goes to the file chat when the run has one.
 
 UNVERIFIED against a live multiplayer game: that Enter opens the chat box in a lobby-less client
 session and Enter sends it, that the box takes ``/`` and ``:`` and non-ASCII text, how long a line
 may be, and whether a line typed while the game is paused is accepted. The keys are constructor
 arguments (``OPEN_KEY``, ``SEND_KEY``) so the first live session can correct them without a code
-change elsewhere. Nothing here reads the game's chat back: the other player's words reach the
-model only if they are also written to the file chat (``hoi4-harness chat``).
+change elsewhere. This module only sends; reading is mp_chat_reader.py (OCR of the chat box, also
+UNVERIFIED live).
 """
 
 from __future__ import annotations
@@ -66,6 +67,8 @@ class MultiplayerChat:
         self.open_key, self.send_key = open_key, send_key
         self._sleep, self.settle = sleep, settle
         self.count = 0
+        #: Every line typed into the game's chat, so the reader can tell its own lines on screen.
+        self.sent_lines: list[str] = []
 
     def reaches(self, to: str) -> bool:
         """Whether ``to`` is somebody in the game's chat: the person, everyone, or a human country."""
@@ -89,6 +92,7 @@ class MultiplayerChat:
         self._sleep(self.settle)
         self.driver.press(self.send_key)
         self.count += 1
+        self.sent_lines.append(line)
         return SentLine(self.count, to.lower() if to.lower() in HUMAN_TARGETS else to.upper(), line)
 
 

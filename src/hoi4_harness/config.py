@@ -546,6 +546,11 @@ class HarnessConfig:
     #: ``mp_human_tags`` play theirs. An action aimed at one of those countries is refused.
     multiplayer: bool = False
     mp_human_tags: list[str] = field(default_factory=list)
+    #: Reading the other player's lines from the game's chat box (adapters/mp_chat_reader.py):
+    #: ``{"enabled": true, "rect": [x, y, w, h] as fractions of the game window, "upscale": 2.0,
+    #: "own_names": ["my in-game name"], "pattern": regex with sender and text groups,
+    #: "baseline": true}``. Without ``rect`` an UNCALIBRATED default is used (docs/multiplayer.md).
+    mp_chat_screen: dict = field(default_factory=dict)
     #: Co-op, changed mid-game (coop.py, ``hoi4-harness domains``): ``{domain: "human" | "llm"}``
     #: laid over ``human_domains`` / ``control``. The person taking a domain back or handing it
     #: over writes here; the run's control map is rebuilt from it.

@@ -708,6 +708,16 @@ def cmd_play(args: argparse.Namespace) -> int:
             tag = (config.country or first.state.country or "LLM").upper()
             env.attach_chat(ChatChannel(ChatLog(config.chat_path), tag, run_dir / "chat_seen.json"))
         loop.supervisor = CoopGuidance(run_dir, loop)
+        if config.multiplayer and env.mp_chat is not None:
+            from .adapters.mp_chat import find_driver
+            from .adapters.mp_chat_reader import build_reader
+
+            fake = getattr(env.adapter, "fake_game", None)
+            reader, note = build_reader(config, find_driver(env.adapter), env.mp_chat,
+                                        backend=getattr(fake, "chat_ocr", None))
+            if reader is not None:
+                loop.supervisor.incoming = reader
+            echo(f"multiplayer chat: {note if reader is not None else 'not read (' + note + ')'}")
     listener = None
     if env.handover is not None:
         from .coop import build_hotkey_listener, wire_handover
