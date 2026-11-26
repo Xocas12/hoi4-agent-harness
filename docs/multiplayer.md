@@ -62,10 +62,12 @@ sent. The line is now `SWE to GER, text`, and anything the key layer cannot type
 (brackets, colon, question mark, accents) is dropped or flattened first (`typable`). The chat was
 also unreachable from the headless adapter (`find_driver` did not look through the router).
 
-**Reading the other player's chat is not built.** The game's chat is not in `game.log`. A person
-tells the harness to move a domain with the command (`hoi4-harness domains --run-dir ... --take
-army`) or the file chat on the harness machine (`hoi4-harness chat`); the in-game chat reaches it
-only through the `incoming` reader a live session would have to supply.
+**Reading the other player's chat** is built, from the screen, and UNCALIBRATED (see "Reading the
+other player's chat" below). The game's chat is not in `game.log`, so the harness reads the chat box
+with Windows OCR (`adapters/mp_chat_reader.py`) and feeds the new lines into `CoopGuidance`'s
+`incoming` seam: a line like `take army` moves a domain, and every new line from the other player
+is in the model's brief and wakes it. The file chat (`hoi4-harness chat`) and `hoi4-harness
+domains` still work beside it.
 
 ## Setting up a hosted session: the exact live steps
 
@@ -104,7 +106,59 @@ copies), two Steam accounts that both own HOI4 1.20, the same playset and the LL
 
 In a multiplayer game (`--mp-client` / `--mp-human`) the person is in the game, not at a chat file, so the model's `send_message` to a human (`person`, `global` or a country in `--mp-human`) is typed into the **game's own chat**: Enter opens the chat box, the line goes in as `FRA to GER, text`, Enter sends it (`adapters/mp_chat.py`, behind the input driver, so the focus check, the key guard and dry-run all apply). `send_message` to another LLM country still goes to the file chat when the run has one; single-player runs are unchanged.
 
-**UNVERIFIED.** Nothing here has run in a live multiplayer game. Unconfirmed: that Enter opens and sends in the chat box on a client, the line length it accepts (200 characters is a guess), characters beyond plain ASCII, and whether a line typed while the host has the game paused is taken. The two keys are `OPEN_KEY` and `SEND_KEY` in `mp_chat.py`. Reading the other player's chat back is not built: the model only sends. Tested with a fake driver in `tests/test_chat.py`.
+**UNVERIFIED.** Nothing here has run in a live multiplayer game. Unconfirmed: that Enter opens and sends in the chat box on a client, the line length it accepts (200 characters is a guess), characters beyond plain ASCII, and whether a line typed while the host has the game paused is taken. The two keys are `OPEN_KEY` and `SEND_KEY` in `mp_chat.py`. Reading is a separate module, below. Tested with a fake driver in `tests/test_chat.py`.
+
+## Reading the other player's chat
+
+Windows OCR (the engine the event reader uses; nothing new to install) reads one rectangle of the
+game window once per turn. Per read:
+
+1. **Capture.** Only the game window, and only while it is the foreground window (the input
+   guard's check); otherwise the read is skipped and the brief says why. The rectangle is
+   `mp_chat_screen.rect`, four fractions of the window (`x, y, w, h`), clamped to the window, so the
+   desktop is never captured. A dry run reads nothing.
+2. **Parse.** `Sender: text`, optionally after `[hh:mm]`. A row with no sender continues the line
+   above (the box wraps). Replace the pattern with `mp_chat_screen.pattern` (a regex with `sender`
+   and `text` groups) if the game's format differs.
+3. **De-duplicate.** Each read overlaps the last one; only the lines after the overlap are new,
+   matched loosely so one misread letter does not repeat a line. The first read of a run is a
+   baseline: talk already in the box is context, not a command (`"baseline": false` turns that
+   off).
+4. **Own lines.** Anything the harness typed (`MultiplayerChat.sent_lines`, and any line starting
+   `<TAG> to `) and any sender in `mp_chat_screen.own_names` is dropped.
+5. **Use.** New lines go to `CoopGuidance`: `take army` / `give army` are parsed as in the file chat,
+   the lines show in the brief as `NEW Name: text`, and a new line wakes the model.
+
+Profile keys, all optional (`mp_chat_screen`):
+
+```json
+"mp_chat_screen": {"enabled": true, "rect": [0.01, 0.60, 0.32, 0.28], "upscale": 2.0,
+                   "own_names": ["YourInGameName"], "pattern": null, "baseline": true}
+```
+
+**UNCALIBRATED.** Without `rect` the harness uses a guess (`0.01, 0.60, 0.32, 0.28`: the lower left
+of the window) and the start line says `UNCALIBRATED`. Nothing about the real box is verified: its
+position, its row format, how long lines stay, whether the typewriter font reads at your resolution.
+
+### Calibrating it live
+
+1. Join the hosted game as in the setup steps and have the host type a few lines, one long enough
+   to wrap, and one starting with a time if the box shows one.
+2. With the game in front, run (no `--provider`, so the scripted stand-in model is used and nothing is spent)
+   `hoi4-harness play --mp-client --country FRA --mp-human GER --adapter headless
+   --headless-reader logtail --live --turns 3 --run-dir runs/mp-chat`.
+   Each turn appends one line to `runs/mp-chat/mp_chat_reads.jsonl`: the raw OCR rows, what they
+   parsed to, and what was heard.
+3. Read the file. Rows empty or garbage: the rectangle is off. Take a screenshot yourself, measure
+   the box as fractions of the window (box left / window width, and so on), put them in `rect`, and
+   repeat. Rows right but `parsed` wrong: set `pattern`. A line missing its first word or its
+   sender: widen the rectangle or raise `upscale`.
+4. Have the host type `take army`; the model's brief should show `NEW Host: take army` and the army
+   should change hands. Have the harness send a line: its own `FRA to GER, ...` row must not come
+   back as heard (if the game prefixes your in-game name differently, add it to `own_names`).
+5. Record the final `mp_chat_screen` and the resolution in the table below.
+
+Tested on fake captures only: `tests/test_91_chat_read.py`.
 
 ## What needs a live session
 
@@ -121,6 +175,7 @@ two-client game. Every row is open.
 | Space (pause) | | | | |
 | Focus, research and production clicks (no console) | | | | |
 | `game.log` carries the mod's lines for the client's own country | | | | |
+| The chat box read by OCR: rectangle, row format, own-line filter | | | | |
 
 Open questions that no test here can answer, each a line to settle on the live session:
 
