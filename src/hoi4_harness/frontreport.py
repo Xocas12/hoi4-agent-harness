@@ -162,6 +162,7 @@ class FrontHistory:
             fronts[tag] = {
                 "gained": len(gained), "lost": len(lost_p), "baseline": baseline,
                 "gained_states": _states(gained, layer), "lost_states": _states(lost_p, layer),
+                "gained_by_state": _by_state(gained, layer), "lost_by_state": _by_state(lost_p, layer),
                 "taken": sorted(now_t), "lost_set": sorted(now_l)}
             if baseline or gained or lost_p:
                 self.since[tag] = world.date
@@ -209,6 +210,19 @@ def _states(provinces, layer) -> int:
     if layer is None:
         return 0
     return len({layer.state_of(p) for p in provinces} - {None})
+
+
+def _by_state(provinces, layer) -> dict[str, int]:
+    """Provinces moved per state (state id as a string, as it comes back from the json file): the
+    per-sector outcome the micro controller's dataset joins on (micro/dataset.py)."""
+    if layer is None:
+        return {}
+    out: dict[str, int] = {}
+    for p in provinces:
+        sid = layer.state_of(p)
+        if sid is not None:
+            out[str(sid)] = out.get(str(sid), 0) + 1
+    return out
 
 
 def _outcome(rec: dict, holder: str | None, me: str, enemies: set[str]) -> str:

@@ -298,8 +298,10 @@ class CampaignSupervisor(Supervisor):
             if self.micro is None:
                 from ..micro.runtime import MicroRuntime, build_controller
 
-                self.micro = MicroRuntime(build_controller(kind, self.config.micro_model),
-                                          self.env, self.run_dir, self.log.line)
+                controller = build_controller(
+                    kind, self.config.micro_model, float(getattr(self.config, "micro_explore", 0.0)),
+                    int(getattr(self.config, "micro_explore_seed", 0)))
+                self.micro = MicroRuntime(controller, self.env, self.run_dir, self.log.line)
             for line in self.micro.step(state):
                 self.log.line(line)
         except Exception as exc:  # noqa: BLE001

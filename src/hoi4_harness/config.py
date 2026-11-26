@@ -449,6 +449,11 @@ class HarnessConfig:
     #: on the sectors the LLM has not ordered itself. Needs ``observe_world``.
     micro_controller: str = "off"
     micro_model: Path | None = None
+    #: Exploration for the micro controller (#85): per sector, with this probability (0 to 1) a
+    #: different order than the controller's own, seeded by ``micro_explore_seed``. Every decision is
+    #: logged in micro_decisions.jsonl with the propensity of the order chosen. 0: off.
+    micro_explore: float = 0.0
+    micro_explore_seed: int = 0
     #: Let the briefing model search the web for mods it cannot judge from files (opt-in;
     #: the Workshop brief is read first; only providers that have a search tool).
     briefing_web_search: bool = False

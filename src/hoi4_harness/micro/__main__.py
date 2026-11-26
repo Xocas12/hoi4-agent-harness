@@ -4,6 +4,7 @@
     python -m hoi4_harness.micro train data/micro.jsonl -o data/micro-model.json
     python -m hoi4_harness.micro eval data/micro.jsonl --model data/micro-model.json
     python -m hoi4_harness.micro report runs/overnight-ger-1936      # extract + train + eval in one go
+    python -m hoi4_harness.micro simulate -o data/sim --episodes 60  # toy-simulator runs to practise on
 
 ``train`` fits on the earlier part of the data and ``eval`` scores on the held-out part with the
 same split, so a model is never judged on rows it learned from.
@@ -32,6 +33,11 @@ def _rows(paths: list[str], horizon: int) -> list[dict]:
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(prog="python -m hoi4_harness.micro", description=__doc__.split("\n")[0])
     sub = ap.add_subparsers(dest="cmd", required=True)
+    sm = sub.add_parser("simulate", help="run the toy simulator (sim.py) and write run directories")
+    sm.add_argument("-o", "--out", required=True)
+    sm.add_argument("--episodes", type=int, default=60)
+    sm.add_argument("--turns", type=int, default=12)
+    sm.add_argument("--epsilon", type=float, default=0.3, help="exploration; 0 logs the baseline alone")
     ex = sub.add_parser("extract", help="run directories -> a dataset (jsonl)")
     ex.add_argument("runs", nargs="+")
     ex.add_argument("-o", "--out", required=True)
@@ -50,6 +56,18 @@ def main(argv: list[str] | None = None) -> int:
             p.add_argument("--json", action="store_true", help="print the numbers, not the report")
     args = ap.parse_args(argv)
 
+    if args.cmd == "simulate":
+        from . import sim
+        from .baseline import baseline_from_features
+        from .explore import ExploringController
+
+        base = sim.FeaturePolicyController(baseline_from_features, "baseline")
+        for n in range(args.episodes):
+            sim.run_episode(ExploringController(base, args.epsilon, seed=n), n, args.turns,
+                            run_dir=Path(args.out) / f"sim-{n:03d}")
+        print(f"wrote {args.episodes} toy episodes to {args.out}; "
+              f"next: python -m hoi4_harness.micro report {args.out}/sim-* --horizon 30")
+        return 0
     if args.cmd == "extract":
         rows = D.extract_runs([Path(r) for r in args.runs], args.horizon)
         D.write_jsonl(rows, Path(args.out))

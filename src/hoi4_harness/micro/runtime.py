@@ -23,19 +23,28 @@ DECISIONS_FILE = "micro_decisions.jsonl"
 KINDS = ("off", "rule", "learned")
 
 
-def build_controller(kind: str, model_path: Path | None = None) -> MicroController | None:
+def build_controller(kind: str, model_path: Path | None = None, explore: float = 0.0,
+                     seed: int = 0) -> MicroController | None:
+    """``explore`` > 0 wraps the controller in epsilon exploration (explore.py): per sector, with that
+    probability a different order, with the propensity logged in micro_decisions.jsonl."""
     kind = (kind or "off").lower()
     if kind == "off":
         return None
     if kind == "rule":
-        return RuleController()
-    if kind == "learned":
+        ctl = RuleController()
+    elif kind == "learned":
         from .learn import LearnedController, LinearBandit
 
         if model_path is None:
             raise ValueError("micro_controller 'learned' needs micro_model (a file from `micro train`)")
-        return LearnedController(LinearBandit.load(model_path))
-    raise ValueError(f"micro_controller must be one of {KINDS}, not {kind!r}")
+        ctl = LearnedController(LinearBandit.load(model_path))
+    else:
+        raise ValueError(f"micro_controller must be one of {KINDS}, not {kind!r}")
+    if explore and explore > 0:
+        from .explore import ExploringController
+
+        return ExploringController(ctl, explore, seed)
+    return ctl
 
 
 def intents_from_standing(standing: dict[str, str], ours: dict[str, str], obs: Observation) -> list[Intent]:
@@ -82,29 +91,40 @@ class MicroRuntime:
         obs = build_observation(pic, world.layer, world.history, current)
         intents = intents_from_standing(self.standing.orders, self.ours, obs)
         orders = self.controller.decide(intents, obs)
-        if not orders:
-            return []
-        results = self.env.act_many(orders_to_calls(orders), state.date or "", auto=True)
+        decisions = getattr(self.controller, "decisions", None)
         lines: list[str] = []
-        for order, result in zip(orders, results, strict=False):
-            if not result.ok:
-                self.log(f"micro: {order.order} {order.state} refused: {result.message}")
-                continue
-            self.ours[str(order.state)] = order.order
-            sec = obs.sector(order.state) or next(
-                (s for s in obs.sectors if order.order == "reserve" and s.rear_state == order.state), None)
-            self._record(state.date, order, sec)
-            lines.append(f"micro {order.order} {order.state}")
+        refused: set[int] = set()
+        if orders:
+            results = self.env.act_many(orders_to_calls(orders), state.date or "", auto=True)
+            for order, result in zip(orders, results, strict=False):
+                if not result.ok:
+                    refused.add(order.state)
+                    self.log(f"micro: {order.order} {order.state} refused: {result.message}")
+                    continue
+                self.ours[str(order.state)] = order.order
+                if decisions is None:
+                    self._record(state.date, order.state, order.order, order.reason, obs)
+                lines.append(f"micro {order.order} {order.state}")
+        if decisions is not None:
+            # every sector decision is data, including the ones that left the standing order as it was
+            for d in decisions:
+                if d.get("applied") and d["state"] not in refused:
+                    self._record(state.date, d["state"], d["order"], "", obs, d)
         self._save()
         return lines
 
-    def _record(self, date, order, sec) -> None:
+    def _record(self, date, state_id: int, order: str, reason: str, obs, extra: dict | None = None) -> None:
         # a reserve order lands on a rear state: it is logged with the features of the sector it relieves
-        rec = {"date": date, "state": order.state, "order": order.order, "reason": order.reason,
-               "controller": self.controller.name,
-               "features": sector_features(sec) if sec is not None else None}
-        if rec["features"] is None:
+        sec = obs.sector(state_id) or next(
+            (s for s in obs.sectors if order == "reserve" and s.rear_state == state_id), None)
+        if sec is None:
             return
+        rec = {"date": date, "state": state_id, "order": order, "reason": reason,
+               "controller": self.controller.name, "enemy": sec.enemy, "sector_state": sec.state,
+               "own": sec.own, "foe": sec.foe, "org_average": sec.org_average,
+               "features": sector_features(sec)}
+        if extra:
+            rec.update({k: v for k, v in extra.items() if k not in ("state", "order", "applied", "enemy")})
         try:
             with open(self.run_dir / DECISIONS_FILE, "a", encoding="utf-8") as fh:
                 fh.write(json.dumps(rec, sort_keys=True) + "\n")
