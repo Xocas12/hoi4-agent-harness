@@ -50,7 +50,9 @@ class BriefingRun:
 
         found = newest_save(self.save_dir, game_date, tag) if self.save_dir else None
         if found is None and game_date and self.save_dir:
-            found = newest_save(self.save_dir, None, tag)      # older than the window, still the world
+            # Older than the window is still this world; LATER than the game's date is another
+            # game (the live run of 2026-11-27 briefed a fresh 1936 start from a 1941 save).
+            found = _newest_not_after(Path(self.save_dir), game_date, tag)
         return found
 
     def _prices(self):
@@ -124,3 +126,26 @@ def wars_of(state) -> set[str]:
 def snapshot(state) -> dict:
     return {"wars": sorted(wars_of(state)), "faction": state.faction}
 
+
+
+def _newest_not_after(save_dir: Path, game_date: str, tag: str | None) -> Path | None:
+    """The newest text save of ``tag`` dated on or before ``game_date``; None when there is none."""
+    import re
+
+    from ..adapters import savegame as sg
+
+    for path in sorted(save_dir.glob("*.hoi4"), key=lambda p: p.stat().st_mtime, reverse=True):
+        try:
+            head = path.open("rb").read(4096).decode("utf-8", errors="replace")
+        except OSError:
+            continue
+        if not head.startswith("HOI4txt"):
+            continue
+        who = re.search(r'\bplayer="?(\w+)', head)
+        if tag and who and who.group(1) != tag:
+            continue
+        when = re.search(r'\bdate="?([\d.]+)', head)
+        saved = sg.save_date(when.group(1)) if when else None
+        if saved and saved <= game_date:
+            return path
+    return None

@@ -544,9 +544,11 @@ def _watch_for_campaign(adapter, config: HarnessConfig, fake, driver, sleep) -> 
     take = None
     if config.campaign_take_focus and fake is None:
         from ..rival.safety import system_input_watch
-        from .window import take_focus
+        from .window import take_focus_fresh
 
-        take = idle_gated(take_focus, system_input_watch().idle_seconds,
+        # From a fresh process: the campaign's own long-lived process was refused the foreground
+        # for 19 minutes on 2026-11-27 (and twice on 11-22), while a new process gets it at once.
+        take = idle_gated(take_focus_fresh, system_input_watch().idle_seconds,
                           config.campaign_take_focus_idle_seconds)
         if getattr(adapter, "input_guard", None) is not None:
             take = adapter.input_guard.gate_take(take)

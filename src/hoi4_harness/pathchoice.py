@@ -417,7 +417,7 @@ def parse_choice(text: str, menu: PathMenu) -> tuple[str, str] | None:
     return pick, reason
 
 
-def choose_path(client, menu: PathMenu, *, max_tokens: int = 600,
+def choose_path(client, menu: PathMenu, *, max_tokens: int = 2000,
                 briefing: str | None = None) -> PathChoice:
     """Ask ``client`` once. An unreadable or invalid reply falls back to the rule's default
     option (or "no path chosen" without a rule) and says so in the reason; it is never asked again."""
@@ -432,9 +432,14 @@ def choose_path(client, menu: PathMenu, *, max_tokens: int = 600,
         return PathChoice(menu.country, rule.token if rule else None, option,
                           reason or "(no reason given)")
     fallback = rule.default.name if rule and rule.default else "no path chosen"
+    # Say what came back: the live run of 2026-11-27 fell back with no trace of the reply (600
+    # tokens cut Haiku off mid-reasoning, before its JSON). The limit is now 2000.
+    text = " ".join((getattr(response, "text", "") or "").split())
+    stop = getattr(response, "stop_reason", None)
+    seen = f" (stop: {stop}; the reply began: {text[:160]!r})" if text else f" (stop: {stop}; empty reply)"
     return PathChoice(menu.country, rule.token if rule else None, fallback,
-                      "the model's reply did not name a valid choice; the rule's default is used",
-                      source="default")
+                      "the model's reply did not name a valid choice; the rule's default is used"
+                      + seen, source="default")
 
 
 def guidance_text(choice: PathChoice) -> str:

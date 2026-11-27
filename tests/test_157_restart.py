@@ -475,3 +475,17 @@ def test_157_restart_is_a_choice_and_preflight_checks_game_dir(tmp_path):
     assert any(c.status == FAIL and c.name == "restart" for c in check_focus_policy(config))
     (tmp_path / "hoi4.exe").write_bytes(b"")
     assert not any(c.status == FAIL and c.name == "restart" for c in check_focus_policy(config))
+
+
+def test_157_the_restarter_finds_the_driver_on_the_router():
+    # A console-only campaign keeps its input driver on the channel router; the live run of
+    # 2026-11-27 got "no live game to restart" because only adapter.driver was looked at.
+    from types import SimpleNamespace
+
+    from hoi4_harness.campaign.restart import run_driver
+
+    driver = object()
+    assert run_driver(SimpleNamespace(driver=driver)) is driver
+    nested = SimpleNamespace(writer=SimpleNamespace(router=SimpleNamespace(driver=driver)))
+    assert run_driver(nested) is driver
+    assert run_driver(SimpleNamespace()) is None

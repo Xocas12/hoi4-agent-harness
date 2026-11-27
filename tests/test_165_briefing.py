@@ -496,3 +496,14 @@ def test_165_claude_cli_gets_web_tools_only_inside_a_web_briefing(tmp_path):
         client.complete("sys", [Msg(role="user", text="dossier")])
     assert commands[1][commands[1].index("--tools") + 1] == ""
     assert client.plain is False and client.web is False     # restored for the player's turns
+
+
+def test_165_a_save_later_than_the_game_date_is_never_briefed(tmp_path):
+    # Live 2026-11-27: a fresh 1936 campaign was briefed from a 1941 save of another game.
+    from hoi4_harness.campaign.briefer import _newest_not_after
+
+    (tmp_path / "GER_1941.hoi4").write_text('HOI4txt\ndate="1941.8.31.2"\nplayer="GER"\n', encoding="utf-8")
+    assert _newest_not_after(tmp_path, "1936-01-01", "GER") is None
+    old = tmp_path / "GER_1936.hoi4"
+    old.write_text('HOI4txt\ndate="1936.1.1.12"\nplayer="GER"\n', encoding="utf-8")
+    assert _newest_not_after(tmp_path, "1936-01-01", "GER") == old

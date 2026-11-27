@@ -391,6 +391,18 @@ def kill_pid(pid: int, *, run=subprocess.run) -> bool:
         return False
 
 
+def run_driver(adapter):
+    """The run's input driver: on the adapter itself, or on the channel router of a headless
+    stack (a console-only campaign keeps it there: ``adapter.writer.router.driver``; the live
+    run of 2026-11-27 found the restart refused as "no live game" because it only looked on the
+    adapter)."""
+    found = getattr(adapter, "driver", None)
+    if found is not None:
+        return found
+    router = getattr(getattr(adapter, "writer", None), "router", None)
+    return getattr(router, "driver", None)
+
+
 def live_seams(config, adapter, log_path: Path | None) -> Seams:  # pragma: no cover - live only
     """The seams on the real machine, from the run's own driver (its click path, its input
     guard, its focus check)."""
@@ -399,7 +411,7 @@ def live_seams(config, adapter, log_path: Path | None) -> Seams:  # pragma: no c
     from ..rival.safety import system_input_watch
     from .watch import process_pids
 
-    driver = adapter.driver
+    driver = run_driver(adapter)
     title = config.window_title
     take = idle_gated(take_focus_fresh, system_input_watch().idle_seconds,
                       config.campaign_take_focus_idle_seconds)
@@ -438,7 +450,7 @@ def live_seams(config, adapter, log_path: Path | None) -> Seams:  # pragma: no c
 def build_for_run(config, adapter, log, load_state, save_state, save_dir) -> GameRestarter | None:
     """The restarter a live campaign uses, or None where it cannot be built (a fake game, no
     driver). Timings come from the ``campaign_restart_*`` config fields."""
-    if getattr(adapter, "fake_game", None) is not None or not hasattr(adapter, "driver"):
+    if getattr(adapter, "fake_game", None) is not None or run_driver(adapter) is None:
         return None
     timings = Timings(
         save_wait=config.campaign_restart_save_wait_seconds,
