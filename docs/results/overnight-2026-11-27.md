@@ -117,3 +117,14 @@ What the new features did:
   model steered production instead.
 - **Political power** stayed the binding constraint: `change_law closed_economy` was refused for 150
   PP with 6.7 held.
+
+**Stopped by hand at 09:05 (game date 1945-01-28), at the person's request.** Germany was a rump
+state after its 1943 capitulation. 133+ model calls (Haiku via `claude -p`) and four Sonnet
+briefings (about $0.35-0.42 each, outside the budget). HOI4 held 7.5-7.9 GB from 03:00 to 09:00 on
+DirectX 11, so the memory guard never fired.
+
+Why it collapsed: France and Belgium never fell (Belgium at 2% for three years). The USA, Mexico,
+Brazil and China joined. Manpower burned at 16-29k a day by late 1943, and war support sat at 78%,
+just under the 80% the next conscription law needs. The fronts turned from STUCK to LOSING from
+August 1943, and Germany capitulated on 1943-11-23. The same pattern as 11-22: the game's AI fights
+the war, and the model's steering does not break a stalled offensive.
