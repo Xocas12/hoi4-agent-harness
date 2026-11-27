@@ -321,6 +321,59 @@ that crossed midnight UTC shows as two rows; the invoice's day is also UTC, so t
    the cause: output high on the harness side is thinking counted twice, cache read low is
    a cache breakpoint that stopped reaching the wire.
 
+## Wall-clock budget of a real campaign (issue #157)
+
+`hoi4-harness campaign-report --run-dir runs/x --budget` (add `--out budget.md` to keep it) takes
+the wall clock from `transcript.jsonl` and splits it, per game year, into
+
+- **model**: waiting for the reply (every `llm` record, from the record before it);
+- **game**: the clock running, from the last action of a turn to its `turn_end` (advance, the
+  pause probe, waiting for the date to land);
+- **overhead**: the rest of the harness's own work: the read before a turn (`observe`: log and
+  save reads, briefings), running the actions (console, mouse), skipped turns.
+
+Time after a crash, a resume or a restart is not counted (it is shown as "down"). A turn is counted in
+the year it ended in. Memory is only what the log carries, the `HOI4 holds N GB` line the campaign
+writes when it reaches `campaign_memory_limit_gb`; a run that never got there has no memory column
+and the report says so (use `memory-probe` for a number). Briefings land in overhead, because their
+wall time is not in the transcript: the briefing runs between a turn and the next `observe`.
+
+Measured on the two overnight runs (Haiku through `claude -p`, vanilla, Germany from 1936):
+
+| run | renderer | game months | counted wall clock | min per game month | model | game | overhead |
+|---|---|---|---|---|---|---|---|
+| overnight-ger-1936 (11-22) | OpenGL | 146.5 (to 1948-03) | 7.4 h | 3.0 | 1.0 | 1.8 | 0.3 |
+| overnight4-ger-1936 (11-27) | DirectX 11 | 97.7 (to 1945-01) | 5.8 h | 3.6 | 1.6 | 1.0 | 1.0 |
+
+By year the first run went from 2.0 (1937, peacetime) to 5.0 minutes per game month (1940, the
+war in the west) and back to 2-3 once Germany was out of the fight; the second ran 1.5 (1937),
+2.8 (1938), then 3.8-4.4 from 1939 to 1944. The model is 33% of the first run and 45% of the second;
+the model's time follows the calls in a year (1940: 23 and 15 calls, 2.3 and 1.6 min per month),
+while game time stays at 1-2 min per game month at speed 5.
+
+Why the two differ. Game time fell from 1.8 to 1.0 min per month: the 11-22 run was on OpenGL, which
+also ran the game slower (DirectX 11 ran 88 game days in 5 minutes on the 1941 save). Overhead
+rose from 0.3 to 1.0: the 11-27 run wrote four Sonnet briefings (each about 2-3 minutes, counted here), and the 11-22 run had none. The 11-22
+log has the two memory lines (49 GB at 1942-06-27 and at 1944-12-19, both stops); the 11-27 log has
+none, because HOI4 held 7.5-7.9 GB for six hours on DirectX 11.
+
+**Targets** (what the report grades against; `campaign/budget.py`):
+
+| quantity | target | 11-22 | 11-27 |
+|---|---|---|---|
+| wall clock per game month | at most 5 min | 3.0 | 3.6 |
+| overhead per game month | at most 1 min | 0.3 | 1.0 |
+| HOI4 private memory growth, DirectX 11 | at most 4 GB an hour (no restart in a night) | 49 GB reached in 4.4 h | 7.5-7.9 GB flat over 6 h |
+
+At 5 minutes a game month 1936-1948 (156 months) is 13 hours: one night is a campaign to about 1946
+in this setup, and the number to move is the model's share in wartime, not the harness. The
+renderer matters more than anything else on this page: on OpenGL the memory limit forces a
+restart every 1.5 hours.
+
+Run `python scripts/live_setup.py prepare --apply` before a campaign: it also sets the renderer to
+DirectX 11 in `pdx_settings.txt`, `campaign-check` FAILs on OpenGL, and `hoi4-harness doctor`
+prints the renderer.
+
 ## What would break this
 
 Honest failure modes, since they decide whether the numbers above survive contact:

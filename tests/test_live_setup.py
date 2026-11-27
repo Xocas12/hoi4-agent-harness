@@ -141,7 +141,8 @@ def test_the_backup_holds_the_originals_the_mod_and_a_manifest(tmp_path, repo_mo
     assert (backup / "mod" / "llm_bridge" / "common" / "old.txt").read_text() == "stale"
     assert (backup / "mod" / "llm_bridge.mod").read_text() == "old"
     manifest = json.loads((backup / "manifest.json").read_text())
-    assert manifest["kind"] == "prepare" and set(manifest["files"]) == {"dlc_load.json", "settings.txt"}
+    assert manifest["kind"] == "prepare" and set(manifest["files"]) == {
+        "dlc_load.json", "settings.txt", "pdx_settings.txt"}
 
 
 def test_two_applies_in_the_same_second_never_share_or_overwrite_a_backup(tmp_path, repo_mod):

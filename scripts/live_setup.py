@@ -13,9 +13,13 @@ what it is about to change:
   longer has are removed from the installed copy;
 * ``dlc_load.json`` enables ``llm_bridge`` as the LAST mod, and with ``--expert-ai`` also
   Expert AI (Workshop 741805475, docs/expert-ai.md) just before it;
-* ``settings.txt`` gets ``save_as_binary=no`` (the harness reads text saves only).
+* ``settings.txt`` gets ``save_as_binary=no`` (the harness reads text saves only);
+* ``pdx_settings.txt`` gets ``"renderer"={ value="dx11" }`` when it says ``opengl``: HOI4 1.20
+  leaks 20-32 GB of memory an hour on OpenGL and none on DirectX 11 (issue #157). A file with no
+  renderer line already means the game's default, DirectX 11, and is left alone.
 
-``restore`` puts back exactly the ``dlc_load.json`` and ``settings.txt`` of a backup (the
+``restore`` puts back exactly the ``dlc_load.json``, ``settings.txt`` and ``pdx_settings.txt`` of
+a backup (the
 newest one, or ``--backup NAME``). The mod files stay where ``prepare`` left them: the
 mod is inert unless the playset enables it.
 
@@ -59,7 +63,7 @@ EXPERT_AI_ENTRY = f"mod/ugc_{EXPERT_AI_ID}.mod"
 BACKUP_DIR = "live_setup_backups"
 GAME_PROCESSES = {"hoi4.exe", "hoi4"}
 MANIFEST = "manifest.json"
-TRACKED = ("dlc_load.json", "settings.txt")
+TRACKED = ("dlc_load.json", "settings.txt", "pdx_settings.txt")
 
 
 class SetupError(Exception):
@@ -138,6 +142,23 @@ def edit_settings(text: str | None) -> str:
         return _SAVE_AS_BINARY.sub(keep_shape, text, count=1)
     eol = "\r\n" if "\r\n" in text else "\n"
     return text + ("" if text.endswith(("\n", "\r")) or not text else eol) + "save_as_binary=no" + eol
+
+
+_RENDERER = re.compile(r'("renderer"\s*=\s*\{\s*value\s*=\s*)"?(\w+)"?')
+
+
+def renderer_of(text: str | None) -> str:
+    """The renderer ``pdx_settings.txt`` names; no file or no line is the game's default, dx11."""
+    found = _RENDERER.search(text or "")
+    return found.group(2) if found else "dx11"
+
+
+def edit_pdx_settings(text: str | None) -> str | None:
+    """pdx_settings.txt with the renderer on dx11, or None when there is nothing to change (no
+    file, no renderer line, or already dx11). Everything else in the file is kept byte for byte."""
+    if text is None or renderer_of(text) == "dx11":
+        return text
+    return _RENDERER.sub(lambda m: f'{m.group(1)}"dx11"', text, count=1)
 
 
 def _read(path: Path) -> str | None:
@@ -319,10 +340,19 @@ def prepare(user_dir: Path, *, apply: bool, expert_ai: bool, repo_mod: Path,
                          f"Workshop (id {EXPERT_AI_ID}) and start the launcher once so it writes it")
     old_dlc, old_settings = _read(user_dir / "dlc_load.json"), _read(user_dir / "settings.txt")
     new_dlc, new_settings = edit_dlc_load(old_dlc, expert_ai, with_mod), edit_settings(old_settings)
+    old_pdx = _read(user_dir / "pdx_settings.txt")
+    new_pdx = edit_pdx_settings(old_pdx)
 
     out(f"HOI4 user folder: {user_dir}")
     out(mods.render())
     changes = {"dlc_load.json": (old_dlc, new_dlc), "settings.txt": (old_settings, new_settings)}
+    if old_pdx is not None:
+        changes["pdx_settings.txt"] = (old_pdx, new_pdx)
+    if renderer_of(old_pdx) != "dx11":
+        out(f"renderer: {renderer_of(old_pdx)} -> dx11 (OpenGL leaks 20-32 GB of memory an hour in "
+            "HOI4 1.20, issue #157; DirectX 11 does not). restore puts it back.")
+    else:
+        out(f"renderer: {renderer_of(old_pdx)} (already the leak-free one)")
     for name, (before, after) in changes.items():
         diff = unified(name, before, after)
         out(diff.rstrip("\n") if diff else f"{name}: no change")
@@ -351,7 +381,11 @@ def restore(user_dir: Path, *, apply: bool, backup_name: str | None,
     out(f"HOI4 user folder: {user_dir}\nrestoring from backup {backup.name}")
     plan = []
     for name in TRACKED:
+        if name not in manifest["files"]:
+            continue                    # a backup from before this file was tracked
         had = manifest["files"].get(name)
+        if had is None and name == "pdx_settings.txt":
+            continue                    # prepare never creates it; the game's own file stays
         current = user_dir / name
         saved = backup / name
         if had is not None and (not saved.is_file() or _sha(saved) != had):
@@ -383,7 +417,8 @@ def restore(user_dir: Path, *, apply: bool, backup_name: str | None,
                                  f"in {safety} has what was there")
         elif before is not None:
             target.rename(user_dir / f"{name}.removed-by-restore-{safety.name}")
-    out("restored dlc_load.json and settings.txt exactly as backed up (the mod files are left in place).")
+    out("restored dlc_load.json, settings.txt and pdx_settings.txt exactly as backed up "
+        "(the mod files are left in place).")
     return 0
 
 
@@ -393,8 +428,10 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0],
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = parser.add_subparsers(dest="command", required=True)
-    for name, text in (("prepare", "back up, then install the mod, enable it and set save_as_binary=no"),
-                       ("restore", "put back the backed-up dlc_load.json and settings.txt")):
+    for name, text in (("prepare", "back up, then install the mod, enable it, set save_as_binary=no "
+                                   "and the renderer to dx11"),
+                       ("restore", "put back the backed-up dlc_load.json, settings.txt and "
+                                   "pdx_settings.txt")):
         p = sub.add_parser(name, help=text)
         p.add_argument("--apply", action="store_true", help="make the changes (default: dry run)")
         p.add_argument("--user-dir", metavar="PATH",

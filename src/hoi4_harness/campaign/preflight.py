@@ -168,8 +168,10 @@ def renderer_check(user_dir: Path) -> Check:
     found = re.search(r'"renderer"\s*=\s*\{\s*value\s*=\s*"?(\w+)', text)
     value = found.group(1) if found else "dx11"
     if value == "opengl":
-        return Check(WARN, "renderer", "OpenGL: HOI4 leaks about 20-30 GB an hour on it (issue #157); "
-                     "set Settings > Video > Renderer to DirectX 11 with the game closed")
+        return Check(FAIL, "renderer", "OpenGL: HOI4 leaks 20-32 GB of memory an hour on it, so a "
+                     "campaign cannot run a night (issue #157). Fix: python scripts/live_setup.py "
+                     "prepare --apply (sets \"renderer\"={ value=\"dx11\" } in pdx_settings.txt), or "
+                     "Settings > Video > Renderer > DirectX 11, with the game closed")
     return Check(PASS, "renderer", value)
 
 
