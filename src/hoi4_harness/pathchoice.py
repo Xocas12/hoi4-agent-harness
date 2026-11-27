@@ -400,7 +400,7 @@ def parse_choice(text: str, menu: PathMenu) -> tuple[str, str] | None:
     """``(option or path, reason)`` from the model's reply, or None when it names nothing usable."""
     match = re.search(r"\{.*\}", text or "", flags=re.S)
     if not match:
-        return None
+        return _named_in_prose(text or "", menu)
     try:
         data = json.loads(match.group(0))
     except ValueError:
@@ -415,6 +415,18 @@ def parse_choice(text: str, menu: PathMenu) -> tuple[str, str] | None:
         option = menu.rule.option(pick)
         return (option.name, reason) if option else None
     return pick, reason
+
+
+def _named_in_prose(text: str, menu: PathMenu) -> tuple[str, str] | None:
+    """A reply with no JSON that names exactly one option as a whole word (Haiku answered in
+    prose on 2026-11-27: "The fascist branch is already locked in ...")."""
+    if menu.rule is None:
+        return None
+    hits = [o.name for o in menu.rule.options
+            if re.search(r"(?<![A-Za-z0-9_])" + re.escape(o.name) + r"(?![A-Za-z0-9_])", text, re.I)]
+    if len(hits) != 1:
+        return None
+    return hits[0], " ".join(text.split())[:300]
 
 
 def choose_path(client, menu: PathMenu, *, max_tokens: int = 2000,

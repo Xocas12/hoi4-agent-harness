@@ -48,6 +48,9 @@ class BriefingRun:
             return Path(self.config.briefing_save)
         from ..world import newest_save
 
+        # Before the first telemetry line the game's date is unknown: bound by the campaign's
+        # start, never "any save" (the live run of 2026-11-27 briefed 1936 from a 1941 autosave).
+        game_date = game_date or getattr(self.config, "start_date", None)
         found = newest_save(self.save_dir, game_date, tag) if self.save_dir else None
         if found is None and game_date and self.save_dir:
             # Older than the window is still this world; LATER than the game's date is another

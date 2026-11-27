@@ -18,7 +18,7 @@ instruction comes first.
 from __future__ import annotations
 
 import json
-import shutil
+import re
 import subprocess
 from pathlib import Path
 
@@ -66,7 +66,11 @@ def index():
 def config_for(tmp_path, **overrides):
     saves = tmp_path / "saves"
     saves.mkdir(exist_ok=True)
-    shutil.copy(SAVE, saves / "SWE_1937_04_23_05.hoi4")
+    # The fixture save is dated 1937-04-23; a 1936 campaign must not read a save from after its
+    # own date (the live bug of 2026-11-27), so the copy carries the start date.
+    text = Path(SAVE).read_text(encoding="utf-8", errors="replace")
+    text = re.sub(r'date="?[\d.]+"?', 'date="1936.1.1.12"', text, count=1)
+    (saves / "SWE_1936_01_01_12.hoi4").write_text(text, encoding="utf-8", newline="")
     options = dict(country="SWE", game_dir=GAME, save_dir=saves, campaign_until="1936-05-01",
                    campaign_briefing=True, objective=INSTRUCTION)
     options.update(overrides)

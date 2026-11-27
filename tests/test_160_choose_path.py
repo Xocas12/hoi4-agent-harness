@@ -285,3 +285,16 @@ def test_160_an_empty_game_rules_block_means_the_default():
     assert game_rule(head, "GER_ai_behavior") == "DEFAULT"
     assert game_rule('date="1936.1.1.12"\n', "GER_ai_behavior") is None
     assert game_rule('game_rules={\n\tGER_ai_behavior="KAISER"\n}\n', "GER_ai_behavior") == "KAISER"
+
+
+
+def test_160_a_prose_reply_naming_one_option_is_taken():
+    # Live 2026-11-27: Haiku answered "The fascist branch is already locked in ..." with no JSON.
+    from hoi4_harness.pathchoice import AiRule, PathMenu, RuleOption, parse_choice
+
+    rule = AiRule("GER_ai_behavior", "Germany", options=[
+        RuleOption("DEFAULT", default=True), RuleOption("FASCIST"), RuleOption("GER_ALT_FASCIST")])
+    menu = PathMenu("GER", rules=[rule])
+    assert parse_choice("The fascist branch is already locked in.", menu)[0] == "FASCIST"
+    assert parse_choice("Fascist or default, unsure.", menu) is None      # two names: no pick
+    assert parse_choice("No idea.", menu) is None
