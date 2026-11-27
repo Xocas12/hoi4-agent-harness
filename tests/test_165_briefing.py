@@ -18,7 +18,7 @@ instruction comes first.
 from __future__ import annotations
 
 import json
-import shutil
+import re
 import subprocess
 from pathlib import Path
 
@@ -66,7 +66,11 @@ def index():
 def config_for(tmp_path, **overrides):
     saves = tmp_path / "saves"
     saves.mkdir(exist_ok=True)
-    shutil.copy(SAVE, saves / "SWE_1937_04_23_05.hoi4")
+    # The fixture save is dated 1937-04-23; a 1936 campaign must not read a save from after its
+    # own date (the live bug of 2026-11-27), so the copy carries the start date.
+    text = Path(SAVE).read_text(encoding="utf-8", errors="replace")
+    text = re.sub(r'date="?[\d.]+"?', 'date="1936.1.1.12"', text, count=1)
+    (saves / "SWE_1936_01_01_12.hoi4").write_text(text, encoding="utf-8", newline="")
     options = dict(country="SWE", game_dir=GAME, save_dir=saves, campaign_until="1936-05-01",
                    campaign_briefing=True, objective=INSTRUCTION)
     options.update(overrides)
@@ -496,3 +500,14 @@ def test_165_claude_cli_gets_web_tools_only_inside_a_web_briefing(tmp_path):
         client.complete("sys", [Msg(role="user", text="dossier")])
     assert commands[1][commands[1].index("--tools") + 1] == ""
     assert client.plain is False and client.web is False     # restored for the player's turns
+
+
+def test_165_a_save_later_than_the_game_date_is_never_briefed(tmp_path):
+    # Live 2026-11-27: a fresh 1936 campaign was briefed from a 1941 save of another game.
+    from hoi4_harness.campaign.briefer import _newest_not_after
+
+    (tmp_path / "GER_1941.hoi4").write_text('HOI4txt\ndate="1941.8.31.2"\nplayer="GER"\n', encoding="utf-8")
+    assert _newest_not_after(tmp_path, "1936-01-01", "GER") is None
+    old = tmp_path / "GER_1936.hoi4"
+    old.write_text('HOI4txt\ndate="1936.1.1.12"\nplayer="GER"\n', encoding="utf-8")
+    assert _newest_not_after(tmp_path, "1936-01-01", "GER") == old

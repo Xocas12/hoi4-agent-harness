@@ -152,7 +152,25 @@ def check_playset(user_dir: Path | None) -> list[Check]:
         else:
             out.append(Check(FAIL, "save_as_binary", f"is {found.group(1) if found else 'not set'}; "
                              "set save_as_binary=no with the game closed"))
+    out.append(renderer_check(user_dir))
     return out
+
+
+def renderer_check(user_dir: Path) -> Check:
+    """The renderer in ``pdx_settings.txt``. On OpenGL, HOI4 1.20 leaked 20-32 GB of private
+    memory an hour on a wall-clock timer (paused, minimised, with or without the mod), and
+    DirectX 11 on the same save leaked none (issue #157, measured 2026-11-27)."""
+    path = Path(user_dir) / "pdx_settings.txt"
+    try:
+        text = path.read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return Check(INFO, "renderer", f"no {path.name}: the game's default (DirectX 11)")
+    found = re.search(r'"renderer"\s*=\s*\{\s*value\s*=\s*"?(\w+)', text)
+    value = found.group(1) if found else "dx11"
+    if value == "opengl":
+        return Check(WARN, "renderer", "OpenGL: HOI4 leaks about 20-30 GB an hour on it (issue #157); "
+                     "set Settings > Video > Renderer to DirectX 11 with the game closed")
+    return Check(PASS, "renderer", value)
 
 
 # --- paths, disk, key, budget ---------------------------------------------------
