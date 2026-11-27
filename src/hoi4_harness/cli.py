@@ -270,6 +270,11 @@ def _config_from_args(args: argparse.Namespace) -> HarnessConfig:
         config.briefing_web_search = True
     if getattr(args, "lobby_rule", False):
         config.campaign_lobby_rule = True
+    if getattr(args, "lobby_scan", False):
+        config.campaign_lobby_rule = config.campaign_lobby_scan = True
+    if getattr(args, "lobby_calibrate", False):
+        config.campaign_lobby_rule = config.campaign_lobby_scan = True
+        config.campaign_lobby_calibrate = True
     spec = getattr(args, "control", None)
     if spec:
         if "=" in spec or spec in ALIASES:
@@ -2126,6 +2131,13 @@ def build_parser() -> argparse.ArgumentParser:
                       help="with --choose-path: click the rule and Historical AI Focuses off into "
                            "the new-game lobby before starting (needs calibration; see "
                            "docs/campaign.md)")
+    play.add_argument("--lobby-scan", dest="lobby_scan", action="store_true",
+                      help="with --choose-path: set the rule by reading the Custom Game Rules "
+                           "window (OCR: collapse sections, find the row, pick the option) "
+                           "instead of recorded points (#160; implies --lobby-rule)")
+    play.add_argument("--lobby-calibrate", dest="lobby_calibrate", action="store_true",
+                      help="read the open Custom Game Rules window once, log every line, click "
+                           "nothing and stop (open the window by hand first; #160)")
     play.add_argument("--control", metavar="game_ai|llm|economy|sovereign|DOMAIN=CONTROLLER,...",
                       help="campaign: who plays the country. game_ai (default): the game's AI "
                            "runs it, the model steers. llm: independent mode, the model plays "

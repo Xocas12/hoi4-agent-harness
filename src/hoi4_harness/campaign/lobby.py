@@ -53,12 +53,14 @@ class Clicker(Protocol):
 
 
 def steps_for(token: str | None, option: str | None,
-              points: dict | None = None) -> list[Step]:
+              points: dict | None = None, scan: bool = False) -> list[Step]:
     """The path's steps, with any operator-supplied points filled in.
 
     ``points`` keys: ``rule_row`` (the country's rule in the list), ``option:<NAME>`` or
     ``option`` (the chosen option), ``rules_close`` (leave Custom Game Rules), and optionally
-    ``custom_rules``/``historical_ai``/``start`` to replace the measured ones."""
+    ``custom_rules``/``historical_ai``/``start`` to replace the measured ones. With ``scan`` the
+    three window-internal steps are left out: ``lobby_scan.RuleScanner`` does them by reading
+    the window, and what is returned is Custom Game Rules, the Historical box and START."""
     points = {k: tuple(v) for k, v in (points or {}).items()}
 
     def pick(*keys, default=None):
@@ -69,7 +71,7 @@ def steps_for(token: str | None, option: str | None,
 
     steps = [Step("custom_rules", "Custom Game Rules button",
                   pick("custom_rules", default=CUSTOM_RULES_BUTTON))]
-    if token and option:
+    if token and option and not scan:
         steps += [
             Step("rule_row", f"the {token} row in the rules list", pick("rule_row"),
                  "position inside Custom Game Rules not recorded yet"),
@@ -134,3 +136,12 @@ class LiveClicker:
     def click(self, point: tuple[int, int], label: str) -> None:
         self._gui.moveTo(point[0], point[1], duration=self.move_duration)
         self._gui.click()
+
+    def scroll(self, point: tuple[int, int], clicks: int) -> None:
+        """Wheel at ``point``: positive clicks scroll up, negative down."""
+        self._gui.moveTo(point[0], point[1], duration=self.move_duration)
+        self._gui.scroll(clicks)
+
+    def drag(self, start: tuple[int, int], end: tuple[int, int]) -> None:
+        self._gui.moveTo(start[0], start[1], duration=self.move_duration)
+        self._gui.dragTo(end[0], end[1], duration=0.6, button="left")
