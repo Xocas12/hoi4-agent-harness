@@ -49,7 +49,7 @@ import time
 from contextlib import nullcontext
 from pathlib import Path
 
-from . import __version__, cadence
+from . import __version__, cadence, paths
 from .actions import catalog
 from .adapters import ADAPTERS, build_adapter
 from .agent.llm import PROVIDERS, build_llm
@@ -355,6 +355,22 @@ def _env_from_config(config: HarnessConfig) -> HOI4Env:
     return HOI4Env(build_adapter(config), config, index=config.build_index())
 
 
+def _renderer_line(config: HarnessConfig) -> str:
+    """The renderer pdx_settings.txt names. OpenGL leaks 20-32 GB an hour in HOI4 1.20 (#157)."""
+    from .campaign.preflight import renderer_check
+
+    try:
+        user = config.user_dir if config.user_dir is not None else paths.find_game_dir()
+    except Exception as exc:  # noqa: BLE001 - doctor reports, never raises
+        return f"unknown ({type(exc).__name__}: {exc})"
+    if user is None:
+        return "unknown -- no Hearts of Iron IV user folder found (pass --user-dir)"
+    check = renderer_check(user)
+    if check.status == "FAIL":
+        return f"opengl -- LEAKS 20-32 GB an hour (issue #157). {check.detail.split('Fix: ', 1)[-1]}"
+    return check.detail
+
+
 def cmd_doctor(args: argparse.Namespace) -> int:
     config = _config_from_args(args)
     print(f"hoi4-agent-harness {__version__}")
@@ -378,6 +394,8 @@ def cmd_doctor(args: argparse.Namespace) -> int:
             f"pricing          ${budget.usd_per_m_input}/M in, ${budget.usd_per_m_output}/M out, "
             + (f"${cached}/M cache read" if cached is not None else "cache reads at the input rate")
         )
+
+    print(f"renderer         {_renderer_line(config)}")
 
     for module, extra in (
         ("anthropic", "anthropic"),
@@ -508,6 +526,19 @@ def cmd_campaign_check(args: argparse.Namespace) -> int:
 
 def cmd_campaign_report(args: argparse.Namespace) -> int:
     from .campaign.report import write_report
+
+    if args.budget:
+        from .campaign.budget import load_budget
+
+        try:
+            text = load_budget(Path(args.run_dir)).render()
+        except FileNotFoundError as exc:
+            print(f"campaign-report: {exc}", file=sys.stderr)
+            return 1
+        print(text)
+        if args.out:
+            Path(args.out).write_text(text, encoding="utf-8")
+        return 0
 
     try:
         text, path = write_report(Path(args.run_dir), out=Path(args.out) if args.out else None)
@@ -2205,6 +2236,10 @@ def build_parser() -> argparse.ArgumentParser:
     report.add_argument("--out", metavar="PATH", help="default: <run-dir>/campaign-report.md")
     report.add_argument("--print", dest="print_report", action="store_true",
                         help="print the report instead of only writing it")
+    report.add_argument("--budget", action="store_true",
+                        help="print the performance budget instead: wall-clock minutes per game "
+                             "month, split into model, game and overhead time, per game year "
+                             "(--out also writes it)")
     report.set_defaults(func=cmd_campaign_report)
 
     check = sub.add_parser(
