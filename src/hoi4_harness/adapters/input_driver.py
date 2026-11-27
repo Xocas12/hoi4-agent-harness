@@ -130,6 +130,10 @@ class ClockUnobservable(RuntimeError):
 
 @dataclass
 class InputConfig:
+    #: The key that opens and closes the game's console. When the pause key does nothing, a
+    #: console left open is the usual reason (it swallows the key; live 2026-11-27): the clock
+    #: presses this once and tries again before it gives up. None: no such retry.
+    console_key: str | None = None
     #: Matched as a case-insensitive substring: the real title carries a suffix
     #: ("Hearts of Iron IV (OpenGL)"), so an exact match never fires.
     window_title: str = "Hearts of Iron IV"
@@ -820,6 +824,22 @@ class InputDriverAdapter(GameAdapter):
             if self._date_moves() == running:
                 self._running = running
                 return
+        if self.config.console_key:
+            # A console left open swallows the pause key. Close it and try once more; if that
+            # was not it, the console key is pressed again so it is left as it was found.
+            self.log.append("clock: the pause key did nothing; closing a console that may be open")
+            self.press(self.config.console_key)
+            self._sleep(self.config.settle_seconds)
+            for _ in range(2):
+                if self._date_moves() == running:
+                    self._running = running
+                    return
+                self.press("pause")
+                self._sleep(self.config.settle_seconds)
+            if self._date_moves() == running:
+                self._running = running
+                return
+            self.press(self.config.console_key)
         probe = self.config.clock_probe_seconds
         if running:
             raise ClockUnobservable(

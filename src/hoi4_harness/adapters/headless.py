@@ -450,7 +450,8 @@ def build_headless(config: HarnessConfig, fake=None) -> CompositeAdapter:
 
     input_config = InputConfig(
         window_title=config.window_title, enforce_focus=config.enforce_window_focus,
-        clock_probe_seconds=config.clock_probe_seconds, mouse=hands.mouse)
+        clock_probe_seconds=config.clock_probe_seconds, mouse=hands.mouse,
+        console_key=config.console_key)
     extra = {}
     if focus_check is not None:
         extra["focus_check"] = focus_check

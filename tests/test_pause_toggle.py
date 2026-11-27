@@ -310,3 +310,29 @@ def test_the_date_read_before_the_unpause_does_not_drain_events(tmp_path, monkey
 
     assert [e.kind for e in state.events] == ["war_declared"]
     assert keyboard.clock_calls == ["resume", "pause"]
+
+
+class ConsoleGame(Game):
+    """A game whose console is open: it swallows the pause key until the console key closes it."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.console_open = True
+
+    def press(self, key: str) -> None:
+        self.keys.append(key)
+        if key == "grave":
+            self.console_open = not self.console_open
+        elif key == "space" and not self.console_open:
+            self.paused = not self.paused
+
+
+def test_a_console_left_open_is_closed_and_the_clock_carries_on():
+    # Live 2026-11-27: the console stayed open after `run llmb_turn.txt`, both pause presses went
+    # into it, and the campaign crashed with ClockUnobservable.
+    game = ConsoleGame(paused=True)
+    driver = InputDriverAdapter(InputConfig(console_key="grave"), dry_run=False, focus_check=focused,
+                                sleep=game.sleep, gui=game, read_state=Reader(game).read_state)
+    driver.resume()
+    assert not game.paused and not game.console_open
+    assert "grave" in game.keys
