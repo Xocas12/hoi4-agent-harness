@@ -450,6 +450,15 @@ class HarnessConfig:
     #: Screen points for the lobby steps nobody has recorded yet (campaign/lobby.py):
     #: ``{"rule_row": [x, y], "option:FASCIST": [x, y], "rules_close": [x, y]}``.
     campaign_lobby_points: dict = field(default_factory=dict)
+    #: With ``campaign_lobby_rule``: find the rule row and the option by reading the Custom Game
+    #: Rules window (OCR) instead of fixed points: collapse every section, expand the AI
+    #: behaviour one, scroll to the row, choose (campaign/lobby_scan.py). Needs Windows OCR.
+    campaign_lobby_scan: bool = False
+    #: With ``campaign_lobby_scan``: read the open window once, log every line with its box and
+    #: what the scan recognised, click nothing, and stop the start. Open Custom Game Rules by
+    #: hand first. ``campaign_lobby_dump`` names a JSON file the lines are also written to.
+    campaign_lobby_calibrate: bool = False
+    campaign_lobby_dump: str = ""
     #: A briefing agent (#165, docs/briefing.md): before the first turn a separately configured
     #: model reads a dossier of the world and the country and writes an orientation (the
     #: situation and the viable paths, no plan), saved in the run dir, shown to the person and

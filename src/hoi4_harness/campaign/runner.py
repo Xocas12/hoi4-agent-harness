@@ -147,6 +147,7 @@ def _choose_path(config: HarnessConfig, planner, env: HOI4Env, run_dir: Path, lo
     if not config.campaign_choose_path:
         return
     recorded = load_state(run_dir).get("path_choice")
+    menu_rule = None
     if recorded:
         choice = pathchoice.PathChoice(**recorded)
         log.line(f"path already chosen by an earlier run, kept: {choice.option} ({choice.reason})")
@@ -162,6 +163,7 @@ def _choose_path(config: HarnessConfig, planner, env: HOI4Env, run_dir: Path, lo
             return
         menu = pathchoice.build_menu(env.index, tag)
         choice = pathchoice.choose_path(client, menu, briefing=briefing)
+        menu_rule = menu.rule
         save_state(run_dir, path_choice=choice.to_dict(), path_menu_branches=len(menu.branches))
         if choice.source == "default":
             log.line(f"WARNING: {choice.reason}")
@@ -171,10 +173,13 @@ def _choose_path(config: HarnessConfig, planner, env: HOI4Env, run_dir: Path, lo
             log.line(f"no AI behaviour rule for {tag} in this playset: the choice steers the "
                      "guidance only; no lobby step")
         elif config.campaign_lobby_rule:
-            steps = lobby.steps_for(choice.rule, choice.option, config.campaign_lobby_points)
             try:
-                lobby.run_steps(steps, clicker or lobby.LiveClicker(config.window_title),
-                                log.line, pause=pause)
+                if config.campaign_lobby_scan:
+                    _scan_lobby(config, menu_rule, choice, clicker, log, pause)
+                else:
+                    steps = lobby.steps_for(choice.rule, choice.option, config.campaign_lobby_points)
+                    lobby.run_steps(steps, clicker or lobby.LiveClicker(config.window_title),
+                                    log.line, pause=pause)
             except lobby.LobbyError as exc:
                 log.line(f"cannot start: the lobby step failed: {exc}")
                 raise CampaignStartError(f"the lobby step failed: {exc}") from exc
@@ -185,6 +190,30 @@ def _choose_path(config: HarnessConfig, planner, env: HOI4Env, run_dir: Path, lo
                      f"{choice.rule}={choice.option} and Historical AI Focuses off by hand "
                      "before the game starts")
     config.objective = config.objective.rstrip() + _PARA + pathchoice.guidance_text(choice)
+
+
+def _scan_lobby(config, rule, choice, clicker, log: CampaignLog, pause) -> None:
+    """The lobby by reading the window (campaign/lobby_scan.py): Custom Game Rules, the scan,
+    the Historical box, START. In calibration only the read-only report runs, then the start
+    is ended on purpose."""
+    from ..adapters.ocr import WindowsOcr
+    from ..adapters.window import client_rect
+    from . import lobby, lobby_scan
+
+    clicker = clicker or lobby.LiveClicker(config.window_title)
+    scanner = lobby_scan.RuleScanner(
+        WindowsOcr(), clicker, client_rect, log.line,
+        layout=lobby_scan.layout_from(config.campaign_lobby_points), pause=pause,
+        calibrate=config.campaign_lobby_calibrate, dump=config.campaign_lobby_dump or None)
+    labels = [rule.title, rule.token] if rule else [choice.rule]
+    opt = rule.option(choice.option) if rule else None
+    wanted = [opt.text, opt.name] if opt else [choice.option]
+    lobby_scan.run_scan_path(scanner, lobby.steps_for(choice.rule, choice.option,
+                                                      config.campaign_lobby_points, scan=True),
+                             labels, wanted, clicker, log.line, pause)
+    if config.campaign_lobby_calibrate:
+        raise CampaignStartError("lobby calibration done: the window was read and logged, "
+                                 "nothing was clicked and the campaign did not start")
 
 
 def _start_briefing(config, planner, briefer, env, run_dir: Path, log: CampaignLog, resume: bool,

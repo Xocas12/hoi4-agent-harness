@@ -203,6 +203,11 @@ class ClaudeCliClient(LLMClient):
                      cached_input_tokens=read, cache_write_input_tokens=write)
 
     def _response(self, data: dict, usage: Usage) -> LLMResponse:
+        if "text" not in data and "calls" not in data:
+            # An object in some other shape (the system prompt asked for its own): hand it back
+            # whole as the text instead of an empty reply the caller cannot read.
+            return LLMResponse(text=json.dumps(data), tool_calls=[], stop_reason="end_turn",
+                               usage=usage, model=self.model)
         calls = []
         for raw in data.get("calls") or []:
             if not isinstance(raw, dict) or not raw.get("name"):

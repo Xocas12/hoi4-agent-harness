@@ -337,7 +337,7 @@ def _grouped(commits: list[Commit]) -> list[tuple[str, str, dict[str, list[str]]
     return list(out.values())
 
 
-def render_menu(menu: PathMenu, limit: int | None = None) -> str:
+def render_menu(menu: PathMenu, limit: int | None = None, max_branches: int | None = None) -> str:
     """The menu as text. ``limit`` caps the committing focuses listed per branch (the prompt
     uses it: the German tree has well over a hundred)."""
     lines = [f"Paths open to {menu.country}"]
@@ -353,7 +353,8 @@ def render_menu(menu: PathMenu, limit: int | None = None) -> str:
             if opt.desc:
                 lines.append(f"      {opt.desc}")
     lines.append(f"Focus tree: {', '.join(menu.trees) or 'none'}; {len(menu.branches)} branches")
-    for branch in menu.branches:
+    shown = menu.branches if max_branches is None else menu.branches[:max_branches]
+    for branch in shown:
         label = f"{branch.name} [{branch.root}]" if branch.name != branch.root else branch.root
         lines.append(f"  Branch {label}: {branch.focuses} focuses")
         if branch.gains:
@@ -366,6 +367,8 @@ def render_menu(menu: PathMenu, limit: int | None = None) -> str:
                 lines.append(f"          excludes: {', '.join(menu.exclusive[focus])}")
         if limit is not None and len(groups) > limit:
             lines.append(f"      ... {len(groups) - limit} more committing focuses")
+    if len(shown) < len(menu.branches):
+        lines.append(f"  ... {len(menu.branches) - len(shown)} more branches")
     return "\n".join(lines)
 
 
@@ -382,7 +385,7 @@ CHOOSE_SYSTEM = (
     'nothing else: {"choice": "<option name>", "reason": "<one or two sentences>"}.')
 
 
-def choice_prompt(menu: PathMenu, briefing: str | None = None) -> str:
+def choice_prompt(menu: PathMenu, briefing: str | None = None, short: bool = False) -> str:
     rule = menu.rule
     if rule is not None:
         ask = (f"Choose one option of {rule.token}, by its name "
@@ -391,6 +394,9 @@ def choice_prompt(menu: PathMenu, briefing: str | None = None) -> str:
         ask = ("The playset has no AI behaviour rule for this country, so name the path you want "
                "in a few words (a branch or a focus from the list). It steers your own guidance "
                "for the campaign.")
+    if short:
+        return (render_menu(menu, limit=3, max_branches=6) + "\n\n" + ask
+                + "\nAnswer with the JSON object only.")
     head = (f"{briefing.strip()}\n\nThe briefing informs your choice; it does not make it.\n\n"
             if briefing else "")
     return f"{head}{render_menu(menu, limit=25)}\n\n{ask}"
@@ -433,10 +439,27 @@ def choose_path(client, menu: PathMenu, *, max_tokens: int = 2000,
                 briefing: str | None = None) -> PathChoice:
     """Ask ``client`` once. An unreadable or invalid reply falls back to the rule's default
     option (or "no path chosen" without a rule) and says so in the reason; it is never asked again."""
+    from contextlib import nullcontext
+
     from .agent.llm.base import Msg
 
-    response = client.complete(CHOOSE_SYSTEM, [Msg(role="user", text=choice_prompt(menu, briefing))],
-                              tools=None, max_tokens=max_tokens)
+    def ask(prompt: str):
+        # prose(): the reply as the model wrote it. Without it the claude-cli client asks for
+        # its {"text", "calls"} tool envelope, and an answer shaped {"choice", "reason"} came back
+        # as text "" (the empty reply of 2026-11-27).
+        scope = client.prose() if hasattr(client, "prose") else nullcontext()
+        with scope:
+            return client.complete(CHOOSE_SYSTEM, [Msg(role="user", text=prompt)], tools=None,
+                                   max_tokens=max_tokens)
+
+    response = ask(choice_prompt(menu, briefing))
+    if parse_choice(getattr(response, "text", "") or "", menu) is None:
+        # One more try with a short prompt: no briefing, a few branches. A reply that was empty
+        # or cut off is often a prompt too big for the call, not a model with no opinion.
+        first = response
+        response = ask(choice_prompt(menu, None, short=True))
+        if not (getattr(response, "text", "") or "").strip():
+            response = first            # report the first reply if the retry is empty too
     rule = menu.rule
     parsed = parse_choice(getattr(response, "text", "") or "", menu)
     if parsed is not None:

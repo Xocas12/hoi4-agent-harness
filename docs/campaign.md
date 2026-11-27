@@ -309,6 +309,34 @@ AI Focuses box (1862, 929) and START (1742, 1028) at 1920x1080 are recorded. Giv
 [x, y]}`; a path with a missing point is refused before the first click. The Historical box is
 a toggle the harness cannot read: the path assumes the lobby opened with it on.
 
+### Reading the window instead of points: `--lobby-scan`
+
+The Custom Game Rules window is a long list of collapsible sections; the country's AI behaviour
+row is far down it and no fixed point reaches it. `campaign_lobby_scan = true` (`--lobby-scan`,
+implies `--lobby-rule`) does it by reading the window (`campaign/lobby_scan.py`, Windows OCR of
+the game window's rectangle only): collapse every section by clicking the arrow at the right end
+of each header, expand only the AI behaviour one, scroll (the wheel, else dragging the
+scrollbar) until the country's row shows, open its dropdown, click the option in the list that
+opens, check the row now shows it, press Apply. Every click is behind the window-in-front check.
+A click that changes nothing on screen stops the scan (a collapse arrow is a toggle, so it is
+never clicked twice blind). Only Custom Game Rules, the Historical box and START still use points.
+
+Live check (needs the game open at the lobby, Windows OCR installed):
+
+1. Open Custom Game Rules by hand, then run `hoi4 play ... --campaign --choose-path
+   --lobby-calibrate` (optionally `campaign_lobby_dump` = a JSON path). It reads once, logs every
+   line with its box, the footer-derived panel edge, the arrow and dropdown x it would click and
+   the headers it recognised, clicks nothing, and ends the start. Check the section names the
+   window really shows are all in the "recognised" line; if one is missing add it to
+   `campaign_lobby_points` as `scan_section_names` (a list), and likewise `scan_arrow_dx`,
+   `scan_dropdown_dx`, `scan_panel_pad`, `scan_scrollbar_dx`, `scan_wheel_clicks`.
+2. Close the window and run with `--lobby-scan`. The log has one line per click ("lobby scan:
+   click collapse 'Foreign Policy' ...") and whether the wheel scrolled or the scrollbar was
+   dragged. The end of it says `<row> now shows '<option>'`, then the first save is read back as
+   above.
+3. Still unmeasured: where the arrow and the dropdown sit, whether the wheel scrolls this list,
+   whether section headers read as plain text, the row label the game shows for the country.
+
 The first recovery save is then read back: `path rule GER_ai_behavior = FASCIST in the first
 save: matches the choice`, or a `WARNING` when it differs, or a note that the save does not
 record it. Where a real save writes its rules has not been seen yet; the reader looks for

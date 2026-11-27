@@ -298,3 +298,64 @@ def test_160_a_prose_reply_naming_one_option_is_taken():
     assert parse_choice("The fascist branch is already locked in.", menu)[0] == "FASCIST"
     assert parse_choice("Fascist or default, unsure.", menu) is None      # two names: no pick
     assert parse_choice("No idea.", menu) is None
+
+
+# --- path choice robustness (#160) -----------------------------------------------
+
+def _cli_client(tmp_path, replies):
+    """A ClaudeCliClient over a fake CLI: ``replies`` are the envelope results, one per call;
+    the prompts it was given are kept in ``seen``."""
+    import subprocess
+
+    from hoi4_harness.agent.llm.claude_cli import ClaudeCliClient
+
+    seen, queue = [], list(replies)
+
+    def run(cmd, **kw):
+        seen.append(kw["input"])
+        result = queue.pop(0) if queue else ""
+        return subprocess.CompletedProcess(cmd, 0, json.dumps({"result": result}), "")
+
+    client = ClaudeCliClient("haiku", cli="claude", workdir=tmp_path / "w", run=run)
+    return client, seen
+
+
+def _ger_menu():
+    from hoi4_harness.pathchoice import AiRule, PathMenu, RuleOption
+
+    rule = AiRule("GER_ai_behavior", "Germany", options=[
+        RuleOption("DEFAULT", default=True), RuleOption("FASCIST")])
+    return PathMenu("GER", rules=[rule])
+
+
+def test_160_a_choice_object_through_the_cli_is_not_an_empty_reply(tmp_path):
+    # The cause of the empty reply: the cli client asked for its {"text","calls"} envelope and
+    # an answer shaped {"choice","reason"} came back as text "".
+    client, seen = _cli_client(tmp_path, ['{"choice": "FASCIST", "reason": "Go."}'])
+    got = pathchoice.choose_path(client, _ger_menu())
+    assert (got.option, got.source) != ("DEFAULT", "default")
+    assert got.option == "FASCIST"
+    assert "You cannot run tools yourself" not in seen[0]       # asked in prose mode
+
+
+def test_160_an_empty_reply_is_retried_once_with_a_short_prompt(tmp_path):
+    menu = _ger_menu()
+    client, seen = _cli_client(tmp_path, ["", '{"choice": "FASCIST", "reason": "Go."}'])
+    got = pathchoice.choose_path(client, menu, briefing="BRIEFING " * 2000)
+    assert got.option == "FASCIST"
+    assert "BRIEFING" in seen[0] and "BRIEFING" not in seen[-1]
+    assert len(seen[-1]) < len(seen[0])
+
+
+def test_160_two_empty_replies_fall_back_to_the_default(tmp_path):
+    client, seen = _cli_client(tmp_path, ["", ""])
+    got = pathchoice.choose_path(client, _ger_menu())
+    assert (got.option, got.source) == ("DEFAULT", "default")
+    assert "empty reply" in got.reason
+
+
+def test_160_the_cli_keeps_a_non_envelope_object_as_text(tmp_path):
+    client, _ = _cli_client(tmp_path, ['{"choice": "X"}'])
+    from hoi4_harness.agent.llm.base import Msg
+
+    assert "choice" in client.complete("s", [Msg(role="user", text="q")]).text
